@@ -1,5 +1,8 @@
+#include "inverter.hpp"
+
 #include <iostream>
 #include <time.h>
+
 #include "cpl_string.h"
 #include "gdal_priv.h"
 #include "cpl_conv.h" // for CPLMalloc()
@@ -47,7 +50,8 @@ CPLErr invertColors(AlgoData data){
     return error;
 }
 
-int main(){
+int inverterTimeTest()
+{
     std::cout<<"Color inversion"<<std::endl;
     char filename[30] = "malbolgeEtalon_coh.tif";
     int tileX = 1000;
@@ -117,11 +121,9 @@ int main(){
         }
     }
 
-
     CPLFree(algoData.buffer);
     GDALClose((GDALDatasetH)outputDataset);
     GDALClose(inputDataset);
     t = clock() - t;
     std::cout<<"time taken: " << ((float)t)/CLOCKS_PER_SEC <<std::endl;
-    return 0;
 }
