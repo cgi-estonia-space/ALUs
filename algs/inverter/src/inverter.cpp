@@ -126,4 +126,6 @@ int inverterTimeTest()
     GDALClose(inputDataset);
     t = clock() - t;
     std::cout<<"time taken: " << ((float)t)/CLOCKS_PER_SEC <<std::endl;
+
+    return 0;
 }

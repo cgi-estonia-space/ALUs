@@ -10,6 +10,7 @@ project(aluserer
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_CXX_FLAGS "-Wall -Werror -Wextra -pedantic")
 
 set(CMAKE_CUDA_STANDARD 11)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
@@ -22,63 +23,7 @@ find_package(GDAL REQUIRED)
 
 # Algorithms
 add_subdirectory(algs/inverter)
+add_subdirectory(algs/cuda_algorithm)
 
 # Main terminal application
 add_subdirectory(app)
-
-
-#list(APPEND aluserer_SOURCES
-#    ${CMAKE_CURRENT_LIST_DIR}/main.cpp
-#    )
-#
-#list(APPEND aluserer_INCLUDES )
-#
-#add_executable(aluserer ${aluserer_SOURCES})
-
-#include(${CMAKE_CURRENT_LIST_DIR}/src/main/CMakeLists.txt)
-#include(${CMAKE_CURRENT_LIST_DIR}/src/test/CMakeLists.txt)
-
-#cmake_print_variables(${Utils_DEP_INCLUDES})
-
-#list(APPEND Utils_DEP_INCLUDES
-        #${CMAKE_CURRENT_LIST_DIR}/target/test-nar/gmock-1.7.0-noarch/include
-        #${CMAKE_CURRENT_LIST_DIR}/target/test-nar/gtest-1.7.0-noarch/include
-        #${CMAKE_CURRENT_LIST_DIR}/target/test-nar/gtest-extra-1.0.1-SNAPSHOT-noarch/include
-        #        )
-
-#cmake_print_variables(${Utils_DEP_INCLUDES})
-
-#add_executable(${CMAKE_PROJECT_NAME}-test ${Utils_TEST_SOURCES})
-#target_include_directories(${CMAKE_PROJECT_NAME}-test PRIVATE ${Utils_INCLUDES} ${Utils_DEP_INCLUDES})
-
-#Some boost include paths needed for gtest-extra.
-#list(APPEND LINK_DIRS
-       # ${CMAKE_CURRENT_LIST_DIR}/target/test-nar/boost-1.0.1-SNAPSHOT-amd64-Linux-gpp-shared/lib/amd64-Linux-gpp/shared/
-       #       ${CMAKE_CURRENT_LIST_DIR}/target/test-nar/gtest-extra-1.0.1-SNAPSHOT-amd64-Linux-gpp-shared/lib/amd64-Linux-gpp/shared
-        #${CMAKE_CURRENT_LIST_DIR}/target/test-nar/gtest-1.7.0-amd64-Linux-gpp-shared/lib/amd64-Linux-gpp/shared
-        #$${CMAKE_CURRENT_LIST_DIR}/target/test-nar/gmock-1.7.0-amd64-Linux-gpp-shared/lib/amd64-Linux-gpp/shared
-        #${CMAKE_CURRENT_LIST_DIR}/target/test-nar/regex-1.57.0+nar.10-amd64-Linux-gpp-shared/lib/amd64-Linux-gpp/shared
-        #${CMAKE_CURRENT_LIST_DIR}/target/test-nar/exception-1.57.0+nar.10-amd64-Linux-gpp-shared/lib/amd64-Linux-gpp/shared
-        #${CMAKE_CURRENT_LIST_DIR}/target/test-nar/smart-ptr-1.57.0+nar.10-amd64-Linux-gpp-shared/lib/amd64-Linux-gpp/shared
-        #${CMAKE_CURRENT_LIST_DIR}/target/test-nar/integer-1.57.0+nar.10-amd64-Linux-gpp-shared/lib/amd64-Linux-gpp/shared
-        #)
-
-        #list(APPEND LINK_LIBS
-        # gtest-extra-1.0.1-SNAPSHOT
-        #gmock-1.7.0
-        #gtest
-        #gmock
-        #)
-
-        #target_link_directories(${CMAKE_PROJECT_NAME}-test PRIVATE ${LINK_DIRS})
-        #target_link_libraries(${CMAKE_PROJECT_NAME}-test
-        #PUBLIC
-        #Boost::filesystem Boost::regex utils-static ${LINK_LIBS}
-        #)
-
-        #add_test(
-        #NAME ${CMAKE_PROJECT_NAME}_test
-        #COMMAND $<TARGET_FILE:${CMAKE_PROJECT_NAME}-test>
-        #)
-
-

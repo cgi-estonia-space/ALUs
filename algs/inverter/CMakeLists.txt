@@ -5,8 +5,6 @@ list(APPEND INVERTER_SOURCES
 list(APPEND INVERTER_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/include)
 
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
 add_library(inverter-obj
         OBJECT
         ${INVERTER_SOURCES})
