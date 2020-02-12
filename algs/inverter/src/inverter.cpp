@@ -1,7 +1,7 @@
 #include "inverter.hpp"
 
+#include <chrono>
 #include <iostream>
-#include <time.h>
 
 #include "cpl_string.h"
 #include "gdal_priv.h"
@@ -59,7 +59,6 @@ int inverterTimeTest()
     CPLErr error;
     AlgoData algoData;
     double adfGeoTransform[6];
-    clock_t t = clock();
 
     algoData.min = 0.0;
     algoData.max=0.99;
@@ -82,6 +81,8 @@ int inverterTimeTest()
     GDALDataset *outputDataset;
     GDALDataset *inputDataset;
     char **outputOptions = NULL;
+
+    auto const start = std::chrono::steady_clock::now();
 
     inputDataset = (GDALDataset *) GDALOpen( filename, GA_ReadOnly );
     if(inputDataset == NULL){
@@ -121,11 +122,12 @@ int inverterTimeTest()
         }
     }
 
+    auto stop = std::chrono::steady_clock::now();
+
     CPLFree(algoData.buffer);
     GDALClose((GDALDatasetH)outputDataset);
     GDALClose(inputDataset);
-    t = clock() - t;
-    std::cout<<"time taken: " << ((float)t)/CLOCKS_PER_SEC <<std::endl;
+    std::cout <<"time taken: " << std::chrono::duration_cast<std::chrono::seconds>(stop - start).count() << " seconds" << std::endl;
 
     return 0;
 }
