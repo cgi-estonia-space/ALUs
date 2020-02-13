@@ -3,9 +3,9 @@
 #include <iostream>
 #include <stdio.h>
 
-#include <cuda/cuda.h>
-#include <cuda/cuda_runtime.h>
-#include <cuda/cuda_runtime_api.h>
+#include <cuda.h>
+#include <cuda_runtime.h>
+#include <cuda_runtime_api.h>
 
 
 __global__ void square(float* dOut, float* dIn)
@@ -29,7 +29,7 @@ void cuda_kernel()
 
     // Host data buffers.
     std::array<float, SERIES_SPAN> hIn;
-    std::iota(hIn.begin(), hIn.end(), 0);
+    //std::iota(hIn.begin(), hIn.end(), 0);
     std::array<float, SERIES_SPAN> hOut;
 
     float* dIn;

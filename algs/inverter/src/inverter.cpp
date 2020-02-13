@@ -3,9 +3,9 @@
 #include <chrono>
 #include <iostream>
 
-#include "cpl_string.h"
-#include "gdal_priv.h"
-#include "cpl_conv.h" // for CPLMalloc()
+#include <gdal/cpl_string.h>
+#include <gdal/gdal_priv.h>
+#include <gdal/cpl_conv.h> // for CPLMalloc()
 
 struct AlgoData{
     //GDALDataset *outputDataset;
