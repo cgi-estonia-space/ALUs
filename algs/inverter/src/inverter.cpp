@@ -3,9 +3,9 @@
 #include <chrono>
 #include <iostream>
 
-#include <gdal/cpl_string.h>
-#include <gdal/gdal_priv.h>
-#include <gdal/cpl_conv.h> // for CPLMalloc()
+#include <cpl_string.h>
+#include <gdal_priv.h>
+#include <cpl_conv.h> // for CPLMalloc()
 
 struct AlgoData{
     //GDALDataset *outputDataset;
@@ -50,10 +50,9 @@ CPLErr invertColors(AlgoData data){
     return error;
 }
 
-int inverterTimeTest()
+int inverterTimeTest(std::string const& fileName)
 {
     std::cout<<"Color inversion"<<std::endl;
-    char filename[30] = "malbolgeEtalon_coh.tif";
     int tileX = 1000;
     int tileY = 1000;
     CPLErr error;
@@ -84,7 +83,7 @@ int inverterTimeTest()
 
     auto const start = std::chrono::steady_clock::now();
 
-    inputDataset = (GDALDataset *) GDALOpen( filename, GA_ReadOnly );
+    inputDataset = (GDALDataset *) GDALOpen( fileName.c_str(), GA_ReadOnly );
     if(inputDataset == NULL){
         std::cerr<<"inputDataset can not be found"<<std::endl;
         return 404;

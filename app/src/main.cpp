@@ -4,12 +4,26 @@
 #include "inverter.hpp"
 #include "cuda_alg.hpp"
 
+void printHelp()
+{
+    std::cout << "Usage: ./me {alg} [file]" << std::endl
+              << "Algorithm options that run as a simple example currently are: inverter, cuda" << std::endl
+              << "Optional second argument is for an input file." << std::endl;
+}
+
 int main(int argc, char* argv[])
 {
-    auto const arg1 = std::string(argv[1]);
-    if (argc == 2 && arg1 == "inverter")
+    if (argc < 2)
     {
-        inverterTimeTest();
+        printHelp();
+        return 1;
+    }
+
+    auto const arg1 = std::string(argv[1]);
+
+    if (argc == 3 && arg1 == "inverter")
+    {
+        inverterTimeTest(argv[2]);
     }
     else if (argc == 2 && arg1 == "cuda")
     {
@@ -17,8 +31,8 @@ int main(int argc, char* argv[])
     }
     else
     {
-        std::cout << "Usage: ./me {app}" << std::endl
-                  << "App options that run as a simple example currently are: inverter, cuda" << std::endl;
+        printHelp();
+        return 2;
     }
 
     return 0;

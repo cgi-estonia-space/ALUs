@@ -7,7 +7,7 @@ project(aluserer
 
 # Project wide compilation directives.
 # For specific ones make yourself acquainted with different CMake files of each algorithm/entity.
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_FLAGS "-Wall -Werror -Wextra -pedantic")

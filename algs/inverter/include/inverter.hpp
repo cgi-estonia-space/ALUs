@@ -1,3 +1,5 @@
 #pragma once
 
-int inverterTimeTest();
+#include <string>
+
+int inverterTimeTest(std::string const& fileName);
