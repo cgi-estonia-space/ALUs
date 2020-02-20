@@ -23,6 +23,7 @@ find_package(GDAL REQUIRED)
 
 # Algorithms
 add_subdirectory(algs/inverter)
+add_subdirectory(algs/inverter_parallel)
 add_subdirectory(algs/cuda_algorithm)
 
 # Main terminal application

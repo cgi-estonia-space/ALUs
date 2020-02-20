@@ -29,6 +29,10 @@ int main(int argc, char* argv[])
     {
         cuda_alg_test();
     }
+    else if (argc == 3 && arg1 == "inverterP")
+    {
+        inverterTimeTest(argv[2]);
+    }
     else
     {
         printHelp();
