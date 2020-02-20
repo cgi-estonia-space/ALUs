@@ -111,7 +111,7 @@ int inverterTimeTest(std::string const& fileName)
     for(algoData.tileXo= 0; algoData.tileXo <algoData.rasterX; algoData.tileXo+= tileX){
         for(algoData.tileYo = 0; algoData.tileYo < algoData.rasterY; algoData.tileYo+= tileY){
             computeTileActual(algoData.rasterX, algoData.rasterY, tileX, tileY, algoData.tileXo, algoData.tileYo, &algoData.tileXa, &algoData.tileYa);
-            std::cout<<algoData.tileXo << ")" << algoData.tileXa << " "<<algoData.tileYo << ")" << algoData.tileYa<<std::endl;
+            //std::cout<<algoData.tileXo << ")" << algoData.tileXa << " "<<algoData.tileYo << ")" << algoData.tileYa<<std::endl;
             error = invertColors(algoData);
             if(error){
         		std::cerr<<"gdal Error detected"<<std::endl;

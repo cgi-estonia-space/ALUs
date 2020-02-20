@@ -15,6 +15,8 @@ private:
     std::condition_variable endBlock;
     std::mutex registerMutex;
     std::mutex outMutex;
+    std::mutex inputReadMutex;
+    std::mutex outputWriteMutex;
     AlgoData algoData;
     std::vector<AlgoData> erroredConfs;
 
@@ -34,6 +36,14 @@ public:
     std::vector<AlgoData> *getErroredConfs(){
         return &this->erroredConfs;
     }
+
+    std::mutex *getInputReadMutex(){
+        return &this->inputReadMutex;
+    }
+
+    std::mutex *getOutputWriteMutex(){
+        return &this->outputWriteMutex;
+    }
 };
 
 
@@ -46,5 +56,5 @@ private:
 public:
     ThreadHolder(AlgoData algoData, ThreadController *controller);
     void work();
-    static CPLErr invertColors(AlgoData data);
+    CPLErr invertColors(AlgoData data);
 };
