@@ -91,7 +91,6 @@ int inverterTimeTest(std::string const& fileName)
 
     algoData.rasterX = inputDataset->GetRasterXSize();
     algoData.rasterY = inputDataset->GetRasterYSize();
-    algoData.inputBand = inputDataset->GetRasterBand( 1 );
     if( inputDataset->GetGeoTransform( adfGeoTransform ) != CE_None ){
         std::cerr<<"geotransform corrupt. Can not continue";
         return 500;
