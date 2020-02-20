@@ -46,5 +46,5 @@ private:
 public:
     ThreadHolder(AlgoData algoData, ThreadController *controller);
     void work();
-    CPLErr invertColors(AlgoData data);
+    static CPLErr invertColors(AlgoData data);
 };

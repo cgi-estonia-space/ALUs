@@ -5,7 +5,7 @@ list(APPEND INVERTER_SOURCES
 list(APPEND INVERTER_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/ThreadHolder.cpp)
 
-list(APPEND INVERTER_INCLUDE_DIRS
+list(APPEND INVERTER_PARALLEL_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/include)
 
 add_library(inverter_parallel-obj
@@ -14,7 +14,7 @@ add_library(inverter_parallel-obj
 
 target_include_directories(inverter_parallel-obj
         PRIVATE
-        ${INVERTER_INCLUDE_DIRS})
+        ${INVERTER_PARALLEL_INCLUDE_DIRS})
 
 add_library(inverter_parallel-static
         STATIC
@@ -22,7 +22,7 @@ add_library(inverter_parallel-static
         )
 target_include_directories(inverter_parallel-static
         PUBLIC
-        ${INVERTER_INCLUDE_DIRS}
+        ${INVERTER_PARALLEL_INCLUDE_DIRS}
         )
 set_target_properties(inverter_parallel-static
         PROPERTIES

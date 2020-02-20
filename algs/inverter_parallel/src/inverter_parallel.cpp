@@ -7,15 +7,7 @@
 #include "gdal_priv.h"
 #include "cpl_conv.h" // for CPLMalloc()
 
-void computeTileActual(int rasterX, int rasterY, int tileX, int tileY, int tileXo, int tileYo, int *tileXa, int *tileYa){
-    *tileXa = rasterX - tileXo;
-    *tileYa = rasterY - tileYo;
-
-    *tileXa = (*tileXa > tileX)*tileX + !(*tileXa > tileX)* *tileXa;
-    *tileYa = (*tileYa > tileY)*tileY + !(*tileYa > tileY)* *tileYa;
-}
-
-CPLErr invertColors(AlgoData data){
+/*CPLErr invertColors(AlgoData data){
     CPLErr error;
     int i, size = data.tileXa*data.tileYa;
     error = data.inputBand->RasterIO( GF_Read, data.tileXo, data.tileYo, data.tileXa, data.tileYa,
@@ -32,7 +24,7 @@ CPLErr invertColors(AlgoData data){
                     data.buffer, data.tileXa, data.tileYa, GDT_Float32,
                     0, 0 );
     return error;
-}
+}*/
 
 int inverterParallelTimeTest(std::string const& fileName){
     std::cout<<"Parallel color inversion"<<std::endl;
@@ -90,17 +82,17 @@ int inverterParallelTimeTest(std::string const& fileName){
     outputDataset->SetGeoTransform( adfGeoTransform );
     outputDataset->SetProjection(inputDataset->GetProjectionRef());
     algoData.outputBand = outputDataset->GetRasterBand(1);
-    algoData.buffer = (float *) CPLMalloc(sizeof(float)*algoData.tileX*algoData.tileY);
+    float *buffer = (float *) CPLMalloc(sizeof(float)*algoData.tileX*algoData.tileY);
 
     ThreadController controller(algoData);
     controller.startThreads();
     std::vector<AlgoData> *erroredConfs =controller.getErroredConfs();
     while(!erroredConfs->empty()){
-        error = invertColors(erroredConfs->back());
+        error = ThreadHolder::invertColors(erroredConfs->back());
         erroredConfs->pop_back();
         if(error){
             std::cerr<<"Got gdal error for the second time: "<< error << ". Terminating now!"<<std::endl;
-            CPLFree(algoData.buffer);
+            CPLFree(buffer);
             GDALClose((GDALDatasetH)outputDataset);
             GDALClose(inputDataset);
             return 500;
@@ -108,7 +100,7 @@ int inverterParallelTimeTest(std::string const& fileName){
     }
 
 
-    CPLFree(algoData.buffer);
+    CPLFree(buffer);
     GDALClose((GDALDatasetH)outputDataset);
     GDALClose(inputDataset);
     t = clock() - t;

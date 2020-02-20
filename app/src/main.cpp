@@ -2,6 +2,7 @@
 #include <string>
 
 #include "inverter.hpp"
+#include "inverter_parallel.hpp"
 #include "cuda_alg.hpp"
 
 void printHelp()
@@ -31,7 +32,7 @@ int main(int argc, char* argv[])
     }
     else if (argc == 3 && arg1 == "inverterP")
     {
-        inverterTimeTest(argv[2]);
+        inverterParallelTimeTest(argv[2]);
     }
     else
     {

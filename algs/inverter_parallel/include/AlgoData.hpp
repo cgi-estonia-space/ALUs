@@ -15,5 +15,4 @@ struct AlgoData{
     int tileYa;
     int rasterX;
     int rasterY;
-    float *buffer;
 };

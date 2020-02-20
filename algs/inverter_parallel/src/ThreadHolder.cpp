@@ -37,7 +37,7 @@ CPLErr ThreadHolder::invertColors(AlgoData data){
         return error;
     }
     for(i=0; i<size; i++){
-        data.buffer[i] = data.max - data.buffer[i];
+        buffer[i] = data.max - buffer[i];
     }
 
     error = data.outputBand->RasterIO( GF_Write, data.tileXo, data.tileYo, data.tileXa, data.tileYa,
