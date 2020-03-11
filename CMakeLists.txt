@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 
 project(aluserer
         LANGUAGES CXX CUDA
@@ -7,7 +7,7 @@ project(aluserer
 
 # Project wide compilation directives.
 # For specific ones make yourself acquainted with different CMake files of each algorithm/entity.
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_FLAGS "-Wall -Werror -Wextra -pedantic")
@@ -21,10 +21,22 @@ message(STATUS "Found CUDA ${CUDA_VERSION_STRING} at ${CUDA_TOOLKIT_ROOT_DIR}")
 
 find_package(GDAL REQUIRED)
 
+# Utilities
+add_subdirectory(util/gdal)
+
 # Algorithms
 add_subdirectory(algs/inverter)
 add_subdirectory(algs/inverter_parallel)
 add_subdirectory(algs/cuda_algorithm)
+add_subdirectory(algs/range_doppler_terrain_correction)
 
 # Main terminal application
 add_subdirectory(app)
+
+# Tests
+option(ENABLE_UNIT_TESTS "Enable unit tests" ON)
+message(STATUS "Enable testing: ${ENABLE_UNIT_TESTS}")
+
+if(ENABLE_UNIT_TESTS)
+    add_subdirectory(test)
+endif()
