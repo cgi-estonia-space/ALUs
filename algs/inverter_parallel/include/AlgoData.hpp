@@ -1,8 +1,8 @@
 #pragma once
+#include "cpl_conv.h"  // for CPLMalloc()
 #include "gdal_priv.h"
-#include "cpl_conv.h" // for CPLMalloc()
 
-struct AlgoData{
+struct AlgoData {
     GDALRasterBand *outputBand;
     GDALRasterBand *inputBand;
     float min;
