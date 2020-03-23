@@ -52,3 +52,8 @@ target_link_libraries(map_cut
         PRIVATE
         gdal-util-static
         )
+
+add_custom_command(TARGET unit_test
+        POST_BUILD
+        COMMAND cp -r ${CMAKE_CURRENT_LIST_DIR}/goods ${CMAKE_BINARY_DIR}/test/.
+        )
