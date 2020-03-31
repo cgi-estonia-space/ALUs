@@ -1,20 +1,25 @@
 #pragma once
 
-#include <memory>
-
 #include "dataset.hpp"
+#include "dem.hpp"
 
 namespace slap {
 
 class TerrainCorrection {
    public:
-    TerrainCorrection(std::shared_ptr<slap::Dataset> ds) : m_ds{ds} {}
+    TerrainCorrection(slap::Dataset cohDs, slap::Dataset metadata,
+                      slap::Dataset dem)
+        : m_cohDs{std::move(cohDs)},
+          m_metadataDs{std::move(metadata)},
+          m_demDs{std::move(dem)} {}
 
     void doWork();
 
     ~TerrainCorrection();
 
    private:
-    std::shared_ptr<slap::Dataset> m_ds;
+    slap::Dataset m_cohDs;
+    slap::Dataset m_metadataDs;
+    slap::Dem m_demDs;
 };
 }  // namespace slap

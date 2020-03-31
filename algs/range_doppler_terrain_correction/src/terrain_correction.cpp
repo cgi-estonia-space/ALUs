@@ -1,29 +1,21 @@
 #include "terrain_correction.hpp"
 
+#include <algorithm>
 #include <iostream>
 
 #include "dem.hpp"
 
 namespace slap {
 
-//TerrainCorrection::TerrainCorrection() {}
-
 void TerrainCorrection::doWork() {
+    auto const result = m_demDs.getLocalDemFor(
+        m_cohDs, 0, 0, m_cohDs.getBand1Xsize(), m_cohDs.getBand1Ysize());
 
-    auto gdalDs = m_ds->getGDALDataset();
-
-    //std::cout << "GDAL driver desc: " << gdalDs->GetDriver()->GetDescription() << std::endl;
-    // This works not - std::cout << GDAL_DMD_LONGNAME << " " << gdalDs->GetDriver()->GetMetadata(GDAL_DMD_LONGNAME) << std::endl;
-    // Same as above - std::cout << "GDAL driver name: " << gdalDs->GetDriverName() << std::endl;
-    std::cout << "Input data size " << gdalDs->GetRasterXSize() << "x" << gdalDs->GetRasterYSize()
-              << " count " << gdalDs->GetRasterCount() << std::endl;
-    //std::cout << "projection ref " << gdalDs->GetProjectionRef() << std::endl;
-    // Same as above - std::cout << "GCP proj " << gdalDs->GetGCPProjection() << std::endl;
-
-    slap::Dem dem{{"/home/sven/.snap/auxdata/dem/SRTM 3Sec/srtm_41_01.tif"}};
-    dem.doWork();
+    const auto [min, max] =
+        std::minmax_element(std::begin(result), std::end(result));
+    std::cout << "Our area has lowest point at " << *min << " and highest at "
+              << *max << std::endl;
 }
 
 TerrainCorrection::~TerrainCorrection() {}
-}
-
+}  // namespace slap
