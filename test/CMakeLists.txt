@@ -37,7 +37,10 @@ endif()
 
 list(APPEND TEST_SOURCES
         src/dataset_test.cpp
-        src/terrain_correction_test.cpp)
+        src/terrain_correction_test.cpp
+        src/dem_test.cpp
+        src/tests_common.cpp
+        )
 
 add_executable(unit_test ${TEST_SOURCES})
 target_link_libraries(unit_test
@@ -56,4 +59,5 @@ target_link_libraries(map_cut
 add_custom_command(TARGET unit_test
         POST_BUILD
         COMMAND cp -r ${CMAKE_CURRENT_LIST_DIR}/goods ${CMAKE_BINARY_DIR}/test/.
+        COMMAND cd ${CMAKE_BINARY_DIR}/test/goods && unzip -oq ${CMAKE_BINARY_DIR}/test/goods/\\*.zip
         )

@@ -1,21 +1,33 @@
 #include "terrain_correction.hpp"
 
+#include <optional>
+
 #include "gmock/gmock.h"
+
+#include "tests_common.hpp"
+
+using namespace slap::tests;
 
 namespace {
 
-std::string testFile{"/home/sven/snap-products/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb.tif"};
-
 class TerrainCorrectionTest : public ::testing::Test {
    public:
-    TerrainCorrectionTest() : ds{std::make_shared<slap::Dataset>(testFile)} {}
+    TerrainCorrectionTest() {
+        cohDs = std::make_optional<slap::Dataset>(COH_1_TIF);
+        demDs = std::make_optional<slap::Dataset>(DEM_PATH_1);
+    }
+
+    std::optional<slap::Dataset> cohDs;
+    std::optional<slap::Dataset> cohDataDs;
+    std::optional<slap::Dataset> demDs;
 
    protected:
-    std::shared_ptr<slap::Dataset> ds;
 };
 
 TEST_F(TerrainCorrectionTest, doSomeWork) {
-    slap::TerrainCorrection tc{ds};
+    slap::TerrainCorrection tc{std::move(cohDs.value()),
+                               std::move(cohDs.value()),
+                               std::move(demDs.value())};
     tc.doWork();
 }
 }  // namespace

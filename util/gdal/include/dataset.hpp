@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <string_view>
 #include <tuple>
+#include <vector>
 
 #include <gdal_priv.h>
 
@@ -36,6 +37,9 @@ class Dataset {
         this->m_originLon = other.m_originLon;
         this->m_pixelSizeLon = other.m_pixelSizeLon;
         this->m_pixelSizeLat = other.m_pixelSizeLat;
+        this->m_band1Xsize = other.m_band1Xsize;
+        this->m_band1Ysize = other.m_band1Ysize;
+        this->m_band1Data = other.m_band1Data;
     }
     Dataset& operator=(Dataset&& other) {
         this->m_dataset = other.m_dataset;
@@ -68,10 +72,16 @@ class Dataset {
      */
     double getOriginLat() const { return m_originLat; }
 
+    int getBand1Xsize() const { return m_band1Xsize; }
+    int getBand1Ysize() const { return m_band1Ysize; }
+    std::vector<double> const& getBand1Data() const { return m_band1Data; }
+
     ~Dataset();
 
    private:
     void loadDataset(std::string_view filename);
+
+    void loadRaster1Data();
 
     GDALDataset* m_dataset;
 
@@ -81,8 +91,12 @@ class Dataset {
     double m_pixelSizeLon;
     double m_pixelSizeLat;
 
+    int m_band1Xsize;
+    int m_band1Ysize;
+    std::vector<double> m_band1Data;
+
     // These are the TOP LEFT / UPPER LEFT coordinates of the image.
-    static constexpr int TRANSFORM_LON_ORIGIN_INDEX{0};   // Or X origin
+    static constexpr int TRANSFORM_LON_ORIGIN_INDEX{0};    // Or X origin
     static constexpr int TRANSFORM_LAT_ORIGIN_INDEX{3};    // Or Y origin
     static constexpr int TRANSFORM_PIXEL_X_SIZE_INDEX{1};  // Or pixel width
     static constexpr int TRANSFORM_PIXEL_Y_SIZE_INDEX{5};  // Or pixel height
