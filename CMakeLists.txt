@@ -17,12 +17,19 @@ set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 # Dependencies which should be installed on a host system and not included separately by this project.
 find_package(CUDA REQUIRED)
-message(STATUS "Found CUDA ${CUDA_VERSION_STRING} at ${CUDA_TOOLKIT_ROOT_DIR}")
+if (CUDA_FOUND)
+    message(STATUS "Found CUDA ${CUDA_VERSION_STRING} at ${CUDA_TOOLKIT_ROOT_DIR}")
+    set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} "-Xcompiler -Wextra")
+    INCLUDE_DIRECTORIES(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+else (CUDA_FOUND)
+    message(FATAL_ERROR "No CUDA toolchain found. Exiting.")
+endif()
 
 find_package(GDAL REQUIRED)
 
 # Utilities
 add_subdirectory(util/gdal)
+add_subdirectory(util/cuda)
 
 # Algorithms
 add_subdirectory(algs/inverter)

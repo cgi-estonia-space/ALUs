@@ -16,6 +16,7 @@ std::vector<double> Dem::getLocalDemFor(Dataset& image, unsigned int x0,
     auto const& dataBuffer = m_ds.getBand1Data();
     auto const bandXsize = m_ds.getBand1Xsize();
     std::vector<double> altitudes;
+    altitudes.reserve(dataBuffer.size());
     for (unsigned int iX = 0; iX < width; iX++) {
         for (unsigned int iY = 0; iY < height; iY++) {
             auto const coordinates =

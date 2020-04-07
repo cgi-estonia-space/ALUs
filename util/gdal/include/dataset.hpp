@@ -30,7 +30,9 @@ class Dataset {
 
     GDALDataset* getGDALDataset() { return m_dataset; }
 
-    Dataset(Dataset&& other) {
+    Dataset(Dataset&& other) { *this = std::move(other); }
+
+    Dataset& operator=(Dataset&& other) {
         this->m_dataset = other.m_dataset;
         other.m_dataset = nullptr;
         this->m_originLat = other.m_originLat;
@@ -39,15 +41,7 @@ class Dataset {
         this->m_pixelSizeLat = other.m_pixelSizeLat;
         this->m_band1Xsize = other.m_band1Xsize;
         this->m_band1Ysize = other.m_band1Ysize;
-        this->m_band1Data = other.m_band1Data;
-    }
-    Dataset& operator=(Dataset&& other) {
-        this->m_dataset = other.m_dataset;
-        other.m_dataset = nullptr;
-        this->m_originLat = other.m_originLat;
-        this->m_originLon = other.m_originLon;
-        this->m_pixelSizeLon = other.m_pixelSizeLon;
-        this->m_pixelSizeLat = other.m_pixelSizeLat;
+        this->m_band1Data = std::move(other.m_band1Data);
         return *this;
     }
 
@@ -72,6 +66,21 @@ class Dataset {
      */
     double getOriginLat() const { return m_originLat; }
 
+    double getPixelSizeLon() const { return m_pixelSizeLon; }
+    double getPixelSizeLat() const { return m_pixelSizeLat; }
+
+    void fillGeoTransform(double& originLon, double& originLat,
+                          double& pixelSizeLon, double& pixelSizeLat) const {
+        originLon = getOriginLon();
+        originLat = getOriginLat();
+        pixelSizeLon = getPixelSizeLon();
+        pixelSizeLat = getPixelSizeLat();
+    }
+
+    int getRasterSizeX() const { return m_dataset->GetRasterXSize(); }
+    int getRasterSizeY() const { return m_dataset->GetRasterYSize(); }
+    int getColumnCount() const { return getRasterSizeX(); }
+    int getRowCount() const { return getRasterSizeY(); }
     int getBand1Xsize() const { return m_band1Xsize; }
     int getBand1Ysize() const { return m_band1Ysize; }
     std::vector<double> const& getBand1Data() const { return m_band1Data; }
