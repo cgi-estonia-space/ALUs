@@ -19,13 +19,13 @@ TerrainCorrection::TerrainCorrection(slap::Dataset cohDs,
     : m_cohDs{std::move(cohDs)},
       m_metadataDs{std::move(metadata)},
       m_demDs{std::move(dem)},
-      m_cohDsElevations(m_cohDs.getBand1Data().size()) {}
+      m_cohDsElevations(m_cohDs.getDataBuffer().size()) {}
 
 void TerrainCorrection::doWork() {
 
     auto const startCpu = std::chrono::steady_clock::now();
     auto const result = m_demDs.getLocalDemFor(
-        m_cohDs, 0, 0, m_cohDs.getBand1Xsize(), m_cohDs.getBand1Ysize());
+        m_cohDs, 0, 0, m_cohDs.getXSize(), m_cohDs.getYSize());
     auto const stopCpu = std::chrono::steady_clock::now();
     localDemCuda();
     auto const stopGpu = std::chrono::steady_clock::now();
@@ -62,7 +62,7 @@ void TerrainCorrection::doWork() {
 
 void TerrainCorrection::localDemCPU() {
     auto const result = m_demDs.getLocalDemFor(
-        m_cohDs, 0, 0, m_cohDs.getBand1Xsize(), m_cohDs.getBand1Ysize());
+        m_cohDs, 0, 0, m_cohDs.getXSize(), m_cohDs.getYSize());
 
     const auto [min, max] =
         std::minmax_element(std::begin(result), std::end(result));
@@ -88,8 +88,8 @@ void TerrainCorrection::localDemCuda() {
         struct LocalDemKernelArgs kernelArgs;
         kernelArgs.demCols = m_demDs.getColumnCount();
         kernelArgs.demRows = m_demDs.getRowCount();
-        kernelArgs.targetCols = m_cohDs.getBand1Xsize();
-        kernelArgs.targetRows = m_cohDs.getBand1Ysize();
+        kernelArgs.targetCols = m_cohDs.getXSize();
+        kernelArgs.targetRows = m_cohDs.getYSize();
         m_demDs.fillGeoTransform(
             kernelArgs.demOriginLon, kernelArgs.demOriginLat,
             kernelArgs.demPixelSizeLon, kernelArgs.demPixelSizeLat);

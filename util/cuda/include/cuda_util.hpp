@@ -25,6 +25,8 @@ class CudaErrorException final : public std::runtime_error {
     int const m_line;
 };
 
+int getGridDim(int blockDim, int dataDim);
+
 }  // namespace slap
 
 inline void checkCudaError(cudaError_t const cudaErr, const char* file,

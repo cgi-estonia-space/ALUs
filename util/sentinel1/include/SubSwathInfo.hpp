@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <fstream>
+#include <vector>
 #include "CudaFriendlyObject.hpp"
 #include "cuda_util.hpp"
 
@@ -16,6 +17,7 @@ public:
     double firstLineTime;
     double lastLineTime;
     double slrTimeToFirstPixel;
+    double slrTimeToLastPixel;
     double rangePixelSpacing;
     double azimuthTimeInterval;
     double radarFrequency;
@@ -26,27 +28,37 @@ public:
     int linesPerBurst;
     int numOfBursts;
     int samplesPerBurst;
-    double *burstFirstLineTime = NULL;
-    double *burstLastLineTime = NULL;
+    double *burstFirstLineTime = nullptr; //placeholder
+    double *burstLastLineTime = nullptr;  //placeholder
 
-    double **dopplerRate = NULL;
-    double **dopplerCentroid = NULL;
-    double **referenceTime =NULL;
-    double **rangeDependDopplerRate = NULL;
+    double **dopplerRate = nullptr;
+    double **dopplerCentroid = nullptr;
+    double **referenceTime = nullptr;
+    double **rangeDependDopplerRate = nullptr;
 
     int dopplerSizeX, dopplerSizeY;
 
-    double *deviceBurstFirstLineTime = NULL;
-    double *deviceBurstLastLineTime = NULL;
+    double *deviceBurstFirstLineTime = nullptr;
+    double *deviceBurstLastLineTime = nullptr;
 
-    double *deviceDopplerRate = NULL;
-    double *deviceDopplerCentroid = NULL;
-    double *deviceReferenceTime =NULL;
-    double *deviceRangeDependDopplerRate = NULL;
+    double *deviceDopplerRate = nullptr;
+    double *deviceDopplerCentroid = nullptr;
+    double *deviceReferenceTime = nullptr;
+    double *deviceRangeDependDopplerRate = nullptr;
+
+    // GeoLocationGridPoint
+    int numOfGeoLines;
+    int numOfGeoPointsPerLine;
+    double **azimuthTime = nullptr; //placeholder
+    double **slantRangeTime = nullptr; //placeholder
+    double **latitude = nullptr;    //placeholder
+    double **longitude = nullptr;   //placeholder
+    double **incidenceAngle = nullptr; //placeholder
 
     void hostToDevice();
     void deviceToHost();
     void deviceFree();
+
     SubSwathInfo();
     ~SubSwathInfo();
 

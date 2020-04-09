@@ -26,9 +26,19 @@ struct DCPolynomial {
     std::vector<double> dataDcPolynomial;
 };
 
+struct Sentinel1Index {
+    int i0;
+    int i1;
+    int j0;
+    int j1;
+    double muX;
+    double muY;
+};
+
 class Sentinel1Utils{
 private:
     int numOfSubSwath;
+
     int isDopplerCentroidAvailable = 0;
     int isRangeDependDopplerRateAvailable = 0;
     int isOrbitAvailable = 0;
@@ -39,30 +49,45 @@ private:
     std::vector<DCPolynomial> computeDCForBurstCenters(std::vector<DCPolynomial> dcEstimateList,int subSwathIndex);
     std::vector<AzimuthFmRate> getAzimuthFmRateList(std::string subSwathName);
     DCPolynomial computeDC(double centerTime, std::vector<DCPolynomial> dcEstimateList);
-    void writePlaceolderInfo();
+    void writePlaceolderInfo(int placeholderType);
     void writeMetadataPlaceholder();
     void getProductOrbit();
     double getVelocity(double time);
+    double getLatitudeValue(Sentinel1Index index, SubSwathInfo *subSwath);
+    double getLongitudeValue(Sentinel1Index index, SubSwathInfo *subSwath);
 
     //files for placeholder data
-    std::string orbitStateVectorsFile = "../test/goods/backgeocoding/orbitStateVectors.txt";
-    std::string dcEstimateListFile = "../test/goods/backgeocoding/dcEstimateList.txt";
-    std::string azimuthListFile = "../test/goods/backgeocoding/azimuthList.txt";
+    std::string orbitStateVectorsFile = "";
+    std::string dcEstimateListFile = "";
+    std::string azimuthListFile = "";
+    std::string burstLineTimeFile = "";
+    std::string geoLocationFile = "";
 
 public:
     std::vector<SubSwathInfo> subSwath;
+    double rangeSpacing;
 
     double *computeDerampDemodPhase(int subSwathIndex,int sBurstIndex,Rectangle rectangle);
+    Sentinel1Index computeIndex(double azimuthTime,double slantRangeTime, SubSwathInfo *subSwath);
 
     void computeReferenceTime();
     void computeDopplerCentroid();
     void computeRangeDependentDopplerRate();
     void computeDopplerRate();
     double getSlantRangeTime(int x, int subSwathIndex);
+    double getLatitude(double azimuthTime, double slantRangeTime, SubSwathInfo *subSwath);
+    double getLongitude(double azimuthTime, double slantRangeTime, SubSwathInfo *subSwath);
 
-    void setPlaceHolderFiles(std::string orbitStateVectorsFile, std::string dcEstimateListFile, std::string azimuthListFile);
+    void setPlaceHolderFiles(
+        std::string orbitStateVectorsFile,
+        std::string dcEstimateListFile,
+        std::string azimuthListFile,
+        std::string burstLineTimeFile,
+        std::string geoLocationFile);
+    void readPlaceHolderFiles();
 
     Sentinel1Utils();
+    Sentinel1Utils(int placeholderType);
     ~Sentinel1Utils();
 };
 

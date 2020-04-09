@@ -27,14 +27,16 @@ TEST_F(DatasetTest, onInvalidFilenameThrows) {
 
 TEST_F(DatasetTest, loadsValidTifFile) {
     auto ds = slap::Dataset(TIF_PATH_1);
-    ASSERT_EQ(100, ds.getBand1Xsize());
-    ASSERT_EQ(100, ds.getBand1Ysize());
-    ASSERT_EQ(ds.getBand1Xsize() * ds.getBand1Ysize(), ds.getBand1Data().size())
+    ds.loadRasterBand(1);
+    ASSERT_EQ(100, ds.getXSize());
+    ASSERT_EQ(100, ds.getYSize());
+    ASSERT_EQ(ds.getXSize() * ds.getYSize(), ds.getDataBuffer().size())
         << "Loaded band 1 buffer does not contain exact data from dataset.";
 }
 
 TEST_F(DatasetTest, returnsCorrectCoordinatesForEdgeIndexes) {
     auto ds = slap::Dataset(TIF_PATH_1);
+    ds.loadRasterBand(1);
     auto const zero = ds.getPixelCoordinatesFromIndex(0, 0);
     auto const zeroOne = ds.getPixelCoordinatesFromIndex(0, 99);
     auto const oneZero = ds.getPixelCoordinatesFromIndex(99, 0);
@@ -49,6 +51,7 @@ TEST_F(DatasetTest, returnsCorrectCoordinatesForEdgeIndexes) {
 
 TEST_F(DatasetTest, returnsCorrectIndexesForCoordinates) {
     auto ds = slap::Dataset(TIF_PATH_1);
+    ds.loadRasterBand(1);
 
     auto const zero = ds.getPixelIndexFromCoordinates(22.236277, 58.373121);
     EXPECT_EQ(0, std::get<0>(zero));
@@ -69,6 +72,7 @@ TEST_F(DatasetTest, returnsCorrectIndexesForCoordinates) {
 
 TEST_F(DatasetTest, createsTargetDataset) {
     auto ds = slap::Dataset(TIF_PATH_1);
+    ds.loadRasterBand(1);
     std::vector<double> from(ds.getRasterSizeY() * ds.getRasterSizeX());
     {
         auto tgt = slap::TargetDataset(ds, "/tmp/test.tif");
@@ -78,13 +82,15 @@ TEST_F(DatasetTest, createsTargetDataset) {
     }
 
     auto checkDs = slap::Dataset("/tmp/test.tif");
-    auto const& checkData = checkDs.getBand1Data();
+    checkDs.loadRasterBand(1);
+    auto const& checkData = checkDs.getDataBuffer();
     ASSERT_EQ(checkData.size(), from.size());
     ASSERT_TRUE(std::equal(checkData.begin(), checkData.end(), from.begin()));
 }
 
 TEST_F(DatasetTest, throwsWhenWritingInvalidSizes) {
     auto ds = slap::Dataset(TIF_PATH_1);
+    ds.loadRasterBand(1);
     auto tgt = slap::TargetDataset(ds, "/tmp/test.tif");
     auto const dims = tgt.getDimensions();
 
@@ -115,8 +121,9 @@ TEST_F(DatasetTest, writesToTargetDatasetWithOffsets) {
     }
 
     auto check = slap::Dataset("/tmp/test.tif");
+    check.loadRasterBand(1);
     ASSERT_EQ(check.getRasterDimensions(), dim);
-    auto checkData = check.getBand1Data();
+    auto checkData = check.getDataBuffer();
     ASSERT_EQ(checkData.size(), dim.getSize());
     EXPECT_TRUE(std::equal(checkData.begin(), checkData.begin() + fillDim.getSize(), fill1.begin()));
     EXPECT_TRUE(

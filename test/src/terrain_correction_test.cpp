@@ -14,7 +14,9 @@ class TerrainCorrectionTest : public ::testing::Test {
    public:
     TerrainCorrectionTest() {
         cohDs = std::make_optional<slap::Dataset>(COH_1_TIF);
+        cohDs.value().loadRasterBand(1);
         demDs = std::make_optional<slap::Dataset>(DEM_PATH_1);
+        demDs.value().loadRasterBand(1);
     }
 
     std::optional<slap::Dataset> cohDs;
