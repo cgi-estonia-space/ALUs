@@ -8,6 +8,8 @@
 
 #include <gdal_priv.h>
 
+#include "raster_properties.hpp"
+
 namespace slap {
 
 class DatasetError : public std::runtime_error {
@@ -79,6 +81,7 @@ class Dataset {
 
     int getRasterSizeX() const { return m_dataset->GetRasterXSize(); }
     int getRasterSizeY() const { return m_dataset->GetRasterYSize(); }
+    RasterDimension getRasterDimensions() const { return {getRasterSizeX(), getRasterSizeY()}; }
     int getColumnCount() const { return getRasterSizeX(); }
     int getRowCount() const { return getRasterSizeY(); }
     int getBand1Xsize() const { return m_band1Xsize; }

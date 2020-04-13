@@ -1,0 +1,4 @@
+
+list(APPEND COMMON_UTIL_INCLUDE_DIRS
+        ${CMAKE_CURRENT_LIST_DIR}/include
+        )

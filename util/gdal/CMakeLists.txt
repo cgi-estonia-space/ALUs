@@ -2,10 +2,12 @@
 list(APPEND GDAL_UTIL_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/dataset.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/dem.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/src/target_dataset.cpp
         )
 
 list(APPEND GDAL_UTIL_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/include
+        ${CMAKE_CURRENT_LIST_DIR}/../common/include
         )
 
 add_library(gdal-util-obj

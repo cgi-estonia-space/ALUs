@@ -6,8 +6,9 @@ list(APPEND TERRAIN_CORRECTION_SOURCES
 
 list(APPEND TERRAIN_CORRECTION_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/include
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/gdal/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/common/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/cuda/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/gdal/include
         )
 
 add_library(terrain-correction-obj
