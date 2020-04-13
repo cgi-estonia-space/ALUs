@@ -1,0 +1,4 @@
+
+list(APPEND CUDA_UTIL_INCLUDE_DIRS
+        ${CMAKE_CURRENT_LIST_DIR}/include
+        )

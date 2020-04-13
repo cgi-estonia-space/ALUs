@@ -47,6 +47,20 @@ class Dem {
                                        unsigned int y0, unsigned int width,
                                        unsigned int height);
 
+    auto const& getData() const { return m_ds.getBand1Data(); }
+    void fillGeoTransform(double& originLon, double& originLat,
+                          double& pixelSizeLon, double& pixelSizeLat) const {
+        originLon = m_ds.getOriginLon();
+        originLat = m_ds.getOriginLat();
+        pixelSizeLon = m_ds.getPixelSizeLon();
+        pixelSizeLat = m_ds.getPixelSizeLat();
+    }
+
+    int getRasterSizeX() const { return m_ds.getRasterSizeX(); }
+    int getRasterSizeY() const { return m_ds.getRasterSizeY(); }
+    int getColumnCount() const { return getRasterSizeX(); }
+    int getRowCount() const { return getRasterSizeY(); }
+
    private:
     Dataset m_ds;
 
