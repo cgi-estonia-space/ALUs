@@ -28,8 +28,9 @@ endif()
 find_package(GDAL REQUIRED)
 
 # Utilities
-add_subdirectory(util/gdal)
+add_subdirectory(util/common)
 add_subdirectory(util/cuda)
+add_subdirectory(util/gdal)
 
 # Algorithms
 add_subdirectory(algs/inverter)

@@ -12,7 +12,9 @@ namespace slap {
 Dataset::Dataset(std::string_view filename) { loadDataset(filename); }
 
 void Dataset::loadDataset(std::string_view filename) {
-    GDALAllRegister();  // Register all known drivers
+    // TODO: move this to a place where it is unifiedly called once when system
+    // starts.
+    GDALAllRegister();  // Register all known drivers.
 
     m_dataset = (GDALDataset*)GDALOpen(filename.data(), GA_ReadOnly);
     if (m_dataset == nullptr) {
