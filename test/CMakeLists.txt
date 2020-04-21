@@ -40,6 +40,8 @@ list(APPEND TEST_SOURCES
         src/terrain_correction_test.cpp
         src/dem_test.cpp
         src/tests_common.cpp
+        src/sentinel1_test.cpp
+        src/backgeocoding_test.cpp
         )
 
 add_executable(unit_test ${TEST_SOURCES})
@@ -48,6 +50,9 @@ target_link_libraries(unit_test
         gmock_main
         gdal-util-static
         terrain-correction-static
+        sentinel1-util-static
+        exotic_operations-static
+        backgeocoding-static
         )
 
 add_executable(map_cut util/map_cut.cpp)

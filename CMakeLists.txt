@@ -28,15 +28,19 @@ endif()
 find_package(GDAL REQUIRED)
 
 # Utilities
+add_subdirectory(util/gdal)
+add_subdirectory(util/sentinel1)
+add_subdirectory(util/exotic_operations)
 add_subdirectory(util/common)
 add_subdirectory(util/cuda)
-add_subdirectory(util/gdal)
+
 
 # Algorithms
 add_subdirectory(algs/inverter)
 add_subdirectory(algs/inverter_parallel)
 add_subdirectory(algs/cuda_algorithm)
 add_subdirectory(algs/range_doppler_terrain_correction)
+add_subdirectory(algs/backgeocoding)
 
 # Main terminal application
 add_subdirectory(app)

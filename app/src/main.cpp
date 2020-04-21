@@ -4,6 +4,7 @@
 #include "cuda_alg.hpp"
 #include "inverter.hpp"
 #include "inverter_parallel.hpp"
+#include "BackgeocodingController.hpp"
 
 void printHelp() {
   std::cout << "Usage: ./me {alg} [file]" << std::endl
@@ -27,6 +28,10 @@ int main(int argc, char* argv[]) {
     cuda_alg_test();
   } else if (argc == 3 && arg1 == "inverterP") {
     inverterParallelTimeTest(argv[2]);
+  } else if (argc == 2 && arg1 == "backgeocoding") {
+    slap::BackgeocodingController orch;
+    orch.readPlacehoderData();
+    orch.computeImage();
   } else {
     printHelp();
     return 2;
