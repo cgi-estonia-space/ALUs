@@ -6,6 +6,7 @@ list(APPEND SENTINEL1_UTIL_SOURCES
 
 list(APPEND SENTINEL1_UTIL_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/include
+        ${CMAKE_CURRENT_LIST_DIR}/../snap-engine/include
         ${CMAKE_CURRENT_LIST_DIR}/../exotic_operations/include
         ${CMAKE_CURRENT_LIST_DIR}/../cuda/include
         )

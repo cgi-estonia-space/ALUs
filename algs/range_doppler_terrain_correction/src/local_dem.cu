@@ -17,8 +17,8 @@
  */
 __global__ void fillElevation(double const* dem, double* targetElevations,
                               LocalDemKernelArgs const args) {
-    int const threadX = threadIdx.x + blockIdx.x * blockDim.x;
-    int const threadY = threadIdx.y + blockIdx.y * blockDim.y;
+    auto const threadX = threadIdx.x + blockIdx.x * blockDim.x;
+    auto const threadY = threadIdx.y + blockIdx.y * blockDim.y;
 
     if (threadX >= args.targetCols || threadY >= args.targetRows) {
         return;
@@ -31,8 +31,8 @@ __global__ void fillElevation(double const* dem, double* targetElevations,
         threadY * args.targetPixelSizeLat + args.targetOriginLat;
 
     // Dataset::getPixelIndexFromCoordinates()
-    int const demX = (targetLon - args.demOriginLon) / args.demPixelSizeLon;
-    int const demY = (targetLat - args.demOriginLat) / args.demPixelSizeLat;
+    auto const demX = static_cast<int>((targetLon - args.demOriginLon) / args.demPixelSizeLon);
+    auto const demY = static_cast<int>((targetLat - args.demOriginLat) / args.demPixelSizeLat);
     if (demX >= args.demCols || demY >= args.demRows || demX < 0 || demY < 0) {
         printf(
             "Index error in getElevation() kernel \"DEM index > size\" %d %d\n",

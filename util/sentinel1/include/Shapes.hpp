@@ -7,13 +7,6 @@ struct Rectangle{
     int x,y,width,height;
 };
 
-struct PosVector {
-    double x;
-    double y;
-    double z;
-};
-
-
 struct OrbitStateVector {
     UTC time;
     double time_mjd;

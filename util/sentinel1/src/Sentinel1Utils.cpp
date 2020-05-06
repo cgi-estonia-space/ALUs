@@ -1,6 +1,10 @@
 #include "Sentinel1Utils.hpp"
 
+#include "Constants.hpp"
+
 namespace slap {
+
+using namespace snapEngine;
 
 Sentinel1Utils::Sentinel1Utils(){
     writePlaceolderInfo();
@@ -62,8 +66,8 @@ double *Sentinel1Utils::computeDerampDemodPhase(int subSwathIndex,int sBurstInde
         for (x = x0; x < xMax; x++) {
             xx = x - x0;
             kt = subSwath[s].dopplerRate[sBurstIndex][x];
-            deramp = -EsaConstants_PI * kt * pow(ta - subSwath[s].referenceTime[sBurstIndex][x], 2);
-            demod = -EsaConstants_TWO_PI * subSwath[s].dopplerCentroid[sBurstIndex][x] * ta;
+            deramp = -snapEngine::constants::PI * kt * pow(ta - subSwath[s].referenceTime[sBurstIndex][x], 2);
+            demod = -snapEngine::constants::TWO_PI * subSwath[s].dopplerCentroid[sBurstIndex][x] * ta;
             result[yy*w + xx] = deramp + demod;
         }
     }
@@ -123,12 +127,12 @@ void Sentinel1Utils::computeDopplerRate(){
         computeRangeDependentDopplerRate();
     }
 
-    waveLength = EsaConstants_lightSpeed / subSwath[0].radarFrequency;
+    waveLength = snapEngine::constants::lightSpeed / subSwath[0].radarFrequency;
     for (int s = 0; s < numOfSubSwath; s++) {
         azTime = (subSwath[s].firstLineTime + subSwath[s].lastLineTime)/2.0;
         subSwath[s].dopplerRate = allocate2DDoubleArray(subSwath[s].numOfBursts, subSwath[s].samplesPerBurst);
-        v = getVelocity(azTime/EsaConstants_secondsInDay); // DLR: 7594.0232
-        steeringRate = subSwath[s].azimuthSteeringRate * EsaConstants_DTOR;
+        v = getVelocity(azTime/ snapEngine::constants::secondsInDay); // DLR: 7594.0232
+        steeringRate = subSwath[s].azimuthSteeringRate * snapEngine::constants::DTOR;
         krot = 2*v*steeringRate/waveLength; // doppler rate by antenna steering
 
         for (int b = 0; b < subSwath[s].numOfBursts; b++) {
@@ -142,7 +146,7 @@ void Sentinel1Utils::computeDopplerRate(){
 
 double Sentinel1Utils::getSlantRangeTime(int x, int subSwathIndex) {
     return subSwath[subSwathIndex - 1].slrTimeToFirstPixel +
-            x * subSwath[subSwathIndex - 1].rangePixelSpacing / EsaConstants_lightSpeed;
+            x * subSwath[subSwathIndex - 1].rangePixelSpacing / snapEngine::constants::lightSpeed;
 }
 
 //TODO: using mock data

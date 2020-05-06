@@ -42,6 +42,7 @@ list(APPEND TEST_SOURCES
         src/tests_common.cpp
         src/sentinel1_test.cpp
         src/backgeocoding_test.cpp
+        src/geo_utils_test.cpp
         )
 
 add_executable(unit_test ${TEST_SOURCES})
@@ -53,6 +54,7 @@ target_link_libraries(unit_test
         sentinel1-util-static
         exotic_operations-static
         backgeocoding-static
+        snap-engine-static
         )
 
 add_executable(map_cut util/map_cut.cpp)

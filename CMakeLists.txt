@@ -12,7 +12,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_FLAGS "-Wall -Werror -Wextra -pedantic")
 
-set(CMAKE_CUDA_STANDARD 11)
+set(CMAKE_CUDA_STANDARD 14)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 # Dependencies which should be installed on a host system and not included separately by this project.
@@ -33,6 +33,7 @@ add_subdirectory(util/sentinel1)
 add_subdirectory(util/exotic_operations)
 add_subdirectory(util/common)
 add_subdirectory(util/cuda)
+add_subdirectory(util/snap-engine)
 
 
 # Algorithms
