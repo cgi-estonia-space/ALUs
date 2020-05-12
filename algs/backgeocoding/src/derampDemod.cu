@@ -1,5 +1,6 @@
 #pragma once
-#include "EsaConstants.hpp"
+
+#include "Constants.hpp"
 
 namespace slap {
 __global__ void derampDemod(Rectangle rectangle, double *slaveI, double*slaveQ, double* demodPhase, double *demodI, double *demodQ, SubSwathInfo subSwath, int sBurstIndex){
@@ -16,8 +17,8 @@ __global__ void derampDemod(Rectangle rectangle, double *slaveI, double*slaveQ, 
 
         ta = (y - firstLineInBurst)* subSwath.azimuthTimeInterval;
         kt = subSwath.deviceDopplerRate[sBurstIndex*subSwath.dopplerSizeY + x];
-        deramp = -EsaConstants_PI * kt * pow(ta - subSwath.deviceReferenceTime[sBurstIndex*subSwath.dopplerSizeY + x], 2);
-        demod = -EsaConstants_TWO_PI * subSwath.deviceDopplerCentroid[sBurstIndex*subSwath.dopplerSizeY + x] * ta;
+        deramp = -snapEngine::constants::PI * kt * pow(ta - subSwath.deviceReferenceTime[sBurstIndex*subSwath.dopplerSizeY + x],2);
+        demod = -snapEngine::constants::TWO_PI * subSwath.deviceDopplerCentroid[sBurstIndex*subSwath.dopplerSizeY + x] * ta;
         valuePhase = deramp + demod;
 
         demodPhase[globalIndex] = valuePhase;

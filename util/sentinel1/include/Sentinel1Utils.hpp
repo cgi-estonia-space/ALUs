@@ -1,10 +1,9 @@
 #pragma once
 #include <vector>
-#include <math.h>
+#include <cmath>
 #include <string>
 #include <fstream>
 
-#include "EsaConstants.hpp"
 #include "Shapes.hpp"
 #include "comparators.hpp"
 #include "allocators.hpp"

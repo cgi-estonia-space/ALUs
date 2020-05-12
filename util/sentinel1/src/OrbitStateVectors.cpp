@@ -2,6 +2,8 @@
 
 namespace slap {
 
+using namespace snapEngine;
+
 OrbitStateVectors::OrbitStateVectors(){
     getMockData();
 }
@@ -48,7 +50,7 @@ PosVector OrbitStateVectors::getVelocity(double time) {
     double weight, time2;
     int vectorsSize = orbitStateVectors.size();
     //lagrangeInterpolatingPolynomial
-    PosVector velocity;
+    PosVector velocity{};
     OrbitStateVector orbI;
 
     if (vectorsSize <= nv) {
