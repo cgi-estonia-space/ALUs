@@ -16,18 +16,26 @@
 
 #include "sar_geocoding.cuh"
 
-namespace slap {
+namespace alus {
 namespace s1tbx {
 namespace sarGeocoding {
 double GetEarthPointZeroDopplerTime(double firstLineUTC,
                                     double lineTimeInterval,
                                     double wavelength,
-                                    snapEngine::PosVector earthPoint,
-                                    KernelArray<snapEngine::PosVector> sensorPosition,
-                                    KernelArray<snapEngine::PosVector> sensorVelocity) {
+                                    alus::snapengine::PosVector earthPoint,
+                                    KernelArray<alus::snapengine::PosVector> sensorPosition,
+                                    KernelArray<alus::snapengine::PosVector> sensorVelocity) {
     return GetEarthPointZeroDopplerTime_impl(
         firstLineUTC, lineTimeInterval, wavelength, earthPoint, sensorPosition, sensorVelocity);
 }
+
+double ComputeSlantRange(double time,
+                         KernelArray<snapengine::OrbitStateVector> vectors,
+                         snapengine::PosVector earthPoint,
+                         snapengine::PosVector& sensorPos) {
+    return ComputeSlantRangeImpl(time, vectors, earthPoint, sensorPos);
+}
+
 }  // namespace sarGeocoding
 }  // namespace s1tbx
-}  // namespace slap
+}  // namespace alus

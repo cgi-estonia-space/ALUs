@@ -17,8 +17,9 @@
 
 #include "PosVector.hpp"
 #include "cuda_util.cuh"
+#include "orbit_state_vectors.cuh"
 
-namespace slap {
+namespace alus {
 namespace s1tbx {
 namespace sarGeocoding {
 
@@ -31,9 +32,9 @@ namespace sarGeocoding {
  * @param wavelength     The radar wavelength.
  * @return The Doppler frequency in Hz.
  */
-inline __device__ __host__ double getDopplerFrequency(snapEngine::PosVector earthPoint,
-                                                      snapEngine::PosVector sensorPosition,
-                                                      snapEngine::PosVector sensorVelocity,
+inline __device__ __host__ double getDopplerFrequency(alus::snapengine::PosVector earthPoint,
+                                                      alus::snapengine::PosVector sensorPosition,
+                                                      alus::snapengine::PosVector sensorVelocity,
                                                       double wavelength) {
     const auto xDiff = earthPoint.x - sensorPosition.x;
     const auto yDiff = earthPoint.y - sensorPosition.y;
@@ -57,12 +58,13 @@ inline __device__ __host__ double getDopplerFrequency(snapEngine::PosVector eart
  * @param sensorVelocity   Array of sensor velocities for all range lines.
  * @return The zero Doppler time in days if it is found, -99999.0 otherwise.
  */
-inline __device__ __host__ double GetEarthPointZeroDopplerTime_impl(double firstLineUTC,
-                                                                    double lineTimeInterval,
-                                                                    double wavelength,
-                                                                    snapEngine::PosVector earthPoint,
-                                                                    KernelArray<snapEngine::PosVector> sensorPosition,
-                                                                    KernelArray<snapEngine::PosVector> sensorVelocity) {
+inline __device__ __host__ double GetEarthPointZeroDopplerTime_impl(
+    double firstLineUTC,
+    double lineTimeInterval,
+    double wavelength,
+    alus::snapengine::PosVector earthPoint,
+    KernelArray<alus::snapengine::PosVector> sensorPosition,
+    KernelArray<alus::snapengine::PosVector> sensorVelocity) {
     // binary search is used in finding the zero doppler time
     int lowerBound = 0;
     int upperBound = static_cast<int>(sensorPosition.size) - 1;
@@ -101,6 +103,19 @@ inline __device__ __host__ double GetEarthPointZeroDopplerTime_impl(double first
     const auto y0 = lowerBound - lowerBoundFreq * (upperBound - lowerBound) / (upperBoundFreq - lowerBoundFreq);
     return firstLineUTC + y0 * lineTimeInterval;
 }
+
+inline __device__ __host__ double ComputeSlantRangeImpl(double time,
+                                                        KernelArray<snapengine::OrbitStateVector> vectors,
+                                                        snapengine::PosVector earthPoint,
+                                                        snapengine::PosVector& sensorPos) {
+    sensorPos = orbitstatevectors::GetPositionImpl(time, vectors);
+    double const xDiff = sensorPos.x - earthPoint.x;
+    double const yDiff = sensorPos.y - earthPoint.y;
+    double const zDiff = sensorPos.z - earthPoint.z;
+
+    return std::sqrt(xDiff * xDiff + yDiff * yDiff + zDiff * zDiff);
+}
+
 }  // namespace sarGeocoding
 }  // namespace s1tbx
-}  // namespace slap
+}  // namespace alus

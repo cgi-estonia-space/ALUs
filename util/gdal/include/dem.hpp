@@ -4,7 +4,7 @@
 
 #include "dataset.hpp"
 
-namespace slap {
+namespace alus {
 class Dem {
    public:
     Dem(Dataset ds);
@@ -66,4 +66,4 @@ class Dem {
 
     double m_noDataValue;
 };
-}  // namespace slap
+}  // namespace alus

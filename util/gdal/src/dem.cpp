@@ -2,9 +2,9 @@
 
 #include <iostream>
 
-namespace slap {
+namespace alus {
 
-Dem::Dem(slap::Dataset ds) : m_ds{std::move(ds)} {
+Dem::Dem(alus::Dataset ds) : m_ds{std::move(ds)} {
     //m_ds.loadRasterBand(1);
 }
 
@@ -36,4 +36,4 @@ std::vector<double> Dem::getLocalDemFor(Dataset& image, unsigned int x0,
     return altitudes;
 }
 
-}  // namespace slap
+}  // namespace alus

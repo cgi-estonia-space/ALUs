@@ -2,6 +2,8 @@
 list(APPEND SNAP-ENGINE_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/GeoUtils.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/earth_gravitational_model96.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/orbit_state_vector.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/product_data.cc
         )
 
 list(APPEND SNAP-ENGINE_INCLUDES

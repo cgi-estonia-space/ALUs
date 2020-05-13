@@ -1,7 +1,7 @@
 #pragma once
 
-namespace slap {
-namespace snapEngine {
+namespace alus {
+namespace snapengine {
 
 struct PosVector {
     double x;
@@ -10,4 +10,4 @@ struct PosVector {
 };
 
 }  // namespace snapEngine
-}  // namespace slap
+}  // namespace alus

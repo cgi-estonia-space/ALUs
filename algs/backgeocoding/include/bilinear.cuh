@@ -2,7 +2,7 @@
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 
-namespace slap{
+namespace alus {
 
 cudaError_t launchBilinearInterpolation(dim3 gridSize,
 						dim3 blockSize,

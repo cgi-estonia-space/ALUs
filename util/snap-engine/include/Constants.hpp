@@ -19,8 +19,8 @@
 
 #include "GeoUtils.hpp"
 
-namespace slap {
-namespace snapEngine {
+namespace alus {
+namespace snapengine {
 namespace constants {
 
 constexpr double secondsInDay{86400.0};
@@ -60,4 +60,4 @@ constexpr double nsTOs{oneBillionth};  // ns to s
 
 }  // namespace constants
 }  // namespace snapEngine
-}  // namespace slap
+}  // namespace alus

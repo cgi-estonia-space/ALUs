@@ -11,15 +11,15 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
-#include "GeoUtils.cuh"
 
-namespace alus {
-namespace snapengine {
-namespace GeoUtils {
-__host__ void geo2xyzWGS84(double latitude, double longitude, double altitude, PosVector& xyz) {
-    geo2xyzWGS84_fast(latitude, longitude, altitude, xyz);
+#include "product_data.h"
+
+namespace alus::snapengine {
+
+Utc::Utc(int days, int seconds, int microseconds) : days_{days}, seconds_{seconds}, microseconds_{microseconds} {}
+
+double Utc::getMjd() const {
+    return getDaysFraction() + SECONDS_TO_DAYS * (getSecondsFraction() + MICROS_TO_SECONDS * getMicroSecondsFraction());
 }
 
-}  // namespace GeoUtils
-}  // namespace snapEngine
-}  // namespace alus
+}  // namespace alus::snapengine

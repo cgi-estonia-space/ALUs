@@ -10,7 +10,7 @@
 
 #include "raster_properties.hpp"
 
-namespace slap {
+namespace alus {
 
 class DatasetError : public std::runtime_error {
    public:
@@ -113,4 +113,4 @@ class Dataset {
     static constexpr int TRANSFORM_PIXEL_Y_SIZE_INDEX{5};  // Or pixel height
 };
 
-}  // namespace slap
+}  // namespace alus

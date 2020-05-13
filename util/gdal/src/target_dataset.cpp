@@ -2,7 +2,7 @@
 
 #include "gdal_util.hpp"
 
-namespace slap {
+namespace alus {
 
 TargetDataset::TargetDataset(Dataset& dsWithProperties, std::string_view filename)
     : dimensions{dsWithProperties.getRasterDimensions()} {
@@ -42,4 +42,4 @@ TargetDataset::~TargetDataset() {
         this->gdalDs = nullptr;
     }
 }
-}  // namespace slap
+}  // namespace alus

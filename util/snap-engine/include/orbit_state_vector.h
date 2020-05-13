@@ -11,15 +11,28 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
-#include "GeoUtils.cuh"
+
+#pragma once
+
+#include "product_data.h"
 
 namespace alus {
 namespace snapengine {
-namespace GeoUtils {
-__host__ void geo2xyzWGS84(double latitude, double longitude, double altitude, PosVector& xyz) {
-    geo2xyzWGS84_fast(latitude, longitude, altitude, xyz);
-}
 
-}  // namespace GeoUtils
-}  // namespace snapEngine
+struct OrbitStateVector {
+    alus::snapengine::Utc time_{};
+    double timeMjd_{};
+    double xPos_{};
+    double yPos_{};
+    double zPos_{};
+    double xVel_{};
+    double yVel_{};
+    double zVel_{};
+
+    OrbitStateVector() = default;
+    OrbitStateVector(
+        alus::snapengine::Utc time, double xPos, double yPos, double zPos, double xVel, double yVel, double zVel);
+};
+
+}  // namespace snapengine
 }  // namespace alus

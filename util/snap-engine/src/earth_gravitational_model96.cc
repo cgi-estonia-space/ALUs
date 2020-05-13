@@ -1,6 +1,6 @@
 #include "earth_gravitational_model96.h"
 
-namespace slap {
+namespace alus {
 namespace snapengine {
 
 EarthGravitationalModel96::EarthGravitationalModel96(std::string gridFile){

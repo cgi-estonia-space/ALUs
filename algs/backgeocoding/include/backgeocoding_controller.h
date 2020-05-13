@@ -2,7 +2,7 @@
 #include <iostream>
 #include "backgeocoding.h"
 
-namespace slap {
+namespace alus {
 
 class BackgeocodingController{
 private:

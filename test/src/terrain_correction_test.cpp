@@ -7,28 +7,28 @@
 
 #include "tests_common.hpp"
 
-using namespace slap::tests;
+using namespace alus::tests;
 
 namespace {
 
 class TerrainCorrectionTest : public ::testing::Test {
    public:
     TerrainCorrectionTest() {
-        cohDs = std::make_optional<slap::Dataset>(COH_1_TIF);
+        cohDs = std::make_optional<alus::Dataset>(COH_1_TIF);
         cohDs.value().loadRasterBand(1);
-        demDs = std::make_optional<slap::Dataset>(DEM_PATH_1);
+        demDs = std::make_optional<alus::Dataset>(DEM_PATH_1);
         demDs.value().loadRasterBand(1);
     }
 
-    std::optional<slap::Dataset> cohDs;
-    std::optional<slap::Dataset> cohDataDs;
-    std::optional<slap::Dataset> demDs;
+    std::optional<alus::Dataset> cohDs;
+    std::optional<alus::Dataset> cohDataDs;
+    std::optional<alus::Dataset> demDs;
 
    protected:
 };
 
 TEST_F(TerrainCorrectionTest, fetchElevationsOnGPU) {
-    slap::TerrainCorrection tc{std::move(cohDs.value()),
+    alus::TerrainCorrection tc{std::move(cohDs.value()),
                                std::move(cohDs.value()),
                                std::move(demDs.value())};
     tc.localDemCuda();

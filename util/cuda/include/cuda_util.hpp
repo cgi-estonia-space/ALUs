@@ -7,7 +7,7 @@
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
 
-namespace slap {
+namespace alus {
 class CudaErrorException final : public std::runtime_error {
    public:
     CudaErrorException(cudaError_t cudaError, std::string file, int line)
@@ -27,10 +27,10 @@ int getGridDim(int blockDim, int dataDim);
 
 inline void checkCudaError(cudaError_t const cudaErr, const char* file, int const line) {
     if (cudaErr != cudaSuccess) {
-        throw slap::CudaErrorException(cudaErr, file, line);
+        throw alus::CudaErrorException(cudaErr, file, line);
     }
 }
 
-}  // namespace slap
+}  // namespace alus
 
-#define CHECK_CUDA_ERR(x) slap::checkCudaError(x, __FILE__, __LINE__)
+#define CHECK_CUDA_ERR(x) alus::checkCudaError(x, __FILE__, __LINE__)

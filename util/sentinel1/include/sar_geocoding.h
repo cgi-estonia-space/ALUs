@@ -21,8 +21,9 @@
 
 #include "PosVector.hpp"
 #include "cuda_util.cuh"
+#include "orbit_state_vectors.h"
 
-namespace slap {
+namespace alus {
 namespace s1tbx {
 namespace sarGeocoding {
 /**
@@ -43,10 +44,28 @@ namespace sarGeocoding {
 double GetEarthPointZeroDopplerTime(double firstLineUTC,
                                     double lineTimeInterval,
                                     double wavelength,
-                                    snapEngine::PosVector earthPoint,
-                                    KernelArray<snapEngine::PosVector> sensorPosition,
-                                    KernelArray<snapEngine::PosVector> sensorVelocity);
+                                    alus::snapengine::PosVector earthPoint,
+                                    KernelArray<alus::snapengine::PosVector> sensorPosition,
+                                    KernelArray<alus::snapengine::PosVector> sensorVelocity);
+
+/**
+ * Compute slant range distance for given earth point and given time.
+ *
+ * Duplicate of a SNAP's SARGeocoding.java's computeSlantRange().
+ * This actually exists as an inline version for CUDA calls as ComputeSlantRangeImpl() in sar_geocoding.cuh.
+ * This procedure is duplicated by the nvcc for host processing in sar_geocoding.cu.
+ *
+ * @param time       The given time in days.
+ * @param vectors    Orbit state vectors for getPosition calculation happening inside this function.
+ * @param earthPoint The earth point in xyz coordinate.
+ * @param sensorPos  The sensor position which is getting value of orbitstatevectors::GetPosition()
+ * @return The slant range distance in meters.
+ */
+double ComputeSlantRange(double time,
+                         KernelArray<snapengine::OrbitStateVector> vectors,
+                         snapengine::PosVector earthPoint,
+                         snapengine::PosVector& sensorPos);
 
 }  // namespace sarGeocoding
 }  // namespace s1tbx
-}  // namespace slap
+}  // namespace alus

@@ -2,7 +2,7 @@
 
 #include <cuda_runtime.h>
 
-namespace slap{
+namespace alus {
 namespace tests{
 
 struct EGM96data{

@@ -20,8 +20,8 @@
 
 #include "PosVector.hpp"
 
-namespace slap {
-namespace snapEngine {
+namespace alus {
+namespace snapengine {
 namespace GeoUtils {
 /**
  * Duplicate of a SNAP's GeoUtils.java's geo2xyzWGS84().
@@ -41,4 +41,4 @@ constexpr double ep2{e2 / (1 - e2)};
 }  // namespace WGS84
 }  // namespace GeoUtils
 }  // namespace snapEngine
-}  // namespace slap
+}  // namespace alus

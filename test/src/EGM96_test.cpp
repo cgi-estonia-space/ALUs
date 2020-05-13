@@ -11,7 +11,7 @@
 #include "cuda_util.hpp"
 #include "comparators.hpp"
 
-using namespace slap::tests;
+using namespace alus::tests;
 
 namespace{
 
@@ -68,7 +68,7 @@ public:
 };
 
 TEST(EGM96, correctness){
-    slap::snapengine::EarthGravitationalModel96 egm96("./goods/ww15mgh_b.grd");
+    alus::snapengine::EarthGravitationalModel96 egm96("./goods/ww15mgh_b.grd");
     EGMTester tester("./goods/egm96TestData.txt");
 
 
@@ -79,13 +79,13 @@ TEST(EGM96, correctness){
     EXPECT_DOUBLE_EQ(-29.534, egm96.egm[720][1440]);
 
     dim3 blockSize(20);
-    dim3 gridSize(slap::getGridDim(blockSize.x,tester.size));
+    dim3 gridSize(alus::getGridDim(blockSize.x,tester.size));
 
     tester.hostToDevice();
     egm96.hostToDevice();
     EGM96data data;
-    data.MAX_LATS = slap::snapengine::earthgravitationalmodel96::MAX_LATS;
-    data.MAX_LONS = slap::snapengine::earthgravitationalmodel96::MAX_LONS;
+    data.MAX_LATS = alus::snapengine::earthgravitationalmodel96::MAX_LATS;
+    data.MAX_LONS = alus::snapengine::earthgravitationalmodel96::MAX_LONS;
     data.size = tester.size;
     data.egm = egm96.deviceEgm;
 
@@ -93,7 +93,7 @@ TEST(EGM96, correctness){
 
     tester.deviceToHost();
     //test data file is not as accurate as I would wish
-    int count = slap::equalsArrays(tester.endResults.data(), tester.etalonResults.data(), tester.size, 0.00001);
+    int count = alus::equalsArrays(tester.endResults.data(), tester.etalonResults.data(), tester.size, 0.00001);
     EXPECT_EQ(count,0) << "EGM test results do not match. Mismatches: " <<count << '\n';
 }
 

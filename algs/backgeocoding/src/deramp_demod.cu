@@ -1,9 +1,11 @@
 #include "deramp_demod.cuh"
 
-namespace slap {
-__global__ void derampDemod(Rectangle rectangle, double *slaveI, double *slaveQ, double* demodPhase, double *demodI, double *demodQ, DeviceSubswathInfo *subSwath, int sBurstIndex){
+namespace alus {
+__global__ void derampDemod(alus::Rectangle rectangle, double *slaveI, double *slaveQ, double* demodPhase,
+                            double *demodI, double *demodQ,
+                            alus::DeviceSubswathInfo *subSwath, int sBurstIndex){
     const int idx = threadIdx.x + (blockDim.x*blockIdx.x);
-	const int idy = threadIdx.y + (blockDim.y*blockIdx.y);
+    const int idy = threadIdx.y + (blockDim.y*blockIdx.y);
     const int globalIndex = rectangle.width * idy + idx;
     const int firstLineInBurst = sBurstIndex * subSwath->linesPerBurst;
     const int y = rectangle.y + idy;
@@ -15,8 +17,11 @@ __global__ void derampDemod(Rectangle rectangle, double *slaveI, double *slaveQ,
 
         ta = (y - firstLineInBurst)* subSwath->azimuthTimeInterval;
         kt = subSwath->deviceDopplerRate[sBurstIndex*subSwath->dopplerSizeY + x];
-        deramp = -snapEngine::constants::PI * kt * pow(ta - subSwath->deviceReferenceTime[sBurstIndex*subSwath->dopplerSizeY + x],2);
-        demod = -snapEngine::constants::TWO_PI * subSwath->deviceDopplerCentroid[sBurstIndex*subSwath->dopplerSizeY + x] * ta;
+        deramp = -alus::snapengine::constants::PI * kt * pow(ta -
+                                                           subSwath->deviceReferenceTime[sBurstIndex*subSwath->dopplerSizeY + x],2);
+        demod = -alus::snapengine::constants::TWO_PI *
+                subSwath->deviceDopplerCentroid[sBurstIndex*subSwath->dopplerSizeY +
+                                                                                 x] * ta;
         valuePhase = deramp + demod;
 
         demodPhase[globalIndex] = valuePhase;
@@ -34,13 +39,13 @@ __global__ void derampDemod(Rectangle rectangle, double *slaveI, double *slaveQ,
 
 cudaError_t launchDerampDemod(dim3 gridSize,
     dim3 blockSize,
-    Rectangle rectangle,
+                              alus::Rectangle rectangle,
     double *slaveI,
     double *slaveQ,
     double *demodPhase,
     double *demodI,
     double *demodQ,
-    DeviceSubswathInfo *subSwath,
+                              alus::DeviceSubswathInfo *subSwath,
     int sBurstIndex){
 
     derampDemod<<<gridSize, blockSize>>>(

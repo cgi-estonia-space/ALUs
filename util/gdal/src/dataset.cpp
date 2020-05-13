@@ -4,7 +4,7 @@
 
 #include <gdal.h>
 
-namespace slap {
+namespace alus {
 
 // If one wants to install custom GDAL error handler -
 // https://gdal.org/api/cpl.html#_CPPv418CPLSetErrorHandler15CPLErrorHandler
@@ -80,4 +80,4 @@ void Dataset::loadRasterBand(int bandNr) {
                            CPLGetLastErrorNo());
     }
 }
-}  // namespace slap
+}  // namespace alus

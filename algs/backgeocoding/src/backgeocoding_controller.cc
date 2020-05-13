@@ -1,6 +1,6 @@
 #include "backgeocoding_controller.h"
 
-namespace slap {
+namespace alus {
 
 BackgeocodingController::BackgeocodingController(){
     std::cout << "Controller started." << '\n';

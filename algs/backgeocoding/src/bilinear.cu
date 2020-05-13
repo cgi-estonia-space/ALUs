@@ -1,6 +1,6 @@
 #include "bilinear.cuh"
 
-namespace slap{
+namespace alus {
 
 inline __device__ void computeIndex(const double x,const double y, const int width,const int height, double *indexI, double *indexJ, double *indexKi, double *indexKj){
 	int i0 = (int)x;

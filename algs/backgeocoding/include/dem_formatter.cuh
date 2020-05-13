@@ -3,7 +3,7 @@
 #include <device_launch_parameters.h>
 
 
-namespace slap{
+namespace alus {
 
 struct DemFormatterData{
     double m00, m01, m02, m10, m11, m12;

@@ -5,7 +5,7 @@
 #include "comparators.hpp"
 #include "shapes.h"
 
-using namespace slap::tests;
+using namespace alus::tests;
 
 namespace{
 
@@ -16,7 +16,7 @@ public:
     double *slaveTileI, *slaveTileQ;
     float *qResult;
     float *iResult;
-    slap::Rectangle slaveRect;
+    alus::Rectangle slaveRect;
     int tileSize;
 
     void readTestData(){
@@ -79,7 +79,7 @@ public:
 };
 
 TEST(backgeocoding, correctness){
-    slap::Backgeocoding backgeocoding;
+    alus::Backgeocoding backgeocoding;
     BackgeocodingTester tester;
     tester.readTestData();
 
@@ -106,10 +106,10 @@ TEST(backgeocoding, correctness){
     const float *iResult = backgeocoding.getIResult();
     const float *qResult = backgeocoding.getQResult();
 
-    int countI = slap::equalsArrays(iResult,tester.iResult, tester.tileSize);
+    int countI = alus::equalsArrays(iResult,tester.iResult, tester.tileSize);
     EXPECT_EQ(countI,0) << "Results I do not match. Mismatches: " <<countI << '\n';
 
-    int countQ = slap::equalsArrays(qResult,tester.qResult, tester.tileSize);
+    int countQ = alus::equalsArrays(qResult,tester.qResult, tester.tileSize);
     EXPECT_EQ(countQ,0) << "Results Q do not match. Mismatches: " <<countQ << '\n';
 }
 

@@ -3,7 +3,7 @@
 
 #define ERROR_RANGE 0.0000001
 
-namespace slap {
+namespace alus {
 
 int equalsArrays(const float *a, const float *b, int elems);
 int equalsArrays(const float *a, const float *b, int elems, float delta);

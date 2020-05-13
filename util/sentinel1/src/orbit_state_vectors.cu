@@ -11,15 +11,19 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
-#include "GeoUtils.cuh"
+
+#include "orbit_state_vectors.h"
+
+#include "PosVector.hpp"
+#include "orbit_state_vectors.cuh"
 
 namespace alus {
-namespace snapengine {
-namespace GeoUtils {
-__host__ void geo2xyzWGS84(double latitude, double longitude, double altitude, PosVector& xyz) {
-    geo2xyzWGS84_fast(latitude, longitude, altitude, xyz);
+namespace s1tbx {
+namespace orbitstatevectors {
+snapengine::PosVector GetPosition(double time,
+                                  KernelArray<snapengine::OrbitStateVector> vectors) {
+    return GetPositionImpl(time, vectors);
 }
-
-}  // namespace GeoUtils
-}  // namespace snapEngine
+}  // namespace orbitstatevectors
+}  // namespace s1tbx
 }  // namespace alus

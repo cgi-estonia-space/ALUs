@@ -19,8 +19,8 @@
 #include "GeoUtils.hpp"
 #include "PosVector.hpp"
 
-namespace slap {
-namespace snapEngine {
+namespace alus {
+namespace snapengine {
 namespace GeoUtils {
 /**
  * Convert geodetic coordinate into cartesian XYZ coordinate with specified geodetic system.
@@ -49,4 +49,4 @@ inline __device__ __host__ void geo2xyzWGS84_fast(double latitude, double longit
 }
 }  // namespace GeoUtils
 }  // namespace snapEngine
-}  // namespace slap
+}  // namespace alus

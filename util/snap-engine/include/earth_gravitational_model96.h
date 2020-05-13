@@ -33,7 +33,7 @@
  * -90.00 N  +------------------+
  * 0.00 E           360.00 E
  */
-namespace slap {
+namespace alus {
 namespace snapengine {
 namespace earthgravitationalmodel96{
 

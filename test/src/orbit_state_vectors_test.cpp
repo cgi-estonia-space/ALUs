@@ -1,0 +1,66 @@
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
+
+#include <vector>
+
+#include "gmock/gmock.h"
+
+#include "../goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_orbit.hpp"
+#include "PosVector.hpp"
+#include "orbit_state_vectors.h"
+
+namespace {
+
+using namespace alus;
+using namespace alus::goods;
+using namespace alus::snapengine;
+
+class OrbitStateVectorsTest : public ::testing::Test {
+   public:
+    std::vector<double> const TIME_ARGS{7135.669986176958,
+                                        7135.669986531099,
+                                        7135.669986951332,
+                                        7135.669986692994,
+                                        7135.669986434845,
+                                        7135.669986179413};
+    std::vector<PosVector> POS_VECTOR_ARGS{{0.0, 0.0, 0.0},
+                                           {0.0, 0.0, 0.0},
+                                           {0.0, 0.0, 0.0},
+                                           {3658922.0283030323, 1053382.6907753784, 5954232.622894548},
+                                           {3659039.023292308, 1053468.915036083, 5954145.672627311},
+                                           {3659155.9302892475, 1053555.0759501432, 5954058.782688444}};
+    std::vector<PosVector> GET_POSITION_RESULTS{{3659272.7159376577, 1053641.1489299594, 5953971.977882909},
+                                                {3659112.340138346, 1053522.9496627555, 5954091.181217907},
+                                                {3658922.0283030323, 1053382.6907753784, 5954232.622894548},
+                                                {3659039.023292308, 1053468.915036083, 5954145.672627311},
+                                                {3659155.9302892475, 1053555.0759501432, 5954058.782688444},
+                                                {3659271.6043083738, 1053640.3296334823, 5953972.804162062}};
+
+   private:
+};
+
+TEST_F(OrbitStateVectorsTest, getPositionCalculatesCorrectly) {
+    auto const seriesSize = POS_VECTOR_ARGS.size();
+    ASSERT_EQ(seriesSize, GET_POSITION_RESULTS.size());
+    const KernelArray<OrbitStateVector> orbitStateVectors{const_cast<OrbitStateVector*>(ORBIT_STATE_VECTORS.data()),
+                                                          ORBIT_STATE_VECTORS.size()};
+    for (size_t i = 0; i < seriesSize; i++) {
+        auto const res = alus::s1tbx::orbitstatevectors::GetPosition(TIME_ARGS.at(i), orbitStateVectors);
+        EXPECT_DOUBLE_EQ(res.x, GET_POSITION_RESULTS.at(i).x);
+        EXPECT_DOUBLE_EQ(res.y, GET_POSITION_RESULTS.at(i).y);
+        EXPECT_DOUBLE_EQ(res.z, GET_POSITION_RESULTS.at(i).z);
+    }
+}
+
+}  // namespace

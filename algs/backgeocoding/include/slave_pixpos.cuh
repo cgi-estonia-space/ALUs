@@ -7,7 +7,7 @@
 #include "shapes.h"
 #include "SRTM3ElevationModel.h"
 
-namespace slap{
+namespace alus {
 
 struct SlavePixPosData{
     int numLines;

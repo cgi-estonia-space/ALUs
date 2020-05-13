@@ -1,6 +1,6 @@
 #include "backgeocoding.h"
 
-namespace slap {
+namespace alus {
 
 Backgeocoding::~Backgeocoding(){
     if(deviceDemodI != nullptr){
@@ -303,9 +303,11 @@ std::vector<double> Backgeocoding::computeImageGeoBoundary(SubSwathInfo *subSwat
     double azTimeMax = subSwath->burstFirstLineTime[burstIndex] +
             (yMax - burstIndex * subSwath->linesPerBurst) * subSwath->azimuthTimeInterval;
 
-    double rgTimeMin = subSwath->slrTimeToFirstPixel + xMin * masterUtils->rangeSpacing / snapEngine::constants::lightSpeed;
+    double rgTimeMin = subSwath->slrTimeToFirstPixel + xMin * masterUtils->rangeSpacing /
+                                                           alus::snapengine::constants::lightSpeed;
 
-    double rgTimeMax = subSwath->slrTimeToFirstPixel + xMax * masterUtils->rangeSpacing / snapEngine::constants::lightSpeed;
+    double rgTimeMax = subSwath->slrTimeToFirstPixel + xMax * masterUtils->rangeSpacing /
+                                                           alus::snapengine::constants::lightSpeed;
 
     double latUL = masterUtils->getLatitude(azTimeMin, rgTimeMin, subSwath);
     double lonUL = masterUtils->getLongitude(azTimeMin, rgTimeMin, subSwath);

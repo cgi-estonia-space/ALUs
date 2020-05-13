@@ -12,10 +12,9 @@
 #include "dem.hpp"
 #include "local_dem.cuh"
 
-namespace slap {
+namespace alus {
 
-TerrainCorrection::TerrainCorrection(slap::Dataset cohDs,
-                                     slap::Dataset metadata, slap::Dataset dem)
+TerrainCorrection::TerrainCorrection(alus::Dataset cohDs, alus::Dataset metadata, alus::Dataset dem)
     : m_cohDs{std::move(cohDs)},
       m_metadataDs{std::move(metadata)},
       m_demDs{std::move(dem)},
@@ -107,7 +106,7 @@ void TerrainCorrection::localDemCuda() {
         CHECK_CUDA_ERR(cudaMemcpy(m_cohDsElevations.data(), d_productArray,
                                   sizeof(double) * m_cohDsElevations.size(),
                                   cudaMemcpyDeviceToHost));
-    } catch (slap::CudaErrorException const& cudaEx) {
+    } catch (alus::CudaErrorException const& cudaEx) {
         cudaFree(d_demArray);
         cudaFree(d_productArray);
 
@@ -118,4 +117,4 @@ void TerrainCorrection::localDemCuda() {
 }
 
 TerrainCorrection::~TerrainCorrection() {}
-}  // namespace slap
+}  // namespace alus
