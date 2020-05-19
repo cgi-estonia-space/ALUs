@@ -43,6 +43,9 @@ add_subdirectory(algs/cuda_algorithm)
 add_subdirectory(algs/range_doppler_terrain_correction)
 add_subdirectory(algs/backgeocoding)
 
+# Test helpers
+add_subdirectory(test/EGM96)
+
 # Main terminal application
 add_subdirectory(app)
 

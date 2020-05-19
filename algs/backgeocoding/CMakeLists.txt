@@ -1,13 +1,17 @@
 
 list(APPEND BACKGEOCODING_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/Backgeocoding.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/src/Backgeocoding.cu
+        ${CMAKE_CURRENT_LIST_DIR}/src/bilinear.cu
+        ${CMAKE_CURRENT_LIST_DIR}/src/derampDemod.cu
+        ${CMAKE_CURRENT_LIST_DIR}/src/slavePixPos.cu
+        ${CMAKE_CURRENT_LIST_DIR}/src/demFormatter.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/BackgeocodingController.cpp
         )
 
 list(APPEND BACKGEOCODING_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/gdal/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/common/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/exotic_operations/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/sentinel1/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include
@@ -40,4 +44,5 @@ target_link_libraries(backgeocoding-static
         gdal-util-static
         exotic_operations-static
         sentinel1-util-static
+        cuda_util-static
         )

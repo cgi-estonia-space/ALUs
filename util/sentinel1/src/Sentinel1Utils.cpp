@@ -7,7 +7,11 @@ namespace slap {
 using namespace snapEngine;
 
 Sentinel1Utils::Sentinel1Utils(){
-    writePlaceolderInfo();
+    writePlaceolderInfo(2);
+}
+
+Sentinel1Utils::Sentinel1Utils(int placeholderType){
+    writePlaceolderInfo(placeholderType);
 }
 
 Sentinel1Utils::~Sentinel1Utils(){
@@ -17,32 +21,139 @@ Sentinel1Utils::~Sentinel1Utils(){
 }
 
 //TODO: using placeholder data
-void Sentinel1Utils::writePlaceolderInfo(){
+void Sentinel1Utils::writePlaceolderInfo(int placeholderType){
     numOfSubSwath = 1;
 
     SubSwathInfo temp;
     subSwath.push_back(temp);
 
-    subSwath[0].azimuthTimeInterval = 0.002055556299999998;
-    subSwath[0].numOfBursts = 19;
-    subSwath[0].linesPerBurst = 1503;
-    subSwath[0].samplesPerBurst = 21401;
-    subSwath[0].firstValidPixel = 267;
-    subSwath[0].lastValidPixel = 20431;
-    subSwath[0].rangePixelSpacing = 2.329562;
-    subSwath[0].slrTimeToFirstPixel = 0.002679737321566982;
-    subSwath[0].subSwathName = "IW1";
-    subSwath[0].firstLineTime = 5.50770938201763E8;
-    subSwath[0].lastLineTime = 5.50770990939114E8;
-    subSwath[0].radarFrequency = 5.40500045433435E9;
-    subSwath[0].azimuthSteeringRate = 1.590368784;
+    //master
+    switch (placeholderType){
+        case 1:
+            this->rangeSpacing = 2.329562;
+
+            subSwath[0].azimuthTimeInterval = 0.002055556299999998;
+            subSwath[0].numOfBursts = 19;
+            subSwath[0].linesPerBurst = 1503;
+            subSwath[0].samplesPerBurst = 21401;
+            subSwath[0].firstValidPixel = 267;
+            subSwath[0].lastValidPixel = 20431;
+            subSwath[0].rangePixelSpacing = 2.329562;
+            subSwath[0].slrTimeToFirstPixel = 0.002679737321566982;
+            subSwath[0].slrTimeToLastPixel = 0.0028460277850849134;
+            subSwath[0].subSwathName = "IW1";
+            subSwath[0].firstLineTime = 5.49734137546908E8;
+            subSwath[0].lastLineTime = 5.49734190282205E8;
+            subSwath[0].radarFrequency = 5.40500045433435E9;
+            subSwath[0].azimuthSteeringRate = 1.590368784;
+            subSwath[0].numOfGeoLines = 21;
+            subSwath[0].numOfGeoPointsPerLine = 21;
+        break;
+        //slave
+        case 2:
+            this->rangeSpacing = 2.329562;
+
+            subSwath[0].azimuthTimeInterval = 0.002055556299999998;
+            subSwath[0].numOfBursts = 19;
+            subSwath[0].linesPerBurst = 1503;
+            subSwath[0].samplesPerBurst = 21401;
+            subSwath[0].firstValidPixel = 267;
+            subSwath[0].lastValidPixel = 20431;
+            subSwath[0].rangePixelSpacing = 2.329562;
+            subSwath[0].slrTimeToFirstPixel = 0.002679737321566982;
+            subSwath[0].slrTimeToLastPixel = 0.0028460277850849134;
+            subSwath[0].subSwathName = "IW1";
+            subSwath[0].firstLineTime = 5.50770938201763E8;
+            subSwath[0].lastLineTime = 5.50770990939114E8;
+            subSwath[0].radarFrequency = 5.40500045433435E9;
+            subSwath[0].azimuthSteeringRate = 1.590368784;
+            subSwath[0].numOfGeoLines = 21;
+            subSwath[0].numOfGeoPointsPerLine = 21;
+        break;
+    }
+
 
 }
 
-void Sentinel1Utils::setPlaceHolderFiles(std::string orbitStateVectorsFile, std::string dcEstimateListFile, std::string azimuthListFile){
+void Sentinel1Utils::readPlaceHolderFiles(){
+    int size;
+    std::ifstream burstLineTimeReader(this->burstLineTimeFile);
+    if(!burstLineTimeReader.is_open()){
+        throw std::ios::failure("Burst Line times file not open.");
+    }
+    burstLineTimeReader >> size;
+
+    subSwath[0].burstFirstLineTime = new double[size];
+    subSwath[0].burstLastLineTime = new double[size];
+    for(int i=0; i<size; i++){
+        burstLineTimeReader >> subSwath[0].burstFirstLineTime[i];
+    }
+    for(int i=0; i<size; i++){
+        burstLineTimeReader >> subSwath[0].burstLastLineTime[i];
+    }
+
+    burstLineTimeReader.close();
+
+
+
+    std::ifstream geoLocationReader(this->geoLocationFile);
+    if(!geoLocationReader.is_open()){
+        throw std::ios::failure("Geo Location file not open.");
+    }
+    int numOfGeoLines2, numOfGeoPointsPerLine2;
+
+
+    geoLocationReader >> numOfGeoLines2 >>numOfGeoPointsPerLine2;
+    if((numOfGeoLines2 != subSwath[0].numOfGeoLines) || (numOfGeoPointsPerLine2 != subSwath[0].numOfGeoPointsPerLine)){
+        throw std::runtime_error("Geo lines and Geo points per lines are not equal to ones in the file.");
+    }
+    subSwath[0].azimuthTime = allocate2DDoubleArray(numOfGeoLines2, numOfGeoPointsPerLine2);
+    subSwath[0].slantRangeTime = allocate2DDoubleArray(numOfGeoLines2, numOfGeoPointsPerLine2);
+    subSwath[0].latitude = allocate2DDoubleArray(numOfGeoLines2, numOfGeoPointsPerLine2);
+    subSwath[0].longitude = allocate2DDoubleArray(numOfGeoLines2, numOfGeoPointsPerLine2);
+    subSwath[0].incidenceAngle = allocate2DDoubleArray(numOfGeoLines2, numOfGeoPointsPerLine2);
+
+    for(int i=0; i<numOfGeoLines2; i++){
+        for(int j=0; j<numOfGeoPointsPerLine2; j++){
+            geoLocationReader >> subSwath[0].azimuthTime[i][j];
+        }
+    }
+    for(int i=0; i<numOfGeoLines2; i++){
+        for(int j=0; j<numOfGeoPointsPerLine2; j++){
+            geoLocationReader >> subSwath[0].slantRangeTime[i][j];
+        }
+    }
+    for(int i=0; i<numOfGeoLines2; i++){
+        for(int j=0; j<numOfGeoPointsPerLine2; j++){
+            geoLocationReader >> subSwath[0].latitude[i][j];
+        }
+    }
+    for(int i=0; i<numOfGeoLines2; i++){
+        for(int j=0; j<numOfGeoPointsPerLine2; j++){
+            geoLocationReader >> subSwath[0].longitude[i][j];
+        }
+    }
+    for(int i=0; i<numOfGeoLines2; i++){
+        for(int j=0; j<numOfGeoPointsPerLine2; j++){
+            geoLocationReader >> subSwath[0].incidenceAngle[i][j];
+        }
+    }
+
+    geoLocationReader.close();
+}
+
+void Sentinel1Utils::setPlaceHolderFiles(
+        std::string orbitStateVectorsFile,
+        std::string dcEstimateListFile,
+        std::string azimuthListFile,
+        std::string burstLineTimeFile,
+        std::string geoLocationFile){
+
     this->orbitStateVectorsFile = orbitStateVectorsFile;
     this->dcEstimateListFile = dcEstimateListFile;
     this->azimuthListFile = azimuthListFile;
+    this->burstLineTimeFile = burstLineTimeFile;
+    this->geoLocationFile = geoLocationFile;
 }
 
 double *Sentinel1Utils::computeDerampDemodPhase(int subSwathIndex,int sBurstIndex,Rectangle rectangle){
@@ -325,6 +436,89 @@ void Sentinel1Utils::computeReferenceTime(){
             }
         }
     }
+}
+
+double Sentinel1Utils::getLatitude(double azimuthTime, double slantRangeTime, SubSwathInfo *subSwath){
+
+    return this->getLatitudeValue(this->computeIndex(azimuthTime, slantRangeTime, subSwath), subSwath);
+}
+double Sentinel1Utils::getLongitude(double azimuthTime, double slantRangeTime, SubSwathInfo *subSwath){
+
+    return this->getLongitudeValue(this->computeIndex(azimuthTime, slantRangeTime, subSwath), subSwath);;
+}
+
+Sentinel1Index Sentinel1Utils::computeIndex(double azimuthTime,double slantRangeTime, SubSwathInfo *subSwath) {
+    Sentinel1Index result;
+    int j0 = -1, j1 = -1;
+    double muX = 0;
+    if (slantRangeTime < subSwath->slantRangeTime[0][0]) {
+        j0 = 0;
+        j1 = 1;
+    } else if (slantRangeTime > subSwath->slantRangeTime[0][subSwath->numOfGeoPointsPerLine - 1]) {
+        j0 = subSwath->numOfGeoPointsPerLine - 2;
+        j1 = subSwath->numOfGeoPointsPerLine - 1;
+    } else {
+        for (int j = 0; j < subSwath->numOfGeoPointsPerLine - 1; j++) {
+            if (subSwath->slantRangeTime[0][j] <= slantRangeTime && subSwath->slantRangeTime[0][j + 1] > slantRangeTime) {
+                j0 = j;
+                j1 = j + 1;
+                break;
+            }
+        }
+    }
+
+    muX = (slantRangeTime - subSwath->slantRangeTime[0][j0]) /
+            (subSwath->slantRangeTime[0][j1] -
+                    subSwath->slantRangeTime[0][j0]);
+
+    int i0 = -1, i1 = -1;
+    double muY = 0;
+    for (int i = 0; i < subSwath->numOfGeoLines - 1; i++) {
+        double i0AzTime = (1 - muX) * subSwath->azimuthTime[i][j0] +
+                muX * subSwath->azimuthTime[i][j1];
+
+        double i1AzTime = (1 - muX) * subSwath->azimuthTime[i + 1][j0] +
+                muX * subSwath->azimuthTime[i + 1][j1];
+
+        if ((i == 0 && azimuthTime < i0AzTime) ||
+                (i == subSwath->numOfGeoLines - 2 && azimuthTime >= i1AzTime) ||
+                (i0AzTime <= azimuthTime && i1AzTime > azimuthTime)) {
+
+            i0 = i;
+            i1 = i + 1;
+            muY = (azimuthTime - i0AzTime) / (i1AzTime - i0AzTime);
+            break;
+        }
+    }
+
+    result.i0 = i0;
+    result.i1 = i1;
+    result.j0 = j0;
+    result.j1 = j1;
+    result.muX = muX;
+    result.muY = muY;
+
+    return result;
+}
+
+double Sentinel1Utils::getLatitudeValue(Sentinel1Index index, SubSwathInfo *subSwath) {
+    double lat00 = subSwath->latitude[index.i0][index.j0];
+    double lat01 = subSwath->latitude[index.i0][index.j1];
+    double lat10 = subSwath->latitude[index.i1][index.j0];
+    double lat11 = subSwath->latitude[index.i1][index.j1];
+
+    return (1 - index.muY) * ((1 - index.muX) * lat00 + index.muX * lat01) +
+            index.muY * ((1 - index.muX) * lat10 + index.muX * lat11);
+}
+
+double Sentinel1Utils::getLongitudeValue(Sentinel1Index index, SubSwathInfo *subSwath) {
+    double lon00 = subSwath->longitude[index.i0][index.j0];
+    double lon01 = subSwath->longitude[index.i0][index.j1];
+    double lon10 = subSwath->longitude[index.i1][index.j0];
+    double lon11 = subSwath->longitude[index.i1][index.j1];
+
+    return (1 - index.muY) * ((1 - index.muX) * lon00 + index.muX * lon01) +
+            index.muY * ((1 - index.muX) * lon10 + index.muX * lon11);
 }
 
 }//namespace

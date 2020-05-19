@@ -1,5 +1,4 @@
-#pragma once
-#include <stdio.h>
+#include "bilinear.cuh"
 
 namespace slap{
 
@@ -149,6 +148,34 @@ __global__ void bilinearInterpolation(double *xPixels,
         	}
 	    }
 	}
+}
+
+cudaError_t launchBilinearInterpolation(dim3 gridSize,
+						dim3 blockSize,
+						double *xPixels,
+                        double *yPixels,
+                        double *demodPhase,
+                        double *demodI,
+                        double *demodQ,
+                        int *intParams,
+                        double doubleParams,
+                        float *resultsI,
+                        float *resultsQ){
+
+
+    bilinearInterpolation<<<gridSize, blockSize>>>(
+        xPixels,
+        yPixels,
+        demodPhase,
+        demodI,
+        demodQ,
+        intParams,
+        doubleParams,
+        resultsI,
+        resultsQ
+    );
+    return cudaGetLastError();
+
 }
 
 }//namespace

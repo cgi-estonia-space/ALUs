@@ -5,6 +5,7 @@
 namespace slap {
 
 Dem::Dem(slap::Dataset ds) : m_ds{std::move(ds)} {
+    //m_ds.loadRasterBand(1);
 }
 
 void Dem::doWork() {
@@ -13,8 +14,8 @@ void Dem::doWork() {
 std::vector<double> Dem::getLocalDemFor(Dataset& image, unsigned int x0,
                                         unsigned int y0, unsigned int width,
                                         unsigned int height){
-    auto const& dataBuffer = m_ds.getBand1Data();
-    auto const bandXsize = m_ds.getBand1Xsize();
+    auto const& dataBuffer = m_ds.getDataBuffer();
+    auto const bandXsize = m_ds.getXSize();
     std::vector<double> altitudes;
     altitudes.reserve(dataBuffer.size());
     for (unsigned int iX = 0; iX < width; iX++) {

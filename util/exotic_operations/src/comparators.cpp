@@ -2,13 +2,13 @@
 
 namespace slap {
 
-int equalsArrays(float *a, float *b, int elems){
+int equalsArrays(const float *a, const float *b, int elems, float delta){
     int i,count =0;
     float temp;
 
     for(i=0; i<elems; i++){
         temp = (a[i]>b[i])*(a[i]-b[i]) + (a[i]<=b[i])*(b[i]-a[i]);
-        if(temp > ERROR_RANGE){
+        if(temp > delta){
             std::cerr << "elements do not match - " <<i<<")"<< a[i] << ":"<<b[i] << '\n';
             count++;
             if(count > 50){
@@ -18,6 +18,12 @@ int equalsArrays(float *a, float *b, int elems){
     }
     return count;
 }
+
+int equalsArrays(const float *a,const float *b, int elems){
+    return equalsArrays(a,b,elems,ERROR_RANGE);
+}
+
+
 
 int equalsArraysd(double *a, double *b, int elems){
     int i,count =0;

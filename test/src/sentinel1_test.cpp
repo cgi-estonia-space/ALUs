@@ -83,7 +83,14 @@ namespace{
 
     TEST(sentinel1, utils){
         slap::Sentinel1Utils utils;
-        utils.setPlaceHolderFiles("./goods/backgeocoding/orbitStateVectors.txt", "./goods/backgeocoding/dcEstimateList.txt", "./goods/backgeocoding/azimuthList.txt");
+        utils.setPlaceHolderFiles(
+            "./goods/backgeocoding/orbitStateVectors.txt",
+            "./goods/backgeocoding/dcEstimateList.txt",
+            "./goods/backgeocoding/azimuthList.txt",
+            "./goods/backgeocoding/burstLineTimes.txt",
+            "./goods/backgeocoding/geoLocation.txt"
+        );
+        utils.readPlaceHolderFiles();
         Sentinel1UtilsTester tester;
         tester.read4Arrays();
 

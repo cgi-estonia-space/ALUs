@@ -6,17 +6,39 @@ SubSwathInfo::SubSwathInfo(){
 
 }
 SubSwathInfo::~SubSwathInfo(){
-    if(dopplerRate != NULL){
+    if(dopplerRate != nullptr){
         delete[] dopplerRate;
     }
-    if(dopplerCentroid != NULL){
+    if(dopplerCentroid != nullptr){
         delete[] dopplerCentroid;
     }
-    if(rangeDependDopplerRate != NULL){
+    if(rangeDependDopplerRate != nullptr){
         delete[] rangeDependDopplerRate;
     }
-    if(referenceTime != NULL){
+    if(referenceTime != nullptr){
         delete[] referenceTime;
+    }
+
+    if(azimuthTime != nullptr){
+        delete[] azimuthTime;
+    }
+    if(slantRangeTime != nullptr){
+        delete[] slantRangeTime;
+    }
+    if(latitude != nullptr){
+        delete[] latitude;
+    }
+    if(longitude != nullptr){
+        delete[] longitude;
+    }
+    if(incidenceAngle != nullptr){
+        delete[] incidenceAngle;
+    }
+    if(burstFirstLineTime != nullptr){
+        delete[] burstFirstLineTime;
+    }
+    if(burstLastLineTime != nullptr){
+        delete[] burstLastLineTime;
     }
     deviceFree();
 }
@@ -50,23 +72,23 @@ void SubSwathInfo::deviceToHost(){
 
 }
 void SubSwathInfo::deviceFree(){
-    if(deviceBurstFirstLineTime != NULL){
+    if(deviceBurstFirstLineTime != nullptr){
         cudaFree(deviceBurstFirstLineTime);
     }
-    if(deviceBurstLastLineTime != NULL){
+    if(deviceBurstLastLineTime != nullptr){
         cudaFree(deviceBurstLastLineTime);
     }
 
-    if(deviceDopplerRate != NULL){
+    if(deviceDopplerRate != nullptr){
         cudaFree(deviceDopplerRate);
     }
-    if(deviceDopplerCentroid != NULL){
+    if(deviceDopplerCentroid != nullptr){
         cudaFree(deviceDopplerCentroid);
     }
-    if(deviceReferenceTime != NULL){
+    if(deviceReferenceTime != nullptr){
         cudaFree(deviceReferenceTime);
     }
-    if(deviceRangeDependDopplerRate != NULL){
+    if(deviceRangeDependDopplerRate != nullptr){
         cudaFree(deviceRangeDependDopplerRate);
     }
 }

@@ -47,7 +47,7 @@ class Dem {
                                        unsigned int y0, unsigned int width,
                                        unsigned int height);
 
-    auto const& getData() const { return m_ds.getBand1Data(); }
+    auto const& getData() const { return m_ds.getDataBuffer(); }
     void fillGeoTransform(double& originLon, double& originLat,
                           double& pixelSizeLon, double& pixelSizeLat) const {
         originLon = m_ds.getOriginLon();

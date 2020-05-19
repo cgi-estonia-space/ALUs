@@ -1,4 +1,33 @@
+list(APPEND CUDA_UTIL_SOURCES
+        ${CMAKE_CURRENT_LIST_DIR}/src/cuda_util.cc
+        )
 
 list(APPEND CUDA_UTIL_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/include
+        )
+
+add_library(cuda_util-obj
+        OBJECT
+        ${CUDA_UTIL_SOURCES}
+        )
+target_include_directories(cuda_util-obj
+        PRIVATE
+        ${CUDA_UTIL_INCLUDE_DIRS}
+        )
+
+add_library(cuda_util-static
+        STATIC
+        $<TARGET_OBJECTS:cuda_util-obj>
+        )
+target_include_directories(cuda_util-static
+        PUBLIC
+        ${CUDA_UTIL_INCLUDE_DIRS}
+        )
+set_target_properties(cuda_util-static
+        PROPERTIES
+        OUTPUT_NAME cuda_util
+        )
+target_link_libraries(cuda_util-static
+        PUBLIC
+
         )

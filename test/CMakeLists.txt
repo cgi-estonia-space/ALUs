@@ -41,6 +41,7 @@ list(APPEND TEST_SOURCES
         src/dem_test.cpp
         src/tests_common.cpp
         src/sentinel1_test.cpp
+        src/EGM96_test.cpp
         src/backgeocoding_test.cpp
         src/geo_utils_test.cpp
         )
@@ -55,6 +56,8 @@ target_link_libraries(unit_test
         exotic_operations-static
         backgeocoding-static
         snap-engine-static
+        egm96-test-static
+        cuda_util-static
         )
 
 add_executable(map_cut util/map_cut.cpp)

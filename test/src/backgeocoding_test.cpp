@@ -79,7 +79,6 @@ public:
 };
 
 TEST(backgeocoding, correctness){
-    int count;
     slap::Backgeocoding backgeocoding;
     BackgeocodingTester tester;
     tester.readTestData();
@@ -92,20 +91,26 @@ TEST(backgeocoding, correctness){
     backgeocoding.setSentinel1Placeholders(
         "./goods/backgeocoding/orbitStateVectors.txt",
         "./goods/backgeocoding/dcEstimateList.txt",
-        "./goods/backgeocoding/azimuthList.txt"
+        "./goods/backgeocoding/azimuthList.txt",
+        "./goods/backgeocoding/burstLineTimes.txt",
+        "./goods/backgeocoding/geoLocation.txt"
+    );
+    backgeocoding.setSRTMPlaceholders(
+        "./goods/srtm_41_01.tif",
+        "./goods/srtm_42_01.tif"
     );
     backgeocoding.feedPlaceHolders();
     backgeocoding.prepareToCompute();
     backgeocoding.computeTile(tester.slaveRect, tester.slaveTileI, tester.slaveTileQ);
 
-    float *iResult = backgeocoding.getIResult();
-    float *qResult = backgeocoding.getQResult();
+    const float *iResult = backgeocoding.getIResult();
+    const float *qResult = backgeocoding.getQResult();
 
     int countI = slap::equalsArrays(iResult,tester.iResult, tester.tileSize);
-    EXPECT_EQ(countI,0) << "Results I do not match. Mismatches: " <<count << '\n';
+    EXPECT_EQ(countI,0) << "Results I do not match. Mismatches: " <<countI << '\n';
 
     int countQ = slap::equalsArrays(qResult,tester.qResult, tester.tileSize);
-    EXPECT_EQ(countQ,0) << "Results Q do not match. Mismatches: " <<count << '\n';
+    EXPECT_EQ(countQ,0) << "Results Q do not match. Mismatches: " <<countQ << '\n';
 }
 
 
