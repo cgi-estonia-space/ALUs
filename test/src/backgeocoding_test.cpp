@@ -1,9 +1,9 @@
 #include <fstream>
 #include "gmock/gmock.h"
 #include "tests_common.hpp"
-#include "Backgeocoding.cuh"
+#include "backgeocoding.h"
 #include "comparators.hpp"
-#include "Shapes.hpp"
+#include "shapes.h"
 
 using namespace slap::tests;
 

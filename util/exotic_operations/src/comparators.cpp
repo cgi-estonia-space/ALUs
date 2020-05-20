@@ -25,7 +25,7 @@ int equalsArrays(const float *a,const float *b, int elems){
 
 
 
-int equalsArraysd(double *a, double *b, int elems){
+int equalsArraysd(const double *a, const double *b, int elems){
     int i,count =0;
     double temp;
 
@@ -42,7 +42,7 @@ int equalsArraysd(double *a, double *b, int elems){
     return count;
 }
 
-int equalsArrays2Dd(double **a, double **b, int x, int y){
+int equalsArrays2Dd(const double* const* a, const double* const* b, int x, int y){
     int i,j, count=0;
     double temp;
 

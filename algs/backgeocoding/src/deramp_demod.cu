@@ -1,7 +1,7 @@
-#include "derampDemod.cuh"
+#include "deramp_demod.cuh"
 
 namespace slap {
-__global__ void derampDemod(Rectangle rectangle, double *slaveI, double *slaveQ, double* demodPhase, double *demodI, double *demodQ, SubSwathInfo *subSwath, int sBurstIndex){
+__global__ void derampDemod(Rectangle rectangle, double *slaveI, double *slaveQ, double* demodPhase, double *demodI, double *demodQ, DeviceSubswathInfo *subSwath, int sBurstIndex){
     const int idx = threadIdx.x + (blockDim.x*blockIdx.x);
 	const int idy = threadIdx.y + (blockDim.y*blockIdx.y);
     const int globalIndex = rectangle.width * idy + idx;
@@ -40,7 +40,7 @@ cudaError_t launchDerampDemod(dim3 gridSize,
     double *demodPhase,
     double *demodI,
     double *demodQ,
-    SubSwathInfo *subSwath,
+    DeviceSubswathInfo *subSwath,
     int sBurstIndex){
 
     derampDemod<<<gridSize, blockSize>>>(

@@ -1,19 +1,56 @@
-#include "Backgeocoding.cuh"
+#include "backgeocoding.h"
 
 namespace slap {
 
 Backgeocoding::~Backgeocoding(){
-    cudaFree(deviceDemodI);
-    cudaFree(deviceDemodQ);
-    cudaFree(deviceDemodPhase);
-    cudaFree(deviceXPoints);
-    cudaFree(deviceYPoints);
-    cudaFree(deviceIResults);
-    cudaFree(deviceQResults);
-    cudaFree(deviceParams);
-    cudaFree(deviceSlaveI);
-    cudaFree(deviceSlaveQ);
-    cudaFree(deviceSubswath);
+    if(deviceDemodI != nullptr){
+        cudaFree(deviceDemodI);
+        deviceDemodI = nullptr;
+    }
+    if(deviceDemodQ != nullptr){
+        cudaFree(deviceDemodQ);
+        deviceDemodQ = nullptr;
+    }
+
+    if(deviceDemodPhase != nullptr){
+        cudaFree(deviceDemodPhase);
+        deviceDemodPhase = nullptr;
+    }
+
+    if(deviceXPoints != nullptr){
+        cudaFree(deviceXPoints);
+        deviceXPoints = nullptr;
+    }
+
+    if(deviceYPoints != nullptr){
+        cudaFree(deviceYPoints);
+        deviceYPoints = nullptr;
+    }
+
+    if(deviceIResults != nullptr){
+        cudaFree(deviceIResults);
+        deviceIResults = nullptr;
+    }
+
+    if(deviceQResults != nullptr){
+        cudaFree(deviceQResults);
+        deviceQResults = nullptr;
+    }
+
+    if(deviceParams != nullptr){
+        cudaFree(deviceParams);
+        deviceParams = nullptr;
+    }
+
+    if(deviceSlaveI != nullptr){
+        cudaFree(deviceSlaveI);
+        deviceSlaveI = nullptr;
+    }
+    if(deviceSlaveQ != nullptr){
+        cudaFree(deviceSlaveQ);
+        deviceSlaveQ = nullptr;
+    }
+
 }
 
 void Backgeocoding::allocateGPUData(){
@@ -120,9 +157,6 @@ void Backgeocoding::prepareToCompute(){
     this->masterUtils->readPlaceHolderFiles();
     this->masterUtils->computeDopplerRate();
     this->masterUtils->computeReferenceTime();
-
-    CHECK_CUDA_ERR(cudaMalloc((void**)&this->deviceSubswath, sizeof(SubSwathInfo)));
-    CHECK_CUDA_ERR(cudaMemcpy(this->deviceSubswath, &this->slaveUtils->subSwath[0], sizeof(SubSwathInfo),cudaMemcpyHostToDevice));
 
     this->prepareSrtm3Data();
 }
@@ -366,11 +400,10 @@ cudaError_t Backgeocoding::launchDerampDemodComp(Rectangle slaveRect, int sBurst
         this->deviceDemodPhase,
         this->deviceDemodI,
         this->deviceDemodQ,
-        this->deviceSubswath,
+        this->slaveUtils->subSwath.at(0).deviceSubswathInfo,
         sBurstIndex
     );
     status = cudaGetLastError();
-    cudaFree(deviceSubswath);
 
     return status;
 }

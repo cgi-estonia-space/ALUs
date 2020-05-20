@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "PosVector.hpp"
-#include "Shapes.hpp"
+#include "shapes.h"
 
 namespace slap {
 
@@ -20,7 +20,6 @@ private:
     std::vector<OrbitStateVector> removeRedundantVectors(std::vector<OrbitStateVector> orbitStateVectors);
 public:
     std::vector<OrbitStateVector> orbitStateVectors;
-    std::vector<OrbitStateVector> orbitStateVectors2;
     snapEngine::PosVector getVelocity(double time);
 
     int testVectors();

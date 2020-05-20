@@ -5,7 +5,7 @@
 #include "gmock/gmock.h"
 #include "tests_common.hpp"
 
-#include "EarthGravitationalModel96.hpp"
+#include "earth_gravitational_model96.h"
 #include "EGM96_test.cuh"
 #include "CudaFriendlyObject.hpp"
 #include "cuda_util.hpp"
@@ -68,7 +68,7 @@ public:
 };
 
 TEST(EGM96, correctness){
-    slap::EarthGravitationalModel96 egm96("./goods/ww15mgh_b.grd");
+    slap::snapengine::EarthGravitationalModel96 egm96("./goods/ww15mgh_b.grd");
     EGMTester tester("./goods/egm96TestData.txt");
 
 
@@ -84,8 +84,8 @@ TEST(EGM96, correctness){
     tester.hostToDevice();
     egm96.hostToDevice();
     EGM96data data;
-    data.MAX_LATS = egm96.MAX_LATS;
-    data.MAX_LONS = egm96.MAX_LONS;
+    data.MAX_LATS = slap::snapengine::earthgravitationalmodel96::MAX_LATS;
+    data.MAX_LONS = slap::snapengine::earthgravitationalmodel96::MAX_LONS;
     data.size = tester.size;
     data.egm = egm96.deviceEgm;
 

@@ -4,7 +4,7 @@
 #include "cuda_alg.hpp"
 #include "inverter.hpp"
 #include "inverter_parallel.hpp"
-#include "BackgeocodingController.hpp"
+#include "backgeocoding_controller.h"
 
 void printHelp() {
   std::cout << "Usage: ./me {alg} [file]" << std::endl
