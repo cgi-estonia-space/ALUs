@@ -34,6 +34,21 @@
  * 0.00 E           360.00 E
  */
 namespace slap {
+namespace snapengine {
+namespace earthgravitationalmodel96{
+
+constexpr int NUM_LATS = 721; // 180*4 + 1  (cover 90 degree to -90 degree)
+constexpr int NUM_LONS = 1441; // 360*4 + 1 (cover 0 degree to 360 degree)
+constexpr int NUM_CHAR_PER_NORMAL_LINE = 74;
+constexpr int NUM_CHAR_PER_SHORT_LINE = 11;
+constexpr int NUM_CHAR_PER_EMPTY_LINE = 1;
+constexpr int BLOCK_HEIGHT = 20;
+constexpr int NUM_OF_BLOCKS_PER_LAT = 9;
+
+constexpr int MAX_LATS = NUM_LATS - 1;
+constexpr int MAX_LONS = NUM_LONS - 1;
+
+} //namespace earthgravitationalmodel96
 
 class EarthGravitationalModel96: public CudaFriendlyObject {
 private:
@@ -41,17 +56,6 @@ private:
 
     void readGridFile();
 public:
-    const int NUM_LATS = 721; // 180*4 + 1  (cover 90 degree to -90 degree)
-    const int NUM_LONS = 1441; // 360*4 + 1 (cover 0 degree to 360 degree)
-    const int NUM_CHAR_PER_NORMAL_LINE = 74;
-    const int NUM_CHAR_PER_SHORT_LINE = 11;
-    const int NUM_CHAR_PER_EMPTY_LINE = 1;
-    const int BLOCK_HEIGHT = 20;
-    const int NUM_OF_BLOCKS_PER_LAT = 9;
-
-    const int MAX_LATS = NUM_LATS - 1;
-    const int MAX_LONS = NUM_LONS - 1;
-
     double **egm = nullptr;
     double *deviceEgm = nullptr;
 
@@ -65,4 +69,5 @@ public:
 
 };
 
+}//namespace
 }//namespace

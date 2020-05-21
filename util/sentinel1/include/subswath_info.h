@@ -5,11 +5,13 @@
 #include "CudaFriendlyObject.hpp"
 #include "cuda_util.hpp"
 
+#include "subswath_info.cuh"
+
 namespace slap {
 
 class SubSwathInfo: public CudaFriendlyObject{
 private:
-
+    DeviceSubswathInfo devicePointersHolder;
 public:
     //subswath info
     int firstValidPixel;
@@ -36,15 +38,7 @@ public:
     double **referenceTime = nullptr;
     double **rangeDependDopplerRate = nullptr;
 
-    int dopplerSizeX, dopplerSizeY;
-
-    double *deviceBurstFirstLineTime = nullptr;
-    double *deviceBurstLastLineTime = nullptr;
-
-    double *deviceDopplerRate = nullptr;
-    double *deviceDopplerCentroid = nullptr;
-    double *deviceReferenceTime = nullptr;
-    double *deviceRangeDependDopplerRate = nullptr;
+    //int dopplerSizeX, dopplerSizeY;
 
     // GeoLocationGridPoint
     int numOfGeoLines;
@@ -54,6 +48,9 @@ public:
     double **latitude = nullptr;    //placeholder
     double **longitude = nullptr;   //placeholder
     double **incidenceAngle = nullptr; //placeholder
+
+    //the packet that you can use on the gpu
+    DeviceSubswathInfo *deviceSubswathInfo = nullptr;
 
     void hostToDevice();
     void deviceToHost();

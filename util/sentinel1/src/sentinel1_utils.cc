@@ -1,4 +1,4 @@
-#include "Sentinel1Utils.hpp"
+#include "sentinel1_utils.h"
 
 #include "Constants.hpp"
 
@@ -32,43 +32,43 @@ void Sentinel1Utils::writePlaceolderInfo(int placeholderType){
         case 1:
             this->rangeSpacing = 2.329562;
 
-            subSwath[0].azimuthTimeInterval = 0.002055556299999998;
-            subSwath[0].numOfBursts = 19;
-            subSwath[0].linesPerBurst = 1503;
-            subSwath[0].samplesPerBurst = 21401;
-            subSwath[0].firstValidPixel = 267;
-            subSwath[0].lastValidPixel = 20431;
-            subSwath[0].rangePixelSpacing = 2.329562;
-            subSwath[0].slrTimeToFirstPixel = 0.002679737321566982;
-            subSwath[0].slrTimeToLastPixel = 0.0028460277850849134;
-            subSwath[0].subSwathName = "IW1";
-            subSwath[0].firstLineTime = 5.49734137546908E8;
-            subSwath[0].lastLineTime = 5.49734190282205E8;
-            subSwath[0].radarFrequency = 5.40500045433435E9;
-            subSwath[0].azimuthSteeringRate = 1.590368784;
-            subSwath[0].numOfGeoLines = 21;
-            subSwath[0].numOfGeoPointsPerLine = 21;
+            this->subSwath.at(0).azimuthTimeInterval = 0.002055556299999998;
+            this->subSwath.at(0).numOfBursts = 19;
+            this->subSwath.at(0).linesPerBurst = 1503;
+            this->subSwath.at(0).samplesPerBurst = 21401;
+            this->subSwath.at(0).firstValidPixel = 267;
+            this->subSwath.at(0).lastValidPixel = 20431;
+            this->subSwath.at(0).rangePixelSpacing = 2.329562;
+            this->subSwath.at(0).slrTimeToFirstPixel = 0.002679737321566982;
+            this->subSwath.at(0).slrTimeToLastPixel = 0.0028460277850849134;
+            this->subSwath.at(0).subSwathName = "IW1";
+            this->subSwath.at(0).firstLineTime = 5.49734137546908E8;
+            this->subSwath.at(0).lastLineTime = 5.49734190282205E8;
+            this->subSwath.at(0).radarFrequency = 5.40500045433435E9;
+            this->subSwath.at(0).azimuthSteeringRate = 1.590368784;
+            this->subSwath.at(0).numOfGeoLines = 21;
+            this->subSwath.at(0).numOfGeoPointsPerLine = 21;
         break;
         //slave
         case 2:
             this->rangeSpacing = 2.329562;
 
-            subSwath[0].azimuthTimeInterval = 0.002055556299999998;
-            subSwath[0].numOfBursts = 19;
-            subSwath[0].linesPerBurst = 1503;
-            subSwath[0].samplesPerBurst = 21401;
-            subSwath[0].firstValidPixel = 267;
-            subSwath[0].lastValidPixel = 20431;
-            subSwath[0].rangePixelSpacing = 2.329562;
-            subSwath[0].slrTimeToFirstPixel = 0.002679737321566982;
-            subSwath[0].slrTimeToLastPixel = 0.0028460277850849134;
-            subSwath[0].subSwathName = "IW1";
-            subSwath[0].firstLineTime = 5.50770938201763E8;
-            subSwath[0].lastLineTime = 5.50770990939114E8;
-            subSwath[0].radarFrequency = 5.40500045433435E9;
-            subSwath[0].azimuthSteeringRate = 1.590368784;
-            subSwath[0].numOfGeoLines = 21;
-            subSwath[0].numOfGeoPointsPerLine = 21;
+            this->subSwath.at(0).azimuthTimeInterval = 0.002055556299999998;
+            this->subSwath.at(0).numOfBursts = 19;
+            this->subSwath.at(0).linesPerBurst = 1503;
+            this->subSwath.at(0).samplesPerBurst = 21401;
+            this->subSwath.at(0).firstValidPixel = 267;
+            this->subSwath.at(0).lastValidPixel = 20431;
+            this->subSwath.at(0).rangePixelSpacing = 2.329562;
+            this->subSwath.at(0).slrTimeToFirstPixel = 0.002679737321566982;
+            this->subSwath.at(0).slrTimeToLastPixel = 0.0028460277850849134;
+            this->subSwath.at(0).subSwathName = "IW1";
+            this->subSwath.at(0).firstLineTime = 5.50770938201763E8;
+            this->subSwath.at(0).lastLineTime = 5.50770990939114E8;
+            this->subSwath.at(0).radarFrequency = 5.40500045433435E9;
+            this->subSwath.at(0).azimuthSteeringRate = 1.590368784;
+            this->subSwath.at(0).numOfGeoLines = 21;
+            this->subSwath.at(0).numOfGeoPointsPerLine = 21;
         break;
     }
 
@@ -83,13 +83,13 @@ void Sentinel1Utils::readPlaceHolderFiles(){
     }
     burstLineTimeReader >> size;
 
-    subSwath[0].burstFirstLineTime = new double[size];
-    subSwath[0].burstLastLineTime = new double[size];
+    this->subSwath.at(0).burstFirstLineTime = new double[size];
+    this->subSwath.at(0).burstLastLineTime = new double[size];
     for(int i=0; i<size; i++){
-        burstLineTimeReader >> subSwath[0].burstFirstLineTime[i];
+        burstLineTimeReader >> this->subSwath.at(0).burstFirstLineTime[i];
     }
     for(int i=0; i<size; i++){
-        burstLineTimeReader >> subSwath[0].burstLastLineTime[i];
+        burstLineTimeReader >> this->subSwath.at(0).burstLastLineTime[i];
     }
 
     burstLineTimeReader.close();
@@ -104,38 +104,38 @@ void Sentinel1Utils::readPlaceHolderFiles(){
 
 
     geoLocationReader >> numOfGeoLines2 >>numOfGeoPointsPerLine2;
-    if((numOfGeoLines2 != subSwath[0].numOfGeoLines) || (numOfGeoPointsPerLine2 != subSwath[0].numOfGeoPointsPerLine)){
+    if((numOfGeoLines2 != this->subSwath.at(0).numOfGeoLines) || (numOfGeoPointsPerLine2 != this->subSwath.at(0).numOfGeoPointsPerLine)){
         throw std::runtime_error("Geo lines and Geo points per lines are not equal to ones in the file.");
     }
-    subSwath[0].azimuthTime = allocate2DDoubleArray(numOfGeoLines2, numOfGeoPointsPerLine2);
-    subSwath[0].slantRangeTime = allocate2DDoubleArray(numOfGeoLines2, numOfGeoPointsPerLine2);
-    subSwath[0].latitude = allocate2DDoubleArray(numOfGeoLines2, numOfGeoPointsPerLine2);
-    subSwath[0].longitude = allocate2DDoubleArray(numOfGeoLines2, numOfGeoPointsPerLine2);
-    subSwath[0].incidenceAngle = allocate2DDoubleArray(numOfGeoLines2, numOfGeoPointsPerLine2);
+    this->subSwath.at(0).azimuthTime = allocate2DDoubleArray(numOfGeoLines2, numOfGeoPointsPerLine2);
+    this->subSwath.at(0).slantRangeTime = allocate2DDoubleArray(numOfGeoLines2, numOfGeoPointsPerLine2);
+    this->subSwath.at(0).latitude = allocate2DDoubleArray(numOfGeoLines2, numOfGeoPointsPerLine2);
+    this->subSwath.at(0).longitude = allocate2DDoubleArray(numOfGeoLines2, numOfGeoPointsPerLine2);
+    this->subSwath.at(0).incidenceAngle = allocate2DDoubleArray(numOfGeoLines2, numOfGeoPointsPerLine2);
 
     for(int i=0; i<numOfGeoLines2; i++){
         for(int j=0; j<numOfGeoPointsPerLine2; j++){
-            geoLocationReader >> subSwath[0].azimuthTime[i][j];
+            geoLocationReader >> this->subSwath.at(0).azimuthTime[i][j];
         }
     }
     for(int i=0; i<numOfGeoLines2; i++){
         for(int j=0; j<numOfGeoPointsPerLine2; j++){
-            geoLocationReader >> subSwath[0].slantRangeTime[i][j];
+            geoLocationReader >> this->subSwath.at(0).slantRangeTime[i][j];
         }
     }
     for(int i=0; i<numOfGeoLines2; i++){
         for(int j=0; j<numOfGeoPointsPerLine2; j++){
-            geoLocationReader >> subSwath[0].latitude[i][j];
+            geoLocationReader >> this->subSwath.at(0).latitude[i][j];
         }
     }
     for(int i=0; i<numOfGeoLines2; i++){
         for(int j=0; j<numOfGeoPointsPerLine2; j++){
-            geoLocationReader >> subSwath[0].longitude[i][j];
+            geoLocationReader >> this->subSwath.at(0).longitude[i][j];
         }
     }
     for(int i=0; i<numOfGeoLines2; i++){
         for(int j=0; j<numOfGeoPointsPerLine2; j++){
-            geoLocationReader >> subSwath[0].incidenceAngle[i][j];
+            geoLocationReader >> this->subSwath.at(0).incidenceAngle[i][j];
         }
     }
 
@@ -165,7 +165,7 @@ double *Sentinel1Utils::computeDerampDemodPhase(int subSwathIndex,int sBurstInde
     const int xMax = x0 + w;
     const int yMax = y0 + h;
     const int s = subSwathIndex - 1;
-    const int firstLineInBurst = sBurstIndex* subSwath[s].linesPerBurst;
+    const int firstLineInBurst = sBurstIndex* this->subSwath.at(s).linesPerBurst;
 
     double *result = new double[h*w*sizeof(double)];
     int yy,xx,x,y;
@@ -173,12 +173,12 @@ double *Sentinel1Utils::computeDerampDemodPhase(int subSwathIndex,int sBurstInde
 
     for (y = y0; y < yMax; y++) {
         yy = y - y0;
-        ta = (y - firstLineInBurst)* subSwath[s].azimuthTimeInterval;
+        ta = (y - firstLineInBurst)* this->subSwath.at(s).azimuthTimeInterval;
         for (x = x0; x < xMax; x++) {
             xx = x - x0;
-            kt = subSwath[s].dopplerRate[sBurstIndex][x];
-            deramp = -snapEngine::constants::PI * kt * pow(ta - subSwath[s].referenceTime[sBurstIndex][x], 2);
-            demod = -snapEngine::constants::TWO_PI * subSwath[s].dopplerCentroid[sBurstIndex][x] * ta;
+            kt = this->subSwath.at(s).dopplerRate[sBurstIndex][x];
+            deramp = -snapEngine::constants::PI * kt * pow(ta - this->subSwath.at(s).referenceTime[sBurstIndex][x], 2);
+            demod = -snapEngine::constants::TWO_PI * this->subSwath.at(s).dopplerCentroid[sBurstIndex][x] * ta;
             result[yy*w + xx] = deramp + demod;
         }
     }
@@ -208,16 +208,6 @@ void Sentinel1Utils::getProductOrbit(){
     vectorReader >> count;
     this->orbit = new OrbitStateVectors(originalVectors);
 
-    std::cout << "writing test vectors: " <<count << '\n';
-    for(i=0; i<count; i++){
-        vectorReader >> tempVector.time.days >>tempVector.time.seconds >> tempVector.time.microseconds;
-        vectorReader >> tempVector.time_mjd;
-        vectorReader >> tempVector.x_pos >> tempVector.y_pos >> tempVector.z_pos;
-        vectorReader >> tempVector.x_vel >> tempVector.y_vel >> tempVector.z_vel;
-        this->orbit->orbitStateVectors2.push_back(tempVector);
-    }
-
-
     vectorReader.close();
     isOrbitAvailable = 1;
 }
@@ -238,26 +228,26 @@ void Sentinel1Utils::computeDopplerRate(){
         computeRangeDependentDopplerRate();
     }
 
-    waveLength = snapEngine::constants::lightSpeed / subSwath[0].radarFrequency;
+    waveLength = snapEngine::constants::lightSpeed / this->subSwath.at(0).radarFrequency;
     for (int s = 0; s < numOfSubSwath; s++) {
-        azTime = (subSwath[s].firstLineTime + subSwath[s].lastLineTime)/2.0;
-        subSwath[s].dopplerRate = allocate2DDoubleArray(subSwath[s].numOfBursts, subSwath[s].samplesPerBurst);
+        azTime = (this->subSwath.at(s).firstLineTime + this->subSwath.at(s).lastLineTime)/2.0;
+        this->subSwath.at(s).dopplerRate = allocate2DDoubleArray(this->subSwath.at(s).numOfBursts, this->subSwath.at(s).samplesPerBurst);
         v = getVelocity(azTime/ snapEngine::constants::secondsInDay); // DLR: 7594.0232
-        steeringRate = subSwath[s].azimuthSteeringRate * snapEngine::constants::DTOR;
+        steeringRate = this->subSwath.at(s).azimuthSteeringRate * snapEngine::constants::DTOR;
         krot = 2*v*steeringRate/waveLength; // doppler rate by antenna steering
 
-        for (int b = 0; b < subSwath[s].numOfBursts; b++) {
-            for (int x = 0; x < subSwath[s].samplesPerBurst; x++) {
-                subSwath[s].dopplerRate[b][x] = subSwath[s].rangeDependDopplerRate[b][x] * krot
-                        / (subSwath[s].rangeDependDopplerRate[b][x] - krot);
+        for (int b = 0; b < this->subSwath.at(s).numOfBursts; b++) {
+            for (int x = 0; x < this->subSwath.at(s).samplesPerBurst; x++) {
+                this->subSwath.at(s).dopplerRate[b][x] = this->subSwath.at(s).rangeDependDopplerRate[b][x] * krot
+                        / (this->subSwath.at(s).rangeDependDopplerRate[b][x] - krot);
             }
         }
     }
 }
 
 double Sentinel1Utils::getSlantRangeTime(int x, int subSwathIndex) {
-    return subSwath[subSwathIndex - 1].slrTimeToFirstPixel +
-            x * subSwath[subSwathIndex - 1].rangePixelSpacing / snapEngine::constants::lightSpeed;
+    return this->subSwath.at(subSwathIndex - 1).slrTimeToFirstPixel +
+            x * this->subSwath.at(subSwathIndex - 1).rangePixelSpacing / snapEngine::constants::lightSpeed;
 }
 
 //TODO: using mock data
@@ -293,15 +283,15 @@ DCPolynomial Sentinel1Utils::computeDC(double centerTime, std::vector<DCPolynomi
     DCPolynomial dcPolynomial;
     double mu;
     int i0 = 0, i1 = 0;
-    if (centerTime < dcEstimateList[0].time) {
+    if (centerTime < dcEstimateList.at(0).time) {
         i0 = 0;
         i1 = 1;
-    } else if (centerTime > dcEstimateList[dcEstimateList.size() - 1].time) {
+    } else if (centerTime > dcEstimateList.at(dcEstimateList.size() - 1).time) {
         i0 = dcEstimateList.size() - 2;
         i1 = dcEstimateList.size() - 1;
     } else {
         for (unsigned int i = 0; i < dcEstimateList.size() - 1; i++) {
-            if (centerTime >= dcEstimateList[i].time && centerTime < dcEstimateList[i+1].time) {
+            if (centerTime >= dcEstimateList.at(i).time && centerTime < dcEstimateList.at(i+1).time) {
                 i0 = i;
                 i1 = i + 1;
                 break;
@@ -311,12 +301,12 @@ DCPolynomial Sentinel1Utils::computeDC(double centerTime, std::vector<DCPolynomi
 
 
     dcPolynomial.time = centerTime;
-    dcPolynomial.t0 = dcEstimateList[i0].t0;
-    dcPolynomial.dataDcPolynomial.reserve(dcEstimateList[i0].dataDcPolynomial.size());
-    mu = (centerTime - dcEstimateList[i0].time) / (dcEstimateList[i1].time - dcEstimateList[i0].time);
-    for (unsigned int j = 0; j < dcEstimateList[i0].dataDcPolynomial.size(); j++) {
-        dcPolynomial.dataDcPolynomial[j] = (1 - mu)*dcEstimateList[i0].dataDcPolynomial[j] +
-                mu*dcEstimateList[i1].dataDcPolynomial[j];
+    dcPolynomial.t0 = dcEstimateList.at(i0).t0;
+    dcPolynomial.dataDcPolynomial.reserve(dcEstimateList.at(i0).dataDcPolynomial.size());
+    mu = (centerTime - dcEstimateList.at(i0).time) / (dcEstimateList.at(i1).time - dcEstimateList.at(i0).time);
+    for (unsigned int j = 0; j < dcEstimateList.at(i0).dataDcPolynomial.size(); j++) {
+        dcPolynomial.dataDcPolynomial[j] = (1 - mu)*dcEstimateList.at(i0).dataDcPolynomial[j] +
+                mu*dcEstimateList.at(i1).dataDcPolynomial[j];
     }
 
     return dcPolynomial;
@@ -350,11 +340,11 @@ std::vector<DCPolynomial> Sentinel1Utils::computeDCForBurstCenters(std::vector<D
 void Sentinel1Utils::computeDopplerCentroid(){
     double slrt, dt, dcValue;
     for (int s = 0; s < numOfSubSwath; s++) {
-        std::vector<DCPolynomial> dcEstimateList = getDCEstimateList(subSwath[s].subSwathName);
+        std::vector<DCPolynomial> dcEstimateList = getDCEstimateList(this->subSwath.at(s).subSwathName);
         std::vector<DCPolynomial> dcBurstList = computeDCForBurstCenters(dcEstimateList, s+1);
-        subSwath[s].dopplerCentroid = allocate2DDoubleArray(subSwath[s].numOfBursts, subSwath[s].samplesPerBurst);
-        for (int b = 0; b < subSwath[s].numOfBursts; b++) {
-            for (int x = 0; x < subSwath[s].samplesPerBurst; x++) {
+        this->subSwath.at(s).dopplerCentroid = allocate2DDoubleArray(this->subSwath.at(s).numOfBursts, this->subSwath.at(s).samplesPerBurst);
+        for (int b = 0; b < this->subSwath.at(s).numOfBursts; b++) {
+            for (int x = 0; x < this->subSwath.at(s).samplesPerBurst; x++) {
                 slrt = getSlantRangeTime(x, s+1)*2;
                 dt = slrt - dcBurstList[b].t0;
 
@@ -362,7 +352,7 @@ void Sentinel1Utils::computeDopplerCentroid(){
                 for (unsigned int i = 0; i < dcBurstList[b].dataDcPolynomial.size(); i++) {
                     dcValue += dcBurstList[b].dataDcPolynomial[i] * pow(dt, i);
                 }
-                subSwath[s].dopplerCentroid[b][x] = dcValue;
+                this->subSwath.at(s).dopplerCentroid[b][x] = dcValue;
             }
         }
     }
@@ -397,13 +387,13 @@ void Sentinel1Utils::computeRangeDependentDopplerRate(){
     double slrt,dt;
 
     for (int s = 0; s < numOfSubSwath; s++) {
-        std::vector<AzimuthFmRate> azFmRateList = getAzimuthFmRateList(subSwath[s].subSwathName);
-        subSwath[s].rangeDependDopplerRate = allocate2DDoubleArray(subSwath[s].numOfBursts,subSwath[s].samplesPerBurst);
-        for (int b = 0; b < subSwath[s].numOfBursts; b++) {
-            for (int x = 0; x < subSwath[s].samplesPerBurst; x++) {
+        std::vector<AzimuthFmRate> azFmRateList = getAzimuthFmRateList(this->subSwath.at(s).subSwathName);
+        this->subSwath.at(s).rangeDependDopplerRate = allocate2DDoubleArray(this->subSwath.at(s).numOfBursts,this->subSwath.at(s).samplesPerBurst);
+        for (int b = 0; b < this->subSwath.at(s).numOfBursts; b++) {
+            for (int x = 0; x < this->subSwath.at(s).samplesPerBurst; x++) {
                 slrt = getSlantRangeTime(x, s+1)*2; // 1-way to 2-way
                 dt = slrt - azFmRateList[b].t0;
-                subSwath[s].rangeDependDopplerRate[b][x] =
+                this->subSwath.at(s).rangeDependDopplerRate[b][x] =
                         azFmRateList[b].c0 + azFmRateList[b].c1*dt + azFmRateList[b].c2*dt*dt;
             }
         }
@@ -422,17 +412,17 @@ void Sentinel1Utils::computeReferenceTime(){
     }
 
     for (int s = 0; s < numOfSubSwath; s++) {
-        subSwath[s].referenceTime = allocate2DDoubleArray(subSwath[s].numOfBursts,subSwath[s].samplesPerBurst);
-        tmp1 = subSwath[s].linesPerBurst * subSwath[s].azimuthTimeInterval / 2.0;
+        this->subSwath.at(s).referenceTime = allocate2DDoubleArray(this->subSwath.at(s).numOfBursts,this->subSwath.at(s).samplesPerBurst);
+        tmp1 = this->subSwath.at(s).linesPerBurst * this->subSwath.at(s).azimuthTimeInterval / 2.0;
 
-        for (int b = 0; b < subSwath[s].numOfBursts; b++) {
+        for (int b = 0; b < this->subSwath.at(s).numOfBursts; b++) {
 
-            tmp2 = tmp1 + subSwath[s].dopplerCentroid[b][subSwath[s].firstValidPixel] /
-                    subSwath[s].rangeDependDopplerRate[b][subSwath[s].firstValidPixel];
+            tmp2 = tmp1 + this->subSwath.at(s).dopplerCentroid[b][this->subSwath.at(s).firstValidPixel] /
+                    this->subSwath.at(s).rangeDependDopplerRate[b][this->subSwath.at(s).firstValidPixel];
 
-            for (int x = 0; x < subSwath[s].samplesPerBurst; x++) {
-                subSwath[s].referenceTime[b][x] = tmp2 -
-                        subSwath[s].dopplerCentroid[b][x] / subSwath[s].rangeDependDopplerRate[b][x];
+            for (int x = 0; x < this->subSwath.at(s).samplesPerBurst; x++) {
+                this->subSwath.at(s).referenceTime[b][x] = tmp2 -
+                        this->subSwath.at(s).dopplerCentroid[b][x] / this->subSwath.at(s).rangeDependDopplerRate[b][x];
             }
         }
     }

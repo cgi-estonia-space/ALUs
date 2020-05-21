@@ -41,8 +41,8 @@ list(APPEND TEST_SOURCES
         src/dem_test.cpp
         src/tests_common.cpp
         src/sentinel1_test.cpp
-        src/EGM96_test.cpp
         src/backgeocoding_test.cpp
+        src/EGM96_test.cpp
         src/geo_utils_test.cpp
         )
 

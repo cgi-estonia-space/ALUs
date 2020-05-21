@@ -1,4 +1,4 @@
-#include "slavePixPos.cuh"
+#include "slave_pixpos.cuh"
 
 namespace slap {
 

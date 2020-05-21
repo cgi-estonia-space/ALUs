@@ -4,11 +4,11 @@
 #include <string>
 #include <fstream>
 
-#include "Shapes.hpp"
+#include "shapes.h"
 #include "comparators.hpp"
 #include "allocators.hpp"
-#include "OrbitStateVectors.hpp"
-#include "SubSwathInfo.hpp"
+#include "orbit_state_vectors.h"
+#include "subswath_info.h"
 
 namespace slap {
 

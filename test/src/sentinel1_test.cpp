@@ -2,7 +2,7 @@
 #include <fstream>
 #include "gmock/gmock.h"
 #include "tests_common.hpp"
-#include "Sentinel1Utils.hpp"
+#include "sentinel1_utils.h"
 #include "comparators.hpp"
 
 using namespace slap::tests;

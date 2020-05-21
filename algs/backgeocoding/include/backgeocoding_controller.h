@@ -1,6 +1,6 @@
 #pragma once
 #include <iostream>
-#include "Backgeocoding.cuh"
+#include "backgeocoding.h"
 
 namespace slap {
 

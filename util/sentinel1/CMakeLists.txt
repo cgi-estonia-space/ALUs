@@ -1,8 +1,7 @@
 list(APPEND SENTINEL1_UTIL_SOURCES
-        ${CMAKE_CURRENT_LIST_DIR}/src/Sentinel1Utils.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/src/SubSwathInfo.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/src/OrbitStateVectors.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/src/EarthGravitationalModel96.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/src/sentinel1_utils.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/subswath_info.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/orbit_state_vectors.cc
         )
 
 list(APPEND SENTINEL1_UTIL_INCLUDE_DIRS

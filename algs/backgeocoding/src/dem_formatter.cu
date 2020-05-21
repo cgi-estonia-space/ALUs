@@ -1,4 +1,4 @@
-#include "demFormatter.cuh"
+#include "dem_formatter.cuh"
 
 
 namespace slap{

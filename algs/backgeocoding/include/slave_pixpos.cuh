@@ -4,7 +4,7 @@
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 
-#include "Shapes.hpp"
+#include "shapes.h"
 #include "SRTM3ElevationModel.h"
 
 namespace slap{

@@ -1,6 +1,6 @@
 #include "EGM96_test.cuh"
 
-#include "getEGM96.cuh"
+#include "earth_gravitational_model96.cuh"
 
 namespace slap{
 namespace tests{
@@ -9,7 +9,7 @@ __global__ void EGM96Tester(double *lats, double *lons, float *results, EGM96dat
     const int idx = threadIdx.x + (blockDim.x*blockIdx.x);
 
     if(idx < data.size){
-        results[idx] = getEGM96(lats[idx],lons[idx], data.MAX_LATS, data.MAX_LONS, data.egm);
+        results[idx] = snapengine::earthgravitationalmodel96::getEGM96(lats[idx],lons[idx], data.MAX_LATS, data.MAX_LONS, data.egm);
     }
 }
 

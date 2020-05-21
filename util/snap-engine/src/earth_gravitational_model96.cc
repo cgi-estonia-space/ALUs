@@ -1,6 +1,7 @@
-#include "EarthGravitationalModel96.hpp"
+#include "earth_gravitational_model96.h"
 
 namespace slap {
+namespace snapengine {
 
 EarthGravitationalModel96::EarthGravitationalModel96(std::string gridFile){
     this->gridFile = gridFile;
@@ -25,14 +26,14 @@ void EarthGravitationalModel96::readGridFile(){
     if(!gridReader.is_open()){
         throw std::ios::failure("Grid file not open.");
     }
-    this->egm = allocate2DDoubleArray(NUM_LATS, NUM_LONS);
+    this->egm = allocate2DDoubleArray(earthgravitationalmodel96::NUM_LATS, earthgravitationalmodel96::NUM_LONS);
 
-    int numCharInHeader = NUM_CHAR_PER_NORMAL_LINE + NUM_CHAR_PER_EMPTY_LINE;
+    int numCharInHeader = earthgravitationalmodel96::NUM_CHAR_PER_NORMAL_LINE + earthgravitationalmodel96::NUM_CHAR_PER_EMPTY_LINE;
 
     gridReader.seekg(numCharInHeader, gridReader.beg);
 
-    for(int rowIdx=0; rowIdx<NUM_LATS; rowIdx++){
-        for(int colIdx=0; colIdx<NUM_LONS; colIdx++){
+    for(int rowIdx=0; rowIdx<earthgravitationalmodel96::NUM_LATS; rowIdx++){
+        for(int colIdx=0; colIdx<earthgravitationalmodel96::NUM_LONS; colIdx++){
             gridReader >> this->egm[rowIdx][colIdx];
         }
     }
@@ -41,9 +42,9 @@ void EarthGravitationalModel96::readGridFile(){
 }
 
 void EarthGravitationalModel96::hostToDevice(){
-    CHECK_CUDA_ERR(cudaMalloc((void**)&deviceEgm, NUM_LATS*NUM_LONS*sizeof(double)));
+    CHECK_CUDA_ERR(cudaMalloc((void**)&deviceEgm, earthgravitationalmodel96::NUM_LATS*earthgravitationalmodel96::NUM_LONS*sizeof(double)));
 
-    CHECK_CUDA_ERR(cudaMemcpy(this->deviceEgm, this->egm[0], NUM_LATS*NUM_LONS*sizeof(double),cudaMemcpyHostToDevice));
+    CHECK_CUDA_ERR(cudaMemcpy(this->deviceEgm, this->egm[0], earthgravitationalmodel96::NUM_LATS*earthgravitationalmodel96::NUM_LONS*sizeof(double),cudaMemcpyHostToDevice));
 }
 
 void EarthGravitationalModel96::deviceToHost(){
@@ -57,4 +58,5 @@ void EarthGravitationalModel96::deviceFree(){
     }
 }
 
+}//namespace
 }//namespace

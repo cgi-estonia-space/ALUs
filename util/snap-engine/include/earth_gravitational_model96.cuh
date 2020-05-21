@@ -3,6 +3,8 @@
 #include <cuda_runtime.h>
 
 namespace slap {
+namespace snapengine {
+namespace earthgravitationalmodel96 {
 
 inline __device__ double interpolationCubicS(double y0, double y1, double y2, double y3, double mu) {
 
@@ -16,7 +18,7 @@ inline __device__ double interpolationCubicB(double y0, double y1, double y2, do
 
 inline __device__ float getEGM96(double lat, double lon, int MAX_LATS, int MAX_LONS, double* egm){
     double r = (90 - lat) / 0.25;
-    double c = (lon < 0 ? lon + 360 : lon) / 0.25;
+    double c = ((lon < 0)*(lon + 360) + (lon >= 0)*lon) / 0.25;
     int ri, i;
     double temp1, temp2, temp3, temp4;
     int ySize = MAX_LONS + 1;
@@ -41,32 +43,22 @@ inline __device__ float getEGM96(double lat, double lon, int MAX_LATS, int MAX_L
     double muX2 = muX*muX;
     double muX3 = muX*muX2;
 
-    /*for (int i = 0; i < 4; i++) {
-        ri = r0 + i > MAX_LATS ? MAX_LATS : r0 + i;
-
-        //unrolled loop
-        v[i][0] = egm[ri][c0];
-        v[i][1] = egm[ri][ci1];
-        v[i][2] = egm[ri][ci2];
-        v[i][3] = egm[ri][ci3];
-    }*/
-
     i=0;
-    ri = r0 + i > MAX_LATS ? MAX_LATS : r0 + i;
+    ri = (r0 + i > MAX_LATS)*MAX_LATS + (r0 + i <= MAX_LATS)*(r0 + i);
     temp1 = interpolationCubicB(egm[ri*ySize + c0], egm[ri*ySize + ci1], egm[ri*ySize + ci2], egm[ri*ySize + ci3], muX, muX2, muX3);
     i=1;
-    ri = r0 + i > MAX_LATS ? MAX_LATS : r0 + i;
+    ri = (r0 + i > MAX_LATS)*MAX_LATS + (r0 + i <= MAX_LATS)*(r0 + i);
     temp2 = interpolationCubicB(egm[ri*ySize + c0], egm[ri*ySize + ci1], egm[ri*ySize + ci2], egm[ri*ySize + ci3], muX, muX2, muX3);
     i=2;
-    ri = r0 + i > MAX_LATS ? MAX_LATS : r0 + i;
+    ri = (r0 + i > MAX_LATS)*MAX_LATS + (r0 + i <= MAX_LATS)*(r0 + i);
     temp3 = interpolationCubicB(egm[ri*ySize + c0], egm[ri*ySize + ci1], egm[ri*ySize + ci2], egm[ri*ySize + ci3], muX, muX2, muX3);
     i=3;
-    ri = r0 + i > MAX_LATS ? MAX_LATS : r0 + i;
+    ri = (r0 + i > MAX_LATS)*MAX_LATS + (r0 + i <= MAX_LATS)*(r0 + i);
     temp4 = interpolationCubicB(egm[ri*ySize + c0], egm[ri*ySize + ci1], egm[ri*ySize + ci2], egm[ri*ySize + ci3], muX, muX2, muX3);
 
     return (float)interpolationCubicS(temp1, temp2, temp3, temp4, muY);
 }
 
-
-
+}//namespace
+}//namespace
 }//namespace

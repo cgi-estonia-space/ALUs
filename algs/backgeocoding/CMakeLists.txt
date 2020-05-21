@@ -1,11 +1,11 @@
 
 list(APPEND BACKGEOCODING_SOURCES
-        ${CMAKE_CURRENT_LIST_DIR}/src/Backgeocoding.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/src/backgeocoding.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/backgeocoding_controller.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/bilinear.cu
-        ${CMAKE_CURRENT_LIST_DIR}/src/derampDemod.cu
-        ${CMAKE_CURRENT_LIST_DIR}/src/slavePixPos.cu
-        ${CMAKE_CURRENT_LIST_DIR}/src/demFormatter.cu
-        ${CMAKE_CURRENT_LIST_DIR}/src/BackgeocodingController.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/src/deramp_demod.cu
+        ${CMAKE_CURRENT_LIST_DIR}/src/slave_pixpos.cu
+        ${CMAKE_CURRENT_LIST_DIR}/src/dem_formatter.cu
         )
 
 list(APPEND BACKGEOCODING_INCLUDE_DIRS

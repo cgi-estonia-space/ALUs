@@ -9,14 +9,14 @@
 
 #include "Constants.hpp"
 #include "cuda_util.hpp"
-#include "Sentinel1Utils.hpp"
+#include "sentinel1_utils.h"
 #include "dataset.hpp"
 #include "SRTM3ElevationModel.h"
 
 #include "bilinear.cuh"
-#include "derampDemod.cuh"
-#include "slavePixPos.cuh"
-#include "demFormatter.cuh"
+#include "deramp_demod.cuh"
+#include "slave_pixpos.cuh"
+#include "dem_formatter.cuh"
 
 
 
@@ -29,10 +29,11 @@ private:
     std::vector<double> xPoints; //slave pixel pos x
     std::vector<double> yPoints; //slave pixel pos y
     std::vector<int> params;
-    double *deviceXPoints, *deviceYPoints, *deviceDemodI, *deviceDemodQ, *deviceDemodPhase;
-    float *deviceIResults, *deviceQResults; //I phase and Q pahse
-    double *deviceSlaveI, *deviceSlaveQ;
-    int *deviceParams;
+    double *deviceXPoints = nullptr, *deviceYPoints = nullptr;
+    double *deviceDemodI = nullptr, *deviceDemodQ = nullptr, *deviceDemodPhase = nullptr;
+    float *deviceIResults = nullptr, *deviceQResults = nullptr; //I phase and Q pahse
+    double *deviceSlaveI = nullptr, *deviceSlaveQ = nullptr;
+    int *deviceParams = nullptr;
 
     int tileX, tileY, demodX, demodY, paramSize, tileSize, demodSize;
 
@@ -42,7 +43,6 @@ private:
     double demSamplingLon = 0.0;
     std::vector<Dataset> srtms;
     std::vector<double *> deviceSrtms;
-    SubSwathInfo *deviceSubswath;
 
 
 

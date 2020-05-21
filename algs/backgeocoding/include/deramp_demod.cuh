@@ -3,8 +3,8 @@
 #include <device_launch_parameters.h>
 
 #include "Constants.hpp"
-#include "Shapes.hpp"
-#include "SubSwathInfo.hpp"
+#include "shapes.h"
+#include "subswath_info.cuh"
 
 namespace slap{
 
@@ -16,7 +16,7 @@ cudaError_t launchDerampDemod(dim3 gridSize,
     double *demodPhase,
     double *demodI,
     double *demodQ,
-    SubSwathInfo *subSwath,
+    DeviceSubswathInfo *subSwath,
     int sBurstIndex);
 
 } //slap
