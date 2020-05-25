@@ -95,10 +95,8 @@ TEST(backgeocoding, correctness){
         "./goods/backgeocoding/burstLineTimes.txt",
         "./goods/backgeocoding/geoLocation.txt"
     );
-    backgeocoding.setSRTMPlaceholders(
-        "./goods/srtm_41_01.tif",
-        "./goods/srtm_42_01.tif"
-    );
+    backgeocoding.setSRTMDirectory("./goods/");
+    backgeocoding.setEGMGridFile("./goods/ww15mgh_b.grd");
     backgeocoding.feedPlaceHolders();
     backgeocoding.prepareToCompute();
     backgeocoding.computeTile(tester.slaveRect, tester.slaveTileI, tester.slaveTileQ);

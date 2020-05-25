@@ -8,6 +8,13 @@
 #include <cuda_runtime_api.h>
 
 namespace alus {
+namespace cuda {
+
+int getGridDim(int blockDim, int dataDim);
+
+}//namespace cuda
+
+
 class CudaErrorException final : public std::runtime_error {
    public:
     CudaErrorException(cudaError_t cudaError, std::string file, int line)
@@ -23,7 +30,7 @@ class CudaErrorException final : public std::runtime_error {
     int const m_line;
 };
 
-int getGridDim(int blockDim, int dataDim);
+
 
 inline void checkCudaError(cudaError_t const cudaErr, const char* file, int const line) {
     if (cudaErr != cudaSuccess) {

@@ -6,7 +6,7 @@ namespace alus {
 
 class BackgeocodingController{
 private:
-    Backgeocoding *backgeocoding = nullptr;
+    Backgeocoding *backgeocoding{nullptr};
     double *slaveTileI, *slaveTileQ;
     Rectangle slaveRect;
 

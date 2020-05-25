@@ -1,46 +1,14 @@
 #include "bilinear.cuh"
 
-namespace alus {
+#include "pointer_holders.h"
+#include "bilinear_interpolation.cuh"
 
-inline __device__ void computeIndex(const double x,const double y, const int width,const int height, double *indexI, double *indexJ, double *indexKi, double *indexKj){
-	int i0 = (int)x;
-	int j0 = (int)y;
-	double di = x - (i0 + 0.5);
-	double dj = y - (j0 + 0.5);
+namespace alus{
 
-	int iMax = width - 1;
-	int jMax = 0;
-
-	if (di >= 0.0) {
-		jMax = i0 + 1;
-		indexI[0] = i0 < 0 ? 0.0 : (i0 > iMax ? iMax : i0);
-		indexI[1] = jMax < 0 ? 0.0 : (jMax > iMax ? iMax : jMax);
-		indexKi[0] = di;
-	}else {
-		jMax = i0 - 1;
-		indexI[0] = jMax < 0 ? 0.0 : (jMax > iMax ? iMax : jMax);
-		indexI[1] = i0 < 0 ? 0.0 : (i0 > iMax ? iMax : i0);
-		indexKi[0] = di + 1.0;
-	}
-
-	jMax = height - 1;
-	int j1 = 0;
-
-	if (dj >= 0.0) {
-		j1 = j0 + 1;
-		indexJ[0] = j0 < 0 ? 0.0 : (j0 > jMax ? jMax : j0);
-		indexJ[1] = j1 < 0 ? 0.0 : (j1 > jMax ? jMax : j1);
-		indexKj[0] = dj;
-	}else {
-		j1 = j0 - 1;
-		indexJ[0] = j1 < 0 ? 0.0 : (j1 > jMax ? jMax : j1);
-		indexJ[1] = j0 < 0 ? 0.0 : (j0 > jMax ? jMax : j0);
-		indexKj[0] = dj + 1.0;
-	}
-}
-
-inline __device__ int getSamples(double *values,int *x, int * y, double *samples, int width, int height, int valueWidth, int valueHeight, double noValue, int useNoData)
+inline __device__ int getSamples(PointerArray *tiles,int *x, int *y, double *samples, int width, int height, double noValue, int useNoData)
 {
+	double *values = (double*)tiles->array[0].pointer;
+	const int valueWidth = tiles->array[0].x;
 	int i = 0, j=0, isValid = 1;
 	while (i < height) {
 		j = 0;
@@ -58,20 +26,7 @@ inline __device__ int getSamples(double *values,int *x, int * y, double *samples
 	return isValid;
 }
 
-inline __device__ double resample(double * values, const int valueWidth, const int valueHeight, double * indexI, double * indexJ, double * indexKi, double * indexKj, double noValue, int useNoData)
-{
-	int x[2] = { (int)indexI[0], (int)indexI[1] };
-	int y[2] = { (int)indexJ[0], (int)indexJ[1] };
-	double samples[2][2];
-	samples[0][0] = 0.0;
-	if(getSamples(values,x, y, samples[0], 2, 2, valueWidth, valueHeight, noValue, useNoData)){
-        double ki = indexKi[0];
-        double kj = indexKj[0];
-        return samples[0][0] * (1.0 - ki) * (1.0 - kj) + samples[0][1] * ki * (1.0 - kj) + samples[1][0] * (1.0 - ki) * kj + samples[1][1] * ki * kj;
-	}else{
-	    return samples[0][0];
-	}
-}
+
 
 __global__ void bilinearInterpolation(double *xPixels,
                                     double *yPixels,
@@ -117,6 +72,12 @@ __global__ void bilinearInterpolation(double *xPixels,
 	double rerampRemodI = 0.0;
 	double rerampRemodQ = 0.0;
 
+	PointerArray pArray;
+	PointerHolder pHolder;
+	pArray.array = &pHolder;
+	pHolder.x = demodWidth;
+	pHolder.y = demodHeight;
+
     //y stride + x index
     const int targetIndex = (startX+idx) - (intParams[8] - (((startY + idy) - intParams[9]) * intParams[7] + intParams[6]));
 
@@ -126,10 +87,13 @@ __global__ void bilinearInterpolation(double *xPixels,
 	        resultsI[(idy*pointWidth) + idx] = noDataValue;
 	        resultsQ[(idy*pointWidth) + idx] = noDataValue;
 	    }else{
-	        computeIndex(x - rectangleX + 0.5, y - rectangleY + 0.5, demodWidth, demodHeight, indexI, indexJ, indexKi, indexKj);
-        	samplePhase = resample(demodPhase, demodWidth, demodHeight, indexI, indexJ, indexKi, indexKj, noDataValue, useNoDataPhase);
-        	sampleI = resample(demodI, demodWidth, demodHeight, indexI, indexJ, indexKi, indexKj, noDataValue, useNoDataI);
-        	sampleQ = resample(demodQ, demodWidth, demodHeight, indexI, indexJ, indexKi, indexKj, noDataValue, useNoDataQ);
+	        snapengine::bilinearinterpolation::computeIndex(x - rectangleX + 0.5, y - rectangleY + 0.5, demodWidth, demodHeight, indexI, indexJ, indexKi, indexKj);
+			pHolder.pointer = demodPhase;
+        	samplePhase = snapengine::bilinearinterpolation::resample(&pArray, indexI, indexJ, indexKi, indexKj, noDataValue, useNoDataPhase, getSamples);
+			pHolder.pointer = demodI;
+        	sampleI = snapengine::bilinearinterpolation::resample(&pArray, indexI, indexJ, indexKi, indexKj, noDataValue, useNoDataI, getSamples);
+			pHolder.pointer = demodQ;
+        	sampleQ = snapengine::bilinearinterpolation::resample(&pArray, indexI, indexJ, indexKi, indexKj, noDataValue, useNoDataQ, getSamples);
 
         	if(!disableReramp){
                 cosPhase = cos(samplePhase);
@@ -138,10 +102,6 @@ __global__ void bilinearInterpolation(double *xPixels,
                 rerampRemodQ = -sampleI * sinPhase + sampleQ * cosPhase;
                 resultsI[targetIndex] = rerampRemodI;
                 resultsQ[targetIndex] = rerampRemodQ;
-				/*if(targetIndex == 4810){
-					printf("current sampleI: %f, sampleQ: %f, rerampI: %f, rerampQ: %f\n", sampleI, sampleQ, rerampRemodI, rerampRemodQ);
-					printf("Sample Phase: %f \n", samplePhase);
-				}*/
             }else{
                 resultsI[targetIndex] = sampleI;
                 resultsQ[targetIndex] = sampleQ;

@@ -47,6 +47,7 @@ list(APPEND TEST_SOURCES
         src/geo_utils_test.cpp
         src/product_data_test.cpp
         src/sar_geocoding_test.cc
+        src/srtm3_tests.cc
         )
 
 add_executable(unit_test ${TEST_SOURCES})
@@ -60,6 +61,7 @@ target_link_libraries(unit_test
         backgeocoding-static
         snap-engine-static
         egm96-test-static
+        srtm3-test-util-static
         cuda_util-static
         )
 

@@ -10,13 +10,14 @@
 #include "Constants.hpp"
 #include "cuda_util.hpp"
 #include "sentinel1_utils.h"
-#include "dataset.hpp"
-#include "SRTM3ElevationModel.h"
+#include "srtm3_elevation_model_constants.h"
+#include "srtm3_elevation_model.h"
+#include "earth_gravitational_model96.h"
+#include "pointer_holders.h"
 
 #include "bilinear.cuh"
 #include "deramp_demod.cuh"
 #include "slave_pixpos.cuh"
-#include "dem_formatter.cuh"
 
 
 
@@ -29,11 +30,11 @@ private:
     std::vector<double> xPoints; //slave pixel pos x
     std::vector<double> yPoints; //slave pixel pos y
     std::vector<int> params;
-    double *deviceXPoints = nullptr, *deviceYPoints = nullptr;
-    double *deviceDemodI = nullptr, *deviceDemodQ = nullptr, *deviceDemodPhase = nullptr;
-    float *deviceIResults = nullptr, *deviceQResults = nullptr; //I phase and Q pahse
-    double *deviceSlaveI = nullptr, *deviceSlaveQ = nullptr;
-    int *deviceParams = nullptr;
+    double *deviceXPoints{nullptr}, *deviceYPoints{nullptr};
+    double *deviceDemodI{nullptr}, *deviceDemodQ{nullptr}, *deviceDemodPhase{nullptr};
+    float *deviceIResults{nullptr}, *deviceQResults{nullptr}; //I phase and Q pahse
+    double *deviceSlaveI{nullptr}, *deviceSlaveQ{nullptr};
+    int *deviceParams{nullptr};
 
     int tileX, tileY, demodX, demodY, paramSize, tileSize, demodSize;
 
@@ -41,8 +42,8 @@ private:
     std::unique_ptr<Sentinel1Utils> slaveUtils;
     double demSamplingLat = 0.0;
     double demSamplingLon = 0.0;
-    std::vector<Dataset> srtms;
-    std::vector<double *> deviceSrtms;
+    std::unique_ptr<snapengine::EarthGravitationalModel96> egm96_;
+    std::unique_ptr<snapengine::SRTM3ElevationModel> srtm3Dem_;
 
 
 
@@ -80,8 +81,10 @@ private:
     std::string burstLineTimeFile = "../test/goods/backgeocoding/burstLineTimes.txt";
     std::string geoLocationFile = "../test/goods/backgeocoding/geoLocation.txt";
 
-    std::string srtm_41_01File = "../test/goods/srtm_41_01.tif";
-    std::string srtm_42_01File = "../test/goods/srtm_42_01.tif";
+    //std::string srtm_41_01File = "../test/goods/srtm_41_01.tif";
+    //std::string srtm_42_01File = "../test/goods/srtm_42_01.tif";
+    std::string srtmsDirectory = "../test/goods/";
+    std::string gridFile = "../test/goods/ww15mgh_b.grd";
 
 public:
 
@@ -100,7 +103,8 @@ public:
         std::string geoLocationFile
     );
 
-    void setSRTMPlaceholders(std::string srtm_41_01File, std::string srtm_42_01File);
+    void setSRTMDirectory(std::string directory);
+    void setEGMGridFile(std::string gridFile);
 
     float const* getIResult(){
         return this->iResult.data();

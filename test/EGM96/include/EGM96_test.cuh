@@ -6,8 +6,8 @@ namespace alus {
 namespace tests{
 
 struct EGM96data{
-    int MAX_LATS;
-    int MAX_LONS;
+    int maxLats;
+    int maxLons;
     double* egm;
     int size;
 };

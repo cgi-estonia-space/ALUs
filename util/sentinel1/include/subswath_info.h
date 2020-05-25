@@ -9,7 +9,7 @@
 
 namespace alus {
 
-class SubSwathInfo: public CudaFriendlyObject{
+class SubSwathInfo: public cuda::CudaFriendlyObject{
 private:
     DeviceSubswathInfo devicePointersHolder;
 public:
