@@ -12,13 +12,15 @@ class TerrainCorrection {
                       slap::Dataset metadata, slap::Dataset dem);
 
     void doWork();
+    void localDemCuda();
+
+    std::vector<double>getElevations() { return m_cohDsElevations; }
 
     ~TerrainCorrection();
 
    private:
 
     void localDemCPU();
-    void localDemCuda();
 
     slap::Dataset m_cohDs;
     slap::Dataset m_metadataDs;

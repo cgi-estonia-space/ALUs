@@ -44,6 +44,7 @@ list(APPEND TEST_SOURCES
         src/backgeocoding_test.cpp
         src/EGM96_test.cpp
         src/geo_utils_test.cpp
+        src/sar_geocoding_test.cc
         )
 
 add_executable(unit_test ${TEST_SOURCES})
