@@ -66,6 +66,31 @@ double ComputeSlantRange(double time,
                          snapengine::PosVector earthPoint,
                          snapengine::PosVector& sensorPos);
 
+/** Validates that Zero Doppler Time is between UTC timestamps.
+ *
+ * This is extracted from SARGeocoding.java class where it is used as part of computeRangeIndex() and
+ * computeExtendedRangeIndex().
+ * This actually exists as an inline version for CUDA calls as IsDopplerTimeValidImpl() in sar_geocoding.cuh.
+ * This procedure is duplicated by the nvcc for host processing in sar_geocoding.cu.
+ *
+ * @return true when zero_doppler_time value is between first and last line UTC times (inclusive)
+ */
+bool IsDopplerTimeValid(double first_line_utc, double last_line_utc, double zero_doppler_time);
+
+/**
+ * Compute range index in source image for earth point with given zero Doppler time and slant range.
+ *
+ * This is adopted from SNAP's SARGeocoding::computeRangeIndex() with only SLC part implemented and stripped
+ * doppler time validation separated as IsDopplerTimeValid().
+ * This actually exists as an inline version for CUDA calls as ComputeRangeIndexSlcImpl() in sar_geocoding.cuh.
+ * This procedure is duplicated by the nvcc for host processing in sar_geocoding.cu.
+ *
+ * @param zeroDopplerTime The zero Doppler time in MJD.
+ * @param slantRange      The slant range in meters.
+ * @return The range index.
+ */
+double ComputeRangeIndexSlc(double range_spacing, double slant_range, double near_edge_slant_range);
+
 }  // namespace sarGeocoding
 }  // namespace s1tbx
 }  // namespace alus

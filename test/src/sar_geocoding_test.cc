@@ -61,8 +61,7 @@ TEST_F(SarGeoCodingTest, getEarthPointZeroDopplerTimeComputesCorrectly) {
     }
 }
 
-TEST_F(SarGeoCodingTest, ComputeSlangRangeResultsAsInSnap) {
-
+TEST_F(SarGeoCodingTest, ComputeSlantRangeResultsAsInSnap) {
     std::vector<double> const TIME_ARGS{7135.669986951332,
                                         7135.669986692994,
                                         7135.669986434845,
@@ -100,4 +99,62 @@ TEST_F(SarGeoCodingTest, ComputeSlangRangeResultsAsInSnap) {
         EXPECT_DOUBLE_EQ(sensorPointRes.z, SENSOR_POINT_EXPECTED.at(i).z);
     }
 }
+
+TEST_F(SarGeoCodingTest, DopplerTimeValidation) {
+    std::vector<double> const ZERO_DOPPLER_TIME_ARGS{7135.669986176958,
+                                                     7135.669986951332,
+                                                     7135.669986692994,
+                                                     7135.669986434845,
+                                                     7135.669986179413,
+                                                     7135.669986528665,
+                                                     7135.669986273058,
+                                                     7135.669985762594};
+    for (auto&& zdt : ZERO_DOPPLER_TIME_ARGS) {
+        ASSERT_TRUE(IsDopplerTimeValid(7135.669951395567, 7135.669987106099, zdt));
+    }
+
+    // Min boundaries
+    ASSERT_TRUE(IsDopplerTimeValid(7135.669951395567, 7135.669987106099, 7135.669951395567));
+    ASSERT_FALSE(IsDopplerTimeValid(7135.669951395567, 7135.669987106099, 7135.669951395566));
+    // Max boundaries
+    ASSERT_TRUE(IsDopplerTimeValid(7135.669951395567, 7135.669987106099, 7135.669987106099));
+    ASSERT_FALSE(IsDopplerTimeValid(7135.669951395567, 7135.669987106099, 7135.669987106100));
+}
+
+TEST_F(SarGeoCodingTest, ComputeRangeIndexResultsAsInSnap) {
+    std::vector<double> const RANGE_SPACING_ARGS{
+        2.329562, 2.329562, 2.329562, 2.329562, 2.329562, 2.329562, 2.329562, 2.329562};
+    std::vector<double> const SLANT_RANGE_ARGS{837692.989475445,
+                                               836412.4827332797,
+                                               836832.2013910259,
+                                               837265.4350552851,
+                                               837688.9260249027,
+                                               841279.0187980297,
+                                               841715.5319330025,
+                                               842582.278111221};
+    std::vector<double> const NEAR_EDGE_SLANT_RANGE_ARGS{799303.6132771898,
+                                                         799303.6132771898,
+                                                         799303.6132771898,
+                                                         799303.6132771898,
+                                                         799303.6132771898,
+                                                         799303.6132771898,
+                                                         799303.6132771898,
+                                                         799303.6132771898};
+    std::vector<double> const COMPUTE_RANGE_INDEX_RESULTS{16479.224935097336,
+                                                          15929.54789616671,
+                                                          16109.71852813367,
+                                                          16295.690682667097,
+                                                          16477.480637009423,
+                                                          18018.582686719634,
+                                                          18205.962604048633,
+                                                          18578.026613600003};
+
+    auto const series_size = COMPUTE_RANGE_INDEX_RESULTS.size();
+    for (size_t i = 0; i < series_size; i++) {
+        auto const res =
+            ComputeRangeIndexSlc(RANGE_SPACING_ARGS.at(i), SLANT_RANGE_ARGS.at(i), NEAR_EDGE_SLANT_RANGE_ARGS.at(i));
+        EXPECT_DOUBLE_EQ(res, COMPUTE_RANGE_INDEX_RESULTS.at(i));
+    }
+}
+
 }  // namespace

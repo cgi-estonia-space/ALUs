@@ -116,6 +116,19 @@ inline __device__ __host__ double ComputeSlantRangeImpl(double time,
     return std::sqrt(xDiff * xDiff + yDiff * yDiff + zDiff * zDiff);
 }
 
+inline __device__ __host__ bool IsDopplerTimeValidImpl(double first_line_utc,
+                                                       double last_line_utc,
+                                                       double zero_doppler_time) {
+    return zero_doppler_time >= std::min(first_line_utc, last_line_utc) &&
+           zero_doppler_time <= std::max(first_line_utc, last_line_utc);
+}
+
+inline __device__ __host__ double ComputeRangeIndexSlcImpl(double range_spacing,
+                                                           double slant_range,
+                                                           double near_edge_slant_range) {
+    return (slant_range - near_edge_slant_range) / range_spacing;
+}
+
 }  // namespace sarGeocoding
 }  // namespace s1tbx
 }  // namespace alus
