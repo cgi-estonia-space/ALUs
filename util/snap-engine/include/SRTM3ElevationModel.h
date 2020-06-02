@@ -1,6 +1,6 @@
 #pragma once
 
-namespace slap {
+namespace alus {
 namespace snapengine{
 namespace srtm3elevationmodel{
 

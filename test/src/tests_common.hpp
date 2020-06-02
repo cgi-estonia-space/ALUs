@@ -4,7 +4,7 @@
 
 #include <cpl_error.h>
 
-namespace slap::tests {
+namespace alus::tests {
 
 std::string const GOODS_DIR{"./goods/"};
 
@@ -34,4 +34,4 @@ std::string const COH_1_DATA{
 
 void silentGdalErrorHandler(CPLErr, CPLErrorNum, const char*);
 
-}  // namespace slap::tests
+}  // namespace alus::tests

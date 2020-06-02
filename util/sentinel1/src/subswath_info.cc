@@ -1,6 +1,6 @@
 #include "subswath_info.h"
 
-namespace slap {
+namespace alus {
 
 SubSwathInfo::SubSwathInfo(){
 

@@ -2,7 +2,7 @@
 
 #include "earth_gravitational_model96.cuh"
 
-namespace slap{
+namespace alus {
 namespace tests{
 
 __global__ void EGM96Tester(double *lats, double *lons, float *results, EGM96data data){

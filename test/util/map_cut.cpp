@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
         auto const lat = std::stod(argv[2]);
         std::string const from{argv[3]};
         std::string const dest{argv[4]};
-        slap::Dataset inDataset{from.c_str()};
+        alus::Dataset inDataset{from.c_str()};
         auto inGdalDataset = inDataset.getGDALDataset();
 
         std::string const driverFormat{"GTiff"};

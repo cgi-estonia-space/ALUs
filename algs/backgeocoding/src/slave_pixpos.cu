@@ -1,6 +1,6 @@
 #include "slave_pixpos.cuh"
 
-namespace slap {
+namespace alus {
 
 inline __device__ double getElevation(double geoPosLat, double geoPosLon, double NO_DATA_VALUE, double DEGREE_RES_BY_NUM_PIXELS_PER_TILEinv){
     if (geoPosLon > 180) {

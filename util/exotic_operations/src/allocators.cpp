@@ -1,6 +1,6 @@
 #include "allocators.hpp"
 
-namespace slap {
+namespace alus {
 
 double ** allocate2DDoubleArray(int x, int y){
     int i=0, size=x*y, countX=0;

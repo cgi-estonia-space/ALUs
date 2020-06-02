@@ -2,9 +2,9 @@
 
 #include "Constants.hpp"
 
-namespace slap {
+namespace alus {
 
-using namespace snapEngine;
+using namespace alus::snapengine;
 
 Sentinel1Utils::Sentinel1Utils(){
     writePlaceolderInfo(2);
@@ -177,8 +177,9 @@ double *Sentinel1Utils::computeDerampDemodPhase(int subSwathIndex,int sBurstInde
         for (x = x0; x < xMax; x++) {
             xx = x - x0;
             kt = this->subSwath.at(s).dopplerRate[sBurstIndex][x];
-            deramp = -snapEngine::constants::PI * kt * pow(ta - this->subSwath.at(s).referenceTime[sBurstIndex][x], 2);
-            demod = -snapEngine::constants::TWO_PI * this->subSwath.at(s).dopplerCentroid[sBurstIndex][x] * ta;
+            deramp = -alus::snapengine::constants::PI * kt * pow(ta - this->subSwath.at(s)
+                                                                          .referenceTime[sBurstIndex][x], 2);
+            demod = -alus::snapengine::constants::TWO_PI * this->subSwath.at(s).dopplerCentroid[sBurstIndex][x] * ta;
             result[yy*w + xx] = deramp + demod;
         }
     }
@@ -199,21 +200,21 @@ void Sentinel1Utils::getProductOrbit(){
     vectorReader >> count;
     std::cout << "writing original vectors: " << count << '\n';
     for(i=0; i<count; i++){
-        vectorReader >> tempVector.time.days >>tempVector.time.seconds >> tempVector.time.microseconds;
-        vectorReader >> tempVector.time_mjd;
-        vectorReader >> tempVector.x_pos >> tempVector.y_pos >> tempVector.z_pos;
-        vectorReader >> tempVector.x_vel >> tempVector.y_vel >> tempVector.z_vel;
+        vectorReader >> tempVector.time_.days_ >>tempVector.time_.seconds_ >> tempVector.time_.microseconds_;
+        vectorReader >> tempVector.timeMjd_;
+        vectorReader >> tempVector.xPos_ >> tempVector.yPos_ >> tempVector.zPos_;
+        vectorReader >> tempVector.xVel_ >> tempVector.yVel_ >> tempVector.zVel_;
         originalVectors.push_back(tempVector);
     }
     vectorReader >> count;
-    this->orbit = new OrbitStateVectors(originalVectors);
+    this->orbit = new alus::s1tbx::OrbitStateVectors(originalVectors);
 
     vectorReader.close();
     isOrbitAvailable = 1;
 }
 
 double Sentinel1Utils::getVelocity(double time){
-    PosVector velocity = orbit->getVelocity(time);
+    PosVector velocity = orbit->GetVelocity(time);
     return sqrt(velocity.x*velocity.x + velocity.y*velocity.y + velocity.z*velocity.z);
 }
 
@@ -228,12 +229,12 @@ void Sentinel1Utils::computeDopplerRate(){
         computeRangeDependentDopplerRate();
     }
 
-    waveLength = snapEngine::constants::lightSpeed / this->subSwath.at(0).radarFrequency;
+    waveLength = alus::snapengine::constants::lightSpeed / this->subSwath.at(0).radarFrequency;
     for (int s = 0; s < numOfSubSwath; s++) {
         azTime = (this->subSwath.at(s).firstLineTime + this->subSwath.at(s).lastLineTime)/2.0;
         this->subSwath.at(s).dopplerRate = allocate2DDoubleArray(this->subSwath.at(s).numOfBursts, this->subSwath.at(s).samplesPerBurst);
-        v = getVelocity(azTime/ snapEngine::constants::secondsInDay); // DLR: 7594.0232
-        steeringRate = this->subSwath.at(s).azimuthSteeringRate * snapEngine::constants::DTOR;
+        v = getVelocity(azTime/ alus::snapengine::constants::secondsInDay); // DLR: 7594.0232
+        steeringRate = this->subSwath.at(s).azimuthSteeringRate * alus::snapengine::constants::DTOR;
         krot = 2*v*steeringRate/waveLength; // doppler rate by antenna steering
 
         for (int b = 0; b < this->subSwath.at(s).numOfBursts; b++) {
@@ -247,7 +248,7 @@ void Sentinel1Utils::computeDopplerRate(){
 
 double Sentinel1Utils::getSlantRangeTime(int x, int subSwathIndex) {
     return this->subSwath.at(subSwathIndex - 1).slrTimeToFirstPixel +
-            x * this->subSwath.at(subSwathIndex - 1).rangePixelSpacing / snapEngine::constants::lightSpeed;
+            x * this->subSwath.at(subSwathIndex - 1).rangePixelSpacing / alus::snapengine::constants::lightSpeed;
 }
 
 //TODO: using mock data

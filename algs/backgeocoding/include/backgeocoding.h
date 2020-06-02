@@ -20,7 +20,7 @@
 
 
 
-namespace slap {
+namespace alus {
 
 class Backgeocoding{
 private:

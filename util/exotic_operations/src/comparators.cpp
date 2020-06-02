@@ -1,6 +1,6 @@
 #include "comparators.hpp"
 
-namespace slap {
+namespace alus {
 
 int equalsArrays(const float *a, const float *b, int elems, float delta){
     int i,count =0;

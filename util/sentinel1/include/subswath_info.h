@@ -7,7 +7,7 @@
 
 #include "subswath_info.cuh"
 
-namespace slap {
+namespace alus {
 
 class SubSwathInfo: public CudaFriendlyObject{
 private:

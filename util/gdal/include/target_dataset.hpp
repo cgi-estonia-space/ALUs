@@ -7,7 +7,7 @@
 #include "dataset.hpp"
 #include "raster_properties.hpp"
 
-namespace slap {
+namespace alus {
 
 class TargetDataset final {
    public:
@@ -36,4 +36,4 @@ class TargetDataset final {
     GDALDataset* gdalDs;
     RasterDimension const dimensions{};
 };
-}  // namespace slap
+}  // namespace alus

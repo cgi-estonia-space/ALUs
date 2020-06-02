@@ -1,6 +1,6 @@
 #pragma once
 
-namespace slap {
+namespace alus {
 
 double ** allocate2DDoubleArray(int x, int y);
 

@@ -20,7 +20,7 @@
 #include <thrust/detail/raw_pointer_cast.h>
 #include <thrust/device_vector.h>
 
-namespace slap {
+namespace alus {
 /**
  * Thrust containers' wrapper.
  *
@@ -32,4 +32,4 @@ struct KernelArray {
     T* array;
     size_t size;
 };
-}  // namespace slap
+}  // namespace alus

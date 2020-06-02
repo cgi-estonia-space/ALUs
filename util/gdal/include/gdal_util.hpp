@@ -4,7 +4,7 @@
 
 #include <cpl_error.h>
 
-namespace slap {
+namespace alus {
 class GdalErrorException final : public std::runtime_error {
    public:
     GdalErrorException(
@@ -25,11 +25,11 @@ class GdalErrorException final : public std::runtime_error {
     std::string file;
     int const line;
 };
-}  // namespace slap
+}  // namespace alus
 
 inline void checkGdalError(CPLErr const err, char const* file, int const line) {
     if (err != CE_None) {
-        throw slap::GdalErrorException(err, CPLGetLastErrorNo(), CPLGetLastErrorMsg(), file, line);
+        throw alus::GdalErrorException(err, CPLGetLastErrorNo(), CPLGetLastErrorMsg(), file, line);
     }
 }
 

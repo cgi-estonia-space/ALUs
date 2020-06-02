@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <array>
 
-namespace slap {
+namespace alus {
 
 struct RasterDimension final {
     int columnsX;
@@ -57,4 +57,4 @@ class GeoTransformConstruct final {
     static constexpr int PIXEL_X_SIZE_INDEX{1};  // Or pixel width
     static constexpr int PIXEL_Y_SIZE_INDEX{5};  // Or pixel height
 };
-}  // namespace slap
+}  // namespace alus

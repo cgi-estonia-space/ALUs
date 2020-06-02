@@ -3,13 +3,12 @@
 #include "dataset.hpp"
 #include "dem.hpp"
 
-namespace slap {
+namespace alus {
 
 class TerrainCorrection {
    public:
 
-    TerrainCorrection(slap::Dataset cohDs,
-                      slap::Dataset metadata, slap::Dataset dem);
+    TerrainCorrection(alus::Dataset cohDs, alus::Dataset metadata, alus::Dataset dem);
 
     void doWork();
     void localDemCuda();
@@ -22,9 +21,9 @@ class TerrainCorrection {
 
     void localDemCPU();
 
-    slap::Dataset m_cohDs;
-    slap::Dataset m_metadataDs;
-    slap::Dem m_demDs;
+    alus::Dataset m_cohDs;
+    alus::Dataset m_metadataDs;
+    alus::Dem m_demDs;
     std::vector<double> m_cohDsElevations;
 };
-}  // namespace slap
+}  // namespace alus

@@ -1,7 +1,7 @@
 #include "dem_formatter.cuh"
 
 
-namespace slap{
+namespace alus {
 
 __global__ void formatSRTM3dem(double *target, double *source, DemFormatterData data){
     const int idx = threadIdx.x + (blockDim.x*blockIdx.x);
@@ -15,7 +15,8 @@ __global__ void formatSRTM3dem(double *target, double *source, DemFormatterData 
             //everything that TileGeoReferencing.getGeoPos does.
             geoPosLon = data.m00*(idx + 0.5) + data.m01*(idy + 0.5) + data.m02;
             geoPosLat = data.m10*(idx + 0.5) + data.m11*(idy + 0.5) + data.m12;
-
+            geoPosLon = geoPosLon;
+            geoPosLat = geoPosLat;
 
         }
 

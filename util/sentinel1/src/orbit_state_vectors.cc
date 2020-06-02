@@ -1,25 +1,18 @@
 #include "orbit_state_vectors.h"
 
-namespace slap {
-
-using namespace snapEngine;
+namespace alus::s1tbx {
 
 OrbitStateVectors::OrbitStateVectors(){
     getMockData();
 }
 
 
-OrbitStateVectors::OrbitStateVectors(std::vector<OrbitStateVector> orbitStateVectors) {
+OrbitStateVectors::OrbitStateVectors(std::vector<snapengine::OrbitStateVector> const& orbitStateVectors) {
 
-    this->orbitStateVectors = removeRedundantVectors(orbitStateVectors);
+    this->orbitStateVectors = RemoveRedundantVectors(orbitStateVectors);
 
-    this->dt = (this->orbitStateVectors[orbitStateVectors.size() - 1].time_mjd -
-            this->orbitStateVectors[0].time_mjd) / (this->orbitStateVectors.size() - 1);
-}
-
-
-OrbitStateVectors::~OrbitStateVectors(){
-
+    this->dt = (this->orbitStateVectors[orbitStateVectors.size() - 1].timeMjd_ -
+            this->orbitStateVectors[0].timeMjd_) / static_cast<double>(this->orbitStateVectors.size() - 1);
 }
 
 //TODO: this is mocked.
@@ -27,42 +20,40 @@ void OrbitStateVectors::getMockData(){
 
 }
 
-std::vector<OrbitStateVector> OrbitStateVectors::removeRedundantVectors(std::vector<OrbitStateVector> orbitStateVectors){
+std::vector<snapengine::OrbitStateVector> OrbitStateVectors::RemoveRedundantVectors(std::vector<snapengine::OrbitStateVector>
+    orbitStateVectors){
 
-    std::vector<OrbitStateVector> vectorList;
+    std::vector<snapengine::OrbitStateVector> vectorList;
     double currentTime = 0.0;
-    for (unsigned int i = 0; i < orbitStateVectors.size(); i++) {
-        if (i == 0) {
-            currentTime = orbitStateVectors[i].time_mjd;
-            vectorList.push_back(orbitStateVectors[i]);
-        } else if (orbitStateVectors[i].time_mjd > currentTime) {
-            currentTime = orbitStateVectors[i].time_mjd;
-            vectorList.push_back(orbitStateVectors[i]);
+    currentTime = orbitStateVectors.at(0).timeMjd_;
+    vectorList.push_back(orbitStateVectors.at(0));
+    for (unsigned int i = 1; i < orbitStateVectors.size(); i++) {
+        if (orbitStateVectors.at(i).timeMjd_ > currentTime) {
+            currentTime = orbitStateVectors.at(i).timeMjd_;
+            vectorList.push_back(orbitStateVectors.at(i));
         }
     }
 
     return vectorList;
 }
 
-PosVector OrbitStateVectors::getVelocity(double time) {
+snapengine::PosVector OrbitStateVectors::GetVelocity(double time) {
 
     int i0, iN;
     double weight, time2;
     int vectorsSize = orbitStateVectors.size();
     //lagrangeInterpolatingPolynomial
-    PosVector velocity{};
-    OrbitStateVector orbI;
+    snapengine::PosVector velocity{};
+    snapengine::OrbitStateVector orbI{};
 
     if (vectorsSize <= nv) {
         i0 = 0;
         iN = vectorsSize - 1;
     } else {
-        i0 = std::max((int) ((time - orbitStateVectors[0].time_mjd) / dt) - nv / 2 + 1, 0);
+        i0 = std::max((int) ((time - orbitStateVectors[0].timeMjd_) / dt) - nv / 2 + 1, 0);
         iN = std::min(i0 + nv - 1, vectorsSize - 1);
         i0 = (iN < vectorsSize - 1 ? i0 : iN - nv + 1);
     }
-
-
 
     for (int i = i0; i <= iN; ++i) {
         orbI = orbitStateVectors[i];
@@ -70,13 +61,13 @@ PosVector OrbitStateVectors::getVelocity(double time) {
         weight = 1;
         for (int j = i0; j <= iN; ++j) {
             if (j != i) {
-                time2 = orbitStateVectors[j].time_mjd;
-                weight *= (time - time2) / (orbI.time_mjd - time2);
+                time2 = orbitStateVectors[j].timeMjd_;
+                weight *= (time - time2) / (orbI.timeMjd_ - time2);
             }
         }
-        velocity.x += weight * orbI.x_vel;
-        velocity.y += weight * orbI.y_vel;
-        velocity.z += weight * orbI.z_vel;
+        velocity.x += weight * orbI.xVel_;
+        velocity.y += weight * orbI.yVel_;
+        velocity.z += weight * orbI.zVel_;
     }
     return velocity;
 }

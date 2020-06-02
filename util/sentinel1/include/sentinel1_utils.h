@@ -10,7 +10,7 @@
 #include "orbit_state_vectors.h"
 #include "subswath_info.h"
 
-namespace slap {
+namespace alus {
 
 struct AzimuthFmRate {
     double time;
@@ -42,7 +42,7 @@ private:
     int isDopplerCentroidAvailable = 0;
     int isRangeDependDopplerRateAvailable = 0;
     int isOrbitAvailable = 0;
-    OrbitStateVectors *orbit = nullptr;
+    alus::s1tbx::OrbitStateVectors *orbit = nullptr;
 
 
     std::vector<DCPolynomial> getDCEstimateList(std::string subSwathName);

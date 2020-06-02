@@ -1,6 +1,6 @@
 #pragma once
 
-namespace slap {
+namespace alus {
 
 struct DeviceSubswathInfo{
     //subswath info

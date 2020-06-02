@@ -1,6 +1,6 @@
 #include "cuda_util.hpp"
 
-namespace slap{
+namespace alus {
 
 //DO NOT USE math::ceil here. it was removed because of its inaccuracy.
 int getGridDim(int blockDim, int dataDim){

@@ -5,7 +5,7 @@
 #include "sentinel1_utils.h"
 #include "comparators.hpp"
 
-using namespace slap::tests;
+using namespace alus::tests;
 
 namespace{
 
@@ -24,7 +24,7 @@ namespace{
 
             int x, y, i, j;
             dopplerRateReader >> x >> y;
-            dopplerRate2 = slap::allocate2DDoubleArray(x,y);
+            dopplerRate2 = alus::allocate2DDoubleArray(x,y);
 
             for(i=0; i<x; i++){
                 for(j=0; j<y; j++){
@@ -33,7 +33,7 @@ namespace{
             }
 
             dopplerCentroidReader >> x >> y;
-            dopplerCentroid2 = slap::allocate2DDoubleArray(x,y);
+            dopplerCentroid2 = alus::allocate2DDoubleArray(x,y);
             for(i=0; i<x; i++){
                 for(j=0; j<y; j++){
                     dopplerCentroidReader >> dopplerCentroid2[i][j];
@@ -41,7 +41,7 @@ namespace{
             }
 
             rangeDependDopplerRateReader >> x >> y;
-            rangeDependDopplerRate2 = slap::allocate2DDoubleArray(x,y);
+            rangeDependDopplerRate2 = alus::allocate2DDoubleArray(x,y);
             for(i=0; i<x; i++){
                 for(j=0; j<y; j++){
                     rangeDependDopplerRateReader >> rangeDependDopplerRate2[i][j];
@@ -49,7 +49,7 @@ namespace{
             }
 
             referenceTimeReader >> x >> y;
-            referenceTime2 = slap::allocate2DDoubleArray(x,y);
+            referenceTime2 = alus::allocate2DDoubleArray(x,y);
             for(i=0; i<x; i++){
                 for(j=0; j<y; j++){
                     referenceTimeReader >> referenceTime2[i][j];
@@ -82,7 +82,7 @@ namespace{
     };
 
     TEST(sentinel1, utils){
-        slap::Sentinel1Utils utils;
+        alus::Sentinel1Utils utils;
         utils.setPlaceHolderFiles(
             "./goods/backgeocoding/orbitStateVectors.txt",
             "./goods/backgeocoding/dcEstimateList.txt",
@@ -112,16 +112,16 @@ namespace{
         ASSERT_TRUE(tester.dopplerRate2 != NULL);
 
 
-        count = slap::equalsArrays2Dd(utils.subSwath[0].dopplerRate, tester.dopplerRate2, utils.subSwath[0].numOfBursts, utils.subSwath[0].samplesPerBurst);
+        count = alus::equalsArrays2Dd(utils.subSwath[0].dopplerRate, tester.dopplerRate2, utils.subSwath[0].numOfBursts, utils.subSwath[0].samplesPerBurst);
         EXPECT_EQ(count,0) << "Doppler Rates do not match. Mismatches: " <<count << '\n';
 
-        count = slap::equalsArrays2Dd(utils.subSwath[0].referenceTime, tester.referenceTime2, utils.subSwath[0].numOfBursts, utils.subSwath[0].samplesPerBurst);
+        count = alus::equalsArrays2Dd(utils.subSwath[0].referenceTime, tester.referenceTime2, utils.subSwath[0].numOfBursts, utils.subSwath[0].samplesPerBurst);
         EXPECT_EQ(count,0) << "Reference Times do not match. Mismatches: " <<count << '\n';
 
-        count = slap::equalsArrays2Dd(utils.subSwath[0].rangeDependDopplerRate, tester.rangeDependDopplerRate2, utils.subSwath[0].numOfBursts, utils.subSwath[0].samplesPerBurst);
+        count = alus::equalsArrays2Dd(utils.subSwath[0].rangeDependDopplerRate, tester.rangeDependDopplerRate2, utils.subSwath[0].numOfBursts, utils.subSwath[0].samplesPerBurst);
         EXPECT_EQ(count,0) << "Range Dependent Doppler Rates do not match. Mismatches: " <<count << '\n';
 
-        count = slap::equalsArrays2Dd(utils.subSwath[0].dopplerCentroid, tester.dopplerCentroid2, utils.subSwath[0].numOfBursts, utils.subSwath[0].samplesPerBurst);
+        count = alus::equalsArrays2Dd(utils.subSwath[0].dopplerCentroid, tester.dopplerCentroid2, utils.subSwath[0].numOfBursts, utils.subSwath[0].samplesPerBurst);
         EXPECT_EQ(count,0) << "Doppler Centroids do not match. Mismatches: " <<count << '\n';
 
     }

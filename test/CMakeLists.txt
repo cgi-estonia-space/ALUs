@@ -39,11 +39,13 @@ list(APPEND TEST_SOURCES
         src/dataset_test.cpp
         src/terrain_correction_test.cpp
         src/dem_test.cpp
+        src/orbit_state_vectors_test.cpp
         src/tests_common.cpp
         src/sentinel1_test.cpp
         src/backgeocoding_test.cpp
         src/EGM96_test.cpp
         src/geo_utils_test.cpp
+        src/product_data_test.cpp
         src/sar_geocoding_test.cc
         )
 

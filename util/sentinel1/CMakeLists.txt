@@ -2,6 +2,7 @@ list(APPEND SENTINEL1_UTIL_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/sentinel1_utils.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/subswath_info.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/orbit_state_vectors.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/orbit_state_vectors.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/sar_geocoding.cu
         )
 

@@ -20,9 +20,9 @@
 
 namespace {
 
-using namespace slap;
-using namespace slap::snapEngine;
-using namespace slap::snapEngine::GeoUtils;
+using namespace alus;
+using namespace alus::snapengine;
+using namespace alus::snapengine::GeoUtils;
 
 class GeoUtilsTest : public ::testing::Test {};
 

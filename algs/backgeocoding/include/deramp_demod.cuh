@@ -6,7 +6,7 @@
 #include "shapes.h"
 #include "subswath_info.cuh"
 
-namespace slap{
+namespace alus {
 
 cudaError_t launchDerampDemod(dim3 gridSize,
     dim3 blockSize,
@@ -19,4 +19,4 @@ cudaError_t launchDerampDemod(dim3 gridSize,
     DeviceSubswathInfo *subSwath,
     int sBurstIndex);
 
-} //slap
+} //alus

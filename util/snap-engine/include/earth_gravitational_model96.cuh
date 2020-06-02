@@ -2,7 +2,7 @@
 
 #include <cuda_runtime.h>
 
-namespace slap {
+namespace alus {
 namespace snapengine {
 namespace earthgravitationalmodel96 {
 
