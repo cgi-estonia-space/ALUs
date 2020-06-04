@@ -36,6 +36,14 @@ double ComputeSlantRange(double time,
     return ComputeSlantRangeImpl(time, vectors, earthPoint, sensorPos);
 }
 
+bool IsDopplerTimeValid(double first_line_utc, double last_line_utc, double zero_doppler_time) {
+    return IsDopplerTimeValidImpl(first_line_utc, last_line_utc, zero_doppler_time);
+}
+
+double ComputeRangeIndexSlc(double range_spacing, double slant_range, double near_edge_slant_range) {
+    return ComputeRangeIndexSlcImpl(range_spacing, slant_range, near_edge_slant_range);
+}
+
 }  // namespace sarGeocoding
 }  // namespace s1tbx
 }  // namespace alus
