@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/framework/libcost_graph_proto_cc_impl.pic.lo
+bazel-out/host/bin/tensorflow/core/framework/_objs/cost_graph_proto_cc_impl/cost_graph.pb.pic.o

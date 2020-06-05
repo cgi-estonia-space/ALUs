@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/framework/libnode_def_proto_cc_impl.pic.lo
+bazel-out/host/bin/tensorflow/core/framework/_objs/node_def_proto_cc_impl/node_def.pb.pic.o

@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/stream_executor/cuda/libcufft_stub.pic.a
+bazel-out/host/bin/tensorflow/stream_executor/cuda/_objs/cufft_stub/cufft_stub.pic.o

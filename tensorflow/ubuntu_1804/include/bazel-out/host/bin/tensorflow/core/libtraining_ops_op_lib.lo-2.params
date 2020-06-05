@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/libtraining_ops_op_lib.lo
+bazel-out/host/bin/tensorflow/core/_objs/training_ops_op_lib/training_ops.o

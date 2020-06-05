@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/grappler/optimizers/libstatic_schedule.pic.a
+bazel-out/host/bin/tensorflow/core/grappler/optimizers/_objs/static_schedule/static_schedule.pic.o

@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/example/libexample_parser_configuration_proto_cc_impl.pic.lo
+bazel-out/host/bin/tensorflow/core/example/_objs/example_parser_configuration_proto_cc_impl/example_parser_configuration.pb.pic.o

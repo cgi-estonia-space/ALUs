@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/profiler/internal/libtraceme_recorder_impl.pic.lo
+bazel-out/host/bin/tensorflow/core/profiler/internal/_objs/traceme_recorder_impl/traceme_recorder.pic.o

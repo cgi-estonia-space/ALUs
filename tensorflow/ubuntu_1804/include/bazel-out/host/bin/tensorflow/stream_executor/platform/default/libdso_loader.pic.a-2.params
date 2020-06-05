@@ -1,0 +1,4 @@
+rcsD
+bazel-out/host/bin/tensorflow/stream_executor/platform/default/libdso_loader.pic.a
+bazel-out/host/bin/tensorflow/stream_executor/platform/default/_objs/dso_loader/dso_loader.pic.o
+bazel-out/host/bin/tensorflow/stream_executor/platform/default/_objs/dso_loader/dlopen_checker.pic.o

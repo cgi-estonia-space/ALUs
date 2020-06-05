@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/stream_executor/libmulti_platform_manager.pic.a
+bazel-out/host/bin/tensorflow/stream_executor/_objs/multi_platform_manager/multi_platform_manager.pic.o

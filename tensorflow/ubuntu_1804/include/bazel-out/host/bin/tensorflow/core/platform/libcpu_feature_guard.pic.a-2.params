@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/platform/libcpu_feature_guard.pic.a
+bazel-out/host/bin/tensorflow/core/platform/_objs/cpu_feature_guard/cpu_feature_guard.pic.o

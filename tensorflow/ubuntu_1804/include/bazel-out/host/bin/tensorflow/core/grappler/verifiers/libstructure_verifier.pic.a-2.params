@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/grappler/verifiers/libstructure_verifier.pic.a
+bazel-out/host/bin/tensorflow/core/grappler/verifiers/_objs/structure_verifier/structure_verifier.pic.o

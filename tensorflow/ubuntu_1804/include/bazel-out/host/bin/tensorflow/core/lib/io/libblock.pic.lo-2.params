@@ -1,0 +1,6 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/lib/io/libblock.pic.lo
+bazel-out/host/bin/tensorflow/core/lib/io/_objs/block/block.pic.o
+bazel-out/host/bin/tensorflow/core/lib/io/_objs/block/block_builder.pic.o
+bazel-out/host/bin/tensorflow/core/lib/io/_objs/block/format.pic.o
+bazel-out/host/bin/tensorflow/core/lib/io/_objs/block/table_builder.pic.o

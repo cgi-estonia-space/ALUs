@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/compiler/jit/ops/libxla_ops.lo
+bazel-out/host/bin/tensorflow/compiler/jit/ops/_objs/xla_ops/xla_ops.o

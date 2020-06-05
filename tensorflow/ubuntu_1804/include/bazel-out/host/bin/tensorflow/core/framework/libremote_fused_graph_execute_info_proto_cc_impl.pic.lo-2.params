@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/framework/libremote_fused_graph_execute_info_proto_cc_impl.pic.lo
+bazel-out/host/bin/tensorflow/core/framework/_objs/remote_fused_graph_execute_info_proto_cc_impl/remote_fused_graph_execute_info.pb.pic.o

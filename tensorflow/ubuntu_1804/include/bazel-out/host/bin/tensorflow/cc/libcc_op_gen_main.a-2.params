@@ -1,0 +1,4 @@
+rcsD
+bazel-out/host/bin/tensorflow/cc/libcc_op_gen_main.a
+bazel-out/host/bin/tensorflow/cc/_objs/cc_op_gen_main/cc_op_gen.o
+bazel-out/host/bin/tensorflow/cc/_objs/cc_op_gen_main/cc_op_gen_main.o

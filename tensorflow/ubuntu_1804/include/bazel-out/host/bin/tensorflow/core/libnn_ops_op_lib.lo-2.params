@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/libnn_ops_op_lib.lo
+bazel-out/host/bin/tensorflow/core/_objs/nn_ops_op_lib/nn_ops.o

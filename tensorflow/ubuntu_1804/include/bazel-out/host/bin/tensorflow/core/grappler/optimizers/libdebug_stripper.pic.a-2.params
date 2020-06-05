@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/grappler/optimizers/libdebug_stripper.pic.a
+bazel-out/host/bin/tensorflow/core/grappler/optimizers/_objs/debug_stripper/debug_stripper.pic.o

@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/grappler/utils/libcolocation.pic.a
+bazel-out/host/bin/tensorflow/core/grappler/utils/_objs/colocation/colocation.pic.o

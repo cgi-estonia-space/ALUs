@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/framework/libreader_base_proto_cc_impl.pic.lo
+bazel-out/host/bin/tensorflow/core/framework/_objs/reader_base_proto_cc_impl/reader_base.pb.pic.o

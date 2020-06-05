@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/framework/libapi_def_proto_cc_impl.pic.lo
+bazel-out/host/bin/tensorflow/core/framework/_objs/api_def_proto_cc_impl/api_def.pb.pic.o

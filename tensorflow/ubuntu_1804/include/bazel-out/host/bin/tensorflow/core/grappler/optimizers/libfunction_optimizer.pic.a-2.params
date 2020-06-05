@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/grappler/optimizers/libfunction_optimizer.pic.a
+bazel-out/host/bin/tensorflow/core/grappler/optimizers/_objs/function_optimizer/function_optimizer.pic.o

@@ -1,0 +1,7 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/framework/libattr_value_proto_text.pic.lo
+bazel-out/host/bin/tensorflow/core/framework/_objs/attr_value_proto_text/attr_value.pb_text.pic.o
+bazel-out/host/bin/tensorflow/core/framework/_objs/attr_value_proto_text/resource_handle.pb_text.pic.o
+bazel-out/host/bin/tensorflow/core/framework/_objs/attr_value_proto_text/tensor.pb_text.pic.o
+bazel-out/host/bin/tensorflow/core/framework/_objs/attr_value_proto_text/tensor_shape.pb_text.pic.o
+bazel-out/host/bin/tensorflow/core/framework/_objs/attr_value_proto_text/types.pb_text.pic.o

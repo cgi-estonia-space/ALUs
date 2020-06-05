@@ -1,0 +1,11 @@
+__init__.py 
+org_tensorflow/external/__init__.py 
+org_tensorflow/external/six_archive/__init__.py 
+org_tensorflow/external/six_archive/six.py /home/sven/.cache/bazel/_bazel_sven/ce880647eb6dd0d76adc3e6efbf8e3ac/external/six_archive/six.py
+org_tensorflow/tensorflow/__init__.py 
+org_tensorflow/tensorflow/tools/__init__.py 
+org_tensorflow/tensorflow/tools/git/__init__.py 
+org_tensorflow/tensorflow/tools/git/gen_git_source /home/sven/.cache/bazel/_bazel_sven/ce880647eb6dd0d76adc3e6efbf8e3ac/execroot/org_tensorflow/bazel-out/host/bin/tensorflow/tools/git/gen_git_source
+org_tensorflow/tensorflow/tools/git/gen_git_source.py /home/sven/tensorflow/tensorflow/tools/git/gen_git_source.py
+six_archive/__init__.py 
+six_archive/six.py /home/sven/.cache/bazel/_bazel_sven/ce880647eb6dd0d76adc3e6efbf8e3ac/external/six_archive/six.py

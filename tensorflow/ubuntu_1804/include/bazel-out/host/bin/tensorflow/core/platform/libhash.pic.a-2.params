@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/platform/libhash.pic.a
+bazel-out/host/bin/tensorflow/core/platform/_objs/hash/hash.pic.o

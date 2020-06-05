@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/util/libpadding.pic.a
+bazel-out/host/bin/tensorflow/core/util/_objs/padding/padding.pic.o

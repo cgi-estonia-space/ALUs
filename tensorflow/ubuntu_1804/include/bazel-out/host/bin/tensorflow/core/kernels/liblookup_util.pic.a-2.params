@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/kernels/liblookup_util.pic.a
+bazel-out/host/bin/tensorflow/core/kernels/_objs/lookup_util/lookup_util.pic.o

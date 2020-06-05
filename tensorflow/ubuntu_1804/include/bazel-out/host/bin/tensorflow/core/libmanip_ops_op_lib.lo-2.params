@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/libmanip_ops_op_lib.lo
+bazel-out/host/bin/tensorflow/core/_objs/manip_ops_op_lib/manip_ops.o

@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/grappler/costs/libvirtual_placer.pic.a
+bazel-out/host/bin/tensorflow/core/grappler/costs/_objs/virtual_placer/virtual_placer.pic.o

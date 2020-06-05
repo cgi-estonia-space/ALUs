@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/platform/cloud/libcompute_engine_metadata_client.pic.a
+bazel-out/host/bin/tensorflow/core/platform/cloud/_objs/compute_engine_metadata_client/compute_engine_metadata_client.pic.o

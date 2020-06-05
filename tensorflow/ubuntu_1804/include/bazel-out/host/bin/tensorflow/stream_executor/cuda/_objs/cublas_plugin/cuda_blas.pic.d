@@ -1,0 +1,610 @@
+bazel-out/host/bin/tensorflow/stream_executor/cuda/_objs/cublas_plugin/cuda_blas.pic.o: \
+ tensorflow/stream_executor/cuda/cuda_blas.cc /usr/include/stdc-predef.h \
+ bazel-out/host/bin/external/local_config_cuda/cuda/_virtual_includes/cuda_headers_virtual/third_party/gpus/cuda/include/cublas_v2.h \
+ bazel-out/host/bin/external/local_config_cuda/cuda/_virtual_includes/cuda_headers_virtual/third_party/gpus/cuda/include/cublas_api.h \
+ bazel-out/host/bin/external/local_config_cuda/cuda/_virtual_includes/cuda_headers_virtual/third_party/gpus/cuda/include/driver_types.h \
+ bazel-out/host/bin/external/local_config_cuda/cuda/_virtual_includes/cuda_headers_virtual/third_party/gpus/cuda/include/crt/host_defines.h \
+ bazel-out/host/bin/external/local_config_cuda/cuda/_virtual_includes/cuda_headers_virtual/third_party/gpus/cuda/include/vector_types.h \
+ /usr/lib/gcc/x86_64-linux-gnu/7/include-fixed/limits.h \
+ /usr/lib/gcc/x86_64-linux-gnu/7/include-fixed/syslimits.h \
+ /usr/include/limits.h \
+ /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
+ /usr/include/features.h /usr/include/x86_64-linux-gnu/sys/cdefs.h \
+ /usr/include/x86_64-linux-gnu/bits/wordsize.h \
+ /usr/include/x86_64-linux-gnu/bits/long-double.h \
+ /usr/include/x86_64-linux-gnu/gnu/stubs.h \
+ /usr/include/x86_64-linux-gnu/gnu/stubs-64.h \
+ /usr/include/x86_64-linux-gnu/bits/posix1_lim.h \
+ /usr/include/x86_64-linux-gnu/bits/local_lim.h \
+ /usr/include/linux/limits.h \
+ /usr/include/x86_64-linux-gnu/bits/posix2_lim.h \
+ /usr/include/x86_64-linux-gnu/bits/xopen_lim.h \
+ /usr/include/x86_64-linux-gnu/bits/uio_lim.h \
+ /usr/lib/gcc/x86_64-linux-gnu/7/include/stddef.h \
+ bazel-out/host/bin/external/local_config_cuda/cuda/_virtual_includes/cuda_headers_virtual/third_party/gpus/cuda/include/cuComplex.h \
+ /usr/include/c++/7/math.h /usr/include/c++/7/cmath \
+ /usr/include/x86_64-linux-gnu/c++/7/bits/c++config.h \
+ /usr/include/x86_64-linux-gnu/c++/7/bits/os_defines.h \
+ /usr/include/x86_64-linux-gnu/c++/7/bits/cpu_defines.h \
+ /usr/include/c++/7/bits/cpp_type_traits.h \
+ /usr/include/c++/7/ext/type_traits.h /usr/include/math.h \
+ /usr/include/x86_64-linux-gnu/bits/types.h \
+ /usr/include/x86_64-linux-gnu/bits/typesizes.h \
+ /usr/include/x86_64-linux-gnu/bits/math-vector.h \
+ /usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h \
+ /usr/include/x86_64-linux-gnu/bits/floatn.h \
+ /usr/include/x86_64-linux-gnu/bits/floatn-common.h \
+ /usr/include/x86_64-linux-gnu/bits/flt-eval-method.h \
+ /usr/include/x86_64-linux-gnu/bits/fp-logb.h \
+ /usr/include/x86_64-linux-gnu/bits/fp-fast.h \
+ /usr/include/x86_64-linux-gnu/bits/mathcalls-helper-functions.h \
+ /usr/include/x86_64-linux-gnu/bits/mathcalls.h \
+ /usr/include/x86_64-linux-gnu/bits/iscanonical.h \
+ /usr/include/x86_64-linux-gnu/bits/mathinline.h \
+ /usr/include/c++/7/bits/std_abs.h /usr/include/stdlib.h \
+ /usr/include/x86_64-linux-gnu/bits/waitflags.h \
+ /usr/include/x86_64-linux-gnu/bits/waitstatus.h \
+ /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
+ /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
+ /usr/include/x86_64-linux-gnu/sys/types.h \
+ /usr/include/x86_64-linux-gnu/bits/types/clock_t.h \
+ /usr/include/x86_64-linux-gnu/bits/types/clockid_t.h \
+ /usr/include/x86_64-linux-gnu/bits/types/time_t.h \
+ /usr/include/x86_64-linux-gnu/bits/types/timer_t.h \
+ /usr/include/x86_64-linux-gnu/bits/stdint-intn.h /usr/include/endian.h \
+ /usr/include/x86_64-linux-gnu/bits/endian.h \
+ /usr/include/x86_64-linux-gnu/bits/byteswap.h \
+ /usr/include/x86_64-linux-gnu/bits/byteswap-16.h \
+ /usr/include/x86_64-linux-gnu/bits/uintn-identity.h \
+ /usr/include/x86_64-linux-gnu/sys/select.h \
+ /usr/include/x86_64-linux-gnu/bits/select.h \
+ /usr/include/x86_64-linux-gnu/bits/types/sigset_t.h \
+ /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h \
+ /usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h \
+ /usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h \
+ /usr/include/x86_64-linux-gnu/bits/select2.h \
+ /usr/include/x86_64-linux-gnu/sys/sysmacros.h \
+ /usr/include/x86_64-linux-gnu/bits/sysmacros.h \
+ /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h \
+ /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h \
+ /usr/include/x86_64-linux-gnu/bits/pthreadtypes-arch.h \
+ /usr/include/alloca.h \
+ /usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h \
+ /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
+ /usr/include/x86_64-linux-gnu/bits/stdlib.h \
+ bazel-out/host/bin/external/local_config_cuda/cuda/cuda/include/cuda_fp16.h \
+ bazel-out/host/bin/external/local_config_cuda/cuda/cuda/include/cuda_fp16.hpp \
+ /usr/include/c++/7/utility /usr/include/c++/7/bits/stl_relops.h \
+ /usr/include/c++/7/bits/stl_pair.h /usr/include/c++/7/bits/move.h \
+ /usr/include/c++/7/bits/concept_check.h /usr/include/c++/7/type_traits \
+ /usr/include/c++/7/initializer_list /usr/include/c++/7/cstring \
+ /usr/include/string.h /usr/include/strings.h \
+ /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \
+ /usr/include/x86_64-linux-gnu/bits/string_fortified.h \
+ bazel-out/host/bin/external/local_config_cuda/cuda/_virtual_includes/cuda_headers_virtual/third_party/gpus/cuda/include/library_types.h \
+ bazel-out/host/bin/external/local_config_cuda/cuda/_virtual_includes/cuda_headers_virtual/third_party/gpus/cuda/include/cuda.h \
+ /usr/include/c++/7/stdlib.h /usr/include/c++/7/cstdlib \
+ /usr/lib/gcc/x86_64-linux-gnu/7/include/stdint.h /usr/include/stdint.h \
+ /usr/include/x86_64-linux-gnu/bits/wchar.h \
+ /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
+ tensorflow/stream_executor/cuda/cuda_blas.h \
+ external/com_google_absl/absl/synchronization/mutex.h \
+ /usr/include/c++/7/atomic /usr/include/c++/7/bits/atomic_base.h \
+ /usr/include/c++/7/bits/atomic_lockfree_defines.h \
+ /usr/include/c++/7/cstdint /usr/include/c++/7/string \
+ /usr/include/c++/7/bits/stringfwd.h /usr/include/c++/7/bits/memoryfwd.h \
+ /usr/include/c++/7/bits/char_traits.h \
+ /usr/include/c++/7/bits/stl_algobase.h \
+ /usr/include/c++/7/bits/functexcept.h \
+ /usr/include/c++/7/bits/exception_defines.h \
+ /usr/include/c++/7/ext/numeric_traits.h \
+ /usr/include/c++/7/bits/stl_iterator_base_types.h \
+ /usr/include/c++/7/bits/stl_iterator_base_funcs.h \
+ /usr/include/c++/7/debug/assertions.h \
+ /usr/include/c++/7/bits/stl_iterator.h \
+ /usr/include/c++/7/bits/ptr_traits.h /usr/include/c++/7/debug/debug.h \
+ /usr/include/c++/7/bits/predefined_ops.h \
+ /usr/include/c++/7/bits/postypes.h /usr/include/c++/7/cwchar \
+ /usr/include/wchar.h /usr/lib/gcc/x86_64-linux-gnu/7/include/stdarg.h \
+ /usr/include/x86_64-linux-gnu/bits/types/wint_t.h \
+ /usr/include/x86_64-linux-gnu/bits/types/mbstate_t.h \
+ /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
+ /usr/include/x86_64-linux-gnu/bits/types/__FILE.h \
+ /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
+ /usr/include/x86_64-linux-gnu/bits/wchar2.h \
+ /usr/include/c++/7/bits/allocator.h \
+ /usr/include/x86_64-linux-gnu/c++/7/bits/c++allocator.h \
+ /usr/include/c++/7/ext/new_allocator.h /usr/include/c++/7/new \
+ /usr/include/c++/7/exception /usr/include/c++/7/bits/exception.h \
+ /usr/include/c++/7/bits/exception_ptr.h \
+ /usr/include/c++/7/bits/cxxabi_init_exception.h \
+ /usr/include/c++/7/typeinfo /usr/include/c++/7/bits/hash_bytes.h \
+ /usr/include/c++/7/bits/nested_exception.h \
+ /usr/include/c++/7/bits/localefwd.h \
+ /usr/include/x86_64-linux-gnu/c++/7/bits/c++locale.h \
+ /usr/include/c++/7/clocale /usr/include/locale.h \
+ /usr/include/x86_64-linux-gnu/bits/locale.h /usr/include/c++/7/iosfwd \
+ /usr/include/c++/7/cctype /usr/include/ctype.h \
+ /usr/include/c++/7/bits/ostream_insert.h \
+ /usr/include/c++/7/bits/cxxabi_forced.h \
+ /usr/include/c++/7/bits/stl_function.h \
+ /usr/include/c++/7/backward/binders.h \
+ /usr/include/c++/7/bits/range_access.h \
+ /usr/include/c++/7/bits/basic_string.h \
+ /usr/include/c++/7/ext/atomicity.h \
+ /usr/include/x86_64-linux-gnu/c++/7/bits/gthr.h \
+ /usr/include/x86_64-linux-gnu/c++/7/bits/gthr-default.h \
+ /usr/include/pthread.h /usr/include/sched.h \
+ /usr/include/x86_64-linux-gnu/bits/sched.h \
+ /usr/include/x86_64-linux-gnu/bits/cpu-set.h /usr/include/time.h \
+ /usr/include/x86_64-linux-gnu/bits/time.h \
+ /usr/include/x86_64-linux-gnu/bits/timex.h \
+ /usr/include/x86_64-linux-gnu/bits/types/struct_tm.h \
+ /usr/include/x86_64-linux-gnu/bits/types/struct_itimerspec.h \
+ /usr/include/x86_64-linux-gnu/bits/setjmp.h \
+ /usr/include/x86_64-linux-gnu/c++/7/bits/atomic_word.h \
+ /usr/include/c++/7/ext/alloc_traits.h \
+ /usr/include/c++/7/bits/alloc_traits.h \
+ /usr/include/c++/7/ext/string_conversions.h /usr/include/c++/7/cstdio \
+ /usr/include/stdio.h /usr/include/x86_64-linux-gnu/bits/libio.h \
+ /usr/include/x86_64-linux-gnu/bits/_G_config.h \
+ /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
+ /usr/include/x86_64-linux-gnu/bits/sys_errlist.h \
+ /usr/include/x86_64-linux-gnu/bits/stdio.h \
+ /usr/include/x86_64-linux-gnu/bits/stdio2.h /usr/include/c++/7/cerrno \
+ /usr/include/errno.h /usr/include/x86_64-linux-gnu/bits/errno.h \
+ /usr/include/linux/errno.h /usr/include/x86_64-linux-gnu/asm/errno.h \
+ /usr/include/asm-generic/errno.h /usr/include/asm-generic/errno-base.h \
+ /usr/include/c++/7/bits/functional_hash.h \
+ /usr/include/c++/7/bits/basic_string.tcc \
+ external/com_google_absl/absl/base/const_init.h \
+ external/com_google_absl/absl/base/internal/identity.h \
+ external/com_google_absl/absl/base/internal/low_level_alloc.h \
+ external/com_google_absl/absl/base/attributes.h \
+ external/com_google_absl/absl/base/config.h /usr/include/c++/7/cstddef \
+ external/com_google_absl/absl/base/policy_checks.h \
+ external/com_google_absl/absl/base/port.h \
+ external/com_google_absl/absl/base/optimization.h \
+ external/com_google_absl/absl/base/internal/thread_identity.h \
+ /usr/include/unistd.h /usr/include/x86_64-linux-gnu/bits/posix_opt.h \
+ /usr/include/x86_64-linux-gnu/bits/environments.h \
+ /usr/include/x86_64-linux-gnu/bits/confname.h \
+ /usr/include/x86_64-linux-gnu/bits/getopt_posix.h \
+ /usr/include/x86_64-linux-gnu/bits/getopt_core.h \
+ /usr/include/x86_64-linux-gnu/bits/unistd.h \
+ external/com_google_absl/absl/base/internal/per_thread_tls.h \
+ external/com_google_absl/absl/base/internal/tsan_mutex_interface.h \
+ external/com_google_absl/absl/base/thread_annotations.h \
+ external/com_google_absl/absl/base/internal/thread_annotations.h \
+ external/com_google_absl/absl/synchronization/internal/kernel_timeout.h \
+ /usr/include/c++/7/algorithm /usr/include/c++/7/bits/stl_algo.h \
+ /usr/include/c++/7/bits/algorithmfwd.h \
+ /usr/include/c++/7/bits/stl_heap.h /usr/include/c++/7/bits/stl_tempbuf.h \
+ /usr/include/c++/7/bits/stl_construct.h \
+ /usr/include/c++/7/bits/uniform_int_dist.h /usr/include/c++/7/limits \
+ external/com_google_absl/absl/base/internal/raw_logging.h \
+ external/com_google_absl/absl/base/internal/atomic_hook.h \
+ /usr/include/c++/7/cassert /usr/include/assert.h \
+ external/com_google_absl/absl/base/log_severity.h \
+ /usr/include/c++/7/array /usr/include/c++/7/stdexcept \
+ /usr/include/c++/7/ostream /usr/include/c++/7/ios \
+ /usr/include/c++/7/bits/ios_base.h \
+ /usr/include/c++/7/bits/locale_classes.h \
+ /usr/include/c++/7/bits/locale_classes.tcc \
+ /usr/include/c++/7/system_error \
+ /usr/include/x86_64-linux-gnu/c++/7/bits/error_constants.h \
+ /usr/include/c++/7/streambuf /usr/include/c++/7/bits/streambuf.tcc \
+ /usr/include/c++/7/bits/basic_ios.h \
+ /usr/include/c++/7/bits/locale_facets.h /usr/include/c++/7/cwctype \
+ /usr/include/wctype.h /usr/include/x86_64-linux-gnu/bits/wctype-wchar.h \
+ /usr/include/x86_64-linux-gnu/c++/7/bits/ctype_base.h \
+ /usr/include/c++/7/bits/streambuf_iterator.h \
+ /usr/include/x86_64-linux-gnu/c++/7/bits/ctype_inline.h \
+ /usr/include/c++/7/bits/locale_facets.tcc \
+ /usr/include/c++/7/bits/basic_ios.tcc \
+ /usr/include/c++/7/bits/ostream.tcc \
+ external/com_google_absl/absl/base/macros.h \
+ external/com_google_absl/absl/time/clock.h \
+ external/com_google_absl/absl/time/time.h \
+ /usr/include/x86_64-linux-gnu/sys/time.h /usr/include/c++/7/chrono \
+ /usr/include/c++/7/ratio /usr/include/c++/7/ctime \
+ /usr/include/c++/7/bits/parse_numbers.h \
+ external/com_google_absl/absl/strings/string_view.h \
+ /usr/include/c++/7/iterator /usr/include/c++/7/istream \
+ /usr/include/c++/7/bits/istream.tcc \
+ /usr/include/c++/7/bits/stream_iterator.h \
+ external/com_google_absl/absl/base/internal/throw_delegate.h \
+ external/com_google_absl/absl/time/civil_time.h \
+ external/com_google_absl/absl/time/internal/cctz/include/cctz/civil_time.h \
+ external/com_google_absl/absl/time/internal/cctz/include/cctz/civil_time_detail.h \
+ external/com_google_absl/absl/time/internal/cctz/include/cctz/time_zone.h \
+ external/com_google_absl/absl/synchronization/internal/per_thread_sem.h \
+ external/com_google_absl/absl/synchronization/internal/create_thread_identity.h \
+ tensorflow/core/platform/thread_annotations.h \
+ tensorflow/stream_executor/blas.h /usr/include/c++/7/complex \
+ /usr/include/c++/7/sstream /usr/include/c++/7/bits/sstream.tcc \
+ /usr/include/c++/7/vector /usr/include/c++/7/bits/stl_uninitialized.h \
+ /usr/include/c++/7/bits/stl_vector.h \
+ /usr/include/c++/7/bits/stl_bvector.h /usr/include/c++/7/bits/vector.tcc \
+ tensorflow/stream_executor/host_or_device_scalar.h \
+ tensorflow/stream_executor/device_memory.h \
+ tensorflow/stream_executor/platform/port.h \
+ tensorflow/core/platform/macros.h tensorflow/core/platform/types.h \
+ tensorflow/core/platform/platform.h tensorflow/core/platform/tstring.h \
+ tensorflow/core/platform/cord.h tensorflow/core/platform/default/cord.h \
+ tensorflow/core/platform/ctstring.h \
+ tensorflow/core/platform/ctstring_internal.h \
+ tensorflow/core/platform/default/integral_types.h \
+ tensorflow/stream_executor/platform/logging.h \
+ tensorflow/core/platform/logging.h \
+ tensorflow/core/platform/default/logging.h /usr/include/c++/7/memory \
+ /usr/include/c++/7/bits/stl_raw_storage_iter.h \
+ /usr/include/c++/7/ext/concurrence.h \
+ /usr/include/c++/7/bits/uses_allocator.h \
+ /usr/include/c++/7/bits/unique_ptr.h /usr/include/c++/7/tuple \
+ /usr/include/c++/7/bits/invoke.h /usr/include/c++/7/bits/shared_ptr.h \
+ /usr/include/c++/7/bits/shared_ptr_base.h \
+ /usr/include/c++/7/bits/allocated_ptr.h \
+ /usr/include/c++/7/bits/refwrap.h \
+ /usr/include/c++/7/ext/aligned_buffer.h \
+ /usr/include/c++/7/bits/shared_ptr_atomic.h \
+ /usr/include/c++/7/backward/auto_ptr.h \
+ tensorflow/stream_executor/lib/array_slice.h \
+ external/com_google_absl/absl/types/span.h \
+ external/com_google_absl/absl/meta/type_traits.h \
+ /usr/include/c++/7/functional /usr/include/c++/7/bits/std_function.h \
+ external/com_google_absl/absl/types/internal/span.h \
+ external/com_google_absl/absl/algorithm/algorithm.h \
+ tensorflow/stream_executor/lib/statusor.h \
+ tensorflow/stream_executor/lib/status.h \
+ tensorflow/core/lib/core/status.h tensorflow/core/platform/status.h \
+ tensorflow/core/platform/stringpiece.h \
+ bazel-out/host/bin/tensorflow/core/protobuf/error_codes.pb.h \
+ external/com_google_protobuf/src/google/protobuf/port_def.inc \
+ external/com_google_protobuf/src/google/protobuf/port_undef.inc \
+ external/com_google_protobuf/src/google/protobuf/io/coded_stream.h \
+ /usr/include/c++/7/climits /usr/include/x86_64-linux-gnu/sys/param.h \
+ /usr/include/signal.h /usr/include/x86_64-linux-gnu/bits/signum.h \
+ /usr/include/x86_64-linux-gnu/bits/signum-generic.h \
+ /usr/include/x86_64-linux-gnu/bits/types/sig_atomic_t.h \
+ /usr/include/x86_64-linux-gnu/bits/types/siginfo_t.h \
+ /usr/include/x86_64-linux-gnu/bits/types/__sigval_t.h \
+ /usr/include/x86_64-linux-gnu/bits/siginfo-arch.h \
+ /usr/include/x86_64-linux-gnu/bits/siginfo-consts.h \
+ /usr/include/x86_64-linux-gnu/bits/siginfo-consts-arch.h \
+ /usr/include/x86_64-linux-gnu/bits/types/sigval_t.h \
+ /usr/include/x86_64-linux-gnu/bits/types/sigevent_t.h \
+ /usr/include/x86_64-linux-gnu/bits/sigevent-consts.h \
+ /usr/include/x86_64-linux-gnu/bits/sigaction.h \
+ /usr/include/x86_64-linux-gnu/bits/sigcontext.h \
+ /usr/include/x86_64-linux-gnu/bits/types/stack_t.h \
+ /usr/include/x86_64-linux-gnu/sys/ucontext.h \
+ /usr/include/x86_64-linux-gnu/bits/sigstack.h \
+ /usr/include/x86_64-linux-gnu/bits/ss_flags.h \
+ /usr/include/x86_64-linux-gnu/bits/types/struct_sigstack.h \
+ /usr/include/x86_64-linux-gnu/bits/sigthread.h \
+ /usr/include/x86_64-linux-gnu/bits/param.h /usr/include/linux/param.h \
+ /usr/include/x86_64-linux-gnu/asm/param.h \
+ /usr/include/asm-generic/param.h \
+ external/com_google_protobuf/src/google/protobuf/stubs/common.h \
+ /usr/include/c++/7/iostream /usr/include/c++/7/map \
+ /usr/include/c++/7/bits/stl_tree.h /usr/include/c++/7/bits/stl_map.h \
+ /usr/include/c++/7/bits/stl_multimap.h /usr/include/c++/7/set \
+ /usr/include/c++/7/bits/stl_set.h /usr/include/c++/7/bits/stl_multiset.h \
+ external/com_google_protobuf/src/google/protobuf/stubs/port.h \
+ external/com_google_protobuf/src/google/protobuf/stubs/platform_macros.h \
+ /usr/include/byteswap.h \
+ external/com_google_protobuf/src/google/protobuf/stubs/macros.h \
+ external/com_google_protobuf/src/google/protobuf/port.h \
+ external/com_google_protobuf/src/google/protobuf/arena.h \
+ external/com_google_protobuf/src/google/protobuf/arena_impl.h \
+ external/com_google_protobuf/src/google/protobuf/stubs/logging.h \
+ external/com_google_protobuf/src/google/protobuf/arenastring.h \
+ external/com_google_protobuf/src/google/protobuf/stubs/fastmem.h \
+ external/com_google_protobuf/src/google/protobuf/generated_message_table_driven.h \
+ external/com_google_protobuf/src/google/protobuf/map.h \
+ external/com_google_protobuf/src/google/protobuf/generated_enum_util.h \
+ external/com_google_protobuf/src/google/protobuf/map_type_handler.h \
+ external/com_google_protobuf/src/google/protobuf/parse_context.h \
+ external/com_google_protobuf/src/google/protobuf/io/zero_copy_stream.h \
+ external/com_google_protobuf/src/google/protobuf/implicit_weak_message.h \
+ external/com_google_protobuf/src/google/protobuf/message_lite.h \
+ external/com_google_protobuf/src/google/protobuf/stubs/once.h \
+ /usr/include/c++/7/mutex /usr/include/c++/7/bits/std_mutex.h \
+ external/com_google_protobuf/src/google/protobuf/stubs/strutil.h \
+ external/com_google_protobuf/src/google/protobuf/stubs/stringpiece.h \
+ external/com_google_protobuf/src/google/protobuf/stubs/hash.h \
+ /usr/include/c++/7/unordered_map /usr/include/c++/7/bits/hashtable.h \
+ /usr/include/c++/7/bits/hashtable_policy.h \
+ /usr/include/c++/7/bits/unordered_map.h /usr/include/c++/7/unordered_set \
+ /usr/include/c++/7/bits/unordered_set.h \
+ external/com_google_protobuf/src/google/protobuf/metadata_lite.h \
+ external/com_google_protobuf/src/google/protobuf/generated_message_util.h \
+ external/com_google_protobuf/src/google/protobuf/has_bits.h \
+ external/com_google_protobuf/src/google/protobuf/wire_format_lite.h \
+ external/com_google_protobuf/src/google/protobuf/repeated_field.h \
+ external/com_google_protobuf/src/google/protobuf/stubs/casts.h \
+ external/com_google_protobuf/src/google/protobuf/map_entry_lite.h \
+ external/com_google_protobuf/src/google/protobuf/map_field_lite.h \
+ external/com_google_protobuf/src/google/protobuf/inlined_string_field.h \
+ external/com_google_protobuf/src/google/protobuf/metadata.h \
+ external/com_google_protobuf/src/google/protobuf/unknown_field_set.h \
+ external/com_google_protobuf/src/google/protobuf/generated_message_reflection.h \
+ external/com_google_protobuf/src/google/protobuf/generated_enum_reflection.h \
+ external/com_google_protobuf/src/google/protobuf/message.h \
+ external/com_google_protobuf/src/google/protobuf/descriptor.h \
+ external/com_google_protobuf/src/google/protobuf/stubs/mutex.h \
+ external/com_google_protobuf/src/google/protobuf/extension_set.h \
+ tensorflow/stream_executor/lib/error.h \
+ tensorflow/stream_executor/lib/statusor_internals.h \
+ tensorflow/stream_executor/plugin_registry.h \
+ tensorflow/stream_executor/dnn.h \
+ external/com_google_absl/absl/types/optional.h \
+ external/com_google_absl/absl/utility/utility.h \
+ external/com_google_absl/absl/base/internal/inline_variable.h \
+ external/com_google_absl/absl/base/internal/invoke.h \
+ external/com_google_absl/absl/types/bad_optional_access.h \
+ external/com_google_absl/absl/types/internal/optional.h \
+ external/com_google_absl/absl/memory/memory.h \
+ bazel-out/host/bin/tensorflow/stream_executor/dnn.pb.h \
+ tensorflow/stream_executor/fft.h tensorflow/stream_executor/platform.h \
+ tensorflow/stream_executor/device_description.h \
+ tensorflow/stream_executor/launch_dim.h \
+ external/com_google_absl/absl/strings/str_cat.h \
+ external/com_google_absl/absl/strings/numbers.h \
+ external/com_google_absl/absl/numeric/int128.h \
+ external/com_google_absl/absl/numeric/int128_have_intrinsic.inc \
+ tensorflow/stream_executor/device_options.h \
+ tensorflow/stream_executor/lib/status_macros.h \
+ tensorflow/stream_executor/plugin.h \
+ tensorflow/stream_executor/trace_listener.h \
+ tensorflow/stream_executor/kernel.h \
+ tensorflow/stream_executor/kernel_cache_config.h \
+ tensorflow/stream_executor/rng.h \
+ external/com_google_absl/absl/strings/str_format.h \
+ external/com_google_absl/absl/strings/internal/str_format/arg.h \
+ /usr/include/c++/7/iomanip /usr/include/c++/7/locale \
+ /usr/include/c++/7/bits/locale_facets_nonio.h \
+ /usr/include/x86_64-linux-gnu/c++/7/bits/time_members.h \
+ /usr/include/x86_64-linux-gnu/c++/7/bits/messages_members.h \
+ /usr/include/libintl.h /usr/include/c++/7/bits/codecvt.h \
+ /usr/include/c++/7/bits/locale_facets_nonio.tcc \
+ /usr/include/c++/7/bits/locale_conv.h \
+ /usr/include/c++/7/bits/stringfwd.h /usr/include/c++/7/bits/allocator.h \
+ /usr/include/c++/7/bits/codecvt.h /usr/include/c++/7/bits/unique_ptr.h \
+ /usr/include/c++/7/bits/quoted_string.h \
+ external/com_google_absl/absl/strings/internal/str_format/extension.h \
+ external/com_google_absl/absl/strings/internal/str_format/output.h \
+ external/com_google_absl/absl/strings/internal/str_format/bind.h \
+ external/com_google_absl/absl/container/inlined_vector.h \
+ external/com_google_absl/absl/container/internal/inlined_vector.h \
+ external/com_google_absl/absl/container/internal/compressed_tuple.h \
+ external/com_google_absl/absl/strings/internal/str_format/checker.h \
+ external/com_google_absl/absl/strings/internal/str_format/parser.h \
+ third_party/eigen3/Eigen/Core external/eigen_archive/Eigen/Core \
+ external/eigen_archive/Eigen/src/Core/util/DisableStupidWarnings.h \
+ external/eigen_archive/Eigen/src/Core/util/Macros.h \
+ external/eigen_archive/Eigen/src/Core/util/ConfigureVectorization.h \
+ /usr/lib/gcc/x86_64-linux-gnu/7/include/mmintrin.h \
+ /usr/lib/gcc/x86_64-linux-gnu/7/include/emmintrin.h \
+ /usr/lib/gcc/x86_64-linux-gnu/7/include/xmmintrin.h \
+ /usr/lib/gcc/x86_64-linux-gnu/7/include/mm_malloc.h \
+ external/eigen_archive/Eigen/src/Core/util/MKL_support.h \
+ external/eigen_archive/Eigen/src/Core/util/Constants.h \
+ external/eigen_archive/Eigen/src/Core/util/Meta.h \
+ external/eigen_archive/Eigen/src/Core/util/ForwardDeclarations.h \
+ external/eigen_archive/Eigen/src/Core/util/StaticAssert.h \
+ external/eigen_archive/Eigen/src/Core/util/XprHelper.h \
+ external/eigen_archive/Eigen/src/Core/util/Memory.h \
+ external/eigen_archive/Eigen/src/Core/util/IntegralConstant.h \
+ external/eigen_archive/Eigen/src/Core/util/SymbolicIndex.h \
+ external/eigen_archive/Eigen/src/Core/NumTraits.h \
+ external/eigen_archive/Eigen/src/Core/MathFunctions.h \
+ external/eigen_archive/Eigen/src/Core/GenericPacketMath.h \
+ external/eigen_archive/Eigen/src/Core/MathFunctionsImpl.h \
+ external/eigen_archive/Eigen/src/Core/arch/Default/ConjHelper.h \
+ external/eigen_archive/Eigen/src/Core/arch/Default/Half.h \
+ external/eigen_archive/Eigen/src/Core/arch/Default/TypeCasting.h \
+ external/eigen_archive/Eigen/src/Core/arch/Default/GenericPacketMathFunctionsFwd.h \
+ external/eigen_archive/Eigen/src/Core/arch/SSE/PacketMath.h \
+ external/eigen_archive/Eigen/src/Core/arch/SSE/TypeCasting.h \
+ external/eigen_archive/Eigen/src/Core/arch/SSE/MathFunctions.h \
+ external/eigen_archive/Eigen/src/Core/arch/SSE/Complex.h \
+ external/eigen_archive/Eigen/src/Core/arch/Default/Settings.h \
+ external/eigen_archive/Eigen/src/Core/arch/Default/GenericPacketMathFunctions.h \
+ external/eigen_archive/Eigen/src/Core/functors/TernaryFunctors.h \
+ external/eigen_archive/Eigen/src/Core/functors/BinaryFunctors.h \
+ external/eigen_archive/Eigen/src/Core/functors/UnaryFunctors.h \
+ external/eigen_archive/Eigen/src/Core/functors/NullaryFunctors.h \
+ external/eigen_archive/Eigen/src/Core/functors/StlFunctors.h \
+ external/eigen_archive/Eigen/src/Core/functors/AssignmentFunctors.h \
+ external/eigen_archive/Eigen/src/Core/util/IndexedViewHelper.h \
+ external/eigen_archive/Eigen/src/Core/util/ReshapedHelper.h \
+ external/eigen_archive/Eigen/src/Core/ArithmeticSequence.h \
+ external/eigen_archive/Eigen/src/Core/IO.h \
+ external/eigen_archive/Eigen/src/Core/DenseCoeffsBase.h \
+ external/eigen_archive/Eigen/src/Core/DenseBase.h \
+ external/eigen_archive/Eigen/src/Core/../plugins/CommonCwiseUnaryOps.h \
+ external/eigen_archive/Eigen/src/Core/../plugins/BlockMethods.h \
+ external/eigen_archive/Eigen/src/Core/../plugins/IndexedViewMethods.h \
+ external/eigen_archive/Eigen/src/Core/../plugins/IndexedViewMethods.h \
+ external/eigen_archive/Eigen/src/Core/../plugins/ReshapedMethods.h \
+ external/eigen_archive/Eigen/src/Core/../plugins/ReshapedMethods.h \
+ external/eigen_archive/Eigen/src/Core/MatrixBase.h \
+ external/eigen_archive/Eigen/src/Core/../plugins/CommonCwiseBinaryOps.h \
+ external/eigen_archive/Eigen/src/Core/../plugins/MatrixCwiseUnaryOps.h \
+ external/eigen_archive/Eigen/src/Core/../plugins/MatrixCwiseBinaryOps.h \
+ external/eigen_archive/Eigen/src/Core/EigenBase.h \
+ external/eigen_archive/Eigen/src/Core/Product.h \
+ external/eigen_archive/Eigen/src/Core/CoreEvaluators.h \
+ external/eigen_archive/Eigen/src/Core/AssignEvaluator.h \
+ external/eigen_archive/Eigen/src/Core/Assign.h \
+ external/eigen_archive/Eigen/src/Core/ArrayBase.h \
+ external/eigen_archive/Eigen/src/Core/../plugins/ArrayCwiseUnaryOps.h \
+ external/eigen_archive/Eigen/src/Core/../plugins/ArrayCwiseBinaryOps.h \
+ external/eigen_archive/Eigen/src/Core/util/BlasUtil.h \
+ external/eigen_archive/Eigen/src/Core/DenseStorage.h \
+ external/eigen_archive/Eigen/src/Core/NestByValue.h \
+ external/eigen_archive/Eigen/src/Core/ReturnByValue.h \
+ external/eigen_archive/Eigen/src/Core/NoAlias.h \
+ external/eigen_archive/Eigen/src/Core/PlainObjectBase.h \
+ external/eigen_archive/Eigen/src/Core/Matrix.h \
+ external/eigen_archive/Eigen/src/Core/Array.h \
+ external/eigen_archive/Eigen/src/Core/CwiseTernaryOp.h \
+ external/eigen_archive/Eigen/src/Core/CwiseBinaryOp.h \
+ external/eigen_archive/Eigen/src/Core/CwiseUnaryOp.h \
+ external/eigen_archive/Eigen/src/Core/CwiseNullaryOp.h \
+ external/eigen_archive/Eigen/src/Core/CwiseUnaryView.h \
+ external/eigen_archive/Eigen/src/Core/SelfCwiseBinaryOp.h \
+ external/eigen_archive/Eigen/src/Core/Dot.h \
+ external/eigen_archive/Eigen/src/Core/StableNorm.h \
+ external/eigen_archive/Eigen/src/Core/Stride.h \
+ external/eigen_archive/Eigen/src/Core/MapBase.h \
+ external/eigen_archive/Eigen/src/Core/Map.h \
+ external/eigen_archive/Eigen/src/Core/Ref.h \
+ external/eigen_archive/Eigen/src/Core/Block.h \
+ external/eigen_archive/Eigen/src/Core/VectorBlock.h \
+ external/eigen_archive/Eigen/src/Core/IndexedView.h \
+ external/eigen_archive/Eigen/src/Core/Reshaped.h \
+ external/eigen_archive/Eigen/src/Core/Transpose.h \
+ external/eigen_archive/Eigen/src/Core/DiagonalMatrix.h \
+ external/eigen_archive/Eigen/src/Core/Diagonal.h \
+ external/eigen_archive/Eigen/src/Core/DiagonalProduct.h \
+ external/eigen_archive/Eigen/src/Core/Redux.h \
+ external/eigen_archive/Eigen/src/Core/Visitor.h \
+ external/eigen_archive/Eigen/src/Core/Fuzzy.h \
+ external/eigen_archive/Eigen/src/Core/Swap.h \
+ external/eigen_archive/Eigen/src/Core/CommaInitializer.h \
+ external/eigen_archive/Eigen/src/Core/GeneralProduct.h \
+ external/eigen_archive/Eigen/src/Core/Solve.h \
+ external/eigen_archive/Eigen/src/Core/Inverse.h \
+ external/eigen_archive/Eigen/src/Core/SolverBase.h \
+ external/eigen_archive/Eigen/src/Core/PermutationMatrix.h \
+ external/eigen_archive/Eigen/src/Core/Transpositions.h \
+ external/eigen_archive/Eigen/src/Core/TriangularMatrix.h \
+ external/eigen_archive/Eigen/src/Core/SelfAdjointView.h \
+ external/eigen_archive/Eigen/src/Core/products/GeneralBlockPanelKernel.h \
+ external/eigen_archive/Eigen/src/Core/products/Parallelizer.h \
+ external/eigen_archive/Eigen/src/Core/ProductEvaluators.h \
+ external/eigen_archive/Eigen/src/Core/products/GeneralMatrixVector.h \
+ external/eigen_archive/Eigen/src/Core/products/GeneralMatrixMatrix.h \
+ external/eigen_archive/Eigen/src/Core/SolveTriangular.h \
+ external/eigen_archive/Eigen/src/Core/products/GeneralMatrixMatrixTriangular.h \
+ external/eigen_archive/Eigen/src/Core/products/SelfadjointMatrixVector.h \
+ external/eigen_archive/Eigen/src/Core/products/SelfadjointMatrixMatrix.h \
+ external/eigen_archive/Eigen/src/Core/products/SelfadjointProduct.h \
+ external/eigen_archive/Eigen/src/Core/products/SelfadjointRank2Update.h \
+ external/eigen_archive/Eigen/src/Core/products/TriangularMatrixVector.h \
+ external/eigen_archive/Eigen/src/Core/products/TriangularMatrixMatrix.h \
+ external/eigen_archive/Eigen/src/Core/products/TriangularSolverMatrix.h \
+ external/eigen_archive/Eigen/src/Core/products/TriangularSolverVector.h \
+ external/eigen_archive/Eigen/src/Core/BandMatrix.h \
+ external/eigen_archive/Eigen/src/Core/CoreIterators.h \
+ external/eigen_archive/Eigen/src/Core/ConditionEstimator.h \
+ external/eigen_archive/Eigen/src/Core/BooleanRedux.h \
+ external/eigen_archive/Eigen/src/Core/Select.h \
+ external/eigen_archive/Eigen/src/Core/VectorwiseOp.h \
+ external/eigen_archive/Eigen/src/Core/PartialReduxEvaluator.h \
+ external/eigen_archive/Eigen/src/Core/Random.h \
+ external/eigen_archive/Eigen/src/Core/Replicate.h \
+ external/eigen_archive/Eigen/src/Core/Reverse.h \
+ external/eigen_archive/Eigen/src/Core/ArrayWrapper.h \
+ external/eigen_archive/Eigen/src/Core/StlIterators.h \
+ external/eigen_archive/Eigen/src/Core/GlobalFunctions.h \
+ external/eigen_archive/Eigen/src/Core/util/ReenableStupidWarnings.h \
+ tensorflow/core/util/env_var.h \
+ tensorflow/stream_executor/cuda/cuda_activation.h \
+ tensorflow/stream_executor/gpu/gpu_activation.h \
+ tensorflow/stream_executor/cuda/cuda_gpu_executor.h \
+ tensorflow/stream_executor/gpu/gpu_executor.h \
+ tensorflow/stream_executor/event.h \
+ tensorflow/stream_executor/gpu/gpu_kernel.h \
+ tensorflow/stream_executor/gpu/gpu_driver.h \
+ tensorflow/stream_executor/gpu/gpu_types.h \
+ bazel-out/host/bin/external/local_config_cuda/cuda/_virtual_includes/cuda_headers_virtual/third_party/gpus/cuda/include/cuComplex.h \
+ tensorflow/stream_executor/stream_executor_internal.h \
+ tensorflow/stream_executor/allocator_stats.h \
+ tensorflow/stream_executor/kernel_spec.h \
+ tensorflow/stream_executor/module_spec.h \
+ tensorflow/stream_executor/shared_memory_config.h \
+ tensorflow/stream_executor/cuda/cuda_helpers.h \
+ tensorflow/stream_executor/gpu/gpu_helpers.h \
+ tensorflow/stream_executor/cuda/cuda_platform_id.h \
+ tensorflow/stream_executor/cuda/cuda_stream.h \
+ tensorflow/stream_executor/gpu/gpu_stream.h \
+ tensorflow/stream_executor/cuda/cuda_timer.h \
+ tensorflow/stream_executor/gpu/gpu_timer.h \
+ tensorflow/stream_executor/lib/env.h tensorflow/core/platform/env.h \
+ tensorflow/core/platform/env_time.h tensorflow/core/platform/errors.h \
+ external/com_google_absl/absl/strings/str_join.h \
+ external/com_google_absl/absl/strings/internal/str_join_internal.h \
+ external/com_google_absl/absl/strings/internal/ostringstream.h \
+ external/com_google_absl/absl/strings/internal/resize_uninitialized.h \
+ tensorflow/core/platform/str_util.h \
+ external/com_google_absl/absl/strings/str_split.h \
+ external/com_google_absl/absl/strings/internal/str_split_internal.h \
+ external/com_google_absl/absl/strings/strip.h \
+ external/com_google_absl/absl/strings/ascii.h \
+ external/com_google_absl/absl/strings/match.h \
+ tensorflow/core/platform/strcat.h tensorflow/core/platform/numbers.h \
+ tensorflow/core/platform/file_system.h \
+ tensorflow/core/platform/file_statistics.h \
+ tensorflow/core/platform/mutex.h /usr/include/c++/7/condition_variable \
+ tensorflow/core/platform/default/mutex_data.h \
+ tensorflow/core/platform/default/mutex.h tensorflow/core/platform/numa.h \
+ tensorflow/core/platform/protobuf.h \
+ external/com_google_protobuf/src/google/protobuf/io/tokenizer.h \
+ external/com_google_protobuf/src/google/protobuf/descriptor.pb.h \
+ external/com_google_protobuf/src/google/protobuf/dynamic_message.h \
+ external/com_google_protobuf/src/google/protobuf/text_format.h \
+ external/com_google_protobuf/src/google/protobuf/util/json_util.h \
+ external/com_google_protobuf/src/google/protobuf/util/type_resolver.h \
+ external/com_google_protobuf/src/google/protobuf/type.pb.h \
+ external/com_google_protobuf/src/google/protobuf/any.pb.h \
+ external/com_google_protobuf/src/google/protobuf/any.h \
+ external/com_google_protobuf/src/google/protobuf/source_context.pb.h \
+ external/com_google_protobuf/src/google/protobuf/stubs/status.h \
+ external/com_google_protobuf/src/google/protobuf/stubs/bytestream.h \
+ external/com_google_protobuf/src/google/protobuf/util/type_resolver_util.h \
+ external/com_google_protobuf/src/google/protobuf/io/zero_copy_stream_impl_lite.h \
+ external/com_google_protobuf/src/google/protobuf/stubs/callback.h \
+ external/com_google_protobuf/src/google/protobuf/stubs/stl_util.h \
+ tensorflow/stream_executor/lib/initialize.h \
+ tensorflow/stream_executor/platform/initialize.h \
+ tensorflow/stream_executor/platform/platform.h \
+ tensorflow/stream_executor/platform/default/initialize.h \
+ tensorflow/stream_executor/scratch_allocator.h \
+ tensorflow/stream_executor/temporary_device_memory.h \
+ tensorflow/stream_executor/stream_executor.h \
+ tensorflow/stream_executor/multi_platform_manager.h \
+ tensorflow/stream_executor/stream.h \
+ tensorflow/stream_executor/temporary_memory_manager.h \
+ tensorflow/stream_executor/stream_executor_pimpl.h \
+ tensorflow/stream_executor/device_memory_allocator.h \
+ tensorflow/core/lib/core/errors.h \
+ tensorflow/stream_executor/lib/threadpool.h \
+ tensorflow/core/lib/core/threadpool.h \
+ tensorflow/core/platform/threadpool.h \
+ tensorflow/core/platform/threadpool_interface.h \
+ third_party/eigen3/unsupported/Eigen/CXX11/ThreadPool \
+ external/eigen_archive/unsupported/Eigen/CXX11/ThreadPool \
+ external/eigen_archive/unsupported/Eigen/CXX11/../../../Eigen/Core \
+ external/eigen_archive/unsupported/Eigen/CXX11/../../../Eigen/src/Core/util/DisableStupidWarnings.h \
+ /usr/include/c++/7/deque /usr/include/c++/7/bits/stl_deque.h \
+ /usr/include/c++/7/bits/deque.tcc /usr/include/c++/7/thread \
+ external/eigen_archive/unsupported/Eigen/CXX11/src/util/CXX11Meta.h \
+ external/eigen_archive/unsupported/Eigen/CXX11/src/util/EmulateArray.h \
+ external/eigen_archive/unsupported/Eigen/CXX11/src/util/CXX11Workarounds.h \
+ external/eigen_archive/unsupported/Eigen/CXX11/src/util/MaxSizeVector.h \
+ external/eigen_archive/unsupported/Eigen/CXX11/src/ThreadPool/ThreadLocal.h \
+ external/eigen_archive/unsupported/Eigen/CXX11/src/ThreadPool/ThreadYield.h \
+ external/eigen_archive/unsupported/Eigen/CXX11/src/ThreadPool/ThreadCancel.h \
+ external/eigen_archive/unsupported/Eigen/CXX11/src/ThreadPool/EventCount.h \
+ external/eigen_archive/unsupported/Eigen/CXX11/src/ThreadPool/RunQueue.h \
+ external/eigen_archive/unsupported/Eigen/CXX11/src/ThreadPool/ThreadPoolInterface.h \
+ external/eigen_archive/unsupported/Eigen/CXX11/src/ThreadPool/ThreadEnvironment.h \
+ external/eigen_archive/unsupported/Eigen/CXX11/src/ThreadPool/Barrier.h \
+ external/eigen_archive/unsupported/Eigen/CXX11/src/ThreadPool/NonBlockingThreadPool.h \
+ external/eigen_archive/unsupported/Eigen/CXX11/../../../Eigen/src/Core/util/ReenableStupidWarnings.h \
+ tensorflow/stream_executor/lib/thread_options.h \
+ tensorflow/stream_executor/timer.h

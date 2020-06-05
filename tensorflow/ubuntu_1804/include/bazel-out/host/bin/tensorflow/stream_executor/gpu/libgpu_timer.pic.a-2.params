@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/stream_executor/gpu/libgpu_timer.pic.a
+bazel-out/host/bin/tensorflow/stream_executor/gpu/_objs/gpu_timer/gpu_timer.pic.o

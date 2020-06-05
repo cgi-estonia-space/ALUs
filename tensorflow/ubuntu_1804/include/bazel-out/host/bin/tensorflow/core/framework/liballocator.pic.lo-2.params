@@ -1,0 +1,4 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/framework/liballocator.pic.lo
+bazel-out/host/bin/tensorflow/core/framework/_objs/allocator/allocator.pic.o
+bazel-out/host/bin/tensorflow/core/framework/_objs/allocator/tracking_allocator.pic.o

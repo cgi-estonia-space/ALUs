@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/grappler/utils/libtraversal.pic.a
+bazel-out/host/bin/tensorflow/core/grappler/utils/_objs/traversal/traversal.pic.o

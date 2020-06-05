@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/framework/libtensor_description_proto_cc_impl.pic.lo
+bazel-out/host/bin/tensorflow/core/framework/_objs/tensor_description_proto_cc_impl/tensor_description.pb.pic.o

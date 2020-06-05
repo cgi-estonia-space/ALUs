@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/framework/libtypes_proto_cc_impl.pic.lo
+bazel-out/host/bin/tensorflow/core/framework/_objs/types_proto_cc_impl/types.pb.pic.o

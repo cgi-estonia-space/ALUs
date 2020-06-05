@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/platform/s3/libaws_crypto.pic.lo
+bazel-out/host/bin/tensorflow/core/platform/s3/_objs/aws_crypto/aws_crypto.pic.o

@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/platform/default/libmutex.pic.a
+bazel-out/host/bin/tensorflow/core/platform/default/_objs/mutex/mutex.pic.o

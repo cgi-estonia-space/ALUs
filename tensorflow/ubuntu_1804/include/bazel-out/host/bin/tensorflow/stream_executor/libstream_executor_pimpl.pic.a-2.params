@@ -1,0 +1,4 @@
+rcsD
+bazel-out/host/bin/tensorflow/stream_executor/libstream_executor_pimpl.pic.a
+bazel-out/host/bin/tensorflow/stream_executor/_objs/stream_executor_pimpl/stream.pic.o
+bazel-out/host/bin/tensorflow/stream_executor/_objs/stream_executor_pimpl/stream_executor_pimpl.pic.o

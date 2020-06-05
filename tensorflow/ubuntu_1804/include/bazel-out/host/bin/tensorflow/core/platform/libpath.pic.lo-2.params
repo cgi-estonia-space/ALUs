@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/platform/libpath.pic.lo
+bazel-out/host/bin/tensorflow/core/platform/_objs/path/path.pic.o

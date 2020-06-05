@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/stream_executor/cuda/libcurand_plugin.pic.lo
+bazel-out/host/bin/tensorflow/stream_executor/cuda/_objs/curand_plugin/cuda_rng.pic.o

@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/platform/default/libunbounded_work_queue.pic.a
+bazel-out/host/bin/tensorflow/core/platform/default/_objs/unbounded_work_queue/unbounded_work_queue.pic.o

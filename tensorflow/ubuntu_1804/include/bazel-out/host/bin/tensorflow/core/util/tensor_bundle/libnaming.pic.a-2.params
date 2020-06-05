@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/util/tensor_bundle/libnaming.pic.a
+bazel-out/host/bin/tensorflow/core/util/tensor_bundle/_objs/naming/naming.pic.o

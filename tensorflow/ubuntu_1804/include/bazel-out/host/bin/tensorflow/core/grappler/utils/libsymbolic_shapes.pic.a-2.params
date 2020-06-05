@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/grappler/utils/libsymbolic_shapes.pic.a
+bazel-out/host/bin/tensorflow/core/grappler/utils/_objs/symbolic_shapes/symbolic_shapes.pic.o
