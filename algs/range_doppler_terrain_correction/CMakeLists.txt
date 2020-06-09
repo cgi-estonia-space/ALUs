@@ -1,7 +1,8 @@
 
 list(APPEND TERRAIN_CORRECTION_SOURCES
-        ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/src/get_position.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/local_dem.cu
+        ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction.cpp
         )
 
 list(APPEND TERRAIN_CORRECTION_INCLUDE_DIRS
@@ -9,6 +10,8 @@ list(APPEND TERRAIN_CORRECTION_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/../../util/common/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/cuda/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/gdal/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/sentinel1/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include
         )
 
 add_library(terrain-correction-obj

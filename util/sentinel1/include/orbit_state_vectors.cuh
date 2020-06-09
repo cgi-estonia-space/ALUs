@@ -16,15 +16,15 @@
 
 #include <cmath>
 
-#include "PosVector.hpp"
+#include "pos_vector.h"
 #include "orbit_state_vector.h"
 
 namespace alus {
 namespace s1tbx {
 namespace orbitstatevectors {
 
-inline __device__ __host__ snapengine::PosVector GetPositionImpl(double time,
-                                                                 KernelArray<snapengine::OrbitStateVector> vectors) {
+inline __device__ __host__ snapengine::PosVector GetPositionImpl(
+    double time, cudautil::KernelArray<snapengine::OrbitStateVector> vectors) {
     const int nv{8};
     const int vectorsSize = vectors.size;
     // TODO: This should be done once.

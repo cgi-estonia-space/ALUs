@@ -12,7 +12,7 @@ using namespace alus::tests;
 
 namespace {
 
-class TiePointGridTester : public CudaFriendlyObject {
+class TiePointGridTester : public cuda::CudaFriendlyObject {
    public:
     // Array values are received by running terrain correction on
     // S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb.dim data file.
@@ -30,7 +30,7 @@ class TiePointGridTester : public CudaFriendlyObject {
         58.507614, 58.515766, 58.52381,  58.531754, 58.539593, 58.39631,  58.40671,  58.416935, 58.426983, 58.436863,
         58.446587, 58.45615,  58.465565, 58.474834, 58.483967, 58.49296,  58.501827, 58.510563, 58.51918,  58.52767,
         58.536053, 58.544315, 58.55247,  58.56052,  58.568466, 58.57631};
-    KernelArray<float> tie_points_ = {tie_points_array_, 126};
+    cudautil::KernelArray<float> tie_points_ = {tie_points_array_, 126};
 
     const double EXPECTED_RESULT_ = 58.21324222804141;
     double end_result_;

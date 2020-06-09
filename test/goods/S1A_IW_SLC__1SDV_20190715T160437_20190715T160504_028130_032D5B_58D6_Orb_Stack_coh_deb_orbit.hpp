@@ -20,7 +20,7 @@
 #include <vector>
 
 #include "orbit_state_vector.h"
-#include "PosVector.hpp"
+#include "pos_vector.h"
 #include "product_data.h"
 
 namespace alus::goods{

@@ -13,7 +13,7 @@ inline __device__ __host__ double Interpolate(
     const int w = grid->grid_width;
     const int j1 = j0 + 1;
     const int i1 = i0 + 1;
-    const KernelArray<float> TIE_POINTS = grid->tie_points;
+    const cudautil::KernelArray<float> TIE_POINTS = grid->tie_points;
 
     return mathutils::Interpolate2D(wi,
                                     wj,

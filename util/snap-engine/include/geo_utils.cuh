@@ -17,15 +17,15 @@
 
 #include "Constants.hpp"
 #include "GeoUtils.hpp"
-#include "PosVector.hpp"
+#include "pos_vector.h"
 
 namespace alus {
 namespace snapengine {
-namespace GeoUtils {
+namespace geoutils {
 /**
  * Convert geodetic coordinate into cartesian XYZ coordinate with specified geodetic system.
  *
- * Duplicate of a SNAP's GeoUtils.java's geo2xyzWGS84() for native.
+ * Duplicate of a SNAP's geoutils.java's geo2xyzWGS84() for native.
  * Copied from a snap-engine's(https://github.com/senbox-org/snap-engine) repository originally stated to be implemented
  * by "Copyright (C) 2014 by Array Systems Computing Inc. http://www.array.ca"
  *
@@ -34,7 +34,7 @@ namespace GeoUtils {
  * @param altitude  The altitude of the given pixel (in m)
  * @param xyz       The xyz coordinates of the given pixel.
  */
-inline __device__ __host__ void geo2xyzWGS84_fast(double latitude, double longitude, double altitude, PosVector& xyz) {
+inline __device__ __host__ void Geo2xyzWgs84Impl(double latitude, double longitude, double altitude, PosVector& xyz) {
     double const lat = latitude * constants::DTOR;
     double const lon = longitude * constants::DTOR;
 
@@ -47,6 +47,6 @@ inline __device__ __host__ void geo2xyzWGS84_fast(double latitude, double longit
     xyz.z = (N + altitude - WGS84::e2 * N) * sinLat;
     // xyz.z = (WGS84.e2inv * N  + altitude) * sinLat;
 }
-}  // namespace GeoUtils
+}  // namespace geoutils
 }  // namespace snapEngine
 }  // namespace alus

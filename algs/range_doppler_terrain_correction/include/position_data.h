@@ -13,19 +13,21 @@
  */
 #pragma once
 
-#include "PosVector.hpp"
+#include "pos_vector.h"
 
-namespace slap {
+namespace alus {
+namespace terraincorrection {
 
 /**
  * A copy of RangeDopplerGeoCodingOp.java's private PositionData class.
  */
 struct PositionData final {
-    snap_engine::PosVector earthPoint;
-    snap_engine::PosVector sensorPos;
-    double azimuthIndex;
-    double rangeIndex;
-    double slantRange;
+    snapengine::PosVector earth_point;
+    snapengine::PosVector sensor_pos;
+    double azimuth_index;
+    double range_index;
+    double slant_range;
 };
 
+}  // namespace terraincorrection
 }  // namespace slap

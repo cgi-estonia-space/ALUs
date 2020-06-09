@@ -17,12 +17,13 @@
 #include "gmock/gmock.h"
 
 #include "../goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_orbit.hpp"
-#include "PosVector.hpp"
+#include "pos_vector.h"
 #include "orbit_state_vectors.h"
 
 namespace {
 
 using namespace alus;
+using namespace alus::cudautil;
 using namespace alus::goods;
 using namespace alus::snapengine;
 

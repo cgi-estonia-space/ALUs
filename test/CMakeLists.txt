@@ -38,6 +38,7 @@ endif()
 list(APPEND TEST_SOURCES
         src/dataset_test.cpp
         src/terrain_correction_test.cpp
+        src/terrain_correction_test_kernels.cu
         src/dem_test.cpp
         src/orbit_state_vectors_test.cpp
         src/tests_common.cpp

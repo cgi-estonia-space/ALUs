@@ -17,7 +17,7 @@
 #include <vector>
 
 #include "cuda_util.cuh"
-#include "PosVector.hpp"
+#include "pos_vector.h"
 #include "orbit_state_vector.h"
 
 namespace alus {
@@ -48,7 +48,7 @@ class OrbitStateVectors {
 namespace orbitstatevectors {
 
 /**
- * Ported function from OrbitStateVectors::getPosition() off of S1TBX repo.
+ * Ported function from OrbitStateVectors::GetPosition() off of S1TBX repo.
  *
  * Position argument is missing, because originally it was modified in place, but this is returning that value here.
  *
@@ -57,7 +57,7 @@ namespace orbitstatevectors {
  * @return snapengine::PosVector Position vector calculated
  */
 snapengine::PosVector GetPosition(double time,
-                                  KernelArray<snapengine::OrbitStateVector> vectors);
+                                  cudautil::KernelArray<snapengine::OrbitStateVector> vectors);
 
 }
 

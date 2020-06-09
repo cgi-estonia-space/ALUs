@@ -22,7 +22,7 @@ namespace {
 
 using namespace alus;
 using namespace alus::snapengine;
-using namespace alus::snapengine::GeoUtils;
+using namespace alus::snapengine::geoutils;
 
 class GeoUtilsTest : public ::testing::Test {};
 
@@ -44,7 +44,7 @@ TEST_F(GeoUtilsTest, geo2xyzWGS84ComputesCorrectly) {
 
     for (size_t i = 0; i < lats.size(); i++) {
         PosVector pos{};
-        geo2xyzWGS84(lats.at(i), lons.at(i), alts.at(i), pos);
+        Geo2xyzWgs84(lats.at(i), lons.at(i), alts.at(i), pos);
         auto const expected = expectedResults.at(i);
         EXPECT_DOUBLE_EQ(expected.x, pos.x);
         EXPECT_DOUBLE_EQ(expected.y, pos.y);

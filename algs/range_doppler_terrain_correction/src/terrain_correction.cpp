@@ -21,36 +21,35 @@ TerrainCorrection::TerrainCorrection(alus::Dataset cohDs, alus::Dataset metadata
       m_cohDsElevations(m_cohDs.getDataBuffer().size()) {}
 
 void TerrainCorrection::doWork() {
-
     auto const startCpu = std::chrono::steady_clock::now();
-    auto const result = m_demDs.getLocalDemFor(
-        m_cohDs, 0, 0, m_cohDs.getXSize(), m_cohDs.getYSize());
+    auto const result = m_demDs.getLocalDemFor(m_cohDs, 0, 0, m_cohDs.getXSize(), m_cohDs.getYSize());
     auto const stopCpu = std::chrono::steady_clock::now();
     localDemCuda();
     auto const stopGpu = std::chrono::steady_clock::now();
     const auto cpuMillis = std::chrono::duration_cast<std::chrono::milliseconds>(stopCpu - startCpu).count();
     const auto gpuMillis = std::chrono::duration_cast<std::chrono::milliseconds>(stopGpu - stopCpu).count();
-    std::cout << "CPU spent " <<  cpuMillis << std::endl;
+    std::cout << "CPU spent " << cpuMillis << std::endl;
     std::cout << "GPU spent " << gpuMillis << std::endl;
 
     {
-        const auto [min, max] =
-        std::minmax_element(std::begin(result), std::end(result));
-        std::cout << "CPU lowest point at " << *min << " and highest at "
-                  << *max << std::endl;
+        const auto [min, max] = std::minmax_element(std::begin(result), std::end(result));
+        std::cout << "CPU lowest point at " << *min << " and highest at " << *max << std::endl;
     }
 
     {
-        const auto [min, max] =
-        std::minmax_element(std::begin(m_cohDsElevations), std::end(m_cohDsElevations));
-        std::cout << "CUDA lowest point at " << *min << " and highest at "
-                  << *max << std::endl;
+        const auto [min, max] = std::minmax_element(std::begin(m_cohDsElevations), std::end(m_cohDsElevations));
+        std::cout << "CUDA lowest point at " << *min << " and highest at " << *max << std::endl;
     }
 
-    auto mismatches = std::mismatch(result.cbegin(), result.cend(), m_cohDsElevations.cbegin(), m_cohDsElevations.cend());
-    std::cout << "Mismatch first " << (mismatches.first == result.cend() ? "cend" : std::to_string(*mismatches.first)) << " second " << (mismatches.second == m_cohDsElevations.cend() ? "cend" : std::to_string(*mismatches.second)) << std::endl;
+    auto mismatches =
+        std::mismatch(result.cbegin(), result.cend(), m_cohDsElevations.cbegin(), m_cohDsElevations.cend());
+    std::cout << "Mismatch first " << (mismatches.first == result.cend() ? "cend" : std::to_string(*mismatches.first))
+              << " second "
+              << (mismatches.second == m_cohDsElevations.cend() ? "cend" : std::to_string(*mismatches.second))
+              << std::endl;
     auto const averageCPU = std::accumulate(result.cbegin(), result.cend(), 0.0) / result.size();
-    auto const averageGPU = std::accumulate(m_cohDsElevations.cbegin(), m_cohDsElevations.cend(), 0.0) / m_cohDsElevations.size();
+    auto const averageGPU =
+        std::accumulate(m_cohDsElevations.cbegin(), m_cohDsElevations.cend(), 0.0) / m_cohDsElevations.size();
     std::cout << "Diff in avg " << averageGPU - averageCPU << std::endl;
     auto const dist1 = std::distance(mismatches.first, result.cend());
     auto const dist2 = std::distance(mismatches.second, m_cohDsElevations.cend());
@@ -60,13 +59,10 @@ void TerrainCorrection::doWork() {
 }
 
 void TerrainCorrection::localDemCPU() {
-    auto const result = m_demDs.getLocalDemFor(
-        m_cohDs, 0, 0, m_cohDs.getXSize(), m_cohDs.getYSize());
+    auto const result = m_demDs.getLocalDemFor(m_cohDs, 0, 0, m_cohDs.getXSize(), m_cohDs.getYSize());
 
-    const auto [min, max] =
-        std::minmax_element(std::begin(result), std::end(result));
-    std::cout << "Our area has lowest point at " << *min << " and highest at "
-              << *max << std::endl;
+    const auto [min, max] = std::minmax_element(std::begin(result), std::end(result));
+    std::cout << "Our area has lowest point at " << *min << " and highest at " << *max << std::endl;
 }
 
 void TerrainCorrection::localDemCuda() {
@@ -76,13 +72,10 @@ void TerrainCorrection::localDemCuda() {
     double* d_productArray;
 
     try {
+        CHECK_CUDA_ERR(cudaMalloc(&d_demArray, sizeof(double) * h_demArray.size()));
+        CHECK_CUDA_ERR(cudaMalloc(&d_productArray, sizeof(double) * m_cohDsElevations.size()));
         CHECK_CUDA_ERR(
-            cudaMalloc(&d_demArray, sizeof(double) * h_demArray.size()));
-        CHECK_CUDA_ERR(cudaMalloc(
-            &d_productArray, sizeof(double) * m_cohDsElevations.size()));
-        CHECK_CUDA_ERR(cudaMemcpy(d_demArray, h_demArray.data(),
-                                  sizeof(double) * h_demArray.size(),
-                                  cudaMemcpyHostToDevice));
+            cudaMemcpy(d_demArray, h_demArray.data(), sizeof(double) * h_demArray.size(), cudaMemcpyHostToDevice));
 
         struct LocalDemKernelArgs kernelArgs;
         kernelArgs.demCols = m_demDs.getColumnCount();
@@ -90,11 +83,11 @@ void TerrainCorrection::localDemCuda() {
         kernelArgs.targetCols = m_cohDs.getXSize();
         kernelArgs.targetRows = m_cohDs.getYSize();
         m_demDs.fillGeoTransform(
-            kernelArgs.demOriginLon, kernelArgs.demOriginLat,
-            kernelArgs.demPixelSizeLon, kernelArgs.demPixelSizeLat);
-        m_cohDs.fillGeoTransform(
-            kernelArgs.targetOriginLon, kernelArgs.targetOriginLat,
-            kernelArgs.targetPixelSizeLon, kernelArgs.targetPixelSizeLat);
+            kernelArgs.demOriginLon, kernelArgs.demOriginLat, kernelArgs.demPixelSizeLon, kernelArgs.demPixelSizeLat);
+        m_cohDs.fillGeoTransform(kernelArgs.targetOriginLon,
+                                 kernelArgs.targetOriginLat,
+                                 kernelArgs.targetPixelSizeLon,
+                                 kernelArgs.targetPixelSizeLat);
 
         CHECK_CUDA_ERR(cudaGetLastError());
 
@@ -103,7 +96,8 @@ void TerrainCorrection::localDemCuda() {
         CHECK_CUDA_ERR(cudaDeviceSynchronize());
         CHECK_CUDA_ERR(cudaGetLastError());
 
-        CHECK_CUDA_ERR(cudaMemcpy(m_cohDsElevations.data(), d_productArray,
+        CHECK_CUDA_ERR(cudaMemcpy(m_cohDsElevations.data(),
+                                  d_productArray,
                                   sizeof(double) * m_cohDsElevations.size(),
                                   cudaMemcpyDeviceToHost));
     } catch (alus::CudaErrorException const& cudaEx) {

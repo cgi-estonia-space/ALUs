@@ -22,9 +22,10 @@
 namespace {
 
 using namespace alus;
+using namespace alus::cudautil;
 using namespace alus::goods;
 using namespace alus::s1tbx;
-using namespace alus::s1tbx::sarGeocoding;
+using namespace alus::s1tbx::sargeocoding;
 using namespace alus::snapengine;
 
 class SarGeoCodingTest : public ::testing::Test {
@@ -44,6 +45,7 @@ class SarGeoCodingTest : public ::testing::Test {
 
     std::vector<double> const DOPPLER_TIME_RESULTS{-99999.0, 7135.669986951332, 7135.669987106099, 7135.669951395567};
 };
+
 
 TEST_F(SarGeoCodingTest, getEarthPointZeroDopplerTimeComputesCorrectly) {
     auto const SERIES_LENGTH = FIRST_LINE_UTC_ARGS.size();

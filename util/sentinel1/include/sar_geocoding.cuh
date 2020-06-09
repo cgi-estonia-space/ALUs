@@ -15,16 +15,19 @@
 
 #include <cmath>
 
-#include "PosVector.hpp"
+#include "pos_vector.h"
 #include "cuda_util.cuh"
 #include "orbit_state_vectors.cuh"
 
 namespace alus {
 namespace s1tbx {
-namespace sarGeocoding {
+namespace sargeocoding {
+
+constexpr double NON_VALID_ZERO_DOPPLER_TIME{-99999.0};
+constexpr double NON_VALID_INCIDENCE_ANGLE{-99999.0};
 
 /**
- * Compute Doppler frequency for given earthPoint and sensor position.
+ * Compute Doppler frequency for given earth_point and sensor position.
  *
  * @param earthPoint     The earth point in xyz coordinate.
  * @param sensorPosition Array of sensor positions for all range lines.
@@ -50,68 +53,70 @@ inline __device__ __host__ double getDopplerFrequency(alus::snapengine::PosVecto
  *
  * Duplicate of a SNAP's SARGeocoding.java's getEarthPointZeroDopplerTime().
  *
- * @param firstLineUTC     The zero Doppler time for the first range line.
- * @param lineTimeInterval The line time interval.
+ * @param first_line_utc     The zero Doppler time for the first range line.
+ * @param line_time_interval The line time interval.
  * @param wavelength       The radar wavelength.
- * @param earthPoint       The earth point in xyz coordinate.
- * @param sensorPosition   Array of sensor positions for all range lines.
- * @param sensorVelocity   Array of sensor velocities for all range lines.
+ * @param earth_point       The earth point in xyz coordinate.
+ * @param sensor_position   Array of sensor positions for all range lines.
+ * @param sensor_velocity   Array of sensor velocities for all range lines.
  * @return The zero Doppler time in days if it is found, -99999.0 otherwise.
  */
-inline __device__ __host__ double GetEarthPointZeroDopplerTime_impl(
-    double firstLineUTC,
-    double lineTimeInterval,
+inline __device__ __host__ double GetEarthPointZeroDopplerTimeImpl(
+    double first_line_utc,
+    double line_time_interval,
     double wavelength,
-    alus::snapengine::PosVector earthPoint,
-    KernelArray<alus::snapengine::PosVector> sensorPosition,
-    KernelArray<alus::snapengine::PosVector> sensorVelocity) {
+    alus::snapengine::PosVector earth_point,
+    cudautil::KernelArray<alus::snapengine::PosVector> sensor_position,
+    cudautil::KernelArray<alus::snapengine::PosVector> sensor_velocity) {
     // binary search is used in finding the zero doppler time
-    int lowerBound = 0;
-    int upperBound = static_cast<int>(sensorPosition.size) - 1;
-    auto lowerBoundFreq =
-        getDopplerFrequency(earthPoint, sensorPosition.array[lowerBound], sensorVelocity.array[lowerBound], wavelength);
-    auto upperBoundFreq =
-        getDopplerFrequency(earthPoint, sensorPosition.array[upperBound], sensorVelocity.array[upperBound], wavelength);
+    int lower_bound = 0;
+    int upper_bound = static_cast<int>(sensor_position.size) - 1;
+    auto lower_bound_freq =
+        getDopplerFrequency(
+        earth_point, sensor_position.array[lower_bound], sensor_velocity.array[lower_bound], wavelength);
+    auto upper_bound_freq =
+        getDopplerFrequency(
+        earth_point, sensor_position.array[upper_bound], sensor_velocity.array[upper_bound], wavelength);
 
-    if (std::abs(lowerBoundFreq) < 1.0) {
-        return firstLineUTC + lowerBound * lineTimeInterval;
-    } else if (std::abs(upperBoundFreq) < 1.0) {
-        return firstLineUTC + upperBound * lineTimeInterval;
-    } else if (lowerBoundFreq * upperBoundFreq > 0.0) {
-        return -99999.0;
+    if (std::abs(lower_bound_freq) < 1.0) {
+        return first_line_utc + lower_bound * line_time_interval;
+    } else if (std::abs(upper_bound_freq) < 1.0) {
+        return first_line_utc + upper_bound * line_time_interval;
+    } else if (lower_bound_freq * upper_bound_freq > 0.0) {
+        return NON_VALID_ZERO_DOPPLER_TIME;
     }
 
     // start binary search
-    double midFreq;
-    while (upperBound - lowerBound > 1) {
-        const auto mid = (int)((static_cast<double>(lowerBound) + upperBound) / 2.0);
-        midFreq = sensorVelocity.array[mid].x * (earthPoint.x - sensorPosition.array[mid].x) +
-                  sensorVelocity.array[mid].y * (earthPoint.y - sensorPosition.array[mid].y) +
-                  sensorVelocity.array[mid].z * (earthPoint.z - sensorPosition.array[mid].z);
+    double mid_freq;
+    while (upper_bound - lower_bound > 1) {
+        const auto mid = (int)((static_cast<double>(lower_bound) + upper_bound) / 2.0);
+        mid_freq = sensor_velocity.array[mid].x * (earth_point.x - sensor_position.array[mid].x) +
+                  sensor_velocity.array[mid].y * (earth_point.y - sensor_position.array[mid].y) +
+                  sensor_velocity.array[mid].z * (earth_point.z - sensor_position.array[mid].z);
 
-        if (midFreq * lowerBoundFreq > 0.0) {
-            lowerBound = mid;
-            lowerBoundFreq = midFreq;
-        } else if (midFreq * upperBoundFreq > 0.0) {
-            upperBound = mid;
-            upperBoundFreq = midFreq;
-        } else if (midFreq == 0.0) {
-            return firstLineUTC + mid * lineTimeInterval;
+        if (mid_freq * lower_bound_freq > 0.0) {
+            lower_bound = mid;
+            lower_bound_freq = mid_freq;
+        } else if (mid_freq * upper_bound_freq > 0.0) {
+            upper_bound = mid;
+            upper_bound_freq = mid_freq;
+        } else if (mid_freq == 0.0) {
+            return first_line_utc + mid * line_time_interval;
         }
     }
 
-    const auto y0 = lowerBound - lowerBoundFreq * (upperBound - lowerBound) / (upperBoundFreq - lowerBoundFreq);
-    return firstLineUTC + y0 * lineTimeInterval;
+    const auto y0 = lower_bound - lower_bound_freq * (upper_bound - lower_bound) / (upper_bound_freq - lower_bound_freq);
+    return first_line_utc + y0 * line_time_interval;
 }
 
 inline __device__ __host__ double ComputeSlantRangeImpl(double time,
-                                                        KernelArray<snapengine::OrbitStateVector> vectors,
-                                                        snapengine::PosVector earthPoint,
-                                                        snapengine::PosVector& sensorPos) {
-    sensorPos = orbitstatevectors::GetPositionImpl(time, vectors);
-    double const xDiff = sensorPos.x - earthPoint.x;
-    double const yDiff = sensorPos.y - earthPoint.y;
-    double const zDiff = sensorPos.z - earthPoint.z;
+                                                        cudautil::KernelArray<snapengine::OrbitStateVector> vectors,
+                                                        snapengine::PosVector earth_point,
+                                                        snapengine::PosVector& sensor_pos) {
+    sensor_pos = orbitstatevectors::GetPositionImpl(time, vectors);
+    double const xDiff = sensor_pos.x - earth_point.x;
+    double const yDiff = sensor_pos.y - earth_point.y;
+    double const zDiff = sensor_pos.z - earth_point.z;
 
     return std::sqrt(xDiff * xDiff + yDiff * yDiff + zDiff * zDiff);
 }
@@ -129,6 +134,6 @@ inline __device__ __host__ double ComputeRangeIndexSlcImpl(double range_spacing,
     return (slant_range - near_edge_slant_range) / range_spacing;
 }
 
-}  // namespace sarGeocoding
+}  // namespace sargeocoding
 }  // namespace s1tbx
 }  // namespace alus
