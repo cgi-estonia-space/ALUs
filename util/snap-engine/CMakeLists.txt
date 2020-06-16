@@ -4,12 +4,16 @@ list(APPEND SNAP-ENGINE_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/earth_gravitational_model96.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/orbit_state_vector.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/product_data.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/srtm3_elevation_model.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/srtm3_formatter.cu
         )
 
 list(APPEND SNAP-ENGINE_INCLUDES
         ${CMAKE_CURRENT_LIST_DIR}/include
         ${CMAKE_CURRENT_LIST_DIR}/../cuda/include
         ${CMAKE_CURRENT_LIST_DIR}/../exotic_operations/include
+        ${CMAKE_CURRENT_LIST_DIR}/../common/include
+        ${CMAKE_CURRENT_LIST_DIR}/../gdal/include
         )
 
 add_library(snap-engine-obj
@@ -36,4 +40,5 @@ set_target_properties(snap-engine-static
 target_link_libraries(snap-engine-static
         PUBLIC
         exotic_operations-static
+        gdal-util-static
         )

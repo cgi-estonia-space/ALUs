@@ -42,7 +42,7 @@ private:
     int isDopplerCentroidAvailable = 0;
     int isRangeDependDopplerRateAvailable = 0;
     int isOrbitAvailable = 0;
-    alus::s1tbx::OrbitStateVectors *orbit = nullptr;
+    alus::s1tbx::OrbitStateVectors *orbit{nullptr};
 
 
     std::vector<DCPolynomial> getDCEstimateList(std::string subSwathName);

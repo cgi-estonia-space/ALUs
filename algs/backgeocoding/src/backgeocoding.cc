@@ -162,54 +162,19 @@ void Backgeocoding::prepareToCompute(){
 }
 
 void Backgeocoding::prepareSrtm3Data(){
-    int size;
 
-    this->srtms.push_back(Dataset(this->srtm_41_01File));
-    this->srtms.at(0).loadRasterBand(1);
-    this->srtms.push_back(Dataset(this->srtm_42_01File));
-    this->srtms.at(1).loadRasterBand(1);
-
-    this->deviceSrtms.resize(2);
-    dim3 blockSize(20,20);
-
-    std::vector<DemFormatterData> datas;
+    this->egm96_ = std::make_unique<snapengine::EarthGravitationalModel96>(this->gridFile);
+    this->egm96_->hostToDevice();
 
     //placeholders
-    DemFormatterData srtm41_01Data;
-    srtm41_01Data.m00 = snapengine::srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE;
-    srtm41_01Data.m01 = 0;
-    srtm41_01Data.m02 = 20;
-    srtm41_01Data.m10 = 0;
-    srtm41_01Data.m11 = -snapengine::srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE;
-    srtm41_01Data.m12 = 60;
-    srtm41_01Data.noDataValue = -32768.0;
-
-    DemFormatterData srtm42_01Data;
-    srtm42_01Data.m00 = snapengine::srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE;
-    srtm42_01Data.m01 = 0;
-    srtm42_01Data.m02 = 25;
-    srtm42_01Data.m10 = 0;
-    srtm42_01Data.m11 = -snapengine::srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE;
-    srtm42_01Data.m12 = 60;
-    srtm42_01Data.noDataValue = -32768.0;
-
-    datas.push_back(srtm41_01Data);
-    datas.push_back(srtm42_01Data);
-
-    for(int i=0; i<2; i++){
-        double *tempBuffer;
-
-        size = this->srtms.at(i).getXSize() * this->srtms.at(i).getYSize();
-        CHECK_CUDA_ERR(cudaMalloc((void**)&this->deviceSrtms.at(i), size*sizeof(double)));
-        CHECK_CUDA_ERR(cudaMalloc((void**)&tempBuffer, size*sizeof(double)));
-        CHECK_CUDA_ERR(cudaMemcpy(tempBuffer, this->srtms.at(i).getDataBuffer().data(), size*sizeof(double),cudaMemcpyHostToDevice));
-        datas.at(i).xSize = this->srtms.at(i).getXSize();
-        datas.at(i).ySize = this->srtms.at(i).getYSize();
-        dim3 gridSize(getGridDim(blockSize.x, datas.at(i).xSize),getGridDim(blockSize.y, datas.at(i).ySize));
-
-        CHECK_CUDA_ERR(launchDemFormatter(gridSize, blockSize, this->deviceSrtms.at(i), tempBuffer, datas.at(i) ));
-        cudaFree(tempBuffer);
-    }
+    Point srtm_41_01 = {41, 1};
+    Point srtm_42_01 = {42, 1};
+    std::vector<Point> files;
+    files.push_back(srtm_41_01);
+    files.push_back(srtm_42_01);
+    this->srtm3Dem_ = std::make_unique<snapengine::SRTM3ElevationModel>(files, this->srtmsDirectory);
+    this->srtm3Dem_->ReadSrtmTiles(this->egm96_.get());
+    this->srtm3Dem_->hostToDevice();
 
 }
 
@@ -288,6 +253,7 @@ void Backgeocoding::computeSlavePixPos(
 
     calcData.numLines = calcData.latMinIdx - calcData.latMaxIdx;
     calcData.numPixels = calcData.lonMaxIdx - calcData.lonMinIdx;
+    calcData.tiles.array = this->srtm3Dem_->deviceSrtm3Tiles_;
 
     CHECK_CUDA_ERR(this->launchSlavePixPosComp(calcData));
 }
@@ -345,9 +311,12 @@ void Backgeocoding::setPlaceHolderFiles(std::string paramsFile,std::string xPoin
     this->yPointsFile = yPointsFile;
 }
 
-void Backgeocoding::setSRTMPlaceholders(std::string srtm_41_01File, std::string srtm_42_01File){
-    this->srtm_41_01File = srtm_41_01File;
-    this->srtm_42_01File = srtm_42_01File;
+void Backgeocoding::setSRTMDirectory(std::string directory){
+    this->srtmsDirectory = directory;
+}
+
+void Backgeocoding::setEGMGridFile(std::string gridFile){
+    this->gridFile = gridFile;
 }
 
 void Backgeocoding::setSentinel1Placeholders(
@@ -412,7 +381,7 @@ cudaError_t Backgeocoding::launchDerampDemodComp(Rectangle slaveRect, int sBurst
 
 cudaError_t Backgeocoding::launchSlavePixPosComp(SlavePixPosData calcData){
     dim3 blockSize(20,20);
-    dim3 gridSize(getGridDim(20,calcData.numLines), getGridDim(20, calcData.numPixels));
+    dim3 gridSize(cuda::getGridDim(20,calcData.numLines), cuda::getGridDim(20, calcData.numPixels));
 
 
     launchSlavePixPos(

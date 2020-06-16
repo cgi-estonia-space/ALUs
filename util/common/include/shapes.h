@@ -8,4 +8,8 @@ struct Rectangle{
     int x,y,width,height;
 };
 
+struct Point{
+    int x,y;
+};
+
 }//namespace

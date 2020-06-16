@@ -1,6 +1,7 @@
 #include "cuda_util.hpp"
 
 namespace alus {
+namespace cuda {
 
 //DO NOT USE math::ceil here. it was removed because of its inaccuracy.
 int getGridDim(int blockDim, int dataDim){
@@ -16,4 +17,5 @@ int getGridDim(int blockDim, int dataDim){
     return tempInt;
 }
 
+}//namespace
 }//namespace

@@ -15,7 +15,7 @@ using namespace alus::tests;
 
 namespace{
 
-class EGMTester: public CudaFriendlyObject{
+class EGMTester: public alus::cuda::CudaFriendlyObject{
 private:
 
 public:
@@ -23,11 +23,11 @@ public:
     std::vector<double> lons;
     std::vector<float> etalonResults;
     std::vector<float> endResults;
-    int size;
+    size_t size;
 
-    double *deviceLats = nullptr;
-    double *deviceLons = nullptr;
-    float *deviceResults = nullptr;
+    double *deviceLats{nullptr};
+    double *deviceLons{nullptr};
+    float *deviceResults{nullptr};
 
     EGMTester(std::string egmTestDataFilename){
         std::ifstream dataReader(egmTestDataFilename);
@@ -38,7 +38,7 @@ public:
         this->etalonResults.resize(size);
         this->endResults.resize(size);
 
-        for(int i=0; i<size; i++){
+        for(size_t i=0; i<size; i++){
             dataReader >> lats[i] >> lons[i] >> etalonResults[i];
         }
 
@@ -78,14 +78,14 @@ TEST(EGM96, correctness){
     EXPECT_DOUBLE_EQ(-29.534, egm96.egm[720][0]);
     EXPECT_DOUBLE_EQ(-29.534, egm96.egm[720][1440]);
 
-    dim3 blockSize(20);
-    dim3 gridSize(alus::getGridDim(blockSize.x,tester.size));
+    dim3 blockSize(512);
+    dim3 gridSize(alus::cuda::getGridDim(blockSize.x,tester.size));
 
     tester.hostToDevice();
     egm96.hostToDevice();
     EGM96data data;
-    data.MAX_LATS = alus::snapengine::earthgravitationalmodel96::MAX_LATS;
-    data.MAX_LONS = alus::snapengine::earthgravitationalmodel96::MAX_LONS;
+    data.maxLats = alus::snapengine::earthgravitationalmodel96::MAX_LATS;
+    data.maxLons = alus::snapengine::earthgravitationalmodel96::MAX_LONS;
     data.size = tester.size;
     data.egm = egm96.deviceEgm;
 

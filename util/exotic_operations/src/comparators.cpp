@@ -26,12 +26,16 @@ int equalsArrays(const float *a,const float *b, int elems){
 
 
 int equalsArraysd(const double *a, const double *b, int elems){
+    return equalsArraysd(a,b,elems,ERROR_RANGE);
+}
+
+int equalsArraysd(const double *a, const double *b, int elems, double delta){
     int i,count =0;
     double temp;
 
     for(i=0; i<elems; i++){
         temp = (a[i]>b[i])*(a[i]-b[i]) + (a[i]<=b[i])*(b[i]-a[i]);
-        if(temp > ERROR_RANGE){
+        if(temp > delta){
             std::cerr << "elements do not match - " <<i<<")"<< a[i] << ":"<<b[i] << '\n';
             count++;
             if(count > 50){
@@ -42,7 +46,7 @@ int equalsArraysd(const double *a, const double *b, int elems){
     return count;
 }
 
-int equalsArrays2Dd(const double* const* a, const double* const* b, int x, int y){
+int equalsArrays2Dd(const double *const *a, const double *const *b, int x, int y){
     int i,j, count=0;
     double temp;
 

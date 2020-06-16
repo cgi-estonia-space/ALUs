@@ -50,14 +50,14 @@ constexpr int MAX_LONS = NUM_LONS - 1;
 
 } //namespace earthgravitationalmodel96
 
-class EarthGravitationalModel96: public CudaFriendlyObject {
+class EarthGravitationalModel96: public cuda::CudaFriendlyObject {
 private:
     std::string gridFile = "../test/goods/ww15mgh_b.grd";
 
     void readGridFile();
 public:
-    double **egm = nullptr;
-    double *deviceEgm = nullptr;
+    double **egm{nullptr};
+    double *deviceEgm{nullptr};
 
     EarthGravitationalModel96(std::string gridFile);
     EarthGravitationalModel96();

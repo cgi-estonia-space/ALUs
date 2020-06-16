@@ -9,7 +9,7 @@ __global__ void EGM96Tester(double *lats, double *lons, float *results, EGM96dat
     const int idx = threadIdx.x + (blockDim.x*blockIdx.x);
 
     if(idx < data.size){
-        results[idx] = snapengine::earthgravitationalmodel96::getEGM96(lats[idx],lons[idx], data.MAX_LATS, data.MAX_LONS, data.egm);
+        results[idx] = snapengine::earthgravitationalmodel96::getEGM96(lats[idx],lons[idx], data.maxLats, data.maxLons, data.egm);
     }
 }
 

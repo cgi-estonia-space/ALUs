@@ -5,7 +5,6 @@ list(APPEND BACKGEOCODING_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/bilinear.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/deramp_demod.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/slave_pixpos.cu
-        ${CMAKE_CURRENT_LIST_DIR}/src/dem_formatter.cu
         )
 
 list(APPEND BACKGEOCODING_INCLUDE_DIRS
@@ -45,4 +44,5 @@ target_link_libraries(backgeocoding-static
         exotic_operations-static
         sentinel1-util-static
         cuda_util-static
+        snap-engine-static
         )
