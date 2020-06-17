@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/framework/libattr_value_proto_cc_impl.pic.lo
+bazel-out/host/bin/tensorflow/core/framework/_objs/attr_value_proto_cc_impl/attr_value.pb.pic.o

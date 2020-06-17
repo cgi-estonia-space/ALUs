@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/framework/libop.pic.a
+bazel-out/host/bin/tensorflow/core/framework/_objs/op/op.pic.o

@@ -1,0 +1,4 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/platform/default/libtracing.pic.lo
+bazel-out/host/bin/tensorflow/core/platform/default/_objs/tracing/0/tracing.pic.o
+bazel-out/host/bin/tensorflow/core/platform/default/_objs/tracing/1/tracing.pic.o

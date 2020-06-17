@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/libmath_ops_op_lib.lo
+bazel-out/host/bin/tensorflow/core/_objs/math_ops_op_lib/math_ops.o

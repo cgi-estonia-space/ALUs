@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/framework/libdevice_attributes_proto_cc_impl.pic.lo
+bazel-out/host/bin/tensorflow/core/framework/_objs/device_attributes_proto_cc_impl/device_attributes.pb.pic.o

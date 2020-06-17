@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/platform/cloud/libgcs_file_system.pic.lo
+bazel-out/host/bin/tensorflow/core/platform/cloud/_objs/gcs_file_system/gcs_file_system.pic.o

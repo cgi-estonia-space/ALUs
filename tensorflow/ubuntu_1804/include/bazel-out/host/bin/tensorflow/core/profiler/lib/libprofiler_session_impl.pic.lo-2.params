@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/profiler/lib/libprofiler_session_impl.pic.lo
+bazel-out/host/bin/tensorflow/core/profiler/lib/_objs/profiler_session_impl/profiler_session.pic.o

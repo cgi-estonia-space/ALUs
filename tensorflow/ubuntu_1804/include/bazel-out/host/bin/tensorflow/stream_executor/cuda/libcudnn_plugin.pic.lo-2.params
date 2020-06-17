@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/stream_executor/cuda/libcudnn_plugin.pic.lo
+bazel-out/host/bin/tensorflow/stream_executor/cuda/_objs/cudnn_plugin/cuda_dnn.pic.o

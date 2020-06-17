@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/grappler/optimizers/libscoped_allocator_optimizer.pic.a
+bazel-out/host/bin/tensorflow/core/grappler/optimizers/_objs/scoped_allocator_optimizer/scoped_allocator_optimizer.pic.o

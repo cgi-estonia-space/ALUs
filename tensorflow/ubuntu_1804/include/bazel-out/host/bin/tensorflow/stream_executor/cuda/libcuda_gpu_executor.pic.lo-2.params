@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/stream_executor/cuda/libcuda_gpu_executor.pic.lo
+bazel-out/host/bin/tensorflow/stream_executor/cuda/_objs/cuda_gpu_executor/cuda_gpu_executor.pic.o

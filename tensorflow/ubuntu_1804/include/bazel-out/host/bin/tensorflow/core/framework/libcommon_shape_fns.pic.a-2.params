@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/framework/libcommon_shape_fns.pic.a
+bazel-out/host/bin/tensorflow/core/framework/_objs/common_shape_fns/common_shape_fns.pic.o

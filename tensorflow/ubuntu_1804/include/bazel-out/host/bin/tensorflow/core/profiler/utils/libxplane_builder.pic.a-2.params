@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/profiler/utils/libxplane_builder.pic.a
+bazel-out/host/bin/tensorflow/core/profiler/utils/_objs/xplane_builder/xplane_builder.pic.o

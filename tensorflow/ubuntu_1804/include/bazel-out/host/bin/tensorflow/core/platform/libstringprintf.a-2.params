@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/platform/libstringprintf.a
+bazel-out/host/bin/tensorflow/core/platform/_objs/stringprintf/stringprintf.o

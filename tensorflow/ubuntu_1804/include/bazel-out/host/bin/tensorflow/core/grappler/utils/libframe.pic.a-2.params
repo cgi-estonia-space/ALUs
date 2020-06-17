@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/grappler/utils/libframe.pic.a
+bazel-out/host/bin/tensorflow/core/grappler/utils/_objs/frame/frame.pic.o

@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/lib/histogram/libhistogram.pic.lo
+bazel-out/host/bin/tensorflow/core/lib/histogram/_objs/histogram/histogram.pic.o

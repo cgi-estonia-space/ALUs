@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/stream_executor/cuda/libcuda_platform.pic.lo
+bazel-out/host/bin/tensorflow/stream_executor/cuda/_objs/cuda_platform/cuda_platform.pic.o

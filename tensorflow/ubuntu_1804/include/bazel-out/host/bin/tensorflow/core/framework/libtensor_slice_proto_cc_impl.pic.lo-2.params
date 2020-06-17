@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/framework/libtensor_slice_proto_cc_impl.pic.lo
+bazel-out/host/bin/tensorflow/core/framework/_objs/tensor_slice_proto_cc_impl/tensor_slice.pb.pic.o

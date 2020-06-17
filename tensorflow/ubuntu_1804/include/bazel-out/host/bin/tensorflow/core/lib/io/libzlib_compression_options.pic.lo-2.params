@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/lib/io/libzlib_compression_options.pic.lo
+bazel-out/host/bin/tensorflow/core/lib/io/_objs/zlib_compression_options/zlib_compression_options.pic.o

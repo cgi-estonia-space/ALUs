@@ -1,0 +1,8 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/platform/default/libenv.pic.a
+bazel-out/host/bin/tensorflow/core/platform/default/_objs/env/0/env.pic.o
+bazel-out/host/bin/tensorflow/core/platform/default/_objs/env/posix_file_system.pic.o
+bazel-out/host/bin/tensorflow/core/platform/default/_objs/env/1/env.pic.o
+bazel-out/host/bin/tensorflow/core/platform/default/_objs/env/file_system.pic.o
+bazel-out/host/bin/tensorflow/core/platform/default/_objs/env/file_system_helper.pic.o
+bazel-out/host/bin/tensorflow/core/platform/default/_objs/env/threadpool.pic.o

@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/platform/cloud/libgoogle_auth_provider.pic.a
+bazel-out/host/bin/tensorflow/core/platform/cloud/_objs/google_auth_provider/google_auth_provider.pic.o

@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/tools/proto_text/libgen_proto_text_functions_lib.a
+bazel-out/host/bin/tensorflow/tools/proto_text/_objs/gen_proto_text_functions_lib/gen_proto_text_functions_lib.o

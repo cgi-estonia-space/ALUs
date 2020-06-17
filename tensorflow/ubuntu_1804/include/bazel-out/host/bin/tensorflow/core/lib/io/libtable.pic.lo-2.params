@@ -1,0 +1,4 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/lib/io/libtable.pic.lo
+bazel-out/host/bin/tensorflow/core/lib/io/_objs/table/table.pic.o
+bazel-out/host/bin/tensorflow/core/lib/io/_objs/table/two_level_iterator.pic.o

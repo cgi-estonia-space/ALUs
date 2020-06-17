@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/platform/liberror.pic.a
+bazel-out/host/bin/tensorflow/core/platform/_objs/error/error.pic.o

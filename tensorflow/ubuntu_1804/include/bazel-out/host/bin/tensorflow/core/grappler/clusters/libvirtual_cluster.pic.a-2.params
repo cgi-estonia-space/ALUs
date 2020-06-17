@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/grappler/clusters/libvirtual_cluster.pic.a
+bazel-out/host/bin/tensorflow/core/grappler/clusters/_objs/virtual_cluster/virtual_cluster.pic.o

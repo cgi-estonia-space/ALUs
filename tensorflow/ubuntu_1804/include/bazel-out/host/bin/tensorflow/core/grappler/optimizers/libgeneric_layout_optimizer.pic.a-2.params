@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/grappler/optimizers/libgeneric_layout_optimizer.pic.a
+bazel-out/host/bin/tensorflow/core/grappler/optimizers/_objs/generic_layout_optimizer/generic_layout_optimizer.pic.o

@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/platform/libtensor_coding.pic.a
+bazel-out/host/bin/tensorflow/core/platform/_objs/tensor_coding/tensor_coding.pic.o

@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/platform/libbase64.pic.a
+bazel-out/host/bin/tensorflow/core/platform/_objs/base64/base64.pic.o

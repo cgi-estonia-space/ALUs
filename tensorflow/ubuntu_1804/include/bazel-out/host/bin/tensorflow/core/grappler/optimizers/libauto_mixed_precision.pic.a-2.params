@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/grappler/optimizers/libauto_mixed_precision.pic.a
+bazel-out/host/bin/tensorflow/core/grappler/optimizers/_objs/auto_mixed_precision/auto_mixed_precision.pic.o

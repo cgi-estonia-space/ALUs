@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/liblinalg_ops_op_lib.lo
+bazel-out/host/bin/tensorflow/core/_objs/linalg_ops_op_lib/linalg_ops.o

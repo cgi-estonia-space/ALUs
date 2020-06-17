@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/platform/default/libenv_time.pic.a
+bazel-out/host/bin/tensorflow/core/platform/default/_objs/env_time/env_time.pic.o

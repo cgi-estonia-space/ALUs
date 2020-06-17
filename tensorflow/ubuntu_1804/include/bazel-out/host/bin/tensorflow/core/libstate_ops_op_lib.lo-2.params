@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/libstate_ops_op_lib.lo
+bazel-out/host/bin/tensorflow/core/_objs/state_ops_op_lib/state_ops.o

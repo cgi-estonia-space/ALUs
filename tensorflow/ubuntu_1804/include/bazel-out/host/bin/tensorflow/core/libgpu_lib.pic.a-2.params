@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/libgpu_lib.pic.a
+bazel-out/host/bin/tensorflow/core/_objs/gpu_lib/gpu_event_mgr.pic.o

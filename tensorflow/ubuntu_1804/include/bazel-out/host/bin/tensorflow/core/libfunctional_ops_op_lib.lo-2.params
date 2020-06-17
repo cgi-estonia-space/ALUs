@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/libfunctional_ops_op_lib.lo
+bazel-out/host/bin/tensorflow/core/_objs/functional_ops_op_lib/functional_ops.o

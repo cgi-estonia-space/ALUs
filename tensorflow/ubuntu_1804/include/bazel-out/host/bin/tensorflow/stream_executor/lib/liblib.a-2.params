@@ -1,0 +1,7 @@
+rcsD
+bazel-out/host/bin/tensorflow/stream_executor/lib/liblib.a
+bazel-out/host/bin/tensorflow/stream_executor/lib/_objs/lib/demangle.o
+bazel-out/host/bin/tensorflow/stream_executor/lib/_objs/lib/numbers.o
+bazel-out/host/bin/tensorflow/stream_executor/lib/_objs/lib/path.o
+bazel-out/host/bin/tensorflow/stream_executor/lib/_objs/lib/process_state.o
+bazel-out/host/bin/tensorflow/stream_executor/lib/_objs/lib/statusor.o

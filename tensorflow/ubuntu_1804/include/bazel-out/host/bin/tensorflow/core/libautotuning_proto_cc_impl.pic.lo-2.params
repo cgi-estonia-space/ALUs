@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/libautotuning_proto_cc_impl.pic.lo
+bazel-out/host/bin/tensorflow/core/_objs/autotuning_proto_cc_impl/autotuning.pb.pic.o

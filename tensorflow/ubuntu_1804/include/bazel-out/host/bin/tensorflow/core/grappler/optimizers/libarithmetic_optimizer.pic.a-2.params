@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/grappler/optimizers/libarithmetic_optimizer.pic.a
+bazel-out/host/bin/tensorflow/core/grappler/optimizers/_objs/arithmetic_optimizer/arithmetic_optimizer.pic.o

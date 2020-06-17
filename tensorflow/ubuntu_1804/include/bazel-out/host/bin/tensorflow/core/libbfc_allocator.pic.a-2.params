@@ -1,0 +1,4 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/libbfc_allocator.pic.a
+bazel-out/host/bin/tensorflow/core/_objs/bfc_allocator/allocator_retry.pic.o
+bazel-out/host/bin/tensorflow/core/_objs/bfc_allocator/bfc_allocator.pic.o

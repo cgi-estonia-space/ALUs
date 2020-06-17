@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/grappler/optimizers/libfunction_api_info.pic.a
+bazel-out/host/bin/tensorflow/core/grappler/optimizers/_objs/function_api_info/function_api_info.pic.o

@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/grappler/optimizers/libpin_to_host_optimizer.pic.a
+bazel-out/host/bin/tensorflow/core/grappler/optimizers/_objs/pin_to_host_optimizer/pin_to_host_optimizer.pic.o

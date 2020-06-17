@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/platform/libnumbers.pic.a
+bazel-out/host/bin/tensorflow/core/platform/_objs/numbers/numbers.pic.o

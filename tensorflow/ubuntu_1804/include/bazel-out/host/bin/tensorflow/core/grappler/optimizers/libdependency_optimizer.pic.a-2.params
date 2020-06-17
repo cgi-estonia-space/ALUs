@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/grappler/optimizers/libdependency_optimizer.pic.a
+bazel-out/host/bin/tensorflow/core/grappler/optimizers/_objs/dependency_optimizer/dependency_optimizer.pic.o

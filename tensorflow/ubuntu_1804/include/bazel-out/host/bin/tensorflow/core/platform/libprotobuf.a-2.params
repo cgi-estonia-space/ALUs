@@ -1,0 +1,4 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/platform/libprotobuf.a
+bazel-out/host/bin/tensorflow/core/platform/_objs/protobuf/protobuf.o
+bazel-out/host/bin/tensorflow/core/platform/_objs/protobuf/protobuf_util.o

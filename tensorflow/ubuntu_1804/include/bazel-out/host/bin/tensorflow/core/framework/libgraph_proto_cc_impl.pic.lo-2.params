@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/framework/libgraph_proto_cc_impl.pic.lo
+bazel-out/host/bin/tensorflow/core/framework/_objs/graph_proto_cc_impl/graph.pb.pic.o

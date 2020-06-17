@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/framework/libtensor_shape.pic.lo
+bazel-out/host/bin/tensorflow/core/framework/_objs/tensor_shape/tensor_shape.pic.o

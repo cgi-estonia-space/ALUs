@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/grappler/libdevices.pic.a
+bazel-out/host/bin/tensorflow/core/grappler/_objs/devices/devices.pic.o

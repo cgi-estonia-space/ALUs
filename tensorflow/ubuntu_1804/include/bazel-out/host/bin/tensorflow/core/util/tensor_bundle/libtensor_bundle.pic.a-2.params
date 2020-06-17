@@ -1,0 +1,4 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/util/tensor_bundle/libtensor_bundle.pic.a
+bazel-out/host/bin/tensorflow/core/util/tensor_bundle/_objs/tensor_bundle/byte_swap.pic.o
+bazel-out/host/bin/tensorflow/core/util/tensor_bundle/_objs/tensor_bundle/tensor_bundle.pic.o

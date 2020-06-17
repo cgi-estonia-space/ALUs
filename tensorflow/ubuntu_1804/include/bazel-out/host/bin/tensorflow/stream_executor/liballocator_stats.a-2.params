@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/stream_executor/liballocator_stats.a
+bazel-out/host/bin/tensorflow/stream_executor/_objs/allocator_stats/allocator_stats.o

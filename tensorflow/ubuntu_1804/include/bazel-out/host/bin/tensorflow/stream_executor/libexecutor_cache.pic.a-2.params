@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/stream_executor/libexecutor_cache.pic.a
+bazel-out/host/bin/tensorflow/stream_executor/_objs/executor_cache/executor_cache.pic.o

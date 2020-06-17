@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/stream_executor/libplatform.a
+bazel-out/host/bin/tensorflow/stream_executor/_objs/platform/platform.o

@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/grappler/costs/libcost_estimator.pic.a
+bazel-out/host/bin/tensorflow/core/grappler/costs/_objs/cost_estimator/cost_estimator.pic.o

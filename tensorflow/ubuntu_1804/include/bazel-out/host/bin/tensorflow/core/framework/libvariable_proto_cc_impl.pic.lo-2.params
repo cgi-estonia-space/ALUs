@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/framework/libvariable_proto_cc_impl.pic.lo
+bazel-out/host/bin/tensorflow/core/framework/_objs/variable_proto_cc_impl/variable.pb.pic.o

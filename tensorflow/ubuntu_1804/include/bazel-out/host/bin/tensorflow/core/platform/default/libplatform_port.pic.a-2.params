@@ -1,0 +1,4 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/platform/default/libplatform_port.pic.a
+bazel-out/host/bin/tensorflow/core/platform/default/_objs/platform_port/port.pic.o
+bazel-out/host/bin/tensorflow/core/platform/default/_objs/platform_port/cpu_info.pic.o

@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/c/libtf_status.a
+bazel-out/host/bin/tensorflow/c/_objs/tf_status/tf_status.o

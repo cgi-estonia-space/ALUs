@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/framework/libstep_stats_proto_cc_impl.pic.lo
+bazel-out/host/bin/tensorflow/core/framework/_objs/step_stats_proto_cc_impl/step_stats.pb.pic.o

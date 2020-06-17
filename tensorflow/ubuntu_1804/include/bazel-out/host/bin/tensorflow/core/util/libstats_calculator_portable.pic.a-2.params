@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/util/libstats_calculator_portable.pic.a
+bazel-out/host/bin/tensorflow/core/util/_objs/stats_calculator_portable/stats_calculator.pic.o

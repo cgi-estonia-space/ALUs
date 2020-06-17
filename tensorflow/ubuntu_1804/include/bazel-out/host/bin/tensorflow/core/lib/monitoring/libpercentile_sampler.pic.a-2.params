@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/lib/monitoring/libpercentile_sampler.pic.a
+bazel-out/host/bin/tensorflow/core/lib/monitoring/_objs/percentile_sampler/percentile_sampler.pic.o

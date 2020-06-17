@@ -43,6 +43,7 @@ add_subdirectory(util/snap-engine)
 
 
 # Algorithms
+add_subdirectory(algs/coherence)
 add_subdirectory(algs/inverter)
 add_subdirectory(algs/inverter_parallel)
 add_subdirectory(algs/cuda_algorithm)

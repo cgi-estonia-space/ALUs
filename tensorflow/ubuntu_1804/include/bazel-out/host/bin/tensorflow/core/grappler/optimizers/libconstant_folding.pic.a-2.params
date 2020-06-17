@@ -1,0 +1,3 @@
+rcsD
+bazel-out/host/bin/tensorflow/core/grappler/optimizers/libconstant_folding.pic.a
+bazel-out/host/bin/tensorflow/core/grappler/optimizers/_objs/constant_folding/constant_folding.pic.o
