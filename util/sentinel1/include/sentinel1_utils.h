@@ -4,10 +4,10 @@
 #include <string>
 #include <fstream>
 
-#include "shapes.h"
-#include "comparators.hpp"
-#include "allocators.hpp"
+#include "allocators.h"
+#include "comparators.h"
 #include "orbit_state_vectors.h"
+#include "shapes.h"
 #include "subswath_info.h"
 
 namespace alus {
@@ -23,7 +23,7 @@ struct AzimuthFmRate {
 struct DCPolynomial {
     double time;
     double t0;
-    std::vector<double> dataDcPolynomial;
+    std::vector<double> data_dc_polynomial;
 };
 
 struct Sentinel1Index {
@@ -31,60 +31,59 @@ struct Sentinel1Index {
     int i1;
     int j0;
     int j1;
-    double muX;
-    double muY;
+    double mu_x;
+    double mu_y;
 };
 
 class Sentinel1Utils{
 private:
-    int numOfSubSwath;
+    int num_of_sub_swath_;
 
-    int isDopplerCentroidAvailable = 0;
-    int isRangeDependDopplerRateAvailable = 0;
-    int isOrbitAvailable = 0;
+    int is_doppler_centroid_available_ = 0;
+    int is_range_depend_doppler_rate_available_ = 0;
+    int is_orbit_available = 0;
     alus::s1tbx::OrbitStateVectors *orbit{nullptr};
 
 
-    std::vector<DCPolynomial> getDCEstimateList(std::string subSwathName);
-    std::vector<DCPolynomial> computeDCForBurstCenters(std::vector<DCPolynomial> dcEstimateList,int subSwathIndex);
-    std::vector<AzimuthFmRate> getAzimuthFmRateList(std::string subSwathName);
-    DCPolynomial computeDC(double centerTime, std::vector<DCPolynomial> dcEstimateList);
-    void writePlaceolderInfo(int placeholderType);
-    void writeMetadataPlaceholder();
-    void getProductOrbit();
-    double getVelocity(double time);
-    double getLatitudeValue(Sentinel1Index index, SubSwathInfo *subSwath);
-    double getLongitudeValue(Sentinel1Index index, SubSwathInfo *subSwath);
+    std::vector<DCPolynomial> GetDCEstimateList(std::string subswath_name);
+    std::vector<DCPolynomial> ComputeDCForBurstCenters(std::vector<DCPolynomial> dc_estimate_list,int subswath_index);
+    std::vector<AzimuthFmRate> GetAzimuthFmRateList(std::string subswath_name);
+    DCPolynomial ComputeDC(double center_time, std::vector<DCPolynomial> dc_estimate_list);
+    void WritePlaceolderInfo(int placeholder_type);
+    void GetProductOrbit();
+    double GetVelocity(double time);
+    double GetLatitudeValue(Sentinel1Index index, SubSwathInfo *subswath);
+    double GetLongitudeValue(Sentinel1Index index, SubSwathInfo *subswath);
 
     //files for placeholder data
-    std::string orbitStateVectorsFile = "";
-    std::string dcEstimateListFile = "";
-    std::string azimuthListFile = "";
-    std::string burstLineTimeFile = "";
-    std::string geoLocationFile = "";
+    std::string orbit_state_vectors_file_ = "";
+    std::string dc_estimate_list_file_ = "";
+    std::string azimuth_list_file_ = "";
+    std::string burst_line_time_file_ = "";
+    std::string geo_location_file_ = "";
 
 public:
-    std::vector<SubSwathInfo> subSwath;
-    double rangeSpacing;
+    std::vector<SubSwathInfo> subswath_;
+    double range_spacing;
 
-    double *computeDerampDemodPhase(int subSwathIndex,int sBurstIndex,Rectangle rectangle);
-    Sentinel1Index computeIndex(double azimuthTime,double slantRangeTime, SubSwathInfo *subSwath);
+    double *ComputeDerampDemodPhase(int subswath_index,int s_burst_index,Rectangle rectangle);
+    Sentinel1Index ComputeIndex(double azimuth_time,double slant_range_time, SubSwathInfo *subswath);
 
-    void computeReferenceTime();
-    void computeDopplerCentroid();
-    void computeRangeDependentDopplerRate();
-    void computeDopplerRate();
-    double getSlantRangeTime(int x, int subSwathIndex);
-    double getLatitude(double azimuthTime, double slantRangeTime, SubSwathInfo *subSwath);
-    double getLongitude(double azimuthTime, double slantRangeTime, SubSwathInfo *subSwath);
+    void ComputeReferenceTime();
+    void ComputeDopplerCentroid();
+    void ComputeRangeDependentDopplerRate();
+    void ComputeDopplerRate();
+    double GetSlantRangeTime(int x, int subswath_index);
+    double GetLatitude(double azimuth_time, double slant_range_time, SubSwathInfo *subswath);
+    double GetLongitude(double azimuth_time, double slant_range_time, SubSwathInfo *subswath);
 
-    void setPlaceHolderFiles(
-        std::string orbitStateVectorsFile,
-        std::string dcEstimateListFile,
-        std::string azimuthListFile,
-        std::string burstLineTimeFile,
-        std::string geoLocationFile);
-    void readPlaceHolderFiles();
+    void SetPlaceHolderFiles(
+        std::string orbit_state_vectors_file,
+        std::string dc_estimate_list_file,
+        std::string azimuth_list_file,
+        std::string burst_line_time_file,
+        std::string geo_location_file);
+    void ReadPlaceHolderFiles();
 
     Sentinel1Utils();
     Sentinel1Utils(int placeholderType);

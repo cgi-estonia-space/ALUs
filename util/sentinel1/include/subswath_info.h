@@ -1,8 +1,8 @@
 #pragma once
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <vector>
-#include "CudaFriendlyObject.hpp"
+#include "CudaFriendlyObject.h"
 #include "cuda_util.hpp"
 
 #include "subswath_info.cuh"
@@ -14,47 +14,45 @@ private:
     DeviceSubswathInfo devicePointersHolder;
 public:
     //subswath info
-    int firstValidPixel;
-    int lastValidPixel;
-    double firstLineTime;
-    double lastLineTime;
-    double slrTimeToFirstPixel;
-    double slrTimeToLastPixel;
-    double rangePixelSpacing;
-    double azimuthTimeInterval;
-    double radarFrequency;
-    double azimuthSteeringRate;
-    std::string subSwathName;
+    int first_valid_pixel_;
+    int last_valid_pixel_;
+    double first_line_time_;
+    double last_line_time;
+    double slr_time_to_first_pixel_;
+    double slr_time_to_last_pixel_;
+    double range_pixel_spacing_;
+    double azimuth_time_interval_;
+    double radar_frequency_;
+    double azimuth_steering_rate_;
+    std::string subswath_name_;
 
     // bursts info
-    int linesPerBurst;
-    int numOfBursts;
-    int samplesPerBurst;
-    double *burstFirstLineTime = nullptr; //placeholder
-    double *burstLastLineTime = nullptr;  //placeholder
+    int lines_per_burst_;
+    int num_of_bursts_;
+    int samples_per_burst_;
+    double *burst_first_line_time_ = nullptr; //placeholder
+    double *burst_last_line_time_ = nullptr;  //placeholder
 
-    double **dopplerRate = nullptr;
-    double **dopplerCentroid = nullptr;
-    double **referenceTime = nullptr;
-    double **rangeDependDopplerRate = nullptr;
-
-    //int dopplerSizeX, dopplerSizeY;
+    double **doppler_rate_ = nullptr;
+    double **doppler_centroid_ = nullptr;
+    double **reference_time_ = nullptr;
+    double **range_depend_doppler_rate_ = nullptr;
 
     // GeoLocationGridPoint
-    int numOfGeoLines;
-    int numOfGeoPointsPerLine;
-    double **azimuthTime = nullptr; //placeholder
-    double **slantRangeTime = nullptr; //placeholder
-    double **latitude = nullptr;    //placeholder
-    double **longitude = nullptr;   //placeholder
-    double **incidenceAngle = nullptr; //placeholder
+    int num_of_geo_lines_;
+    int num_of_geo_points_per_line_;
+    double **azimuth_time_ = nullptr; //placeholder
+    double **slant_range_time_ = nullptr; //placeholder
+    double **latitude_ = nullptr;    //placeholder
+    double **longitude_ = nullptr;   //placeholder
+    double **incidence_angle_ = nullptr; //placeholder
 
     //the packet that you can use on the gpu
-    DeviceSubswathInfo *deviceSubswathInfo = nullptr;
+    DeviceSubswathInfo *device_subswath_info_ = nullptr;
 
-    void hostToDevice();
-    void deviceToHost();
-    void deviceFree();
+    void HostToDevice() override ;
+    void DeviceToHost() override ;
+    void DeviceFree() override ;
 
     SubSwathInfo();
     ~SubSwathInfo();

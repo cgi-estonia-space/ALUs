@@ -11,20 +11,20 @@
 namespace alus {
 
 struct SlavePixPosData{
-    int numLines;
-    int numPixels;
+    int num_lines;
+    int num_pixels;
 
-    int mBurstIndex;
-    int sBurstIndex;
+    int m_burst_index;
+    int s_burst_index;
 
-    int latMaxIdx;
-    int latMinIdx;
-    int lonMinIdx;
-    int lonMaxIdx;
+    int lat_max_idx;
+    int lat_min_idx;
+    int lon_min_idx;
+    int lon_max_idx;
 
     PointerArray tiles;
 };
 
-cudaError_t launchSlavePixPos(dim3 gridSize, dim3 bockSize, SlavePixPosData calcData);
+cudaError_t LaunchSlavePixPos(dim3 grid_size, dim3 block_size, SlavePixPosData calc_data);
 
 } //namespace

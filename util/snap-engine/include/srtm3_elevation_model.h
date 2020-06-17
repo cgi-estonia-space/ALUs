@@ -4,14 +4,13 @@
 #include <vector>
 #include <sstream>
 
-#include "srtm3_elevation_model_constants.h"
-#include "shapes.h"
-#include "CudaFriendlyObject.hpp"
-#include "earth_gravitational_model96.h"
-#include "srtm3_formatter.cuh"
-#include "pointer_holders.h"
+#include "CudaFriendlyObject.h"
 #include "dataset.hpp"
-
+#include "earth_gravitational_model96.h"
+#include "pointer_holders.h"
+#include "shapes.h"
+#include "srtm3_elevation_model_constants.h"
+#include "srtm3_formatter.cuh"
 
 namespace alus{
 namespace snapengine{
@@ -27,16 +26,16 @@ namespace snapengine{
 */
 class SRTM3ElevationModel: public alus::cuda::CudaFriendlyObject{
 private:
-    std::vector<Point> fileIndexes_;
-    std::string filesDirectory_;
-    std::string tifExtension_ = ".tif";
-    std::string tfwExtension_ = ".tfw";
-    std::vector<std::string> fileTemplates_;
+    std::vector<Point> file_indexes_;
+    std::string files_directory_;
+    std::string tif_extension_ = ".tif";
+    std::string tfw_extension_ = ".tfw";
+    std::vector<std::string> file_templates_;
 
-    int nrOfTiles_;
+    int nr_of_tiles_;
     std::vector<Dataset> srtms_;
     //use this for cudaFree once you are done with image.
-    std::vector<double *> deviceSrtms_;
+    std::vector<double *> device_srtms_;
 
     std::vector<DemFormatterData> datas_;
 
@@ -44,16 +43,16 @@ private:
     std::string FormatName(Point coords);
 
 public:
-    SRTM3ElevationModel(std::vector<Point> fileCoords, std::string directory);
+    SRTM3ElevationModel(std::vector<Point> file_indexes, std::string directory);
     ~SRTM3ElevationModel();
-    PointerHolder *deviceSrtm3Tiles_{nullptr};
-    std::vector<DemFormatterData> srtmPlaceholderData(EarthGravitationalModel96 *egm96);
+    PointerHolder *device_srtm3_tiles_{nullptr};
+    std::vector<DemFormatterData> SrtmPlaceholderData(EarthGravitationalModel96 *egm96);
 
     void ReadSrtmTiles(EarthGravitationalModel96 *egm96);
 
-    void hostToDevice();
-    void deviceToHost();
-    void deviceFree();
+    void HostToDevice() override ;
+    void DeviceToHost() override ;
+    void DeviceFree() override ;
 
 };
 

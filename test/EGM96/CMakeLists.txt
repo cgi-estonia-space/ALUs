@@ -1,5 +1,5 @@
 list(APPEND EGM96_TEST_SOURCES
-        ${CMAKE_CURRENT_LIST_DIR}/src/EGM96_test.cu
+        ${CMAKE_CURRENT_LIST_DIR}/src/egm96_test.cu
         )
 
 list(APPEND EGM96_TEST_INCLUDE_DIRS

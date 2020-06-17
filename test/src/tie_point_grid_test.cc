@@ -1,7 +1,7 @@
 #include "gmock/gmock.h"
 #include "tests_common.hpp"
 
-#include "CudaFriendlyObject.hpp"
+#include "CudaFriendlyObject.h"
 #include "cuda_util.hpp"
 #include "tie_point_grid.h"
 #include "tie_point_grid_test.cuh"
@@ -37,20 +37,20 @@ class TiePointGridTester : public cuda::CudaFriendlyObject {
     double *device_result_ {};
     float *device_tie_points_ {};
 
-    ~TiePointGridTester() { this->deviceFree(); }
+    ~TiePointGridTester() { this->DeviceFree(); }
 
-    void hostToDevice() {
+    void HostToDevice() {
         CHECK_CUDA_ERR(cudaMalloc(&device_tie_points_, sizeof(float) * tie_points_.size));
         CHECK_CUDA_ERR(cudaMalloc(&device_result_, sizeof(double)));
         CHECK_CUDA_ERR(
             cudaMemcpy(device_tie_points_, tie_points_.array, sizeof(float) * tie_points_.size, cudaMemcpyHostToDevice));
     }
 
-    void deviceToHost() {
+    void DeviceToHost() {
         CHECK_CUDA_ERR(cudaMemcpy(&end_result_, device_result_, sizeof(double), cudaMemcpyDeviceToHost));
     }
 
-    void deviceFree() {
+    void DeviceFree() {
         cudaFree(device_tie_points_);
         cudaFree(device_result_);
     }
@@ -59,7 +59,7 @@ class TiePointGridTester : public cuda::CudaFriendlyObject {
 TEST(getPixelDouble, tie_point_grid) {
     TiePointGridTester tester;
 
-    tester.hostToDevice();
+    tester.HostToDevice();
     CHECK_CUDA_ERR(LaunchGetPixelDouble(
         1,
         1,
@@ -68,7 +68,7 @@ TEST(getPixelDouble, tie_point_grid) {
         tester.device_result_,
         tiepointgrid::TiePointGrid{0, 0, 1163, 300, 21, 6, {tester.device_tie_points_, tester.tie_points_.size}}));
 
-    tester.deviceToHost();
+    tester.DeviceToHost();
     EXPECT_DOUBLE_EQ(tester.end_result_, tester.EXPECTED_RESULT_);
 }
 

@@ -3,8 +3,8 @@
 #include <string>
 #include <fstream>
 
-#include "CudaFriendlyObject.hpp"
-#include "allocators.hpp"
+#include "CudaFriendlyObject.h"
+#include "allocators.h"
 #include "cuda_util.hpp"
 
 
@@ -52,20 +52,20 @@ constexpr int MAX_LONS = NUM_LONS - 1;
 
 class EarthGravitationalModel96: public cuda::CudaFriendlyObject {
 private:
-    std::string gridFile = "../test/goods/ww15mgh_b.grd";
+    std::string grid_file_ = "../test/goods/ww15mgh_b.grd";
 
-    void readGridFile();
+    void ReadGridFile();
 public:
-    double **egm{nullptr};
-    double *deviceEgm{nullptr};
+    double **egm_{nullptr};
+    double *device_egm_{nullptr};
 
-    EarthGravitationalModel96(std::string gridFile);
+    EarthGravitationalModel96(std::string grid_file);
     EarthGravitationalModel96();
     ~EarthGravitationalModel96();
 
-    void hostToDevice();
-    void deviceToHost();
-    void deviceFree();
+    void HostToDevice() override ;
+    void DeviceToHost() override ;
+    void DeviceFree() override ;
 
 };
 

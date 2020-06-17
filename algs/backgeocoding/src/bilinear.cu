@@ -1,141 +1,139 @@
 #include "bilinear.cuh"
 
-#include "pointer_holders.h"
 #include "bilinear_interpolation.cuh"
+#include "pointer_holders.h"
 
-namespace alus{
+namespace alus {
 
-inline __device__ int getSamples(PointerArray *tiles,int *x, int *y, double *samples, int width, int height, double noValue, int useNoData)
-{
-	double *values = (double*)tiles->array[0].pointer;
-	const int valueWidth = tiles->array[0].x;
-	int i = 0, j=0, isValid = 1;
-	while (i < height) {
-		j = 0;
-		while (j < width) {
-			samples[i*width + j] = values[valueWidth*y[i] + x[j]];
-			if(useNoData){
-				if(noValue == samples[i*width + j]){
-				    isValid=0;
-				}
-			}
-			++j;
-		}
-		++i;
-	}
-	return isValid;
+inline __device__ int GetSamples(
+    PointerArray *tiles, int *x, int *y, double *samples, int width, int height, double no_value, int use_no_data) {
+
+    double *values = (double *)tiles->array[0].pointer;
+    const int value_width = tiles->array[0].x;
+    int i = 0, j = 0, is_valid = 1;
+    while (i < height) {
+        j = 0;
+        while (j < width) {
+            samples[i * width + j] = values[value_width * y[i] + x[j]];
+            if (use_no_data) {
+                if (no_value == samples[i * width + j]) {
+                    is_valid = 0;
+                }
+            }
+            ++j;
+        }
+        ++i;
+    }
+    return is_valid;
 }
 
+__global__ void BilinearInterpolation(double *x_pixels,
+                                      double *y_pixels,
+                                      double *demod_phase,
+                                      double *demod_i,
+                                      double *demod_q,
+                                      int *int_params,
+                                      double double_params,
+                                      float *results_i,
+                                      float *results_q) {
+    double index_i[2];
+    double index_j[2];
+    double index_ki[1];
+    double index_kj[1];
 
+    const int point_width = int_params[0];
+    const int point_height = int_params[1];
+    const int demod_width = int_params[2];
+    const int demod_height = int_params[3];
+    const int start_x = int_params[4];
+    const int start_y = int_params[5];
+    const int rectangle_x = int_params[10];
+    const int rectangle_y = int_params[11];
+    const int disable_reramp = int_params[12];
+    const int subswath_start = int_params[13];
+    const int subswath_end = int_params[14];
+    // TODO: this needs to come from tile information
+    const int use_no_data_phase = 0;
+    const int use_no_data_i = 0;
+    const int use_no_data_q = 0;
 
-__global__ void bilinearInterpolation(double *xPixels,
-                                    double *yPixels,
-                                    double *demodPhase,
-                                    double *demodI,
-                                    double *demodQ,
-                                    int *intParams,
-                                    double doubleParams,
-                                    float *resultsI,
-                                    float *resultsQ){
-	double indexI[2];
-	double indexJ[2];
-	double indexKi[1];
-	double indexKj[1];
+    const double no_data_value = double_params;
 
-	const int pointWidth = intParams[0];
-	const int pointHeight = intParams[1];
-	const int demodWidth = intParams[2];
-	const int demodHeight = intParams[3];
-	const int startX = intParams[4];
-	const int startY = intParams[5];
-	const int rectangleX = intParams[10];
-	const int rectangleY = intParams[11];
-	const int disableReramp = intParams[12];
-	const int subswathStart = intParams[13];
-	const int subswathEnd = intParams[14];
-	//TODO: this needs to come from tile information
-	const int useNoDataPhase = 0;
-	const int useNoDataI = 0;
-	const int useNoDataQ = 0;
+    const int idx = threadIdx.x + (blockDim.x * blockIdx.x);
+    const int idy = threadIdx.y + (blockDim.y * blockIdx.y);
+    const double x = x_pixels[(idy * point_width) + idx];
+    const double y = y_pixels[(idy * point_width) + idx];
+    double sample_phase = 0.0;
+    double sample_i = 0.0;
+    double sample_q = 0.0;
+    double cos_phase = 0.0;
+    double sin_phase = 0.0;
+    double reramp_remod_i = 0.0;
+    double reramp_remod_q = 0.0;
 
-	const double noDataValue = doubleParams;
+    PointerArray p_array;
+    PointerHolder p_holder;
+    p_array.array = &p_holder;
+    p_holder.x = demod_width;
+    p_holder.y = demod_height;
 
-	const int idx = threadIdx.x + (blockDim.x*blockIdx.x);
-	const int idy = threadIdx.y + (blockDim.y*blockIdx.y);
-	const double x = xPixels[(idy*pointWidth) + idx];
-	const double y = yPixels[(idy*pointWidth) + idx];
-	double samplePhase = 0.0;
-	double sampleI = 0.0;
-	double sampleQ = 0.0;
-	double cosPhase = 0.0;
-	double sinPhase = 0.0;
-	double rerampRemodI = 0.0;
-	double rerampRemodQ = 0.0;
+    // y stride + x index
+    const int target_index =
+        (start_x + idx) - (int_params[8] - (((start_y + idy) - int_params[9]) * int_params[7] + int_params[6]));
 
-	PointerArray pArray;
-	PointerHolder pHolder;
-	pArray.array = &pHolder;
-	pHolder.x = demodWidth;
-	pHolder.y = demodHeight;
+    if (idx < point_width && idy < point_height) {
+        if ((x == no_data_value && y == no_data_value) || !(y >= subswath_start && y < subswath_end)) {
+            results_i[(idy * point_width) + idx] = no_data_value;
+            results_q[(idy * point_width) + idx] = no_data_value;
+        } else {
+            snapengine::bilinearinterpolation::ComputeIndex(x - rectangle_x + 0.5,
+                                                            y - rectangle_y + 0.5,
+                                                            demod_width,
+                                                            demod_height,
+                                                            index_i,
+                                                            index_j,
+                                                            index_ki,
+                                                            index_kj);
+            p_holder.pointer = demod_phase;
+            sample_phase = snapengine::bilinearinterpolation::Resample(
+                &p_array, index_i, index_j, index_ki, index_kj, no_data_value, use_no_data_phase, GetSamples);
+            p_holder.pointer = demod_i;
+            sample_i = snapengine::bilinearinterpolation::Resample(
+                &p_array, index_i, index_j, index_ki, index_kj, no_data_value, use_no_data_i, GetSamples);
+            p_holder.pointer = demod_q;
+            sample_q = snapengine::bilinearinterpolation::Resample(
+                &p_array, index_i, index_j, index_ki, index_kj, no_data_value, use_no_data_q, GetSamples);
 
-    //y stride + x index
-    const int targetIndex = (startX+idx) - (intParams[8] - (((startY + idy) - intParams[9]) * intParams[7] + intParams[6]));
-
-	if(idx < pointWidth && idy < pointHeight){
-
-	    if((x==noDataValue && y==noDataValue) || !(y >= subswathStart && y < subswathEnd)){
-	        resultsI[(idy*pointWidth) + idx] = noDataValue;
-	        resultsQ[(idy*pointWidth) + idx] = noDataValue;
-	    }else{
-	        snapengine::bilinearinterpolation::computeIndex(x - rectangleX + 0.5, y - rectangleY + 0.5, demodWidth, demodHeight, indexI, indexJ, indexKi, indexKj);
-			pHolder.pointer = demodPhase;
-        	samplePhase = snapengine::bilinearinterpolation::resample(&pArray, indexI, indexJ, indexKi, indexKj, noDataValue, useNoDataPhase, getSamples);
-			pHolder.pointer = demodI;
-        	sampleI = snapengine::bilinearinterpolation::resample(&pArray, indexI, indexJ, indexKi, indexKj, noDataValue, useNoDataI, getSamples);
-			pHolder.pointer = demodQ;
-        	sampleQ = snapengine::bilinearinterpolation::resample(&pArray, indexI, indexJ, indexKi, indexKj, noDataValue, useNoDataQ, getSamples);
-
-        	if(!disableReramp){
-                cosPhase = cos(samplePhase);
-                sinPhase = sin(samplePhase);
-                rerampRemodI = sampleI * cosPhase + sampleQ * sinPhase;
-                rerampRemodQ = -sampleI * sinPhase + sampleQ * cosPhase;
-                resultsI[targetIndex] = rerampRemodI;
-                resultsQ[targetIndex] = rerampRemodQ;
-            }else{
-                resultsI[targetIndex] = sampleI;
-                resultsQ[targetIndex] = sampleQ;
-        	}
-	    }
-	}
+            if (!disable_reramp) {
+                cos_phase = cos(sample_phase);
+                sin_phase = sin(sample_phase);
+                reramp_remod_i = sample_i * cos_phase + sample_q * sin_phase;
+                reramp_remod_q = -sample_i * sin_phase + sample_q * cos_phase;
+                results_i[target_index] = reramp_remod_i;
+                results_q[target_index] = reramp_remod_q;
+            } else {
+                results_i[target_index] = sample_i;
+                results_q[target_index] = sample_q;
+            }
+        }
+    }
 }
 
-cudaError_t launchBilinearInterpolation(dim3 gridSize,
-						dim3 blockSize,
-						double *xPixels,
-                        double *yPixels,
-                        double *demodPhase,
-                        double *demodI,
-                        double *demodQ,
-                        int *intParams,
-                        double doubleParams,
-                        float *resultsI,
-                        float *resultsQ){
+cudaError_t LaunchBilinearInterpolation(dim3 grid_size,
+                                        dim3 block_size,
+                                        double *x_pixels,
+                                        double *y_pixels,
+                                        double *demod_phase,
+                                        double *demod_i,
+                                        double *demod_q,
+                                        int *int_params,
+                                        double double_params,
+                                        float *results_i,
+                                        float *results_q) {
 
-
-    bilinearInterpolation<<<gridSize, blockSize>>>(
-        xPixels,
-        yPixels,
-        demodPhase,
-        demodI,
-        demodQ,
-        intParams,
-        doubleParams,
-        resultsI,
-        resultsQ
-    );
+    BilinearInterpolation<<<grid_size, block_size>>>(
+        x_pixels, y_pixels, demod_phase, demod_i, demod_q, int_params, double_params, results_i, results_q);
     return cudaGetLastError();
-
 }
 
-}//namespace
+}  // namespace alus

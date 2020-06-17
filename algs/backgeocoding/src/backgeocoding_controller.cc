@@ -7,53 +7,53 @@ BackgeocodingController::BackgeocodingController(){
 }
 
 BackgeocodingController::~BackgeocodingController(){
-    if(this->backgeocoding != nullptr){
-        delete backgeocoding;
+    if(this->backgeocoding_ != nullptr){
+        delete backgeocoding_;
     }
 }
 
-void BackgeocodingController::computeImage(){
+void BackgeocodingController::ComputeImage(){
     std::cout << "compute image started" << '\n';
-    this->backgeocoding = new Backgeocoding;
-    this->backgeocoding->feedPlaceHolders();
-    this->backgeocoding->prepareToCompute();
+    this->backgeocoding_ = new Backgeocoding;
+    this->backgeocoding_->FeedPlaceHolders();
+    this->backgeocoding_->PrepareToCompute();
 
-    this->backgeocoding->computeTile(this->slaveRect, this->slaveTileI, this->slaveTileQ);
+    this->backgeocoding_->ComputeTile(this->slave_rect, this->slave_tile_i_, this->slave_tile_q_);
 
     std::cout << "compute image ended" << '\n';
 }
 
-void BackgeocodingController::readPlacehoderData(){
+void BackgeocodingController::ReadPlacehoderData(){
     int i, size;
 
-    std::ifstream rectStream("../test/goods/backgeocoding/rectangle.txt");
-    if(!rectStream.is_open()){
+    std::ifstream rect_stream("../test/goods/backgeocoding/rectangle.txt");
+    if(!rect_stream.is_open()){
         throw std::ios::failure("Error opening rectangle.txt");
     }
-    rectStream >> slaveRect.x >> slaveRect.y >>slaveRect.width >> slaveRect.height;
-    rectStream.close();
+    rect_stream >> slave_rect.x >> slave_rect.y >> slave_rect.width >> slave_rect.height;
+    rect_stream.close();
 
-    std::ifstream slaveIStream("../test/goods/backgeocoding/slaveTileI.txt");
-    std::ifstream slaveQStream("../test/goods/backgeocoding/slaveTileQ.txt");
-    if(!slaveIStream.is_open()){
+    std::ifstream slave_i_stream("../test/goods/backgeocoding/slaveTileI.txt");
+    std::ifstream slave_q_stream("../test/goods/backgeocoding/slaveTileQ.txt");
+    if(!slave_i_stream.is_open()){
         throw std::ios::failure("Error opening slaveTileI.txt");
     }
-    if(!slaveQStream.is_open()){
+    if(!slave_q_stream.is_open()){
         throw std::ios::failure("Error opening slaveTileQ.txt");
     }
 
-    size = slaveRect.width * slaveRect.height;
+    size = slave_rect.width * slave_rect.height;
 
-    this->slaveTileI = new double[size];
-    this->slaveTileQ = new double[size];
+    this->slave_tile_i_ = new double[size];
+    this->slave_tile_q_ = new double[size];
 
     for(i=0; i< size; i++){
-        slaveIStream >> slaveTileI[i];
-        slaveQStream >> slaveTileQ[i];
+        slave_i_stream >> slave_tile_i_[i];
+        slave_q_stream >> slave_tile_q_[i];
     }
 
-    slaveIStream.close();
-    slaveQStream.close();
+    slave_i_stream.close();
+    slave_q_stream.close();
 
 
 }
