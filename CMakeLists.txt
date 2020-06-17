@@ -52,6 +52,7 @@ add_subdirectory(algs/backgeocoding)
 # Test helpers
 add_subdirectory(test/EGM96)
 add_subdirectory(test/SRTM3TestUtil)
+add_subdirectory(test/tie_point_grid)
 
 # Main terminal application
 add_subdirectory(app)

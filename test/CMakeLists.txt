@@ -48,6 +48,7 @@ list(APPEND TEST_SOURCES
         src/product_data_test.cpp
         src/sar_geocoding_test.cc
         src/srtm3_tests.cc
+        src/tie_point_grid_test.cc
         )
 
 add_executable(unit_test ${TEST_SOURCES})
@@ -63,6 +64,7 @@ target_link_libraries(unit_test
         egm96-test-static
         srtm3-test-util-static
         cuda_util-static
+        tiePointGrid-test-static
         )
 
 add_executable(map_cut util/map_cut.cpp)
