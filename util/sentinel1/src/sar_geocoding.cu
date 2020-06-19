@@ -18,22 +18,23 @@
 
 namespace alus {
 namespace s1tbx {
-namespace sarGeocoding {
-double GetEarthPointZeroDopplerTime(double firstLineUTC,
-                                    double lineTimeInterval,
+namespace sargeocoding {
+
+double GetEarthPointZeroDopplerTime(double first_line_utc,
+                                    double line_time_interval,
                                     double wavelength,
-                                    alus::snapengine::PosVector earthPoint,
-                                    KernelArray<alus::snapengine::PosVector> sensorPosition,
-                                    KernelArray<alus::snapengine::PosVector> sensorVelocity) {
-    return GetEarthPointZeroDopplerTime_impl(
-        firstLineUTC, lineTimeInterval, wavelength, earthPoint, sensorPosition, sensorVelocity);
+                                    alus::snapengine::PosVector earth_point,
+                                    cudautil::KernelArray<alus::snapengine::PosVector> sensor_position,
+                                    cudautil::KernelArray<alus::snapengine::PosVector> sensor_velocity) {
+    return GetEarthPointZeroDopplerTimeImpl(
+        first_line_utc, line_time_interval, wavelength, earth_point, sensor_position, sensor_velocity);
 }
 
 double ComputeSlantRange(double time,
-                         KernelArray<snapengine::OrbitStateVector> vectors,
-                         snapengine::PosVector earthPoint,
-                         snapengine::PosVector& sensorPos) {
-    return ComputeSlantRangeImpl(time, vectors, earthPoint, sensorPos);
+                         cudautil::KernelArray<snapengine::OrbitStateVector> vectors,
+                         snapengine::PosVector earth_point,
+                         snapengine::PosVector& sensor_pos) {
+    return ComputeSlantRangeImpl(time, vectors, earth_point, sensor_pos);
 }
 
 bool IsDopplerTimeValid(double first_line_utc, double last_line_utc, double zero_doppler_time) {
@@ -44,6 +45,6 @@ double ComputeRangeIndexSlc(double range_spacing, double slant_range, double nea
     return ComputeRangeIndexSlcImpl(range_spacing, slant_range, near_edge_slant_range);
 }
 
-}  // namespace sarGeocoding
+}  // namespace sargeocoding
 }  // namespace s1tbx
 }  // namespace alus

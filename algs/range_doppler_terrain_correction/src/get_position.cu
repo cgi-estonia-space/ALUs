@@ -12,18 +12,14 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 
-#include "orbit_state_vectors.h"
-
-#include "pos_vector.h"
-#include "orbit_state_vectors.cuh"
+#include "get_position.h"
+#include "get_position.cuh"
 
 namespace alus {
-namespace s1tbx {
-namespace orbitstatevectors {
-snapengine::PosVector GetPosition(double time,
-                                  cudautil::KernelArray<snapengine::OrbitStateVector> vectors) {
-    return GetPositionImpl(time, vectors);
+namespace terraincorrection {
+bool GetPosition(double lat, double lon, double alt, PositionData& satellite_pos, const GetPositionMetadata& metadata){
+    return GetPositionImpl(lat, lon, alt, satellite_pos, metadata);
 }
-}  // namespace orbitstatevectors
-}  // namespace s1tbx
-}  // namespace alus
+
+}
+}

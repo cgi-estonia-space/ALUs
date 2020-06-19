@@ -11,15 +11,16 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
-#include "GeoUtils.cuh"
+
+#include "geo_utils.cuh"
 
 namespace alus {
 namespace snapengine {
-namespace GeoUtils {
-__host__ void geo2xyzWGS84(double latitude, double longitude, double altitude, PosVector& xyz) {
-    geo2xyzWGS84_fast(latitude, longitude, altitude, xyz);
+namespace geoutils {
+__host__ void Geo2xyzWgs84(double latitude, double longitude, double altitude, PosVector& xyz) {
+    Geo2xyzWgs84Impl(latitude, longitude, altitude, xyz);
 }
 
-}  // namespace GeoUtils
+}  // namespace geoutils
 }  // namespace snapEngine
 }  // namespace alus

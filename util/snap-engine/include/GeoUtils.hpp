@@ -1,5 +1,5 @@
 /**
- * This file is a filtered duplicate of a SNAP's GeoUtils.java ported for native code.
+ * This file is a filtered duplicate of a SNAP's geoutils.java ported for native code.
  * Copied from a snap-engine's(https://github.com/senbox-org/snap-engine) repository originally stated to be implemented
  * by "Copyright (C) 2014 by Array Systems Computing Inc. http://www.array.ca"
  *
@@ -18,18 +18,18 @@
 
 #pragma once
 
-#include "PosVector.hpp"
+#include "pos_vector.h"
 
 namespace alus {
 namespace snapengine {
-namespace GeoUtils {
+namespace geoutils {
 /**
- * Duplicate of a SNAP's GeoUtils.java's geo2xyzWGS84().
+ * Duplicate of a SNAP's geoutils.java's geo2xyzWGS84().
  *
- * This actually exists as an inline version for CUDA calls as geo2xyzWGS84_fast() in GeoUtils.cuh.
- * This procedure is duplicated by the nvcc for host processing in GeoUtils.cu.
+ * This actually exists as an inline version for CUDA calls as Geo2xyzWgs84Impl() in geoutils.cuh.
+ * This procedure is duplicated by the nvcc for host processing in geoutils.cu.
  */
-void geo2xyzWGS84(double latitude, double longitude, double altitude, PosVector& xyz);
+void Geo2xyzWgs84(double latitude, double longitude, double altitude, PosVector& xyz);
 
 namespace WGS84 {
 constexpr double a{6378137.0};                          // m
@@ -39,6 +39,6 @@ constexpr double e2{2.0 / earthFlatCoef - 1.0 / (earthFlatCoef * earthFlatCoef)}
 constexpr double e2inv{1 - e2};
 constexpr double ep2{e2 / (1 - e2)};
 }  // namespace WGS84
-}  // namespace GeoUtils
+}  // namespace geoutils
 }  // namespace snapEngine
 }  // namespace alus

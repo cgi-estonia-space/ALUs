@@ -21,6 +21,7 @@
 #include <thrust/device_vector.h>
 
 namespace alus {
+namespace cudautil {
 /**
  * Thrust containers' wrapper.
  *
@@ -32,4 +33,5 @@ struct KernelArray {
     T* array;
     size_t size;
 };
+}  // namespace cudautil
 }  // namespace alus

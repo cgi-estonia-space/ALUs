@@ -13,7 +13,7 @@ struct TiePointGrid {
     double sub_sampling_y;
     int grid_width;
     int grid_height;
-    alus::KernelArray<float> tie_points;
+    cudautil::KernelArray<float> tie_points;
 };
 
 /**

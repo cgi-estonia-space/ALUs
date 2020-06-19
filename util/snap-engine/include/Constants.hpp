@@ -28,8 +28,8 @@ constexpr double lightSpeed{299792458.0};  //  m / s
 constexpr double halfLightSpeed{lightSpeed / 2.0};
 constexpr double lightSpeedInMetersPerDay{lightSpeed * secondsInDay};
 
-constexpr double semiMajorAxis{GeoUtils::WGS84::a};  // in m, WGS84 semi-major axis of Earth
-constexpr double semiMinorAxis{GeoUtils::WGS84::b};  // in m, WGS84 semi-minor axis of Earth
+constexpr double semiMajorAxis{geoutils::WGS84::a};  // in m, WGS84 semi-major axis of Earth
+constexpr double semiMinorAxis{geoutils::WGS84::b};  // in m, WGS84 semi-minor axis of Earth
 
 constexpr double MeanEarthRadius{6371008.7714};  // in m (WGS84)
 
