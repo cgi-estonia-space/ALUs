@@ -17,9 +17,9 @@
  */
 #pragma once
 
-#include "pos_vector.h"
 #include "cuda_util.cuh"
 #include "orbit_state_vectors.h"
+#include "pos_vector.h"
 
 namespace alus {
 namespace s1tbx {
@@ -88,6 +88,19 @@ bool IsDopplerTimeValid(double first_line_utc, double last_line_utc, double zero
  * @return The range index.
  */
 double ComputeRangeIndexSlc(double range_spacing, double slant_range, double near_edge_slant_range);
+
+/**
+ * Determines if tile is located inside the given input area.
+ *
+ * @param range_index
+ * @param azimuth_index
+ * @param diff_lat
+ * @param src_max_range
+ * @param src_max_azimuth
+ * @return true if the cell is valid and false otherwise
+ * @todo part of the logic is not implemented as it is only used for very long images such as GM, WSM or assembled slices which is not the case in test data provided
+ */
+bool IsValidCell(double range_index, double azimuth_index, int diff_lat, int src_max_range, int src_max_azimuth);
 
 }  // namespace sargeocoding
 }  // namespace s1tbx
