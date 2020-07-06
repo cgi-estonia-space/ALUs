@@ -42,6 +42,7 @@ set_target_properties(terrain-correction-static
 target_link_libraries(terrain-correction-static
         PUBLIC
         gdal-util-static
+        snap-engine-static
         )
 
 add_library(terrain-correction-shared

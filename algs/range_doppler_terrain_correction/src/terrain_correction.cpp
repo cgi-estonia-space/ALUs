@@ -14,24 +14,20 @@
 
 namespace alus {
 
-TerrainCorrection::TerrainCorrection(alus::Dataset coh_ds, alus::Dataset metadata, alus::Dataset dem)
-    : coh_ds_{std::move(coh_ds)},
-      metadata_ds_{std::move(metadata)},
-      dem_ds_{std::move(dem)},
-      coh_ds_elevations_(coh_ds_.GetDataBuffer().size()) {}
+TerrainCorrection::TerrainCorrection(alus::Dataset coh_ds, alus::Dataset dem)
+    : coh_ds_{std::move(coh_ds)}, dem_ds_{std::move(dem)}, coh_ds_elevations_(coh_ds_.GetDataBuffer().size()) {
+    FillMetadata();
+}
 
 /**
  * Method for launching RangeDoppler Terrain Correction algorithm.
  *
  * @todo WIP: The method is going to be renamed and completed as part of SNAPGPU-119 and SNAPGUP-121 issues
  */
-void TerrainCorrection::DoWork() {
-    LocalDemCuda();
-}
+void TerrainCorrection::DoWork() { LocalDemCuda(); }
 
 void TerrainCorrection::LocalDemCpu() {
     auto const result = dem_ds_.GetLocalDemFor(coh_ds_, 0, 0, coh_ds_.GetXSize(), coh_ds_.GetYSize());
-
 }
 
 void TerrainCorrection::LocalDemCuda() {
@@ -197,4 +193,7 @@ void TerrainCorrection::FillMetadata() {
     metadata_.last_valid_line_time = 6.165218868469114E8;
     metadata_.orbit_state_vectors = GetOrbitStateVectors();
 }
+
+
+alus::Dataset TerrainCorrection::ExecuteTerrainCorrection() { return alus::Dataset("goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_TC.tif"); }
 }  // namespace alus

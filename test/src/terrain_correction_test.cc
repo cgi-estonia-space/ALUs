@@ -49,7 +49,7 @@ class TerrainCorrectionTest : public ::testing::Test {
 };
 
 TEST_F(TerrainCorrectionTest, fetchElevationsOnGPU) {
-    alus::TerrainCorrection tc{std::move(coh_ds_.value()), std::move(coh_ds_.value()), std::move(dem_ds_.value())};
+    alus::TerrainCorrection tc{std::move(coh_ds_.value()), std::move(dem_ds_.value())};
     tc.LocalDemCuda();
     const auto& elevations = tc.GetElevations();
     const auto [min, max] = std::minmax_element(std::begin(elevations), std::end(elevations));
