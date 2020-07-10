@@ -15,69 +15,69 @@ namespace bilinearinterpolation {
         examples in our project can be found in algs/backgeocoding/src/bilinear.cu and
         util/snap-engine/include/srtm3_elevation_calc.cuh
 */
-inline __device__ void computeIndex(const double x,
+inline __device__ void ComputeIndex(const double x,
                                     const double y,
                                     const int width,
                                     const int height,
-                                    double *indexI,
-                                    double *indexJ,
-                                    double *indexKi,
-                                    double *indexKj) {
+                                    double *index_i,
+                                    double *index_j,
+                                    double *index_ki,
+                                    double *index_kj) {
     const int i0 = (int)x;
     const int j0 = (int)y;
     double di = x - (i0 + 0.5);
     double dj = y - (j0 + 0.5);
 
-    int iMax = width - 1;
-    int jMax = 0;
+    int i_max = width - 1;
+    int j_max = 0;
 
     if (di >= 0.0) {
-        jMax = i0 + 1;
-        indexI[0] = i0 < 0 ? 0.0 : (i0 > iMax ? iMax : i0);
-        indexI[1] = jMax < 0 ? 0.0 : (jMax > iMax ? iMax : jMax);
-        indexKi[0] = di;
+        j_max = i0 + 1;
+        index_i[0] = i0 < 0 ? 0.0 : (i0 > i_max ? i_max : i0);
+        index_i[1] = j_max < 0 ? 0.0 : (j_max > i_max ? i_max : j_max);
+        index_ki[0] = di;
     } else {
-        jMax = i0 - 1;
-        indexI[0] = jMax < 0 ? 0.0 : (jMax > iMax ? iMax : jMax);
-        indexI[1] = i0 < 0 ? 0.0 : (i0 > iMax ? iMax : i0);
-        indexKi[0] = di + 1.0;
+        j_max = i0 - 1;
+        index_i[0] = j_max < 0 ? 0.0 : (j_max > i_max ? i_max : j_max);
+        index_i[1] = i0 < 0 ? 0.0 : (i0 > i_max ? i_max : i0);
+        index_ki[0] = di + 1.0;
     }
 
-    jMax = height - 1;
+    j_max = height - 1;
     int j1 = 0;
 
     if (dj >= 0.0) {
         j1 = j0 + 1;
-        indexJ[0] = j0 < 0 ? 0.0 : (j0 > jMax ? jMax : j0);
-        indexJ[1] = j1 < 0 ? 0.0 : (j1 > jMax ? jMax : j1);
-        indexKj[0] = dj;
+        index_j[0] = j0 < 0 ? 0.0 : (j0 > j_max ? j_max : j0);
+        index_j[1] = j1 < 0 ? 0.0 : (j1 > j_max ? j_max : j1);
+        index_kj[0] = dj;
     } else {
         j1 = j0 - 1;
-        indexJ[0] = j1 < 0 ? 0.0 : (j1 > jMax ? jMax : j1);
-        indexJ[1] = j0 < 0 ? 0.0 : (j0 > jMax ? jMax : j0);
-        indexKj[0] = dj + 1.0;
+        index_j[0] = j1 < 0 ? 0.0 : (j1 > j_max ? j_max : j1);
+        index_j[1] = j0 < 0 ? 0.0 : (j0 > j_max ? j_max : j0);
+        index_kj[0] = dj + 1.0;
     }
 }
 
-inline __device__ double resample(
+inline __device__ double Resample(
         PointerArray *tiles,
-        double *indexI,
-        double *indexJ,
-        double *indexKi,
-        double *indexKj,
-        double noValue,
-        int useNoData,
-        int getSamplesFunction(PointerArray *, int *, int *, double *, int, int, double, int)) {
+        double *index_i,
+        double *index_j,
+        double *index_ki,
+        double *index_kj,
+        double no_value,
+        int use_no_data,
+        int GetSamplesFunction(PointerArray *, int *, int *, double *, int, int, double, int)) {
 
 
-    int x[2] = {(int)indexI[0], (int)indexI[1]};
-    int y[2] = {(int)indexJ[0], (int)indexJ[1]};
+    int x[2] = {(int)index_i[0], (int)index_i[1]};
+    int y[2] = {(int)index_j[0], (int)index_j[1]};
     double samples[2][2];
     samples[0][0] = 0.0;
     
-    if (getSamplesFunction(tiles, x, y, samples[0], 2, 2, noValue, useNoData)) {
-        const double ki = indexKi[0];
-        const double kj = indexKj[0];
+    if (GetSamplesFunction(tiles, x, y, samples[0], 2, 2, no_value, use_no_data)) {
+        const double ki = index_ki[0];
+        const double kj = index_kj[0];
         return samples[0][0] * (1.0 - ki) * (1.0 - kj) + samples[0][1] * ki * (1.0 - kj) +
                samples[1][0] * (1.0 - ki) * kj + samples[1][1] * ki * kj;
     } else {

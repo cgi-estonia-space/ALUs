@@ -9,18 +9,14 @@ __global__ void SRTM3AltitudeTester(double *lats, double *lons, double *results,
     const int idx = threadIdx.x + (blockDim.x*blockIdx.x);
 
     if(idx < data.size){
-        results[idx] = snapengine::srtm3elevationmodel::getElevation(
-            lats[idx],
-            lons[idx],
-            &data.tiles
-        );
+        results[idx] = snapengine::srtm3elevationmodel::GetElevation(lats[idx], lons[idx], &data.tiles);
     }
 }
 
 
-cudaError_t launchSRTM3AltitudeTester(dim3 gridSize, dim3 blockSize, double *lats, double *lons, double *results, SRTM3TestData data){
+cudaError_t LaunchSRTM3AltitudeTester(dim3 grid_size, dim3 block_size, double *lats, double *lons, double *results, SRTM3TestData data){
 
-    SRTM3AltitudeTester<<<gridSize, blockSize>>>(
+    SRTM3AltitudeTester<<<grid_size, block_size>>>(
         lats,
         lons,
         results,

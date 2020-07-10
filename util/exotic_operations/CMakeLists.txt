@@ -1,6 +1,6 @@
 list(APPEND EXOTIC_OPERATIONS_SOURCES
-        ${CMAKE_CURRENT_LIST_DIR}/src/comparators.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/src/allocators.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/src/comparators.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/allocators.cc
         )
 
 list(APPEND EXOTIC_OPERATIONS_INCLUDE_DIRS

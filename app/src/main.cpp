@@ -30,8 +30,8 @@ int main(int argc, char* argv[]) {
     inverterParallelTimeTest(argv[2]);
   } else if (argc == 2 && arg1 == "backgeocoding") {
       alus::BackgeocodingController orch;
-    orch.readPlacehoderData();
-    orch.computeImage();
+      orch.ReadPlacehoderData();
+      orch.ComputeImage();
   } else {
     printHelp();
     return 2;

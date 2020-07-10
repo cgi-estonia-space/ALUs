@@ -3,13 +3,12 @@
 namespace alus{
 namespace snapengine{
 
-SRTM3ElevationModel::SRTM3ElevationModel(std::vector<Point> fileIndexes, std::string directory){
-    this->fileIndexes_ = fileIndexes;
-    this->filesDirectory_ = directory;
+SRTM3ElevationModel::SRTM3ElevationModel(std::vector<Point> file_indexes, std::string directory){
+    this->file_indexes_ = file_indexes;
+    this->files_directory_ = directory;
 }
 
-SRTM3ElevationModel::~SRTM3ElevationModel(){
-    this->deviceFree();
+SRTM3ElevationModel::~SRTM3ElevationModel(){ this->DeviceFree();
 }
 
 //use a preconfigured emg96 instance with the tiles already loaded onto the gpu.
@@ -17,40 +16,41 @@ void SRTM3ElevationModel::ReadSrtmTiles(EarthGravitationalModel96 *egm96){
 
     this->ResolveFileNames();
 
-    this->deviceSrtms_.resize(this->nrOfTiles_);
+    this->device_srtms_.resize(this->nr_of_tiles_);
 
-    for(int i=0; i<this->nrOfTiles_; i++){
+    for(int i=0; i<this->nr_of_tiles_; i++){
 
-        std::string imageFile = this->fileTemplates_.at(i);
-        imageFile.append(this->tifExtension_);
-        std::string tfwFile = this->fileTemplates_.at(i);
-        tfwFile.append(this->tfwExtension_);
+        std::string image_file = this->file_templates_.at(i);
+        image_file.append(this->tif_extension_);
+        std::string tfw_file = this->file_templates_.at(i);
+        tfw_file.append(this->tfw_extension_);
 
-        this->srtms_.push_back(Dataset(imageFile));
+        this->srtms_.push_back(Dataset(image_file));
         this->srtms_.at(i).loadRasterBand(1);
 
-        std::ifstream tfwReader(tfwFile);
-        if(!tfwReader.is_open()){
-            std::stringstream errMsg;
-            errMsg << "Can not open TFW file " << tfwFile << '\n';
-            throw std::ios::failure(errMsg.str().c_str());
+        std::ifstream tfw_reader(tfw_file);
+        if(!tfw_reader.is_open()){
+            std::stringstream err_msg;
+            err_msg << "Can not open TFW file " << tfw_file << '\n';
+            throw std::ios::failure(err_msg.str().c_str());
         }
 
-        DemFormatterData srtmData;
-        tfwReader >> srtmData.m00 >> srtmData.m10 >> srtmData.m01 >> srtmData.m11 >> srtmData.m02 >> srtmData.m12;
-        srtmData.noDataValue = -32768.0;
-        srtmData.maxLats = alus::snapengine::earthgravitationalmodel96::MAX_LATS;
-        srtmData.maxLons = alus::snapengine::earthgravitationalmodel96::MAX_LONS;
-        srtmData.egm = egm96->deviceEgm;
+        DemFormatterData srtm_data;
+        tfw_reader >> srtm_data.m00 >> srtm_data.m10 >> srtm_data.m01 >> srtm_data.m11 >> srtm_data.m02 >>
+            srtm_data.m12;
+        srtm_data.no_data_value = -32768.0;
+        srtm_data.max_lats = alus::snapengine::earthgravitationalmodel96::MAX_LATS;
+        srtm_data.max_lons = alus::snapengine::earthgravitationalmodel96::MAX_LONS;
+        srtm_data.egm = egm96->device_egm_;
 
-        tfwReader.close();
-        this->datas_.push_back(srtmData);
+        tfw_reader.close();
+        this->datas_.push_back(srtm_data);
     }
 }
 //keep it for accuracy tests. Not sure if first 4 values(by column) are calcuated or read.
 //not sure if the last 2 values get their decimals ripped of or not.
 //once backgeocoding is completed and SRTM3 tile processing is automated and without placeholders, remove this.
-std::vector<DemFormatterData> SRTM3ElevationModel::srtmPlaceholderData(EarthGravitationalModel96 *egm96){
+std::vector<DemFormatterData> SRTM3ElevationModel::SrtmPlaceholderData(EarthGravitationalModel96 *egm96){
 
     std::vector<DemFormatterData> result;
 
@@ -61,10 +61,10 @@ std::vector<DemFormatterData> SRTM3ElevationModel::srtmPlaceholderData(EarthGrav
     srtm41_01Data.m10 = 0;
     srtm41_01Data.m11 = -snapengine::srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE;
     srtm41_01Data.m12 = 60;
-    srtm41_01Data.noDataValue = -32768.0;
-    srtm41_01Data.maxLats = alus::snapengine::earthgravitationalmodel96::MAX_LATS;
-    srtm41_01Data.maxLons = alus::snapengine::earthgravitationalmodel96::MAX_LONS;
-    srtm41_01Data.egm = egm96->deviceEgm;
+    srtm41_01Data.no_data_value = -32768.0;
+    srtm41_01Data.max_lats = alus::snapengine::earthgravitationalmodel96::MAX_LATS;
+    srtm41_01Data.max_lons = alus::snapengine::earthgravitationalmodel96::MAX_LONS;
+    srtm41_01Data.egm = egm96->device_egm_;
 
     DemFormatterData srtm42_01Data;
     srtm42_01Data.m00 = snapengine::srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE;
@@ -73,10 +73,10 @@ std::vector<DemFormatterData> SRTM3ElevationModel::srtmPlaceholderData(EarthGrav
     srtm42_01Data.m10 = 0;
     srtm42_01Data.m11 = -snapengine::srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE;
     srtm42_01Data.m12 = 60;
-    srtm42_01Data.noDataValue = -32768.0;
-    srtm42_01Data.maxLats = alus::snapengine::earthgravitationalmodel96::MAX_LATS;
-    srtm42_01Data.maxLons = alus::snapengine::earthgravitationalmodel96::MAX_LONS;
-    srtm42_01Data.egm = egm96->deviceEgm;
+    srtm42_01Data.no_data_value = -32768.0;
+    srtm42_01Data.max_lats = alus::snapengine::earthgravitationalmodel96::MAX_LATS;
+    srtm42_01Data.max_lons = alus::snapengine::earthgravitationalmodel96::MAX_LONS;
+    srtm42_01Data.egm = egm96->device_egm_;
 
     result.push_back(srtm41_01Data);
     result.push_back(srtm42_01Data);
@@ -85,73 +85,77 @@ std::vector<DemFormatterData> SRTM3ElevationModel::srtmPlaceholderData(EarthGrav
 
 void SRTM3ElevationModel::ResolveFileNames(){
 
-    for(unsigned int i=0; i< this->fileIndexes_.size(); i++){
-        Point coords = fileIndexes_.at(i);
+    for(unsigned int i=0; i< this->file_indexes_.size(); i++){
+        Point coords = file_indexes_.at(i);
         if (coords.x <= srtm3elevationmodel::NUM_X_TILES && coords.x > 0 && coords.y <= srtm3elevationmodel::NUM_Y_TILES && coords.y > 0) {
-            this->fileTemplates_.push_back(this->FormatName(coords));
+            this->file_templates_.push_back(this->FormatName(coords));
         }else{
-            std::stringstream errMsg;
-            errMsg << "Tile file at indexes " << coords.x << ":" << coords.y << " does not exist. Indexes start with 1." << '\n';
-            throw errMsg.str().c_str();
+            std::stringstream err_msg;
+            err_msg << "Tile file at indexes " << coords.x << ":" << coords.y << " does not exist. Indexes start with 1." << '\n';
+            throw err_msg.str().c_str();
         }
     }
-    this->nrOfTiles_ = this->fileTemplates_.size();
+    this->nr_of_tiles_ = this->file_templates_.size();
 }
 
 std::string SRTM3ElevationModel::FormatName(Point coords){
     char buffer[500];
-    std::snprintf(buffer, sizeof(buffer), "%ssrtm_%02d_%02d",this->filesDirectory_.c_str(), coords.x, coords.y);
+    std::snprintf(buffer, sizeof(buffer), "%ssrtm_%02d_%02d",this->files_directory_.c_str(), coords.x, coords.y);
     std::string result(buffer);
     return result;
 }
 
-void SRTM3ElevationModel::hostToDevice(){
+void SRTM3ElevationModel::HostToDevice(){
     int size;
 
-    std::vector<PointerHolder> tempTiles;
-    tempTiles.resize(this->nrOfTiles_);
+    std::vector<PointerHolder> temp_tiles;
+    temp_tiles.resize(this->nr_of_tiles_);
     dim3 blockSize(20,20);
 
-    for(int i=0; i<this->nrOfTiles_; i++){
-        double *tempBuffer;
+    for(int i=0; i<this->nr_of_tiles_; i++){
+        double *temp_buffer;
 
         size = this->srtms_.at(i).getXSize() * this->srtms_.at(i).getYSize();
-        CHECK_CUDA_ERR(cudaMalloc((void**)&this->deviceSrtms_.at(i), size*sizeof(double)));
-        CHECK_CUDA_ERR(cudaMalloc((void**)&tempBuffer, size*sizeof(double)));
-        CHECK_CUDA_ERR(cudaMemcpy(tempBuffer, this->srtms_.at(i).getDataBuffer().data(), size*sizeof(double),cudaMemcpyHostToDevice));
-        this->datas_.at(i).xSize = this->srtms_.at(i).getXSize();
-        this->datas_.at(i).ySize = this->srtms_.at(i).getYSize();
-        dim3 gridSize(cuda::getGridDim(blockSize.x, this->datas_.at(i).xSize),cuda::getGridDim(blockSize.y, this->datas_.at(i).ySize));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&this->device_srtms_.at(i), size*sizeof(double)));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&temp_buffer, size*sizeof(double)));
+        CHECK_CUDA_ERR(cudaMemcpy(temp_buffer, this->srtms_.at(i).getDataBuffer().data(), size*sizeof(double),cudaMemcpyHostToDevice));
+        this->datas_.at(i).x_size = this->srtms_.at(i).getXSize();
+        this->datas_.at(i).y_size = this->srtms_.at(i).getYSize();
+        dim3 gridSize(cuda::getGridDim(blockSize.x, this->datas_.at(i).x_size),cuda::getGridDim(blockSize.y, this->datas_.at(i).y_size));
 
-        CHECK_CUDA_ERR(launchDemFormatter(gridSize, blockSize, this->deviceSrtms_.at(i), tempBuffer, this->datas_.at(i) ));
-        tempTiles.at(i).pointer = this->deviceSrtms_.at(i);
-        tempTiles.at(i).x = this->srtms_.at(i).getXSize();
-        tempTiles.at(i).y = this->srtms_.at(i).getYSize();
-        tempTiles.at(i).z = 1;
-        cudaFree(tempBuffer);
+        CHECK_CUDA_ERR(
+            LaunchDemFormatter(gridSize, blockSize, this->device_srtms_.at(i), temp_buffer, this->datas_.at(i)));
+        temp_tiles.at(i).pointer = this->device_srtms_.at(i);
+        temp_tiles.at(i).x = this->srtms_.at(i).getXSize();
+        temp_tiles.at(i).y = this->srtms_.at(i).getYSize();
+        temp_tiles.at(i).z = 1;
+        cudaFree(temp_buffer);
     }
-    CHECK_CUDA_ERR(cudaMalloc((void**)&this->deviceSrtm3Tiles_, this->nrOfTiles_*sizeof(PointerHolder)));
-    CHECK_CUDA_ERR(cudaMemcpy(this->deviceSrtm3Tiles_, tempTiles.data(), this->nrOfTiles_*sizeof(PointerHolder), cudaMemcpyHostToDevice));
+    CHECK_CUDA_ERR(cudaMalloc((void**)&this->device_srtm3_tiles_, this->nr_of_tiles_ *sizeof(PointerHolder)));
+    CHECK_CUDA_ERR(cudaMemcpy(this->device_srtm3_tiles_,
+                              temp_tiles.data(),
+                              this->nr_of_tiles_ *sizeof(PointerHolder),
+                              cudaMemcpyHostToDevice));
 
 }
 
-void SRTM3ElevationModel::deviceToHost(){
+void SRTM3ElevationModel::DeviceToHost(){
     CHECK_CUDA_ERR(cudaErrorNotYetImplemented);
 }
 
-void SRTM3ElevationModel::deviceFree(){
-    if(this->deviceSrtm3Tiles_ != nullptr){
-        cudaFree(this->deviceSrtm3Tiles_);
-        this->deviceSrtm3Tiles_ = nullptr;
+void SRTM3ElevationModel::DeviceFree(){
+    if(this->device_srtm3_tiles_ != nullptr){
+        cudaFree(this->device_srtm3_tiles_);
+        this->device_srtm3_tiles_ = nullptr;
     }
 
-    for(unsigned int i=0; i< this->deviceSrtms_.size(); i++){
-        if(this->deviceSrtms_.at(0) != nullptr){
-            cudaFree(this->deviceSrtms_.at(0));
-            this->deviceSrtms_.at(0) = nullptr;
+    for(unsigned int i=0; i< this->device_srtms_.size(); i++){
+        if(this->device_srtms_.at(0) != nullptr){
+            cudaFree(this->device_srtms_.at(0));
+            this->device_srtms_.at(0) = nullptr;
         }
     }
-    this->deviceSrtms_.clear();
+    this->device_srtms_.clear();
 }
 
 

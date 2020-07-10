@@ -10,46 +10,45 @@ namespace alus {
 namespace snapengine {
 namespace srtm3elevationmodel {
 
-inline __device__ int getSamples(
-    PointerArray *tiles, int *x, int *y, double *samples, int width, int height, double noValue, int useNoData) {
+inline __device__ int GetSamples(
+    PointerArray *tiles, int *x, int *y, double *samples, int width, int height, double no_value, int use_no_data) {
     // in this case, it will always be used.
-    noValue = noValue;
+    no_value = no_value;
     int allValid = 1;
     int i = 0, j = 0;
-    int tileYIndex, tileXIndex, pixelY, pixelX;
+    int tile_y_index, tile_x_index, pixel_y, pixel_x;
     int xI, yI;
-    double *srtm41_01Tile = (double *)tiles->array[0].pointer;
+    double *srtm_41_01_tile = (double *)tiles->array[0].pointer;
     int xSize = tiles->array[0].x;
-    double *srtm42_01Tile = (double *)tiles->array[1].pointer;
+    double *srtm_42_01_tile = (double *)tiles->array[1].pointer;
 
     for (yI = 0; yI < height; yI++) {
-        tileYIndex = (int)(y[yI] * NUM_PIXELS_PER_TILEinv);
-        pixelY = y[yI] - tileYIndex * NUM_PIXELS_PER_TILE;
+        tile_y_index = (int)(y[yI] * NUM_PIXELS_PER_TILEinv);
+        pixel_y = y[yI] - tile_y_index * NUM_PIXELS_PER_TILE;
 
         j = 0;
         for (xI = 0; xI < width; xI++) {
-            tileXIndex = (int)(x[xI] * NUM_PIXELS_PER_TILEinv);
+            tile_x_index = (int)(x[xI] * NUM_PIXELS_PER_TILEinv);
 
-            // final ElevationTile tile = elevationFiles[tileXIndex][tileYIndex].getTile();
             // make sure that the tile we want is actually listed
-            if (tileXIndex > NUM_X_TILES || tileXIndex < 0 || tileYIndex > NUM_Y_TILES || tileYIndex < 0) {
+            if (tile_x_index > NUM_X_TILES || tile_x_index < 0 || tile_y_index > NUM_Y_TILES || tile_y_index < 0) {
                 samples[i * width + j] = CUDART_NAN;
                 allValid = 0;
                 ++j;
                 continue;
             }
-            pixelX = x[xI] - tileXIndex * NUM_PIXELS_PER_TILE;
+            pixel_x = x[xI] - tile_x_index * NUM_PIXELS_PER_TILE;
 
             // TODO: placeholder. Chanage once you know how dynamic tiling will work.
-            switch (tileXIndex) {
+            switch (tile_x_index) {
                 case 40:
-                    samples[i * width + j] = srtm41_01Tile[pixelX + xSize * pixelY];
+                    samples[i * width + j] = srtm_41_01_tile[pixel_x + xSize * pixel_y];
                     break;
                 case 41:
-                    samples[i * width + j] = srtm42_01Tile[pixelX + xSize * pixelY];
+                    samples[i * width + j] = srtm_42_01_tile[pixel_x + xSize * pixel_y];
                     break;
                 default:
-                    printf("Slave pix pos where it should not be. %d \n", tileXIndex);
+                    printf("Slave pix pos where it should not be. %d \n", tile_x_index);
                     samples[i * width + j] = CUDART_NAN;
             }
 
@@ -64,29 +63,29 @@ inline __device__ int getSamples(
     return allValid;
 }
 
-inline __device__ double getElevation(double geoPosLat, double geoPosLon, PointerArray *pArray) {
-    double indexI[2];
-    double indexJ[2];
-    double indexKi[1];
-    double indexKj[1];
+inline __device__ double GetElevation(double geo_pos_lat, double geo_pos_lon, PointerArray *p_array) {
+    double index_i[2];
+    double index_j[2];
+    double index_ki[1];
+    double index_kj[1];
 
-    if (geoPosLon > 180) {
-        geoPosLat -= 360;
+    if (geo_pos_lon > 180) {
+        geo_pos_lat -= 360;
     }
 
-    double pixelY = (60.0 - geoPosLat) * DEGREE_RES_BY_NUM_PIXELS_PER_TILEinv;
-    if (pixelY < 0 || isnan(pixelY)) {
+    double pixel_y = (60.0 - geo_pos_lat) * DEGREE_RES_BY_NUM_PIXELS_PER_TILEinv;
+    if (pixel_y < 0 || isnan(pixel_y)) {
         return NO_DATA_VALUE;
     }
-    double pixelX = (geoPosLon + 180.0) * DEGREE_RES_BY_NUM_PIXELS_PER_TILEinv;
+    double pixel_x = (geo_pos_lon + 180.0) * DEGREE_RES_BY_NUM_PIXELS_PER_TILEinv;
     double elevation = 0.0;
 
     // computing corner based index.
-    snapengine::bilinearinterpolation::computeIndex(
-        pixelX + 0.5, pixelY + 0.5, RASTER_WIDTH, RASTER_HEIGHT, indexI, indexJ, indexKi, indexKj);
+    snapengine::bilinearinterpolation::ComputeIndex(
+        pixel_x + 0.5, pixel_y + 0.5, RASTER_WIDTH, RASTER_HEIGHT, index_i, index_j, index_ki, index_kj);
 
-    elevation = snapengine::bilinearinterpolation::resample(
-        pArray, indexI, indexJ, indexKi, indexKj, CUDART_NAN, 1, getSamples);
+    elevation = snapengine::bilinearinterpolation::Resample(
+        p_array, index_i, index_j, index_ki, index_kj, CUDART_NAN, 1, GetSamples);
 
     return isnan(elevation) ? NO_DATA_VALUE : elevation;
 }

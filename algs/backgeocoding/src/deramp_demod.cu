@@ -1,63 +1,61 @@
 #include "deramp_demod.cuh"
 
 namespace alus {
-__global__ void derampDemod(alus::Rectangle rectangle, double *slaveI, double *slaveQ, double* demodPhase,
-                            double *demodI, double *demodQ,
-                            alus::DeviceSubswathInfo *subSwath, int sBurstIndex){
+__global__ void DerampDemod(alus::Rectangle rectangle,
+                            double *slave_i,
+                            double *slave_q,
+                            double *demod_phase,
+                            double *demod_i,
+                            double *demod_q,
+                            alus::DeviceSubswathInfo *subSwath, int s_burst_index){
+
+
     const int idx = threadIdx.x + (blockDim.x*blockIdx.x);
     const int idy = threadIdx.y + (blockDim.y*blockIdx.y);
-    const int globalIndex = rectangle.width * idy + idx;
-    const int firstLineInBurst = sBurstIndex * subSwath->linesPerBurst;
+    const int global_index = rectangle.width * idy + idx;
+    const int first_line_in_burst = s_burst_index * subSwath->lines_per_burst;
     const int y = rectangle.y + idy;
     const int x = rectangle.x + idx;
     double ta, kt, deramp, demod;
-    double valueI, valueQ, valuePhase, cosPhase, sinPhase;
+    double value_i, value_q, value_phase, cos_phase, sin_phase;
 
     if(idx < rectangle.width && idy < rectangle.height){
 
-        ta = (y - firstLineInBurst)* subSwath->azimuthTimeInterval;
-        kt = subSwath->deviceDopplerRate[sBurstIndex*subSwath->dopplerSizeY + x];
+        ta = (y - first_line_in_burst)* subSwath->azimuth_time_interval;
+        kt = subSwath->device_doppler_rate[s_burst_index *subSwath->doppler_size_y + x];
         deramp = -alus::snapengine::constants::PI * kt * pow(ta -
-                                                           subSwath->deviceReferenceTime[sBurstIndex*subSwath->dopplerSizeY + x],2);
+                subSwath->device_reference_time[s_burst_index *subSwath->doppler_size_y + x],2);
         demod = -alus::snapengine::constants::TWO_PI *
-                subSwath->deviceDopplerCentroid[sBurstIndex*subSwath->dopplerSizeY +
+                subSwath->device_doppler_centroid[s_burst_index *subSwath->doppler_size_y +
                                                                                  x] * ta;
-        valuePhase = deramp + demod;
+        value_phase = deramp + demod;
 
-        demodPhase[globalIndex] = valuePhase;
+        demod_phase[global_index] = value_phase;
 
-        valueI = slaveI[globalIndex];
-        valueQ = slaveQ[globalIndex];
+        value_i = slave_i[global_index];
+        value_q = slave_q[global_index];
 
-        cosPhase = cos(valuePhase);
-        sinPhase = sin(valuePhase);
-        demodI[globalIndex] = valueI*cosPhase - valueQ*sinPhase;
-        demodQ[globalIndex] = valueI*sinPhase + valueQ*cosPhase;
+        cos_phase = cos(value_phase);
+        sin_phase = sin(value_phase);
+        demod_i[global_index] = value_i * cos_phase - value_q * sin_phase;
+        demod_q[global_index] = value_i * sin_phase + value_q * cos_phase;
 
     }
 }
 
-cudaError_t launchDerampDemod(dim3 gridSize,
-    dim3 blockSize,
-                              alus::Rectangle rectangle,
-    double *slaveI,
-    double *slaveQ,
-    double *demodPhase,
-    double *demodI,
-    double *demodQ,
-                              alus::DeviceSubswathInfo *subSwath,
-    int sBurstIndex){
-
-    derampDemod<<<gridSize, blockSize>>>(
-        rectangle,
-        slaveI,
-        slaveQ,
-        demodPhase,
-        demodI,
-        demodQ,
-        subSwath,
-        sBurstIndex
-    );
+cudaError_t LaunchDerampDemod(
+        dim3 grid_size,
+        dim3 block_size,
+        alus::Rectangle rectangle,
+        double *slave_i,
+        double *slave_q,
+        double *demod_phase,
+        double *demod_i,
+        double *demod_q,
+        alus::DeviceSubswathInfo *sub_swath,
+        int s_burst_index){
+    DerampDemod<<<grid_size, block_size>>>(
+        rectangle, slave_i, slave_q, demod_phase, demod_i, demod_q, sub_swath, s_burst_index);
     return cudaGetLastError();
 }
 

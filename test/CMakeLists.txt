@@ -42,9 +42,9 @@ list(APPEND TEST_SOURCES
         src/dem_test.cpp
         src/orbit_state_vectors_test.cpp
         src/tests_common.cpp
-        src/sentinel1_test.cpp
-        src/backgeocoding_test.cpp
-        src/EGM96_test.cpp
+        src/sentinel1_test.cc
+        src/backgeocoding_test.cc
+        src/egm96_test.cc
         src/geo_utils_test.cpp
         src/product_data_test.cpp
         src/sar_geocoding_test.cc

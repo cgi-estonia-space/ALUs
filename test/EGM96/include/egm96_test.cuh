@@ -6,13 +6,13 @@ namespace alus {
 namespace tests{
 
 struct EGM96data{
-    int maxLats;
-    int maxLons;
+    int max_lats;
+    int max_lons;
     double* egm;
     int size;
 };
 
-cudaError_t launchEGM96(dim3 gridSize, dim3 blockSize, double *lats, double *lons, float *results, EGM96data data);
+cudaError_t LaunchEGM96(dim3 grid_size, dim3 block_size, double *lats, double *lons, float *results, EGM96data data);
 
 
 }//namespace

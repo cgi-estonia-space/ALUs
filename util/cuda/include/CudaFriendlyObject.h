@@ -10,9 +10,9 @@ namespace cuda{
 */
 class CudaFriendlyObject{
 public:
-    virtual void hostToDevice() = 0;
-    virtual void deviceToHost() = 0;
-    virtual void deviceFree() = 0;
+    virtual void HostToDevice() = 0;
+    virtual void DeviceToHost() = 0;
+    virtual void DeviceFree() = 0;
 };
 
 }//namespace

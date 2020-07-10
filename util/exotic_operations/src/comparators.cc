@@ -1,8 +1,8 @@
-#include "comparators.hpp"
+#include "comparators.h"
 
 namespace alus {
 
-int equalsArrays(const float *a, const float *b, int elems, float delta){
+int EqualsArrays(const float *a, const float *b, int elems, float delta){
     int i,count =0;
     float temp;
 
@@ -19,17 +19,17 @@ int equalsArrays(const float *a, const float *b, int elems, float delta){
     return count;
 }
 
-int equalsArrays(const float *a,const float *b, int elems){
-    return equalsArrays(a,b,elems,ERROR_RANGE);
+int EqualsArrays(const float *a,const float *b, int elems){
+    return EqualsArrays(a, b, elems, ERROR_RANGE);
 }
 
 
 
-int equalsArraysd(const double *a, const double *b, int elems){
-    return equalsArraysd(a,b,elems,ERROR_RANGE);
+int EqualsArraysd(const double *a, const double *b, int elems){
+    return EqualsArraysd(a, b, elems, ERROR_RANGE);
 }
 
-int equalsArraysd(const double *a, const double *b, int elems, double delta){
+int EqualsArraysd(const double *a, const double *b, int elems, double delta){
     int i,count =0;
     double temp;
 
@@ -46,7 +46,7 @@ int equalsArraysd(const double *a, const double *b, int elems, double delta){
     return count;
 }
 
-int equalsArrays2Dd(const double *const *a, const double *const *b, int x, int y){
+int EqualsArrays2Dd(const double *const *a, const double *const *b, int x, int y){
     int i,j, count=0;
     double temp;
 

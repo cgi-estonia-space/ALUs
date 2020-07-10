@@ -10,7 +10,7 @@ struct SRTM3TestData{
     PointerArray tiles;
 };
 
-cudaError_t launchSRTM3AltitudeTester(dim3 gridSize, dim3 blockSize, double *lats, double *lons, double *results, SRTM3TestData data);
+cudaError_t LaunchSRTM3AltitudeTester(dim3 grid_size, dim3 block_size, double *lats, double *lons, double *results, SRTM3TestData data);
 
 }//namespace
 }//namespace

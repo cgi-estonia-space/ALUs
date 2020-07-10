@@ -15,9 +15,10 @@
 
 #include <cmath>
 
-#include "Constants.hpp"
 #include "GeoUtils.hpp"
 #include "pos_vector.h"
+#include "general_constants.h"
+
 
 namespace alus {
 namespace snapengine {
