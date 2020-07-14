@@ -50,6 +50,7 @@ list(APPEND TEST_SOURCES
         src/sar_geocoding_test.cc
         src/srtm3_tests.cc
         src/tie_point_grid_test.cc
+        src/range_doppler_geocoding_test.cc
         )
 
 add_executable(unit_test ${TEST_SOURCES})
@@ -66,6 +67,7 @@ target_link_libraries(unit_test
         srtm3-test-util-static
         cuda_util-static
         tiePointGrid-test-static
+        range-doppler-geocoding-test-static
         )
 
 add_executable(map_cut util/map_cut.cpp)
