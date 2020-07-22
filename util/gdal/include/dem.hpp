@@ -9,8 +9,6 @@ class Dem {
    public:
     Dem(Dataset ds);
 
-    void doWork();
-
     /**
      * This is a ripoff of a Sentinel 1 Toolbox's code from
      * DEMFactory::getLocalDem() with some functionality stripped off.
@@ -21,7 +19,7 @@ class Dem {
      *                            final double demNoDataValue,
      *                            final String demResamplingMethod,
      *                            final TileGeoreferencing tileGeoRef,
-     *                            final int x0, final int y0,
+     *                            final int x_0, final int y_0,
      *                            final int tileWidth, final int tileHeight,
      *                            final Product sourceProduct,
      *                            final boolean nodataValueAtSea,
@@ -34,7 +32,7 @@ class Dem {
      * demResamplingMethod not used here since this class by default supports
      * only bilinear resampling method.
      * tileGeoRef ??
-     * x0 and y0 ??
+     * x_0 and y_0 ??
      * tileWidth and tileHeight ??
      * sourceProduct Not used.
      * nodataValueAtSea Not supporting this.
@@ -43,27 +41,27 @@ class Dem {
      * @image
      * @return 2D array of the elevation values for a specified area.
      */
-    std::vector<double> getLocalDemFor(Dataset& image, unsigned int x0,
-                                       unsigned int y0, unsigned int width,
+    std::vector<double> GetLocalDemFor(Dataset& image, unsigned int x_0,
+                                       unsigned int y_0, unsigned int width,
                                        unsigned int height);
 
-    auto const& getData() const { return m_ds.getDataBuffer(); }
-    void fillGeoTransform(double& originLon, double& originLat,
-                          double& pixelSizeLon, double& pixelSizeLat) const {
-        originLon = m_ds.getOriginLon();
-        originLat = m_ds.getOriginLat();
-        pixelSizeLon = m_ds.getPixelSizeLon();
-        pixelSizeLat = m_ds.getPixelSizeLat();
+    auto const& GetData() const { return m_ds_.GetDataBuffer(); }
+    void FillGeoTransform(double& origin_lon, double& origin_lat,
+                          double& pixel_size_lon, double& pixel_size_lat) const {
+        origin_lon = m_ds_.GetOriginLon();
+        origin_lat = m_ds_.GetOriginLat();
+        pixel_size_lon = m_ds_.GetPixelSizeLon();
+        pixel_size_lat = m_ds_.GetPixelSizeLat();
     }
 
-    int getRasterSizeX() const { return m_ds.getRasterSizeX(); }
-    int getRasterSizeY() const { return m_ds.getRasterSizeY(); }
-    int getColumnCount() const { return getRasterSizeX(); }
-    int getRowCount() const { return getRasterSizeY(); }
+    int GetRasterSizeX() const { return m_ds_.GetRasterSizeX(); }
+    int GetRasterSizeY() const { return m_ds_.GetRasterSizeY(); }
+    int GetColumnCount() const { return GetRasterSizeX(); }
+    int GetRowCount() const { return GetRasterSizeY(); }
 
    private:
-    Dataset m_ds;
+    Dataset m_ds_;
 
-    double m_noDataValue;
+    double m_no_data_value_;
 };
 }  // namespace alus

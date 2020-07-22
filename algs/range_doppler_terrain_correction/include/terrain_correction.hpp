@@ -1,29 +1,32 @@
 #pragma once
 
+#include <vector>
+
 #include "dataset.hpp"
 #include "dem.hpp"
+#include "terrain_correction_metadata.h"
 
 namespace alus {
 
 class TerrainCorrection {
    public:
+    TerrainCorrection(alus::Dataset coh_ds, alus::Dataset metadata, alus::Dataset dem);
+    alus::terraincorrection::RangeDopplerTerrainMetadata metadata_;
 
-    TerrainCorrection(alus::Dataset cohDs, alus::Dataset metadata, alus::Dataset dem);
+    void DoWork();
+    void LocalDemCuda();
 
-    void doWork();
-    void localDemCuda();
-
-    std::vector<double>getElevations() { return m_cohDsElevations; }
+    std::vector<double> GetElevations() { return coh_ds_elevations_; }
 
     ~TerrainCorrection();
 
    private:
+    void LocalDemCpu();
 
-    void localDemCPU();
-
-    alus::Dataset m_cohDs;
-    alus::Dataset m_metadataDs;
-    alus::Dem m_demDs;
-    std::vector<double> m_cohDsElevations;
+    alus::Dataset coh_ds_;
+    alus::Dataset metadata_ds_;
+    alus::Dem dem_ds_;
+    std::vector<double> coh_ds_elevations_;
+    void FillMetadata();
 };
 }  // namespace alus

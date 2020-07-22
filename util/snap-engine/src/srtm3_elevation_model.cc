@@ -26,7 +26,7 @@ void SRTM3ElevationModel::ReadSrtmTiles(EarthGravitationalModel96 *egm96){
         tfw_file.append(this->tfw_extension_);
 
         this->srtms_.push_back(Dataset(image_file));
-        this->srtms_.at(i).loadRasterBand(1);
+        this->srtms_.at(i).LoadRasterBand(1);
 
         std::ifstream tfw_reader(tfw_file);
         if(!tfw_reader.is_open()){
@@ -115,19 +115,19 @@ void SRTM3ElevationModel::HostToDevice(){
     for(int i=0; i<this->nr_of_tiles_; i++){
         double *temp_buffer;
 
-        size = this->srtms_.at(i).getXSize() * this->srtms_.at(i).getYSize();
+        size = this->srtms_.at(i).GetXSize() * this->srtms_.at(i).GetYSize();
         CHECK_CUDA_ERR(cudaMalloc((void**)&this->device_srtms_.at(i), size*sizeof(double)));
         CHECK_CUDA_ERR(cudaMalloc((void**)&temp_buffer, size*sizeof(double)));
-        CHECK_CUDA_ERR(cudaMemcpy(temp_buffer, this->srtms_.at(i).getDataBuffer().data(), size*sizeof(double),cudaMemcpyHostToDevice));
-        this->datas_.at(i).x_size = this->srtms_.at(i).getXSize();
-        this->datas_.at(i).y_size = this->srtms_.at(i).getYSize();
+        CHECK_CUDA_ERR(cudaMemcpy(temp_buffer, this->srtms_.at(i).GetDataBuffer().data(), size*sizeof(double),cudaMemcpyHostToDevice));
+        this->datas_.at(i).x_size = this->srtms_.at(i).GetXSize();
+        this->datas_.at(i).y_size = this->srtms_.at(i).GetYSize();
         dim3 gridSize(cuda::getGridDim(blockSize.x, this->datas_.at(i).x_size),cuda::getGridDim(blockSize.y, this->datas_.at(i).y_size));
 
         CHECK_CUDA_ERR(
             LaunchDemFormatter(gridSize, blockSize, this->device_srtms_.at(i), temp_buffer, this->datas_.at(i)));
         temp_tiles.at(i).pointer = this->device_srtms_.at(i);
-        temp_tiles.at(i).x = this->srtms_.at(i).getXSize();
-        temp_tiles.at(i).y = this->srtms_.at(i).getYSize();
+        temp_tiles.at(i).x = this->srtms_.at(i).GetXSize();
+        temp_tiles.at(i).y = this->srtms_.at(i).GetYSize();
         temp_tiles.at(i).z = 1;
         cudaFree(temp_buffer);
     }
