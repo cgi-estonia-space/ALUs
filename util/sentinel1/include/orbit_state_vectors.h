@@ -19,20 +19,30 @@
 #include "cuda_util.cuh"
 #include "pos_vector.h"
 #include "orbit_state_vector.h"
+#include "CudaFriendlyObject.h"
 
 namespace alus {
 namespace s1tbx {
 
-class OrbitStateVectors {
+class OrbitStateVectors: public cuda::CudaFriendlyObject {
    public:
     std::vector<snapengine::OrbitStateVector> orbitStateVectors;
     snapengine::PosVector GetVelocity(double time);
+    snapengine::OrbitStateVector *device_orbit_state_vectors_{nullptr};
 
     static int testVectors();
 
     OrbitStateVectors();
     explicit OrbitStateVectors(std::vector<snapengine::OrbitStateVector> const& orbitStateVectors);
     ~OrbitStateVectors() = default;
+
+    void HostToDevice() override;
+    void DeviceToHost() override;
+    void DeviceFree() override;
+
+    double GetDT(){
+        return dt;
+    }
 
    private:
     std::vector<snapengine::PosVector> sensorPosition;  // sensor position for all range lines
@@ -43,6 +53,7 @@ class OrbitStateVectors {
     static void getMockData();
     static std::vector<snapengine::OrbitStateVector> RemoveRedundantVectors(
         std::vector<snapengine::OrbitStateVector> orbitStateVectors);
+
 };
 
 namespace orbitstatevectors {

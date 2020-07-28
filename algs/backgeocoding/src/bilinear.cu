@@ -1,9 +1,27 @@
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #include "bilinear.cuh"
 
 #include "bilinear_interpolation.cuh"
 #include "pointer_holders.h"
 
+/**
+ * The contents of this file refer to BackGeocodingOp.performInterpolation method on SNAP's code s1tbx module.
+ */
+
 namespace alus {
+namespace backgeocoding{
 
 inline __device__ int GetSamples(
     PointerArray *tiles, int *x, int *y, double *samples, int width, int height, double no_value, int use_no_data) {
@@ -134,4 +152,5 @@ cudaError_t LaunchBilinearInterpolation(dim3 grid_size,
     return cudaGetLastError();
 }
 
+}  // namespace alus
 }  // namespace alus

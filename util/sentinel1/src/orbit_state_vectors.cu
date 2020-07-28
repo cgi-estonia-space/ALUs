@@ -12,8 +12,7 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 
-#include "orbit_state_vectors.h"
-
+#include "cuda_util.cuh"
 #include "pos_vector.h"
 #include "orbit_state_vectors.cuh"
 

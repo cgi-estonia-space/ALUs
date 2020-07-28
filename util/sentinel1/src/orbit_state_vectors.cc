@@ -1,4 +1,5 @@
 #include "orbit_state_vectors.h"
+#include "cuda_util.hpp"
 
 namespace alus::s1tbx {
 
@@ -75,6 +76,21 @@ snapengine::PosVector OrbitStateVectors::GetVelocity(double time) {
 int OrbitStateVectors::testVectors(){
 
     return 0;
+}
+
+void OrbitStateVectors::HostToDevice(){
+    size_t vectorSize = sizeof(snapengine::OrbitStateVector) * this->orbitStateVectors.size();
+    cudaMalloc((void**)&this->device_orbit_state_vectors_, vectorSize);
+    cudaMemcpy(this->device_orbit_state_vectors_, this->orbitStateVectors.data(), vectorSize, cudaMemcpyHostToDevice);
+}
+void OrbitStateVectors::DeviceToHost(){
+    CHECK_CUDA_ERR(cudaErrorNotYetImplemented);
+}
+void OrbitStateVectors::DeviceFree(){
+    if(this->device_orbit_state_vectors_ != nullptr){
+        cudaFree(this->device_orbit_state_vectors_);
+        this->device_orbit_state_vectors_ = nullptr;
+    }
 }
 
 } //namespace

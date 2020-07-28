@@ -16,10 +16,11 @@
 #include "pos_vector.h"
 
 namespace alus {
-namespace terraincorrection {
+namespace s1tbx {
 
 /**
  * A copy of RangeDopplerGeoCodingOp.java's private PositionData class.
+ * BackGeocodingOp.java has the same private class.
  */
 struct PositionData final {
     snapengine::PosVector earth_point;
@@ -29,5 +30,5 @@ struct PositionData final {
     double slant_range;
 };
 
-}  // namespace terraincorrection
+}  // namespace s1tbx
 }  // namespace slap

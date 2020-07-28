@@ -17,7 +17,7 @@
 
 namespace alus {
 namespace terraincorrection {
-bool GetPosition(double lat, double lon, double alt, PositionData& satellite_pos, const GetPositionMetadata& metadata){
+bool GetPosition(double lat, double lon, double alt, s1tbx::PositionData& satellite_pos, const GetPositionMetadata& metadata){
     return GetPositionImpl(lat, lon, alt, satellite_pos, metadata);
 }
 

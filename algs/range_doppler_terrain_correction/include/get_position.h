@@ -47,7 +47,7 @@ struct GetPositionMetadata {
  * @param[in] metadata Various metadata needed for the calulcations.
  * @return
  */
-bool GetPosition(double lat, double lon, double alt, PositionData& satellite_pos, const GetPositionMetadata& metadata);
+bool GetPosition(double lat, double lon, double alt, s1tbx::PositionData& satellite_pos, const GetPositionMetadata& metadata);
 
 }  // namespace terraincorrection
 }  // namespace alus

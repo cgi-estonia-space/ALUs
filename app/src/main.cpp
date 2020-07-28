@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
   } else if (argc == 3 && arg1 == "inverterP") {
     inverterParallelTimeTest(argv[2]);
   } else if (argc == 2 && arg1 == "backgeocoding") {
-      alus::BackgeocodingController orch;
+      alus::backgeocoding::BackgeocodingController orch;
       orch.ReadPlacehoderData();
       orch.ComputeImage();
   } else {

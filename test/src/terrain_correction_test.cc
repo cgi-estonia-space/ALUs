@@ -16,7 +16,7 @@ namespace alus::tests {
 void LaunchGetPositionKernel(const std::vector<double>& lat_args,
                              const std::vector<double>& lon_args,
                              const std::vector<double>& alt_args,
-                             std::vector<terraincorrection::PositionData>& sat_positions,
+                             std::vector<s1tbx::PositionData>& sat_positions,
                              terraincorrection::GetPositionMetadata metadata,
                              const std::vector<snapengine::PosVector>& sensor_position,
                              const std::vector<snapengine::PosVector>& sensor_velocity,
@@ -90,7 +90,7 @@ TEST_F(TerrainCorrectionTest, getPositionTrueScenario) {
                                         27.243448696122737,
                                         27.28233709742411,
                                         25.688039075802656};
-    std::vector<PositionData> const POS_DATA_TRUE{{{3069968.8651965917, 1310368.109966936, 5416775.0928144},
+    std::vector<alus::s1tbx::PositionData> const POS_DATA_TRUE{{{3069968.8651965917, 1310368.109966936, 5416775.0928144},
                                                    {3658851.937123117, 1053331.0349233549, 5954284.711984713},
                                                    1499.0,
                                                    16489.057561014797,
@@ -157,7 +157,7 @@ TEST_F(TerrainCorrectionTest, getPositionTrueScenario) {
                                        orbitStateVectors};
     const auto series_size = POS_DATA_TRUE.size();
     for (size_t i = 0; i < series_size; i++) {
-        PositionData pos_data{};
+        alus::s1tbx::PositionData pos_data{};
         const auto ret = GetPosition(LATS_TRUE.at(i), LONS_TRUE.at(i), ALTS_TRUE.at(i), pos_data, metadata);
         EXPECT_TRUE(ret);
         EXPECT_DOUBLE_EQ(pos_data.earth_point.x, POS_DATA_TRUE.at(i).earth_point.x);
@@ -203,7 +203,7 @@ TEST_F(TerrainCorrectionTest, getPositionFalseScenario) {
                                          32.01600429552241,
                                          31.849911514287488,
                                          31.683818733084806};
-    std::vector<PositionData> const POS_DATA_FALSE{
+    std::vector<alus::s1tbx::PositionData> const POS_DATA_FALSE{
         {{3084869.388681489, 1264575.8165823026, 5419183.743972956}, {0.0, 0.0, 0.0}, 0.0, 0.0, 0.0},
         {{3084866.615145824, 1264582.5379252795, 5419183.716329651}, {0.0, 0.0, 0.0}, 0.0, 0.0, 0.0},
         {{3084863.8415955133, 1264589.2592621732, 5419183.688686345}, {0.0, 0.0, 0.0}, 0.0, 0.0, 0.0},
@@ -231,7 +231,7 @@ TEST_F(TerrainCorrectionTest, getPositionFalseScenario) {
                                        orbitStateVectors};
     const auto series_size = POS_DATA_FALSE.size();
     for (size_t i = 0; i < series_size; i++) {
-        PositionData pos_data{};
+        alus::s1tbx::PositionData pos_data{};
         const auto ret = GetPosition(LATS_FALSE.at(i), LONS_FALSE.at(i), ALTS_FALSE.at(i), pos_data, metadata);
         EXPECT_FALSE(ret);
         EXPECT_DOUBLE_EQ(pos_data.earth_point.x, POS_DATA_FALSE.at(i).earth_point.x);
@@ -277,7 +277,7 @@ TEST_F(TerrainCorrectionTest, getPositionTrueScenarioKernel) {
                                         27.243448696122737,
                                         27.28233709742411,
                                         25.688039075802656};
-    std::vector<PositionData> const POS_DATA_TRUE{{{3069968.8651965917, 1310368.109966936, 5416775.0928144},
+    std::vector<alus::s1tbx::PositionData> const POS_DATA_TRUE{{{3069968.8651965917, 1310368.109966936, 5416775.0928144},
                                                    {3658851.937123117, 1053331.0349233549, 5954284.711984713},
                                                    1499.0,
                                                    16489.057561014797,
@@ -332,7 +332,7 @@ TEST_F(TerrainCorrectionTest, getPositionTrueScenarioKernel) {
         7135.669951395567, 2.3822903166873924E-8, 0.05546576, 2.329562, 799303.6132771898, {}, {}, {}};
 
     const auto series_size = POS_DATA_TRUE.size();
-    std::vector<PositionData> positionResults(series_size);
+    std::vector<alus::s1tbx::PositionData> positionResults(series_size);
     std::vector<bool> successResults(series_size);
     LaunchGetPositionKernel(LATS_TRUE,
                             LONS_TRUE,

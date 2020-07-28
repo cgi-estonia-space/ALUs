@@ -23,7 +23,7 @@ namespace alus {
 namespace terraincorrection {
 
 inline __device__ __host__ bool GetPositionImpl(
-    double lat, double lon, double alt, PositionData& satellite_pos, const GetPositionMetadata& metadata) {
+    double lat, double lon, double alt, s1tbx::PositionData& satellite_pos, const GetPositionMetadata& metadata) {
     snapengine::geoutils::Geo2xyzWgs84Impl(lat, lon, alt, satellite_pos.earth_point);
     const auto zero_doppler_time = s1tbx::sargeocoding::GetEarthPointZeroDopplerTimeImpl(metadata.first_line_utc,
                                                                                          metadata.line_time_interval,

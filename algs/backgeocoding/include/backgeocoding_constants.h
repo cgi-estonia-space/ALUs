@@ -13,29 +13,10 @@
  */
 #pragma once
 
-#include <iostream>
-
-#include "backgeocoding.h"
-
-namespace alus {
+namespace alus{
 namespace backgeocoding{
 
-/**
- * A helper class to manage the data intputs and threading to Backgeocoding class.
- */
-class BackgeocodingController{
-private:
-    Backgeocoding *backgeocoding_{nullptr};
-    double *slave_tile_i_, *slave_tile_q_;
-    Rectangle slave_rect;
-
-public:
-
-    void ReadPlacehoderData();
-    void ComputeImage();
-    BackgeocodingController();
-    ~BackgeocodingController();
-};
+constexpr double INVALID_INDEX{-9999.0};
 
 }//namespace
 }//namespace

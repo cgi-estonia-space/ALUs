@@ -1,3 +1,16 @@
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #include <fstream>
 #include <optional>
 #include "comparators.h"
@@ -17,10 +30,10 @@ namespace{
         double **range_depend_doppler_rate_2_ = NULL;
 
         void Read4Arrays(){
-            std::ifstream doppler_rate_reader("./goods/backgeocoding/dopplerRate.txt");
-            std::ifstream doppler_centroid_reader("./goods/backgeocoding/dopplerCentroid.txt");
-            std::ifstream range_depend_doppler_rate_reader("./goods/backgeocoding/rangeDependDopplerRate.txt");
-            std::ifstream reference_time_reader("./goods/backgeocoding/referenceTime.txt");
+            std::ifstream doppler_rate_reader("./goods/backgeocoding/slaveDopplerRate.txt");
+            std::ifstream doppler_centroid_reader("./goods/backgeocoding/slaveDopplerCentroid.txt");
+            std::ifstream range_depend_doppler_rate_reader("./goods/backgeocoding/slaveRangeDependDopplerRate.txt");
+            std::ifstream reference_time_reader("./goods/backgeocoding/slaveReferenceTime.txt");
 
             int x, y, i, j;
             doppler_rate_reader >> x >> y;
@@ -81,13 +94,16 @@ namespace{
         }
     };
 
+    /**
+     * Important. Perform test with slave data as master does not have these 5 arrays.
+     */
     TEST(sentinel1, utils){
-        alus::Sentinel1Utils utils;
-        utils.SetPlaceHolderFiles("./goods/backgeocoding/orbitStateVectors.txt",
+        alus::s1tbx::Sentinel1Utils utils;
+        utils.SetPlaceHolderFiles("./goods/backgeocoding/slaveOrbitStateVectors.txt",
                                   "./goods/backgeocoding/dcEstimateList.txt",
                                   "./goods/backgeocoding/azimuthList.txt",
-                                  "./goods/backgeocoding/burstLineTimes.txt",
-                                  "./goods/backgeocoding/geoLocation.txt");
+                                  "./goods/backgeocoding/slaveBurstLineTimes.txt",
+                                  "./goods/backgeocoding/slaveGeoLocation.txt");
         utils.ReadPlaceHolderFiles();
         Sentinel1UtilsTester tester;
         tester.Read4Arrays();
