@@ -45,6 +45,10 @@ double ComputeRangeIndexSlc(double range_spacing, double slant_range, double nea
     return ComputeRangeIndexSlcImpl(range_spacing, slant_range, near_edge_slant_range);
 }
 
+bool IsValidCell(double range_index, double azimuth_index, int diff_lat, int src_max_range, int src_max_azimuth) {
+    return IsValidCellImpl(range_index, azimuth_index, diff_lat, src_max_range, src_max_azimuth);
+}
+
 }  // namespace sargeocoding
 }  // namespace s1tbx
 }  // namespace alus

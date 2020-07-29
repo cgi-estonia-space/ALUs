@@ -46,7 +46,6 @@ class SarGeoCodingTest : public ::testing::Test {
     std::vector<double> const DOPPLER_TIME_RESULTS{-99999.0, 7135.669986951332, 7135.669987106099, 7135.669951395567};
 };
 
-
 TEST_F(SarGeoCodingTest, getEarthPointZeroDopplerTimeComputesCorrectly) {
     auto const SERIES_LENGTH = FIRST_LINE_UTC_ARGS.size();
     const KernelArray<PosVector> sensorPositions{const_cast<PosVector*>(SENSOR_POSITION.data()),
@@ -157,6 +156,23 @@ TEST_F(SarGeoCodingTest, ComputeRangeIndexResultsAsInSnap) {
             ComputeRangeIndexSlc(RANGE_SPACING_ARGS.at(i), SLANT_RANGE_ARGS.at(i), NEAR_EDGE_SLANT_RANGE_ARGS.at(i));
         EXPECT_DOUBLE_EQ(res, COMPUTE_RANGE_INDEX_RESULTS.at(i));
     }
+}
+
+TEST_F(SarGeoCodingTest, IsValidCellTest) {
+    int const SRC_MAX_AZIMUTH = 1499;
+    int const SRC_MAX_RANGE = 23277;
+    int const DIFF_LAT = 0;
+
+    double const INVALID_RANGE_INDEX = 19514.457185293883;
+    double const INVALID_AZIMUTH_INDEX = 1499.0;
+    EXPECT_FALSE(IsValidCell(INVALID_RANGE_INDEX, INVALID_AZIMUTH_INDEX, DIFF_LAT, SRC_MAX_RANGE, SRC_MAX_AZIMUTH));
+
+    double const VALID_RANGE_INDEX = 19486.111233636275;
+    double const VALID_AZIMUTH_INDEX = 1498.9999618226757;
+
+    bool valid_data_result =
+        IsValidCell(VALID_RANGE_INDEX, VALID_AZIMUTH_INDEX, DIFF_LAT, SRC_MAX_RANGE, SRC_MAX_AZIMUTH);
+    EXPECT_TRUE(valid_data_result);
 }
 
 }  // namespace

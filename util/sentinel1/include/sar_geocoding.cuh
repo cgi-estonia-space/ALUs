@@ -15,9 +15,9 @@
 
 #include <cmath>
 
-#include "pos_vector.h"
 #include "cuda_util.cuh"
 #include "orbit_state_vectors.cuh"
+#include "pos_vector.h"
 
 namespace alus {
 namespace s1tbx {
@@ -71,11 +71,9 @@ inline __device__ __host__ double GetEarthPointZeroDopplerTimeImpl(
     // binary search is used in finding the zero doppler time
     int lower_bound = 0;
     int upper_bound = static_cast<int>(sensor_position.size) - 1;
-    auto lower_bound_freq =
-        getDopplerFrequency(
+    auto lower_bound_freq = getDopplerFrequency(
         earth_point, sensor_position.array[lower_bound], sensor_velocity.array[lower_bound], wavelength);
-    auto upper_bound_freq =
-        getDopplerFrequency(
+    auto upper_bound_freq = getDopplerFrequency(
         earth_point, sensor_position.array[upper_bound], sensor_velocity.array[upper_bound], wavelength);
 
     if (std::abs(lower_bound_freq) < 1.0) {
@@ -91,8 +89,8 @@ inline __device__ __host__ double GetEarthPointZeroDopplerTimeImpl(
     while (upper_bound - lower_bound > 1) {
         const auto mid = (int)((static_cast<double>(lower_bound) + upper_bound) / 2.0);
         mid_freq = sensor_velocity.array[mid].x * (earth_point.x - sensor_position.array[mid].x) +
-                  sensor_velocity.array[mid].y * (earth_point.y - sensor_position.array[mid].y) +
-                  sensor_velocity.array[mid].z * (earth_point.z - sensor_position.array[mid].z);
+                   sensor_velocity.array[mid].y * (earth_point.y - sensor_position.array[mid].y) +
+                   sensor_velocity.array[mid].z * (earth_point.z - sensor_position.array[mid].z);
 
         if (mid_freq * lower_bound_freq > 0.0) {
             lower_bound = mid;
@@ -105,7 +103,8 @@ inline __device__ __host__ double GetEarthPointZeroDopplerTimeImpl(
         }
     }
 
-    const auto y0 = lower_bound - lower_bound_freq * (upper_bound - lower_bound) / (upper_bound_freq - lower_bound_freq);
+    const auto y0 =
+        lower_bound - lower_bound_freq * (upper_bound - lower_bound) / (upper_bound_freq - lower_bound_freq);
     return first_line_utc + y0 * line_time_interval;
 }
 
@@ -132,6 +131,15 @@ inline __device__ __host__ double ComputeRangeIndexSlcImpl(double range_spacing,
                                                            double slant_range,
                                                            double near_edge_slant_range) {
     return (slant_range - near_edge_slant_range) / range_spacing;
+}
+
+inline __device__ __host__ bool IsValidCellImpl(
+    double range_index, double azimuth_index, int diff_lat, int src_max_range, int src_max_azimuth) {
+    if (range_index < 0.0 || range_index >= src_max_range || azimuth_index <= 0.0 | azimuth_index >= src_max_azimuth) {
+        return false;
+    }
+
+    return diff_lat < 5;
 }
 
 }  // namespace sargeocoding
