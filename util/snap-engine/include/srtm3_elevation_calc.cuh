@@ -4,6 +4,7 @@
 
 #include "bilinear_interpolation.cuh"
 #include "math_constants.h"  //not sure if required
+#include "resampling.h"
 #include "srtm3_elevation_model_constants.h"
 
 namespace alus {
@@ -68,6 +69,7 @@ inline __device__ double GetElevation(double geo_pos_lat, double geo_pos_lon, Po
     double index_j[2];
     double index_ki[1];
     double index_kj[1];
+    snapengine::resampling::ResamplingIndex index{0, 0, 0, 0, 0, 0, index_i, index_j, index_ki, index_kj};
 
     if (geo_pos_lon > 180) {
         geo_pos_lat -= 360;
@@ -81,11 +83,9 @@ inline __device__ double GetElevation(double geo_pos_lat, double geo_pos_lon, Po
     double elevation = 0.0;
 
     // computing corner based index.
-    snapengine::bilinearinterpolation::ComputeIndex(
-        pixel_x + 0.5, pixel_y + 0.5, RASTER_WIDTH, RASTER_HEIGHT, index_i, index_j, index_ki, index_kj);
+    snapengine::bilinearinterpolation::ComputeIndex(pixel_x + 0.5, pixel_y + 0.5, RASTER_WIDTH, RASTER_HEIGHT, &index);
 
-    elevation = snapengine::bilinearinterpolation::Resample(
-        p_array, index_i, index_j, index_ki, index_kj, CUDART_NAN, 1, GetSamples);
+    elevation = snapengine::bilinearinterpolation::Resample(p_array, &index, 2, CUDART_NAN, 1, GetSamples);
 
     return isnan(elevation) ? NO_DATA_VALUE : elevation;
 }

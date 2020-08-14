@@ -40,7 +40,9 @@ __global__ void BilinearInterpolation(double *x_pixels,
     double index_j[2];
     double index_ki[1];
     double index_kj[1];
+    snapengine::resampling::ResamplingIndex index {0, 0, 0, 0, 0, 0, index_i, index_j, index_ki, index_kj};
 
+    const int raster_width = 2;
     const int point_width = int_params[0];
     const int point_height = int_params[1];
     const int demod_width = int_params[2];
@@ -89,20 +91,16 @@ __global__ void BilinearInterpolation(double *x_pixels,
             snapengine::bilinearinterpolation::ComputeIndex(x - rectangle_x + 0.5,
                                                             y - rectangle_y + 0.5,
                                                             demod_width,
-                                                            demod_height,
-                                                            index_i,
-                                                            index_j,
-                                                            index_ki,
-                                                            index_kj);
+                                                            demod_height, &index);
             p_holder.pointer = demod_phase;
             sample_phase = snapengine::bilinearinterpolation::Resample(
-                &p_array, index_i, index_j, index_ki, index_kj, no_data_value, use_no_data_phase, GetSamples);
+                &p_array, &index, raster_width, no_data_value, use_no_data_phase, GetSamples);
             p_holder.pointer = demod_i;
             sample_i = snapengine::bilinearinterpolation::Resample(
-                &p_array, index_i, index_j, index_ki, index_kj, no_data_value, use_no_data_i, GetSamples);
+                &p_array, &index, raster_width, no_data_value, use_no_data_i, GetSamples);
             p_holder.pointer = demod_q;
             sample_q = snapengine::bilinearinterpolation::Resample(
-                &p_array, index_i, index_j, index_ki, index_kj, no_data_value, use_no_data_q, GetSamples);
+                &p_array, &index, raster_width, no_data_value, use_no_data_q, GetSamples);
 
             if (!disable_reramp) {
                 cos_phase = cos(sample_phase);

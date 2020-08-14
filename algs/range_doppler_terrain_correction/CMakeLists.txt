@@ -12,6 +12,8 @@ list(APPEND TERRAIN_CORRECTION_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/../../util/gdal/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/sentinel1/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/exotic_operations/include
+
         )
 
 add_library(terrain-correction-obj
