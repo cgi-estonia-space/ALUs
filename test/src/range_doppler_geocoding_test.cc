@@ -50,7 +50,7 @@ class RangeDopplerGeocodingTester : public cuda::CudaFriendlyObject {
     }
 
     void CopySourceTileToDevice() {
-        long size = sizeof(double) * dataset_.getDataBuffer().size();
+        long size = sizeof(double) * dataset_.GetDataBuffer().size();
         CHECK_CUDA_ERR(cudaMalloc(&d_data_buffer_, size));
         CHECK_CUDA_ERR(cudaMemcpy(d_data_buffer_, tile_data_.source_tile->data_buffer, size, cudaMemcpyHostToDevice));
         source_tile_.data_buffer = d_data_buffer_;
@@ -148,13 +148,13 @@ class RangeDopplerGeocodingTester : public cuda::CudaFriendlyObject {
                               &resampling_raster_tile_};
         tile_data_ = {&resampling_raster_, &source_tile_, &resampling_index_};
 
-        dataset_.loadRasterBand(1);
-        tile_data_.source_tile->data_buffer = const_cast<double *>(dataset_.getDataBuffer().data());
+        dataset_.LoadRasterBand(1);
+        tile_data_.source_tile->data_buffer = const_cast<double *>(dataset_.GetDataBuffer().data());
     }
 
     RangeDopplerGeocodingTester() {
-        dataset_.loadRasterBand(1);
-        tile_data_.source_tile->data_buffer = const_cast<double *>(dataset_.getDataBuffer().data());
+        dataset_.LoadRasterBand(1);
+        tile_data_.source_tile->data_buffer = const_cast<double *>(dataset_.GetDataBuffer().data());
     }
 
     ~RangeDopplerGeocodingTester() { this->DeviceFree(); }

@@ -22,10 +22,18 @@ using namespace alus::goods;
 using namespace alus::snapengine;
 
 TEST(ProductData, UtcHasCorrectMjdTimes) {
-    auto const seriesSize = ORBIT_STATE_VECTORS.size();
-    EXPECT_EQ(seriesSize, MJD_TIMES.size());
-    for (size_t i = 0; i < seriesSize; i++){
+    auto const series_size = ORBIT_STATE_VECTORS.size();
+    EXPECT_EQ(series_size, MJD_TIMES.size());
+    for (size_t i = 0; i < series_size; i++) {
         EXPECT_EQ(ORBIT_STATE_VECTORS.at(i).timeMjd_, MJD_TIMES.at(i));
     }
 }
+TEST(ProductData, UtcIsCorrectlyConstructedFromString) {
+    const std::string DATE_TEXT = "15-JUL-2019 16:04:43.800577";
+    const alus::snapengine::Utc EXPECTED_UTC{7135, 57883, 800577};
+    const alus::snapengine::Utc RESULT(DATE_TEXT);
+    EXPECT_EQ(EXPECTED_UTC.days_, RESULT.days_);
+    EXPECT_EQ(EXPECTED_UTC.seconds_, RESULT.seconds_);
+    EXPECT_EQ(EXPECTED_UTC.microseconds_, RESULT.microseconds_);
 }
+}  // namespace

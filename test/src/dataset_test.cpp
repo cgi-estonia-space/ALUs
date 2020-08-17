@@ -27,22 +27,22 @@ TEST_F(DatasetTest, onInvalidFilenameThrows) {
 
 TEST_F(DatasetTest, loadsValidTifFile) {
     auto ds = alus::Dataset(TIF_PATH_1);
-    ds.loadRasterBand(1);
-    ASSERT_EQ(100, ds.getXSize());
-    ASSERT_EQ(100, ds.getYSize());
-    ASSERT_EQ(ds.getXSize() * ds.getYSize(), ds.getDataBuffer().size())
+    ds.LoadRasterBand(1);
+    ASSERT_EQ(100, ds.GetXSize());
+    ASSERT_EQ(100, ds.GetYSize());
+    ASSERT_EQ(ds.GetXSize() * ds.GetYSize(), ds.GetDataBuffer().size())
         << "Loaded band 1 buffer does not contain exact data from dataset.";
 }
 
 TEST_F(DatasetTest, returnsCorrectCoordinatesForEdgeIndexes) {
     auto ds = alus::Dataset(TIF_PATH_1);
-    ds.loadRasterBand(1);
-    auto const zero = ds.getPixelCoordinatesFromIndex(0, 0);
-    auto const zeroOne = ds.getPixelCoordinatesFromIndex(0, 99);
-    auto const oneZero = ds.getPixelCoordinatesFromIndex(99, 0);
-    auto const oneOne = ds.getPixelCoordinatesFromIndex(99, 99);
-    EXPECT_DOUBLE_EQ(22.2362770, std::get<0>(zero));  // getOriginLon()
-    EXPECT_DOUBLE_EQ(58.3731210, std::get<1>(zero));  // getOriginLat()
+    ds.LoadRasterBand(1);
+    auto const zero = ds.GetPixelCoordinatesFromIndex(0, 0);
+    auto const zeroOne = ds.GetPixelCoordinatesFromIndex(0, 99);
+    auto const oneZero = ds.GetPixelCoordinatesFromIndex(99, 0);
+    auto const oneOne = ds.GetPixelCoordinatesFromIndex(99, 99);
+    EXPECT_DOUBLE_EQ(22.2362770, std::get<0>(zero));  // GetOriginLon()
+    EXPECT_DOUBLE_EQ(58.3731210, std::get<1>(zero));  // GetOriginLat()
     EXPECT_DOUBLE_EQ(22.238828045110708, std::get<0>(oneZero));
     EXPECT_DOUBLE_EQ(58.360151848948476, std::get<1>(zeroOne));
     EXPECT_DOUBLE_EQ(22.238828045110708, std::get<0>(oneOne));
@@ -51,29 +51,29 @@ TEST_F(DatasetTest, returnsCorrectCoordinatesForEdgeIndexes) {
 
 TEST_F(DatasetTest, returnsCorrectIndexesForCoordinates) {
     auto ds = alus::Dataset(TIF_PATH_1);
-    ds.loadRasterBand(1);
+    ds.LoadRasterBand(1);
 
-    auto const zero = ds.getPixelIndexFromCoordinates(22.236277, 58.373121);
+    auto const zero = ds.GetPixelIndexFromCoordinates(22.236277, 58.373121);
     EXPECT_EQ(0, std::get<0>(zero));
     EXPECT_EQ(0, std::get<1>(zero));
-    auto const lon0Lat99 = ds.getPixelIndexFromCoordinates(22.236277, 58.360151);
+    auto const lon0Lat99 = ds.GetPixelIndexFromCoordinates(22.236277, 58.360151);
     EXPECT_EQ(0, std::get<0>(lon0Lat99));
     EXPECT_EQ(99, std::get<1>(lon0Lat99));
-    auto const lon99Lat0 = ds.getPixelIndexFromCoordinates(22.238828045110708, 58.373121);
+    auto const lon99Lat0 = ds.GetPixelIndexFromCoordinates(22.238828045110708, 58.373121);
     EXPECT_EQ(99, std::get<0>(lon99Lat0));
     EXPECT_EQ(0, std::get<1>(lon99Lat0));
-    auto const lon99Lat99 = ds.getPixelIndexFromCoordinates(22.238828045110708, 58.360151);
+    auto const lon99Lat99 = ds.GetPixelIndexFromCoordinates(22.238828045110708, 58.360151);
     EXPECT_EQ(99, std::get<0>(lon99Lat99));
     EXPECT_EQ(99, std::get<1>(lon99Lat99));
-    auto const lon50lat50 = ds.getPixelIndexFromCoordinates(22.2375654, 58.3665709);  // Values from gdalinfo.
+    auto const lon50lat50 = ds.GetPixelIndexFromCoordinates(22.2375654, 58.3665709);  // Values from gdalinfo.
     EXPECT_EQ(49, std::get<0>(lon50lat50));
     EXPECT_EQ(50, std::get<1>(lon50lat50));
 }
 
 TEST_F(DatasetTest, createsTargetDataset) {
     auto ds = alus::Dataset(TIF_PATH_1);
-    ds.loadRasterBand(1);
-    std::vector<double> from(ds.getRasterSizeY() * ds.getRasterSizeX());
+    ds.LoadRasterBand(1);
+    std::vector<double> from(ds.GetRasterSizeY() * ds.GetRasterSizeX());
     {
         auto tgt = alus::TargetDataset(ds, "/tmp/test.tif");
         ASSERT_EQ(tgt.getSize(), from.size());
@@ -82,15 +82,15 @@ TEST_F(DatasetTest, createsTargetDataset) {
     }
 
     auto checkDs = alus::Dataset("/tmp/test.tif");
-    checkDs.loadRasterBand(1);
-    auto const& checkData = checkDs.getDataBuffer();
+    checkDs.LoadRasterBand(1);
+    auto const& checkData = checkDs.GetDataBuffer();
     ASSERT_EQ(checkData.size(), from.size());
     ASSERT_TRUE(std::equal(checkData.begin(), checkData.end(), from.begin()));
 }
 
 TEST_F(DatasetTest, throwsWhenWritingInvalidSizes) {
     auto ds = alus::Dataset(TIF_PATH_1);
-    ds.loadRasterBand(1);
+    ds.LoadRasterBand(1);
     auto tgt = alus::TargetDataset(ds, "/tmp/test.tif");
     auto const dims = tgt.getDimensions();
 
@@ -121,9 +121,9 @@ TEST_F(DatasetTest, writesToTargetDatasetWithOffsets) {
     }
 
     auto check = alus::Dataset("/tmp/test.tif");
-    check.loadRasterBand(1);
-    ASSERT_EQ(check.getRasterDimensions(), dim);
-    auto checkData = check.getDataBuffer();
+    check.LoadRasterBand(1);
+    ASSERT_EQ(check.GetRasterDimensions(), dim);
+    auto checkData = check.GetDataBuffer();
     ASSERT_EQ(checkData.size(), dim.getSize());
     EXPECT_TRUE(std::equal(checkData.begin(), checkData.begin() + fillDim.getSize(), fill1.begin()));
     EXPECT_TRUE(

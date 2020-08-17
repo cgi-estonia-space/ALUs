@@ -36,9 +36,9 @@ class TerrainCorrectionTest : public ::testing::Test {
    public:
     TerrainCorrectionTest() {
         coh_ds_ = std::make_optional<alus::Dataset>(COH_1_TIF);
-        coh_ds_.value().loadRasterBand(1);
+        coh_ds_.value().LoadRasterBand(1);
         dem_ds_ = std::make_optional<alus::Dataset>(DEM_PATH_1);
-        dem_ds_.value().loadRasterBand(1);
+        dem_ds_.value().LoadRasterBand(1);
     }
 
     std::optional<alus::Dataset> coh_ds_;
@@ -50,8 +50,8 @@ class TerrainCorrectionTest : public ::testing::Test {
 
 TEST_F(TerrainCorrectionTest, fetchElevationsOnGPU) {
     alus::TerrainCorrection tc{std::move(coh_ds_.value()), std::move(coh_ds_.value()), std::move(dem_ds_.value())};
-    tc.localDemCuda();
-    const auto& elevations = tc.getElevations();
+    tc.LocalDemCuda();
+    const auto& elevations = tc.GetElevations();
     const auto [min, max] = std::minmax_element(std::begin(elevations), std::end(elevations));
     EXPECT_EQ(*min, 0);
     EXPECT_EQ(*max, 43);

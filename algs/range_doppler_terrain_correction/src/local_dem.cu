@@ -9,7 +9,7 @@
 #include "local_dem.cuh"
 
 /**
- * This is a duplication of Dem::getLocalDemFor().
+ * This is a duplication of Dem::GetLocalDemFor().
  *
  * @arg dem Elevation map
  * @arg targetElevations Elevation map for the product
@@ -20,39 +20,39 @@ __global__ void fillElevation(double const* dem, double* targetElevations,
     auto const threadX = threadIdx.x + blockIdx.x * blockDim.x;
     auto const threadY = threadIdx.y + blockIdx.y * blockDim.y;
 
-    if (threadX >= args.targetCols || threadY >= args.targetRows) {
+    if (threadX >= args.target_cols || threadY >= args.target_rows) {
         return;
     }
 
-    // Dataset::getPixelCoordinatesFromIndex()
+    // Dataset::GetPixelCoordinatesFromIndex()
     double const targetLon =
-        threadX * args.targetPixelSizeLon + args.targetOriginLon;
+        threadX * args.target_pixel_size_lon + args.target_origin_lon;
     double const targetLat =
-        threadY * args.targetPixelSizeLat + args.targetOriginLat;
+        threadY * args.target_pixel_size_lat + args.target_origin_lat;
 
-    // Dataset::getPixelIndexFromCoordinates()
-    auto const demX = static_cast<int>((targetLon - args.demOriginLon) / args.demPixelSizeLon);
-    auto const demY = static_cast<int>((targetLat - args.demOriginLat) / args.demPixelSizeLat);
-    if (demX >= args.demCols || demY >= args.demRows || demX < 0 || demY < 0) {
+    // Dataset::GetPixelIndexFromCoordinates()
+    auto const demX = static_cast<int>((targetLon - args.dem_origin_lon) / args.dem_pixel_size_lon);
+    auto const demY = static_cast<int>((targetLat - args.dem_origin_lat) / args.dem_pixel_size_lat);
+    if (demX >= args.dem_cols || demY >= args.dem_rows || demX < 0 || demY < 0) {
         printf(
             "Index error in getElevation() kernel \"DEM index > size\" %d %d\n",
             demX, demY);
         return;
     }
 
-    double const elevation = dem[args.demCols * demY + demX];
-    targetElevations[args.targetCols * threadY + threadX] =
+    double const elevation = dem[args.dem_cols * demY + demX];
+    targetElevations[args.target_cols * threadY + threadX] =
         (elevation > 0) * elevation;
 }
 
-void runElevationKernel(double const* dem, double* targetElevations,
+void RunElevationKernel(double const* dem, double* target_elevations,
                         LocalDemKernelArgs const args) {
     dim3 blockSize{32, 32};
-    dim3 gridSize{args.targetCols / blockSize.x + 1,
-                  args.targetRows / blockSize.y + 1};
+    dim3 gridSize{args.target_cols / blockSize.x + 1,
+                  args.target_rows / blockSize.y + 1};
 
     printf("Running kernel threads per block X:%d Y:%d blocks X:%d Y:%d\n",
            blockSize.x, blockSize.y, gridSize.x, gridSize.y);
 
-    fillElevation<<<gridSize, blockSize>>>(dem, targetElevations, args);
+    fillElevation<<<gridSize, blockSize>>>(dem, target_elevations, args);
 }

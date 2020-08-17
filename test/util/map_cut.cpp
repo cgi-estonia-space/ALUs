@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
         std::string const from{argv[3]};
         std::string const dest{argv[4]};
         alus::Dataset inDataset{from.c_str()};
-        auto inGdalDataset = inDataset.getGDALDataset();
+        auto inGdalDataset = inDataset.GetGdalDataset();
 
         std::string const driverFormat{"GTiff"};
         GDALDriver *outDriver;
@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
             return 4;
         }
 
-        auto const inGeoTransform = inDataset.getTransform();
+        auto const inGeoTransform = inDataset.GetTransform();
         std::array const geoTransform{
             lon, inGeoTransform[1], inGeoTransform[2],
             lat, inGeoTransform[4], inGeoTransform[5]};
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
 
         std::array<float, OUT_WIDTH * OUT_HEIGHT> rasterBuffer;
 
-        auto const origin = inDataset.getPixelIndexFromCoordinates(lon, lat);
+        auto const origin = inDataset.GetPixelIndexFromCoordinates(lon, lat);
         auto const inError = inGdalDataset->GetRasterBand(1)->RasterIO(
             GF_Read, std::get<0>(origin), std::get<1>(origin), OUT_WIDTH,
             OUT_HEIGHT, rasterBuffer.data(), OUT_WIDTH, OUT_HEIGHT, GDT_Float32,

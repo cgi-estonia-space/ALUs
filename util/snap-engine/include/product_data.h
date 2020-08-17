@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <string>
+
 namespace alus {
 namespace snapengine {
 
@@ -43,9 +45,14 @@ class Utc {
 
     /**
      * Returns the Modified Julian Day 2000 (MJD2000) represented by this UTC value as double value.
+     * Conversion algorithm from Gregorian Calendar to Julian Day is taken from L. E. Doggett, Ch. 12, "Calendars", p.
+     * 604, in Seidelmann 1992.
      *
+     * @param date_string Text with date in format  "DAY-MONTH-YEAR HH:MM:SS.MICROSECONDS", e.g., 15-JUL-2019 16:04:43.800577
      * @return this UTC value computed as days
      */
+    explicit Utc(const std::string &date_string);
+
     double getMjd() const;
     int getDaysFraction() const { return days_; }
     int getSecondsFraction() const { return seconds_; }
@@ -58,6 +65,8 @@ class Utc {
     static constexpr double SECONDS_TO_DAYS{1.0 / SECONDS_PER_DAY};
     static constexpr double MICROS_PER_SECOND{1000000.0};
     static constexpr double MICROS_TO_SECONDS{1.0 / MICROS_PER_SECOND};
+
+    static const std::string TIME_FORMAT;
 };
 
 }  // namespace snapengine

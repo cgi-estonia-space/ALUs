@@ -9,74 +9,74 @@ namespace alus {
 // If one wants to install custom GDAL error handler -
 // https://gdal.org/api/cpl.html#_CPPv418CPLSetErrorHandler15CPLErrorHandler
 
-Dataset::Dataset(std::string_view filename) { loadDataset(filename); }
+Dataset::Dataset(std::string_view filename) { LoadDataset(filename); }
 
-void Dataset::loadDataset(std::string_view filename) {
+void Dataset::LoadDataset(std::string_view filename) {
     // TODO: move this to a place where it is unifiedly called once when system
     // starts.
     GDALAllRegister();  // Register all known drivers.
 
-    this->dataset = (GDALDataset*)GDALOpen(filename.data(), GA_ReadOnly);
-    if (this->dataset == nullptr) {
+    this->dataset_ = (GDALDataset*)GDALOpen(filename.data(), GA_ReadOnly);
+    if (this->dataset_ == nullptr) {
         throw DatasetError(CPLGetLastErrorMsg(), filename.data(),
                            CPLGetLastErrorNo());
     }
 
-    if (this->dataset->GetGeoTransform(this->transform.data()) != CE_None) {
-        throw DatasetError(CPLGetLastErrorMsg(), this->dataset->GetFileList()[0],
+    if (this->dataset_->GetGeoTransform(this->transform_.data()) != CE_None) {
+        throw DatasetError(CPLGetLastErrorMsg(), this->dataset_->GetFileList()[0],
                            CPLGetLastErrorNo());
     }
 
-    this->originLon = this->transform[TRANSFORM_LON_ORIGIN_INDEX];
-    this->originLat = this->transform[TRANSFORM_LAT_ORIGIN_INDEX];
-    this->pixelSizeLon = this->transform[TRANSFORM_PIXEL_X_SIZE_INDEX];
-    this->pixelSizeLat = this->transform[TRANSFORM_PIXEL_Y_SIZE_INDEX];
+    this->origin_lon_ = this->transform_[TRANSFORM_LON_ORIGIN_INDEX];
+    this->origin_lat_ = this->transform_[TRANSFORM_LAT_ORIGIN_INDEX];
+    this->pixel_size_lon_ = this->transform_[TRANSFORM_PIXEL_X_SIZE_INDEX];
+    this->pixel_size_lat_ = this->transform_[TRANSFORM_PIXEL_Y_SIZE_INDEX];
 }
 
-std::tuple<double, double> Dataset::getPixelCoordinatesFromIndex(int x,
+std::tuple<double, double> Dataset::GetPixelCoordinatesFromIndex(int x,
                                                                  int y) const {
-    auto const lon = x * this->pixelSizeLon +
-                     this->originLon;  // Optional - {'+' (this->pixelSizeLon / 2)};
-    auto const lat = y * this->pixelSizeLat +
-                     this->originLat;  // Optional - {'+' (this->pixelSizeLat / 2)};
+    auto const lon = x * this->pixel_size_lon_ +
+                     this->origin_lon_;  // Optional - {'+' (this->pixel_size_lon_ / 2)};
+    auto const lat = y * this->pixel_size_lat_ +
+                     this->origin_lat_;  // Optional - {'+' (this->pixel_size_lat_ / 2)};
     return {lon, lat};
 }
 
-std::tuple<int, int> Dataset::getPixelIndexFromCoordinates(double lon,
+std::tuple<int, int> Dataset::GetPixelIndexFromCoordinates(double lon,
                                                            double lat) const {
-    auto const x = (lon - getOriginLon()) / this->pixelSizeLon;
-    auto const y = (lat - getOriginLat()) / this->pixelSizeLat;
+    auto const x = (lon - GetOriginLon()) / this->pixel_size_lon_;
+    auto const y = (lat - GetOriginLat()) / this->pixel_size_lat_;
 
     return {x, y};
 }
 
 Dataset::~Dataset() {
-    if (this->dataset) {
-        GDALClose(this->dataset);
-        this->dataset = nullptr;
+    if (this->dataset_) {
+        GDALClose(this->dataset_);
+        this->dataset_ = nullptr;
     }
 }
-void Dataset::loadRasterBand(int bandNr) {
-    auto const bandCount = this->dataset->GetRasterCount();
+void Dataset::LoadRasterBand(int band_nr) {
+    auto const bandCount = this->dataset_->GetRasterCount();
     if (bandCount == 0) {
         throw DatasetError("Does not support rasters with no bands.",
-                           this->dataset->GetFileList()[0], 0);
+                           this->dataset_->GetFileList()[0], 0);
     }
 
-    if (bandCount < bandNr) {
+    if (bandCount < band_nr) {
         throw DatasetError("Too big band nr! You can not read a band that isn't there.",
-                           this->dataset->GetFileList()[0], 0);
+                           this->dataset_->GetFileList()[0], 0);
     }
-    this->xSize = this->dataset->GetRasterXSize();
-    this->ySize = this->dataset->GetRasterYSize();
-    this->dataBuffer.resize(this->xSize * this->ySize);
+    this->x_size_ = this->dataset_->GetRasterXSize();
+    this->y_size_ = this->dataset_->GetRasterYSize();
+    this->data_buffer_.resize(this->x_size_ * this->y_size_);
 
-    auto const inError = this->dataset->GetRasterBand(bandNr)->RasterIO(
-        GF_Read, 0, 0, this->xSize, this->ySize, this->dataBuffer.data(),
-        this->xSize, this->ySize, GDALDataType::GDT_Float64, 0, 0);
+    auto const inError = this->dataset_->GetRasterBand(band_nr)->RasterIO(
+        GF_Read, 0, 0, this->x_size_, this->y_size_, this->data_buffer_.data(),
+        this->x_size_, this->y_size_, GDALDataType::GDT_Float64, 0, 0);
 
     if (inError != CE_None) {
-        throw DatasetError(CPLGetLastErrorMsg(), this->dataset->GetFileList()[0],
+        throw DatasetError(CPLGetLastErrorMsg(), this->dataset_->GetFileList()[0],
                            CPLGetLastErrorNo());
     }
 }

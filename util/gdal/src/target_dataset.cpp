@@ -5,17 +5,17 @@
 namespace alus {
 
 TargetDataset::TargetDataset(Dataset& dsWithProperties, std::string_view filename)
-    : dimensions{dsWithProperties.getRasterDimensions()} {
-    auto const driver = dsWithProperties.getGDALDataset()->GetDriver();
+    : dimensions{dsWithProperties.GetRasterDimensions()} {
+    auto const driver = dsWithProperties.GetGdalDataset()->GetDriver();
     CHECK_GDAL_PTR(driver);
 
     this->gdalDs = driver->Create(filename.data(), dimensions.columnsX, dimensions.rowsY, 1, GDT_Float64, nullptr);
     CHECK_GDAL_PTR(this->gdalDs);
     double gt[GeoTransformConstruct::GDAL_GEOTRANSFORM_PARAMETERS_LENGTH];
-    auto inputGt = dsWithProperties.getTransform();
+    auto inputGt = dsWithProperties.GetTransform();
     std::copy_n(inputGt, GeoTransformConstruct::GDAL_GEOTRANSFORM_PARAMETERS_LENGTH, gt);
     CHECK_GDAL_ERROR(this->gdalDs->SetGeoTransform(gt));
-    CHECK_GDAL_ERROR(this->gdalDs->SetProjection(dsWithProperties.getGDALDataset()->GetProjectionRef()));
+    CHECK_GDAL_ERROR(this->gdalDs->SetProjection(dsWithProperties.GetGdalDataset()->GetProjectionRef()));
 }
 
 void TargetDataset::write(std::vector<double>& from, RasterPoint to, RasterDimension howMuch) {
