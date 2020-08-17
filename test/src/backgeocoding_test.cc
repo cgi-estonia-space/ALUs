@@ -1,7 +1,22 @@
-#include "backgeocoding.h"
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #include <fstream>
-#include "comparators.h"
+
 #include "gmock/gmock.h"
+
+#include "backgeocoding.h"
+#include "comparators.h"
 #include "shapes.h"
 #include "tests_common.hpp"
 
@@ -79,17 +94,22 @@ public:
 };
 
 TEST(backgeocoding, correctness){
-    alus::Backgeocoding backgeocoding;
+    alus::backgeocoding::Backgeocoding backgeocoding;
     BackgeocodingTester tester;
     tester.ReadTestData();
 
     backgeocoding.SetPlaceHolderFiles(
         "./goods/backgeocoding/params.txt", "./goods/backgeocoding/xPoints.txt", "./goods/backgeocoding/yPoints.txt");
-    backgeocoding.SetSentinel1Placeholders("./goods/backgeocoding/orbitStateVectors.txt",
+    backgeocoding.SetSentinel1Placeholders(
                                            "./goods/backgeocoding/dcEstimateList.txt",
                                            "./goods/backgeocoding/azimuthList.txt",
-                                           "./goods/backgeocoding/burstLineTimes.txt",
-                                           "./goods/backgeocoding/geoLocation.txt");
+                                           "./goods/backgeocoding/masterBurstLineTimes.txt",
+                                           "./goods/backgeocoding/slaveBurstLineTimes.txt",
+                                           "./goods/backgeocoding/masterGeoLocation.txt",
+                                           "./goods/backgeocoding/slaveGeoLocation.txt");
+    backgeocoding.SetOrbitVectorsFiles(
+                     "./goods/backgeocoding/masterOrbitStateVectors.txt",
+                     "./goods/backgeocoding/slaveOrbitStateVectors.txt");
     backgeocoding.SetSRTMDirectory("./goods/");
     backgeocoding.SetEGMGridFile("./goods/ww15mgh_b.grd");
     backgeocoding.FeedPlaceHolders();

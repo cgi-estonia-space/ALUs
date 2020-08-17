@@ -1,6 +1,7 @@
 #include "subswath_info.h"
 
 namespace alus {
+namespace s1tbx {
 
 SubSwathInfo::SubSwathInfo(){
 
@@ -34,12 +35,6 @@ SubSwathInfo::~SubSwathInfo(){
     if(incidence_angle_ != nullptr){
         delete[] incidence_angle_;
     }
-    if(burst_first_line_time_ != nullptr){
-        delete[] burst_first_line_time_;
-    }
-    if(burst_last_line_time_ != nullptr){
-        delete[] burst_last_line_time_;
-    }
     DeviceFree();
 }
 
@@ -49,6 +44,7 @@ void SubSwathInfo::HostToDevice(){
     int elems = doppler_size_x * doppler_size_y;
     DeviceSubswathInfo temp_pack;
 
+    //TODO: before copy make sure to check if these are even available. In our demo these are forced available
     CHECK_CUDA_ERR(cudaMalloc((void**)&temp_pack.device_doppler_rate, elems*sizeof(double)));
 
     CHECK_CUDA_ERR(cudaMalloc((void**)&temp_pack.device_doppler_centroid, elems*sizeof(double)));
@@ -90,6 +86,21 @@ void SubSwathInfo::HostToDevice(){
     temp_pack.num_of_geo_lines = this->num_of_geo_lines_;
     temp_pack.num_of_geo_points_per_line = this->num_of_geo_points_per_line_;
 
+    temp_pack.burst_line_times_count = this->burst_first_line_time_.size();
+    CHECK_CUDA_ERR(cudaMalloc((void**)&temp_pack.device_burst_first_line_time, temp_pack.burst_line_times_count*sizeof(double)));
+    CHECK_CUDA_ERR(cudaMalloc((void**)&temp_pack.device_burst_last_line_time, temp_pack.burst_line_times_count*sizeof(double)));
+
+
+    CHECK_CUDA_ERR(cudaMemcpy(temp_pack.device_burst_first_line_time,
+                              this->burst_first_line_time_.data(),
+                              temp_pack.burst_line_times_count*sizeof(double),
+                              cudaMemcpyHostToDevice));
+
+    CHECK_CUDA_ERR(cudaMemcpy(temp_pack.device_burst_last_line_time,
+                              this->burst_last_line_time_.data(),
+                              temp_pack.burst_line_times_count*sizeof(double),
+                              cudaMemcpyHostToDevice));
+
     this->devicePointersHolder = temp_pack;
 
     CHECK_CUDA_ERR(cudaMalloc((void**)&this->device_subswath_info_, sizeof(DeviceSubswathInfo)));
@@ -122,6 +133,11 @@ void SubSwathInfo::DeviceFree(){
         cudaFree(this->devicePointersHolder.device_reference_time);
         this->devicePointersHolder.device_reference_time = nullptr;
     }
+    if(this->devicePointersHolder.device_range_depend_doppler_rate != nullptr){
+        cudaFree(this->devicePointersHolder.device_range_depend_doppler_rate);
+        this->devicePointersHolder.device_range_depend_doppler_rate = nullptr;
+    }
+
     if(this->device_subswath_info_ != nullptr){
         cudaFree(this->device_subswath_info_);
         this->device_subswath_info_ = nullptr;
@@ -130,4 +146,5 @@ void SubSwathInfo::DeviceFree(){
 
 }
 
+}//namespace
 }//namespace

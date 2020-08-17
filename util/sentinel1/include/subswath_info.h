@@ -8,7 +8,11 @@
 #include "subswath_info.cuh"
 
 namespace alus {
+namespace s1tbx {
 
+/**
+ * This class refers to SubSwathInfo private class from Sentinel1Utils class from s1tbx module
+ */
 class SubSwathInfo: public cuda::CudaFriendlyObject{
 private:
     DeviceSubswathInfo devicePointersHolder;
@@ -30,8 +34,8 @@ public:
     int lines_per_burst_;
     int num_of_bursts_;
     int samples_per_burst_;
-    double *burst_first_line_time_ = nullptr; //placeholder
-    double *burst_last_line_time_ = nullptr;  //placeholder
+    std::vector<double> burst_first_line_time_; //placeholder
+    std::vector<double> burst_last_line_time_;  //placeholder
 
     double **doppler_rate_ = nullptr;
     double **doppler_centroid_ = nullptr;
@@ -59,4 +63,5 @@ public:
 
 };
 
+}//namespace
 }//namespace

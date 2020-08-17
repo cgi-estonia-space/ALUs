@@ -10,7 +10,10 @@
 #include "shapes.h"
 #include "subswath_info.h"
 
+#include "sentinel1_utils.cuh"
+
 namespace alus {
+namespace s1tbx {
 
 struct AzimuthFmRate {
     double time;
@@ -35,14 +38,17 @@ struct Sentinel1Index {
     double mu_y;
 };
 
-class Sentinel1Utils{
+/**
+ * This class refers to Sentinel1Utils class from s1tbx module.
+ */
+class Sentinel1Utils: public cuda::CudaFriendlyObject{
 private:
     int num_of_sub_swath_;
 
-    int is_doppler_centroid_available_ = 0;
-    int is_range_depend_doppler_rate_available_ = 0;
-    int is_orbit_available = 0;
-    alus::s1tbx::OrbitStateVectors *orbit{nullptr};
+    bool is_doppler_centroid_available_ = false;
+    bool is_range_depend_doppler_rate_available_ = false;
+    bool is_orbit_available_ = false;
+    std::unique_ptr<s1tbx::OrbitStateVectors> orbit;
 
 
     std::vector<DCPolynomial> GetDCEstimateList(std::string subswath_name);
@@ -64,7 +70,21 @@ private:
 
 public:
     std::vector<SubSwathInfo> subswath_;
-    double range_spacing;
+
+    double first_line_utc_{0.0};
+    double last_line_utc_{0.0};
+    double line_time_interval_{0.0};
+    double near_edge_slant_range_{0.0};
+    double wavelength_{0.0};
+    double range_spacing_{0.0};
+    double azimuth_spacing_{0.0};
+
+    int source_image_width_{0};
+    int source_image_height_{0};
+    int near_range_on_left_{1};
+    int srgr_flag_{0};
+
+    DeviceSentinel1Utils *device_sentinel_1_utils_{nullptr};
 
     double *ComputeDerampDemodPhase(int subswath_index,int s_burst_index,Rectangle rectangle);
     Sentinel1Index ComputeIndex(double azimuth_time,double slant_range_time, SubSwathInfo *subswath);
@@ -85,9 +105,21 @@ public:
         std::string geo_location_file);
     void ReadPlaceHolderFiles();
 
+    void HostToDevice() override;
+    void DeviceToHost() override;
+    void DeviceFree() override;
+
+    alus::s1tbx::OrbitStateVectors * GetOrbitStateVectors(){
+        if(this->is_orbit_available_){
+            return this->orbit.get();
+        }
+        return nullptr;
+    }
+
     Sentinel1Utils();
     Sentinel1Utils(int placeholderType);
     ~Sentinel1Utils();
 };
 
+}//namespace
 }//namespace

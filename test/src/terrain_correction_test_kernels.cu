@@ -10,7 +10,7 @@ namespace tests {
 __global__ void GetPositionKernel(cudautil::KernelArray<double> lat_args,
                                   cudautil::KernelArray<double> lon_args,
                                   cudautil::KernelArray<double> alt_args,
-                                  cudautil::KernelArray<terraincorrection::PositionData> sat_positions,
+                                  cudautil::KernelArray<s1tbx::PositionData> sat_positions,
                                   terraincorrection::GetPositionMetadata metadata,
                                   cudautil::KernelArray<bool> results) {
     auto const thread_x = threadIdx.x + blockIdx.x * blockDim.x;
@@ -29,7 +29,7 @@ __global__ void GetPositionKernel(cudautil::KernelArray<double> lat_args,
 void LaunchGetPositionKernel(const std::vector<double>& lat_args,
                              const std::vector<double>& lon_args,
                              const std::vector<double>& alt_args,
-                             std::vector<terraincorrection::PositionData>& sat_positions,
+                             std::vector<s1tbx::PositionData>& sat_positions,
                              terraincorrection::GetPositionMetadata metadata,
                              const std::vector<snapengine::PosVector>& sensor_position,
                              const std::vector<snapengine::PosVector>& sensor_velocity,
@@ -44,8 +44,8 @@ void LaunchGetPositionKernel(const std::vector<double>& lat_args,
     cudautil::KernelArray<double> k_lon_args{thrust::raw_pointer_cast(d_lon_args.data()), d_lon_args.size()};
     thrust::device_vector<double> d_alt_args = alt_args;
     cudautil::KernelArray<double> k_alt_args{thrust::raw_pointer_cast(d_alt_args.data()), d_alt_args.size()};
-    thrust::device_vector<terraincorrection::PositionData> d_sat_positions(sat_positions.size());
-    cudautil::KernelArray<terraincorrection::PositionData> k_sat_positions{
+    thrust::device_vector<s1tbx::PositionData> d_sat_positions(sat_positions.size());
+    cudautil::KernelArray<s1tbx::PositionData> k_sat_positions{
         thrust::raw_pointer_cast(d_sat_positions.data()), d_sat_positions.size()};
 
     thrust::device_vector<snapengine::PosVector> d_sensor_position = sensor_position;

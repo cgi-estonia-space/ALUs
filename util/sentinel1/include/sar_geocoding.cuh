@@ -13,6 +13,7 @@
  */
 #pragma once
 
+#include <pos_vector.h>
 #include <cmath>
 
 #include "cuda_util.cuh"
@@ -46,6 +47,26 @@ inline __device__ __host__ double getDopplerFrequency(alus::snapengine::PosVecto
 
     return 2.0 * (sensorVelocity.x * xDiff + sensorVelocity.y * yDiff + sensorVelocity.z * zDiff) /
            (distance * wavelength);
+}
+
+/**
+     * Compute Doppler frequency for given earthPoint and sensor position.
+     *
+     * @param earthPoint     The earth point in xyz coordinate.
+     * @param orbit          OrbitStateVector
+     * @param wavelength     The radar wavelength.
+     * @return The Doppler frequency in Hz.
+     */
+inline __device__ __host__ double getDopplerFrequency(alus::snapengine::PosVector earthPoint,
+                                                      alus::snapengine::OrbitStateVector orbit,
+                                                      double wavelength) {
+
+    double xDiff = earthPoint.x - orbit.xPos_;
+    double yDiff = earthPoint.y - orbit.yPos_;
+    double zDiff = earthPoint.z - orbit.zPos_;
+    double distance = sqrt(xDiff * xDiff + yDiff * yDiff + zDiff * zDiff);
+
+    return 2.0 * (orbit.xVel_ * xDiff + orbit.yVel_ * yDiff + orbit.zVel_ * zDiff) / (distance * wavelength);
 }
 
 /**
@@ -106,6 +127,82 @@ inline __device__ __host__ double GetEarthPointZeroDopplerTimeImpl(
     const auto y0 =
         lower_bound - lower_bound_freq * (upper_bound - lower_bound) / (upper_bound_freq - lower_bound_freq);
     return first_line_utc + y0 * line_time_interval;
+}
+
+/**
+ * Compute zero Doppler time for given point with the product orbit state vectors using bisection method.
+ *
+ * @param line_time_interval The line time interval.
+ * @param wavelength       The radar wavelength.
+ * @param earth_point       The earth point in xyz coordinate.
+ * @param orbit            The array of orbit state vectors.
+ * @return The zero Doppler time in days if it is found, NonValidZeroDopplerTime otherwise.
+ */
+inline __device__ double GetZeroDopplerTime(double line_time_interval,
+                                            double wavelength,
+                                            snapengine::PosVector earth_point,
+                                            snapengine::OrbitStateVector *orbit,
+                                            const int num_orbit_vec,
+                                            const double dt){
+    double first_vec_time = 0.0;
+    double second_vec_time = 0.0;
+    double first_vec_freq = 0.0;
+    double second_vec_freq = 0.0;
+
+    for (int i = 0; i < num_orbit_vec; i++) {
+        snapengine::OrbitStateVector orb = orbit[i];
+
+        double current_freq = getDopplerFrequency(earth_point, orb, wavelength);
+        if (i == 0 || first_vec_freq * current_freq > 0) {
+            first_vec_time = orb.timeMjd_;
+            first_vec_freq = current_freq;
+        } else {
+            second_vec_time = orb.timeMjd_;
+            second_vec_freq = current_freq;
+            break;
+        }
+    }
+
+    if (first_vec_freq * second_vec_freq >= 0.0) {
+        return NON_VALID_ZERO_DOPPLER_TIME;
+    }
+
+    // find the exact time using Doppler frequency and bisection method
+    double lower_bound_time = first_vec_time;
+    double upper_bound_time = second_vec_time;
+    double lower_bound_freq = first_vec_freq;
+    double upper_bound_freq = second_vec_freq;
+    double mid_time, mid_freq;
+    double diff_time = std::abs(upper_bound_time - lower_bound_time);
+    const double abs_line_time_interval = std::abs(line_time_interval);
+
+    const int total_iterations = (int)(diff_time / abs_line_time_interval) + 1;
+    int num_iterations = 0;
+    while (diff_time > abs_line_time_interval && num_iterations <= total_iterations) {
+        mid_time = (upper_bound_time + lower_bound_time) / 2.0;
+        snapengine::PosVector position;
+        snapengine::PosVector velocity;
+
+        orbitstatevectors::getPositionVelocity(mid_time, orbit, num_orbit_vec, dt, &position, &velocity);
+        mid_freq = getDopplerFrequency(earth_point, position, velocity, wavelength);
+
+        if (mid_freq * lower_bound_freq > 0.0) {
+            lower_bound_time = mid_time;
+            lower_bound_freq = mid_freq;
+        } else if (mid_freq * upper_bound_freq > 0.0) {
+            upper_bound_time = mid_time;
+            upper_bound_freq = mid_freq;
+            //TODO: there might be an accuracy bug here because we are missing a compare delta, but what is the delta?
+        } else if (mid_freq == 0.0) {
+            return mid_time;
+        }
+
+        diff_time = std::abs(upper_bound_time - lower_bound_time);
+        num_iterations++;
+    }
+
+    return lower_bound_time -
+           lower_bound_freq * (upper_bound_time - lower_bound_time) / (upper_bound_freq - lower_bound_freq);
 }
 
 inline __device__ __host__ double ComputeSlantRangeImpl(double time,

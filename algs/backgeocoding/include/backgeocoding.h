@@ -1,3 +1,16 @@
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #pragma once
 
 #include <memory>
@@ -22,7 +35,11 @@
 
 
 namespace alus {
+namespace backgeocoding{
 
+/**
+ * The contents of this class originate from s1tbx module's BackGeocodingOp java class.
+ */
 class Backgeocoding{
 private:
     std::vector<float> q_result_;
@@ -38,8 +55,8 @@ private:
 
     int tile_x_, tile_y_, param_size_, tile_size_, demod_size_;
 
-    std::unique_ptr<Sentinel1Utils> master_utils_;
-    std::unique_ptr<Sentinel1Utils> slave_utils_;
+    std::unique_ptr<s1tbx::Sentinel1Utils> master_utils_;
+    std::unique_ptr<s1tbx::Sentinel1Utils> slave_utils_;
     double dem_sampling_lat_ = 0.0;
     double dem_sampling_lon_ = 0.0;
     std::unique_ptr<snapengine::EarthGravitationalModel96> egm96_;
@@ -57,7 +74,7 @@ private:
     void PrepareSrtm3Data();
 
     std::vector<double> ComputeImageGeoBoundary(
-            SubSwathInfo *sub_swath,
+            s1tbx::SubSwathInfo *sub_swath,
             int burst_index,
             int x_min,
             int x_max,
@@ -81,11 +98,14 @@ private:
     std::string x_points_file_ = "../test/goods/backgeocoding/xPoints.txt";
     std::string y_points_file_ = "../test/goods/backgeocoding/yPoints.txt";
 
-    std::string orbit_state_vectors_file_ = "../test/goods/backgeocoding/orbitStateVectors.txt";
+    std::string slave_orbit_state_vectors_file_ = "../test/goods/backgeocoding/slaveOrbitStateVectors.txt";
+    std::string master_orbit_state_vectors_file_ = "../test/goods/backgeocoding/masterOrbitStateVectors.txt";
     std::string dc_estimate_list_file_ = "../test/goods/backgeocoding/dcEstimateList.txt";
     std::string azimuth_list_file_ = "../test/goods/backgeocoding/azimuthList.txt";
-    std::string burst_line_time_file_ = "../test/goods/backgeocoding/burstLineTimes.txt";
-    std::string geo_location_file_ = "../test/goods/backgeocoding/geoLocation.txt";
+    std::string master_burst_line_time_file_ = "../test/goods/backgeocoding/masterBurstLineTimes.txt";
+    std::string slave_burst_line_time_file_ = "../test/goods/backgeocoding/slaveBurstLineTimes.txt";
+    std::string master_geo_location_file_ = "../test/goods/backgeocoding/masterGeoLocation.txt";
+    std::string slave_geo_location_file_ = "../test/goods/backgeocoding/slaveGeoLocation.txt";
 
     //std::string srtm_41_01File = "../test/goods/srtm_41_01.tif";
     //std::string srtm_42_01File = "../test/goods/srtm_42_01.tif";
@@ -102,11 +122,16 @@ public:
 
     void SetPlaceHolderFiles(std::string params_file,std::string x_points_file, std::string y_points_file);
     void SetSentinel1Placeholders(
-        std::string orbit_state_vectors_file,
         std::string dc_estimate_list_file,
         std::string azimuth_list_file,
-        std::string burst_line_time_file,
-        std::string geo_location_file);
+        std::string master_burst_line_time_file,
+        std::string slave_burst_line_time_file,
+        std::string master_geo_location_file,
+        std::string slave_geo_location_file);
+
+    void SetOrbitVectorsFiles(
+        std::string master_orbit_state_vectors_file,
+        std::string slave_orbit_state_vectors_file);
 
     void SetSRTMDirectory(std::string directory);
     void SetEGMGridFile(std::string grid_file);
@@ -120,4 +145,5 @@ public:
     }
 };
 
+}//namespace
 }//namespace

@@ -3,6 +3,7 @@
 #include "general_constants.h"
 
 namespace alus {
+namespace s1tbx {
 
 using namespace alus::snapengine;
 
@@ -13,9 +14,7 @@ Sentinel1Utils::Sentinel1Utils(int placeholderType){ WritePlaceolderInfo(placeho
 }
 
 Sentinel1Utils::~Sentinel1Utils(){
-    if(orbit != nullptr){
-        delete orbit;
-    }
+    this->DeviceFree();
 }
 
 //TODO: using placeholder data
@@ -28,7 +27,20 @@ void Sentinel1Utils::WritePlaceolderInfo(int placeholder_type){
     //master
     switch (placeholder_type){
         case 1:
-            this->range_spacing = 2.329562;
+
+            this->first_line_utc_ = 6362.663629015139;
+            this->last_line_utc_ = 6362.664239377373;
+            this->line_time_interval_ = 2.3791160879629606E-8;
+            this->near_edge_slant_range_ = 803365.0384269019;
+            this->wavelength_ = 0.05546576;
+            this->range_spacing_ = 2.329562;
+            this->azimuth_spacing_ = 13.91421;
+
+            this->source_image_width_ = 21401;
+            this->source_image_height_ = 28557;
+            this->near_range_on_left_ = 1;
+            this->srgr_flag_ = 0;
+            //srgrConvParams = null;
 
             this->subswath_.at(0).azimuth_time_interval_ = 0.002055556299999998;
             this->subswath_.at(0).num_of_bursts_ = 19;
@@ -49,7 +61,20 @@ void Sentinel1Utils::WritePlaceolderInfo(int placeholder_type){
         break;
         //slave
         case 2:
-            this->range_spacing = 2.329562;
+
+            this->first_line_utc_ = 6374.66363659448;
+            this->last_line_utc_ = 6374.6642469804865;
+            this->line_time_interval_ = 2.3791160879629606E-8;
+            this->near_edge_slant_range_ = 803365.0384269019;
+            this->wavelength_ = 0.05546576;
+            this->range_spacing_ = 2.329562;
+            this->azimuth_spacing_ = 13.91417;
+
+            this->source_image_width_ = 21401;
+            this->source_image_height_ = 28557;
+            this->near_range_on_left_ = 1;
+            this->srgr_flag_ = 0;
+            //srgrConvParams = null;
 
             this->subswath_.at(0).azimuth_time_interval_ = 0.002055556299999998;
             this->subswath_.at(0).num_of_bursts_ = 19;
@@ -81,8 +106,9 @@ void Sentinel1Utils::ReadPlaceHolderFiles(){
     }
     burst_line_time_reader >> size;
 
-    this->subswath_.at(0).burst_first_line_time_ = new double[size];
-    this->subswath_.at(0).burst_last_line_time_ = new double[size];
+    this->subswath_.at(0).burst_first_line_time_.resize(size);
+    this->subswath_.at(0).burst_last_line_time_.resize(size);
+
     for(int i=0; i<size; i++){
         burst_line_time_reader >> this->subswath_.at(0).burst_first_line_time_[i];
     }
@@ -204,10 +230,10 @@ void Sentinel1Utils::GetProductOrbit(){
         original_vectors.push_back(temp_vector);
     }
     vector_reader >> count;
-    this->orbit = new alus::s1tbx::OrbitStateVectors(original_vectors);
+    this->orbit = std::make_unique<alus::s1tbx::OrbitStateVectors>(original_vectors);
 
     vector_reader.close();
-    is_orbit_available = 1;
+    is_orbit_available_ = true;
 }
 
 double Sentinel1Utils::GetVelocity(double time){
@@ -218,7 +244,7 @@ double Sentinel1Utils::GetVelocity(double time){
 void Sentinel1Utils::ComputeDopplerRate(){
     double wave_length, az_time, v, steering_rate, krot;
 
-    if (!is_orbit_available) {
+    if (!is_orbit_available_) {
         GetProductOrbit();
     }
 
@@ -356,7 +382,7 @@ void Sentinel1Utils::ComputeDopplerCentroid(){
         }
     }
 
-    is_doppler_centroid_available_ = 1;
+    is_doppler_centroid_available_ = true;
 }
 
 //TODO: useing mock data
@@ -510,4 +536,36 @@ double Sentinel1Utils::GetLongitudeValue(Sentinel1Index index, SubSwathInfo *sub
             index.mu_y * ((1 - index.mu_x) * lon10 + index.mu_x * lon11);
 }
 
+void Sentinel1Utils::HostToDevice(){
+    DeviceSentinel1Utils temp_pack;
+
+    temp_pack.first_line_utc = this->first_line_utc_;
+    temp_pack.last_line_utc = this->last_line_utc_;
+    temp_pack.line_time_interval = this->line_time_interval_;
+    temp_pack.near_edge_slant_range = this->near_edge_slant_range_;
+    temp_pack.wavelength = this->wavelength_;
+    temp_pack.range_spacing = this->range_spacing_;
+    temp_pack.azimuth_spacing = this->azimuth_spacing_;
+
+    temp_pack.source_image_width = this->source_image_width_;
+    temp_pack.source_image_height = this->source_image_height_;
+    temp_pack.near_range_on_left = this->near_range_on_left_;
+    temp_pack.srgr_flag = this->srgr_flag_;
+
+    CHECK_CUDA_ERR(cudaMalloc((void**)&this->device_sentinel_1_utils_, sizeof(DeviceSentinel1Utils)));
+    CHECK_CUDA_ERR(cudaMemcpy(this->device_sentinel_1_utils_, &temp_pack, sizeof(DeviceSentinel1Utils),cudaMemcpyHostToDevice));
+}
+
+void Sentinel1Utils::DeviceToHost() {
+    CHECK_CUDA_ERR(cudaErrorNotYetImplemented);
+}
+
+void Sentinel1Utils::DeviceFree() {
+    if(this->device_sentinel_1_utils_ != nullptr){
+        cudaFree(this->device_sentinel_1_utils_);
+        this->device_sentinel_1_utils_ = nullptr;
+    }
+}
+
+}//namespace
 }//namespace

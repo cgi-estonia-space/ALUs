@@ -1,6 +1,7 @@
 #pragma once
 
 namespace alus {
+namespace s1tbx {
 
 struct DeviceSubswathInfo{
     //subswath info
@@ -17,6 +18,7 @@ struct DeviceSubswathInfo{
 
     double *device_burst_first_line_time = nullptr;
     double *device_burst_last_line_time = nullptr;
+    size_t burst_line_times_count;
 
     double *device_doppler_rate = nullptr;
     double *device_doppler_centroid = nullptr;
@@ -36,4 +38,5 @@ struct DeviceSubswathInfo{
 
 };
 
+}//namespace
 }//namespace
