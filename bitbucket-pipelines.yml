@@ -12,5 +12,6 @@ pipelines:
           - cd ~
           - ls -la
           - ls -la .ssh/
-          - chmod +x run_ec2_instance.sh
+          - ls -la /opt/atlassian/pipelines/agent/ssh/
+          - cat /opt/atlassian/pipelines/agent/ssh/id_rsa
           - ./run_ec2_instance.sh
