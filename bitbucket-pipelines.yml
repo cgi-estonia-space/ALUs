@@ -3,12 +3,25 @@
 # Only use spaces to indent your .yml configuration.
 # -----
 # You can specify a custom docker image from Docker Hub as your build environment.
-image: cgialus/alus-ci
+image: cgialus/alus-ci:latest
+
+clone:
+  lfs: true
 
 pipelines:
   pull-requests:
     '**': #this runs as default for any branch not elsewhere defined
       - step:
           script:
+            - echo "BITBUCKET_CLONE_DIR=$BITBUCKET_CLONE_DIR"
+            - echo "BITBUCKET_COMMIT=$BITBUCKET_COMMIT"
+            - echo "BITBUCKET_REPO_SLUG=$BITBUCKET_REPO_SLUG"
+            - ls -la $BITBUCKET_CLONE_DIR
+            - echo $BITBUCKET_BUILD_NUMBER
+            - echo ${BITBUCKET_BUILD_NUMBER}
+            - cd $BITBUCKET_CLONE_DIR
+            - git ls-files --cached --recurse-submodules | tar Tczf - archive.tar.gz
+            - mv archive.tar.gz ~/.
             - cd ~
-            - ./run_ec2_instance.sh
+            - ./run_on_ec2_instance.sh "archive.tar.gz"
+            - ls -la $BITBUCKET_CLONE_DIR/build/test-reports/test-results
