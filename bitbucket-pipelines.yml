@@ -6,8 +6,9 @@
 image: cgialus/alus-ci
 
 pipelines:
-  default:
-    - step:
-        script: # Modify the commands below to build your repository.
-          - cd ~
-          - ./run_ec2_instance.sh
+  pull-requests:
+    '**': #this runs as default for any branch not elsewhere defined
+      - step:
+          script:
+            - cd ~
+            - ./run_ec2_instance.sh
