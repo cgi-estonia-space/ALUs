@@ -100,4 +100,29 @@ Dataset::Dataset(GDALDataset &dataset) {
     this->pixel_size_lon_ = this->transform_[TRANSFORM_PIXEL_X_SIZE_INDEX];
     this->pixel_size_lat_ = this->transform_[TRANSFORM_PIXEL_Y_SIZE_INDEX];
 }
+
+void Dataset::LoadRasterBandFloat(int band_nr) {
+    auto const bandCount = this->dataset_->GetRasterCount();
+    if (bandCount == 0) {
+        throw DatasetError("Does not support rasters with no bands.",
+                           this->dataset_->GetFileList()[0], 0);
+    }
+
+    if (bandCount < band_nr) {
+        throw DatasetError("Too big band nr! You can not read a band that isn't there.",
+                           this->dataset_->GetFileList()[0], 0);
+    }
+    this->x_size_ = this->dataset_->GetRasterXSize();
+    this->y_size_ = this->dataset_->GetRasterYSize();
+    this->float_data_buffer_.resize(this->x_size_ * this->y_size_);
+
+    auto const inError = this->dataset_->GetRasterBand(band_nr)->RasterIO(
+        GF_Read, 0, 0, this->x_size_, this->y_size_, this->float_data_buffer_.data(),
+        this->x_size_, this->y_size_, GDALDataType::GDT_Float32, 0, 0);
+
+    if (inError != CE_None) {
+        throw DatasetError(CPLGetLastErrorMsg(), this->dataset_->GetFileList()[0],
+                           CPLGetLastErrorNo());
+    }
+}
 }  // namespace alus

@@ -34,7 +34,7 @@ class SRTM3TileTester {
    public:
     std::vector<int> xs_;
     std::vector<int> ys_;
-    std::vector<double> results_;
+    std::vector<float> results_;
 
     size_t size_;
 
@@ -75,8 +75,8 @@ TEST(SRTM3, tileFormating) {
     srtm3_dem.ReadSrtmTiles(&egm96);
     srtm3_dem.HostToDevice();
 
-    std::vector<double> end_tile;
-    std::vector<double> end_results;
+    std::vector<float> end_tile;
+    std::vector<float> end_results;
     end_results.resize(tester.size_);
     std::vector<alus::PointerHolder> tiles;
     tiles.resize(2);
@@ -87,14 +87,17 @@ TEST(SRTM3, tileFormating) {
     int tile_y_size = tiles.at(chosen_tile).y;
     int tile_size = tile_x_size * tile_y_size;
     end_tile.resize(tile_size);
-    CHECK_CUDA_ERR(
-        cudaMemcpy(end_tile.data(), tiles.at(chosen_tile).pointer, tile_size * sizeof(double), cudaMemcpyDeviceToHost));
+
+    CHECK_CUDA_ERR(cudaMemcpy(end_tile.data(), tiles.at(chosen_tile).pointer, tile_size *sizeof(float), cudaMemcpyDeviceToHost));
 
     for (size_t i = 0; i < tester.size_; i++) {
         end_results.at(i) = end_tile.at(tester.xs_.at(i) + tile_x_size * tester.ys_.at(i));
     }
-    int count = alus::EqualsArraysd(end_results.data(), tester.results_.data(), tester.size_, 0.00001);
-    EXPECT_EQ(count, 0) << "SRTM3 tiling test results do not match. Mismatches: " << count << '\n';
+
+    std::cout<<"tester size: " << tester.size_ << std::endl;
+    int count = alus::EqualsArrays(end_results.data(), tester.results_.data(), tester.size_, 0.0000001);
+    EXPECT_EQ(count,0) << "SRTM3 tiling test results do not match. Mismatches: " <<count << '\n';
+
 }
 
 }  // namespace

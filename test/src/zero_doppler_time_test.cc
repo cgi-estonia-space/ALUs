@@ -134,13 +134,13 @@ TEST(SarGeoCodingTestSimple, ZeroDopplerTimeTest){
     test_data.dt = master_orbit->GetDT();
 
     dim3 block_size(125);
-    dim3 grid_size(alus::cuda::getGridDim(block_size.x,tester.data_size_));
+    dim3 grid_size(alus::cuda::GetGridDim(block_size.x, tester.data_size_));
 
     CHECK_CUDA_ERR(LaunchZeroDopplerTimeTest(grid_size, block_size, tester.device_zero_doppler_times_, test_data));
 
     tester.DeviceToHost();
 
-    int count = alus::EqualsArraysd(tester.original_zero_doppler_times_.data(), tester.calcd_zero_doppler_times_.data(), tester.data_size_, 0.0001);
+    int count = alus::EqualsArraysd(tester.original_zero_doppler_times_.data(), tester.calcd_zero_doppler_times_.data(), tester.data_size_, 0.00000000001);
     EXPECT_EQ(count,0) << "Zero doppler time test results do not match. Mismatches: " <<count << '\n';
 
 

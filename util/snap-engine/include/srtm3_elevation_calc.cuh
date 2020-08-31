@@ -32,9 +32,9 @@ inline __device__ int GetSamples(
     int i = 0, j = 0;
     int tile_y_index, tile_x_index, pixel_y, pixel_x;
     int xI, yI;
-    double *srtm_41_01_tile = (double *)tiles->array[0].pointer;
+    float *srtm_41_01_tile = (float *)tiles->array[0].pointer;
     int xSize = tiles->array[0].x;
-    double *srtm_42_01_tile = (double *)tiles->array[1].pointer;
+    float *srtm_42_01_tile = (float *)tiles->array[1].pointer;
 
     for (yI = 0; yI < height; yI++) {
         tile_y_index = (int)(y[yI] * NUM_PIXELS_PER_TILEinv);
@@ -84,8 +84,8 @@ inline __device__ double GetElevation(double geo_pos_lat, double geo_pos_lon, Po
     double index_kj[1];
     snapengine::resampling::ResamplingIndex index{0, 0, 0, 0, 0, 0, index_i, index_j, index_ki, index_kj};
 
-    if (geo_pos_lon > 180) {
-        geo_pos_lat -= 360;
+    if (geo_pos_lon > 180.0) {
+        geo_pos_lat -= 360.0;
     }
 
     double pixel_y = (60.0 - geo_pos_lat) * DEGREE_RES_BY_NUM_PIXELS_PER_TILEinv;

@@ -26,15 +26,15 @@ namespace earthgravitationalmodel96 {
 
 inline __device__ double InterpolationCubicS(double y0, double y1, double y2, double y3, double mu) {
 
-    return ((-0.5 * y0 + 1.5 * y1 - 1.5 * y2 + 0.5 * y3) * mu * (mu * mu) + (y0 - 2.5 * y1 + 2 * y2 - 0.5 * y3) * (mu * mu) + (-0.5 * y0 + 0.5 * y2) * mu + y1);
+    return (-0.5 * y0 + 1.5 * y1 - 1.5 * y2 + 0.5 * y3) * mu * mu * mu + (y0 - 2.5 * y1 + 2.0 * y2 - 0.5 * y3) * (mu * mu) + (-0.5 * y0 + 0.5 * y2) * mu + y1;
 }
 
 inline __device__ double InterpolationCubicB(double y0, double y1, double y2, double y3, double mu, double mu2, double mu3) {
 
-    return ((-0.5 * y0 + 1.5 * y1 - 1.5 * y2 + 0.5 * y3) * mu3 + (y0 - 2.5 * y1 + 2 * y2 - 0.5 * y3) * mu2 + (-0.5 * y0 + 0.5 * y2) * mu + y1);
+    return (-0.5 * y0 + 1.5 * y1 - 1.5 * y2 + 0.5 * y3) * mu3 + (y0 - 2.5 * y1 + 2.0 * y2 - 0.5 * y3) * mu2 + (-0.5 * y0 + 0.5 * y2) * mu + y1;
 }
 
-inline __device__ float GetEGM96(double lat, double lon, int max_lats, int max_lons, double* egm){
+inline __device__ float GetEGM96(double lat, double lon, int max_lats, int max_lons, float* egm){
     const double r = (90 - lat) / 0.25;
     const double c = ((lon < 0)*(lon + 360) + (lon >= 0)*lon) / 0.25;
     int ri, i;
@@ -56,27 +56,39 @@ inline __device__ float GetEGM96(double lat, double lon, int max_lats, int max_l
         ci3 = min(ci3, max_lons);
     }
 
-    double mu_x = c - (c0 + 1);
-    double mu_y = r - (r0 + 1);
+    double mu_x = c - (double)(c0 + 1);
+    double mu_y = r - (double)(r0 + 1);
     double mu_x2 = mu_x * mu_x;
     double mu_x3 = mu_x * mu_x2;
 
     i=0;
     ri = (r0 + i > max_lats)* max_lats + (r0 + i <= max_lats)*(r0 + i);
-    temp1 = InterpolationCubicB(
-        egm[ri * ySize + c0], egm[ri * ySize + ci1], egm[ri * ySize + ci2], egm[ri * ySize + ci3], mu_x, mu_x2, mu_x3);
+    temp1 = InterpolationCubicB((double)egm[ri * ySize + c0],
+                                (double)egm[ri * ySize + ci1],
+                                (double)egm[ri * ySize + ci2],
+                                (double)egm[ri * ySize + ci3], mu_x, mu_x2, mu_x3);
+
     i=1;
     ri = (r0 + i > max_lats)* max_lats + (r0 + i <= max_lats)*(r0 + i);
-    temp2 = InterpolationCubicB(
-        egm[ri * ySize + c0], egm[ri * ySize + ci1], egm[ri * ySize + ci2], egm[ri * ySize + ci3], mu_x, mu_x2, mu_x3);
+    temp2 = InterpolationCubicB((double)egm[ri * ySize + c0],
+                                (double)egm[ri * ySize + ci1],
+                                (double)egm[ri * ySize + ci2],
+                                (double)egm[ri * ySize + ci3], mu_x, mu_x2, mu_x3);
+
     i=2;
     ri = (r0 + i > max_lats)* max_lats + (r0 + i <= max_lats)*(r0 + i);
-    temp3 = InterpolationCubicB(
-        egm[ri * ySize + c0], egm[ri * ySize + ci1], egm[ri * ySize + ci2], egm[ri * ySize + ci3], mu_x, mu_x2, mu_x3);
+    temp3 = InterpolationCubicB((double)egm[ri * ySize + c0],
+                                (double)egm[ri * ySize + ci1],
+                                (double)egm[ri * ySize + ci2],
+                                (double)egm[ri * ySize + ci3], mu_x, mu_x2, mu_x3);
+
     i=3;
     ri = (r0 + i > max_lats)* max_lats + (r0 + i <= max_lats)*(r0 + i);
-    temp4 = InterpolationCubicB(
-        egm[ri * ySize + c0], egm[ri * ySize + ci1], egm[ri * ySize + ci2], egm[ri * ySize + ci3], mu_x, mu_x2, mu_x3);
+    temp4 = InterpolationCubicB((double)egm[ri * ySize + c0],
+                                (double)egm[ri * ySize + ci1],
+                                (double)egm[ri * ySize + ci2],
+                                (double)egm[ri * ySize + ci3], mu_x, mu_x2, mu_x3);
+
 
     return (float)InterpolationCubicS(temp1, temp2, temp3, temp4, mu_y);
 }

@@ -13,10 +13,12 @@
  */
 #include <fstream>
 #include <optional>
+
 #include "comparators.h"
 #include "gmock/gmock.h"
 #include "sentinel1_utils.h"
 #include "tests_common.hpp"
+#include "allocators.h"
 
 using namespace alus::tests;
 
@@ -37,7 +39,7 @@ namespace{
 
             int x, y, i, j;
             doppler_rate_reader >> x >> y;
-            doppler_rate_2_ = alus::Allocate2DDoubleArray(x, y);
+            doppler_rate_2_ = alus::Allocate2DArray<double>(x, y);
 
             for(i=0; i<x; i++){
                 for(j=0; j<y; j++){
@@ -46,7 +48,7 @@ namespace{
             }
 
             doppler_centroid_reader >> x >> y;
-            doppler_centroid_2_ = alus::Allocate2DDoubleArray(x, y);
+            doppler_centroid_2_ = alus::Allocate2DArray<double>(x, y);
             for(i=0; i<x; i++){
                 for(j=0; j<y; j++){
                     doppler_centroid_reader >> doppler_centroid_2_[i][j];
@@ -54,7 +56,7 @@ namespace{
             }
 
             range_depend_doppler_rate_reader >> x >> y;
-            range_depend_doppler_rate_2_ = alus::Allocate2DDoubleArray(x, y);
+            range_depend_doppler_rate_2_ = alus::Allocate2DArray<double>(x, y);
             for(i=0; i<x; i++){
                 for(j=0; j<y; j++){
                     range_depend_doppler_rate_reader >> range_depend_doppler_rate_2_[i][j];
@@ -62,7 +64,7 @@ namespace{
             }
 
             reference_time_reader >> x >> y;
-            reference_time_2_ = alus::Allocate2DDoubleArray(x, y);
+            reference_time_2_ = alus::Allocate2DArray<double>(x, y);
             for(i=0; i<x; i++){
                 for(j=0; j<y; j++){
                     reference_time_reader >> reference_time_2_[i][j];

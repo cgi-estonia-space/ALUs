@@ -1,15 +1,27 @@
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #include "srtm3_formatter.cuh"
 #include "earth_gravitational_model96.cuh"
-
-#include <cstdio>
 
 namespace alus {
 namespace snapengine{
 
-__global__ void FormatSRTM3dem(double *target, double *source, DemFormatterData data){
+__global__ void FormatSRTM3dem(float *target, float *source, DemFormatterData data){
     const int idx = threadIdx.x + (blockDim.x*blockIdx.x);
     const int idy = threadIdx.y + (blockDim.y*blockIdx.y);
-    double geo_pos_lon, geo_pos_lat, source_value;
+    double geo_pos_lon, geo_pos_lat;
+    float source_value;
 
 
     //possible bug:it is possible that this is a snap bug, as snap reads line 2501 when index is 2500.
@@ -34,7 +46,7 @@ __global__ void FormatSRTM3dem(double *target, double *source, DemFormatterData 
 }
 
 
-cudaError_t LaunchDemFormatter(dim3 grid_size, dim3 block_size, double *target, double *source, DemFormatterData data){
+cudaError_t LaunchDemFormatter(dim3 grid_size, dim3 block_size, float *target, float *source, DemFormatterData data){
     FormatSRTM3dem<<<grid_size, block_size>>>(target, source, data);
     return cudaGetLastError();
 }

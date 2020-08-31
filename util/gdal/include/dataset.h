@@ -28,7 +28,9 @@ class Dataset {
     Dataset() = default;
     explicit Dataset(std::string_view filename);
     void LoadRasterBand(int band_nr);
+    void LoadRasterBandFloat(int band_nr);
     Dataset(GDALDataset& dataset);
+
 
     GDALDataset* GetGdalDataset() { return dataset_; }
 
@@ -44,6 +46,7 @@ class Dataset {
         this->x_size_ = other.x_size_;
         this->y_size_ = other.y_size_;
         this->data_buffer_ = std::move(other.data_buffer_);
+        this->float_data_buffer_ = std::move(other.float_data_buffer_);
         return *this;
     }
 
@@ -88,6 +91,7 @@ class Dataset {
     int GetYSize() const { return y_size_; }
     std::vector<double> const& GetDataBuffer() const { return data_buffer_; }
     double GetNoDataValue() const { return no_data_value_; }
+    std::vector<float> const& GetFloatDataBuffer() const { return float_data_buffer_; }
 
     ~Dataset();
 
@@ -107,6 +111,7 @@ class Dataset {
     int x_size_{};
     int y_size_{};
     std::vector<double> data_buffer_{};
+    std::vector<float> float_data_buffer_{};
 
     // These are the TOP LEFT / UPPER LEFT coordinates of the image.
     static constexpr int TRANSFORM_LON_ORIGIN_INDEX{0};    // Or X origin

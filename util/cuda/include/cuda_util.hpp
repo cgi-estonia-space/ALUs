@@ -10,7 +10,7 @@
 namespace alus {
 namespace cuda {
 
-int getGridDim(int blockDim, int dataDim);
+int GetGridDim(int blockDim, int dataDim);
 
 }//namespace cuda
 

@@ -23,6 +23,7 @@
 #include "cuda_util.hpp"
 #include "earth_gravitational_model96.h"
 #include "general_constants.h"
+#include "backgeocoding_constants.h"
 #include "pointer_holders.h"
 #include "sentinel1_utils.h"
 #include "srtm3_elevation_model.h"
@@ -31,6 +32,8 @@
 #include "bilinear.cuh"
 #include "deramp_demod.cuh"
 #include "slave_pixpos.cuh"
+#include "triangular_interpolation.cuh"
+#include "delaunay_triangulator.h"
 
 
 
@@ -44,8 +47,6 @@ class Backgeocoding{
 private:
     std::vector<float> q_result_;
     std::vector<float> i_result_;
-    std::vector<double> x_points_; //slave pixel pos x
-    std::vector<double> y_points_; //slave pixel pos y
     std::vector<int> params_;
     double *device_x_points_{nullptr}, *device_y_points_{nullptr};
     double *device_demod_i_{nullptr}, *device_demod_q_{nullptr}, *device_demod_phase_{nullptr};
@@ -80,7 +81,7 @@ private:
             int x_max,
             int y_min,
             int y_max);
-    void ComputeSlavePixPos(
+    bool ComputeSlavePixPos(
             int m_burst_index,
             int s_burst_index,
             int x0,
@@ -95,8 +96,6 @@ private:
 
     //placeholder files
     std::string params_file_ = "../test/goods/backgeocoding/params.txt";
-    std::string x_points_file_ = "../test/goods/backgeocoding/xPoints.txt";
-    std::string y_points_file_ = "../test/goods/backgeocoding/yPoints.txt";
 
     std::string slave_orbit_state_vectors_file_ = "../test/goods/backgeocoding/slaveOrbitStateVectors.txt";
     std::string master_orbit_state_vectors_file_ = "../test/goods/backgeocoding/masterOrbitStateVectors.txt";
@@ -120,7 +119,7 @@ public:
     Backgeocoding() = default;
     ~Backgeocoding();
 
-    void SetPlaceHolderFiles(std::string params_file,std::string x_points_file, std::string y_points_file);
+    void SetPlaceHolderFiles(std::string params_file);
     void SetSentinel1Placeholders(
         std::string dc_estimate_list_file,
         std::string azimuth_list_file,

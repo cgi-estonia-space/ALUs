@@ -24,26 +24,26 @@ inline __device__ void ComputeIndex(
     index->width = width;
     index->height = height;
 
-    const int i0 = (int)x;
-    const int j0 = (int)y;
-    double di = x - (i0 + 0.5);
-    double dj = y - (j0 + 0.5);
+    const int i0 = (int)floor(x);
+    const int j0 = (int)floor(y);
+    double di = x - ((double)i0 + 0.5);
+    double dj = y - ((double)j0 + 0.5);
 
-    index->i0 = i0;
-    index->j0 = j0;
+    index->i0 = (double)i0;
+    index->j0 = (double)j0;
 
     int i_max = width - 1;
     int j_max = 0;
 
     if (di >= 0.0) {
         j_max = i0 + 1;
-        index->i[0] = i0 < 0 ? 0.0 : (i0 > i_max ? i_max : i0);
-        index->i[1] = j_max < 0 ? 0.0 : (j_max > i_max ? i_max : j_max);
+        index->i[0] = i0 < 0 ? 0.0 : (i0 > i_max ? (double)i_max : (double)i0);
+        index->i[1] = j_max < 0 ? 0.0 : (j_max > i_max ? (double)i_max : (double)j_max);
         index->ki[0] = di;
     } else {
         j_max = i0 - 1;
-        index->i[0] = j_max < 0 ? 0.0 : (j_max > i_max ? i_max : j_max);
-        index->i[1] = i0 < 0 ? 0.0 : (i0 > i_max ? i_max : i0);
+        index->i[0] = j_max < 0 ? 0.0 : (j_max > i_max ? (double)i_max : (double)j_max);
+        index->i[1] = i0 < 0 ? 0.0 : (i0 > i_max ? (double)i_max : (double)i0);
         index->ki[0] = di + 1.0;
     }
 
@@ -52,13 +52,13 @@ inline __device__ void ComputeIndex(
 
     if (dj >= 0.0) {
         j1 = j0 + 1;
-        index->j[0] = j0 < 0 ? 0.0 : (j0 > j_max ? j_max : j0);
-        index->j[1] = j1 < 0 ? 0.0 : (j1 > j_max ? j_max : j1);
+        index->j[0] = j0 < 0 ? 0.0 : (j0 > j_max ? (double)j_max : (double)j0);
+        index->j[1] = j1 < 0 ? 0.0 : (j1 > j_max ? (double)j_max : (double)j1);
         index->kj[0] = dj;
     } else {
         j1 = j0 - 1;
-        index->j[0] = j1 < 0 ? 0.0 : (j1 > j_max ? j_max : j1);
-        index->j[1] = j0 < 0 ? 0.0 : (j0 > j_max ? j_max : j0);
+        index->j[0] = j1 < 0 ? 0.0 : (j1 > j_max ? (double)j_max : (double)j1);
+        index->j[1] = j0 < 0 ? 0.0 : (j0 > j_max ? (double)j_max : (double)j0);
         index->kj[0] = dj + 1.0;
     }
 }
@@ -70,6 +70,7 @@ inline __device__ double Resample(
     double no_value,
     int use_no_data,
     int GetSamplesFunction(PointerArray *, int *, int *, double *, int, int, double, int)) {
+
     int x[2] = {(int)index->i[0], (int)index->i[1]};
     int y[2] = {(int)index->j[0], (int)index->j[1]};
     double samples[2][2];

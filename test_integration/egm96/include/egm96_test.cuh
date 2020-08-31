@@ -8,7 +8,7 @@ namespace tests{
 struct EGM96data{
     int max_lats;
     int max_lons;
-    double* egm;
+    float* egm;
     int size;
 };
 

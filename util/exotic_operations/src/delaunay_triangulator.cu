@@ -280,7 +280,7 @@ __global__ void DelaunayTriangulation(double *x_coords, double *y_coords, const 
 
 cudaError_t LaunchDelaunayTriangulation(double *x_coords, double *y_coords, const int width, const int height, DelaunayTriangle2Dgpu *triangles){
     dim3 block_size(20,20); //TODO: relook this number, as the computation itself is 1D.
-    dim3 grid_size(cuda::getGridDim(20, width), cuda::getGridDim(20, height));
+    dim3 grid_size(cuda::GetGridDim(20, width), cuda::GetGridDim(20, height));
 
     unsigned int *empty_triangle_index;
     unsigned int zero = 0;

@@ -103,7 +103,7 @@ TEST(SRTM3, altitudeCalc) {
     tester.ReadTestData();
     tester.HostToDevice();
     dim3 block_size(512);
-    dim3 grid_size(alus::cuda::getGridDim(block_size.x, tester.size_));
+    dim3 grid_size(alus::cuda::GetGridDim(block_size.x, tester.size_));
 
     alus::snapengine::EarthGravitationalModel96 egm96("./goods/ww15mgh_b.grd");
     egm96.HostToDevice();
