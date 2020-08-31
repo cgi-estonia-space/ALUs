@@ -13,8 +13,15 @@
  */
 #pragma once
 
+#include <cuda_runtime.h>
+#include <device_launch_parameters.h>
+
+#include "delaunay_triangle2D.h"
+
 namespace alus {
+namespace delaunay {
 
-double ** Allocate2DDoubleArray(int x, int y);
+cudaError_t LaunchDelaunayTriangulation(double *x_coords, double *y_coords, int width, int height, DelaunayTriangle2Dgpu *triangles);
 
+}//namespace
 }//namespace

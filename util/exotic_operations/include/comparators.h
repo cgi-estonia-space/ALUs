@@ -1,7 +1,22 @@
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #pragma once
+
 #include <iostream>
 
-#define ERROR_RANGE 0.0000001
+#include "delaunay_triangle2D.h"
+
 
 namespace alus {
 
@@ -10,5 +25,12 @@ int EqualsArrays(const float *a, const float *b, int elems, float delta);
 int EqualsArraysd(const double *a, const double *b, int elems);
 int EqualsArraysd(const double *a, const double *b, int elems, double delta);
 int EqualsArrays2Dd(const double *const *a, const double *const *b, int x, int y);
+
+int EqualsDouble(double a, double b, double delta);
+int EqualsTrianglesByIndices(delaunay::DelaunayTriangle2D a, delaunay::DelaunayTriangle2D b);
+int EqualsTrianglesByPoints(delaunay::DelaunayTriangle2D a, delaunay::DelaunayTriangle2D b, double delta);
+int EqualsTriangles(delaunay::DelaunayTriangle2D *a, delaunay::DelaunayTriangle2D *b,size_t length, double delta);
+
+
 
 }//namespace
