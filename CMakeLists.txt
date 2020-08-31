@@ -25,13 +25,20 @@ if (CUDA_FOUND)
     # To suppress using of cmath std::min and std::max.
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr")
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --Werror all-warnings")
-#    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --resource-usage")
+    #    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --resource-usage")
     INCLUDE_DIRECTORIES(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 else (CUDA_FOUND)
     message(FATAL_ERROR "No CUDA toolchain found. Exiting.")
-endif()
+endif ()
+
+find_package(Boost 1.65.1 REQUIRED COMPONENTS program_options)
+if (!Boost_FOUND)
+    message(FATAL_ERROR "Required BOOST components not found.")
+endif ()
 
 find_package(GDAL REQUIRED)
+
+set(ALUS_BINARY_OUTPUT_DIR ${PROJECT_BINARY_DIR}/alus_package)
 
 # Utilities
 add_subdirectory(util/gdal)
@@ -64,6 +71,6 @@ add_subdirectory(app)
 option(ENABLE_UNIT_TESTS "Enable unit tests" ON)
 message(STATUS "Enable testing: ${ENABLE_UNIT_TESTS}")
 
-if(ENABLE_UNIT_TESTS)
+if (ENABLE_UNIT_TESTS)
     add_subdirectory(test)
-endif()
+endif ()

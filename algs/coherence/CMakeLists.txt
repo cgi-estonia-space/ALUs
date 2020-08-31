@@ -20,6 +20,7 @@ list(APPEND COHERENCE_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/tf_algorithm_runner.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/gdal_tile_writer.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/gdal_tile_reader.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/execute.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/point.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/coh_tiles_generator.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/coh_tile.cc
@@ -32,6 +33,8 @@ list(APPEND COHERENCE_SOURCES
 
 list(APPEND COHERENCE_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/include
+        ${CMAKE_CURRENT_LIST_DIR}/../algorithm_bond/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/common/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/gdal/include
         ${TENSORFLOW_INCLUDES}
         )
@@ -70,6 +73,26 @@ target_link_libraries(coherence-static
         gdal
         ${TENSORFLOW_LIBS}
         )
+
+add_library(coherence-shared
+        SHARED
+        $<TARGET_OBJECTS:coherence-obj>
+        )
+target_include_directories(coherence-shared
+        PUBLIC
+        ${COHERENCE_INCLUDE_DIRS}
+        )
+set_target_properties(coherence-shared
+        PROPERTIES
+        OUTPUT_NAME coherence
+        LIBRARY_OUTPUT_DIRECTORY ${ALUS_BINARY_OUTPUT_DIR}
+        )
+target_link_libraries(coherence-shared
+        PUBLIC
+        gdal
+        ${TENSORFLOW_LIBS}
+        )
+
 #this is main executable, no need to build object out of example.cc
 add_executable(coherence src/example_coh.cc)
 target_link_libraries(coherence
