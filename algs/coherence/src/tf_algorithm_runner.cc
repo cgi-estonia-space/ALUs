@@ -6,6 +6,8 @@ void TFAlgorithmRunner::Run() {
     // todo:resolve parameters in a better way here (maybe add user provided options during construction?)
     auto tiles = this->tile_provider_->GetTiles();
     this->algo_->PreTileCalc(*this->scope_);
+    size_t i {0};
+    const size_t TILES_TO_PROCESS{tiles.size()};
     for (auto tile : tiles) {
         this->tile_reader_->ReadTile(tile.GetTileIn());
         // todo:move to tensors
@@ -19,6 +21,12 @@ void TFAlgorithmRunner::Run() {
                                         algo_graph_tile,
                                         &outputs_101));
         this->tile_writer_->WriteTile(tile.GetTileOut(), outputs_101[0].data());
+
+        ++i;
+        std::cout << '\r' << "Tile " << i << "/" << tiles.size() << " processed" << std::endl;
+        if (i >= TILES_TO_PROCESS) {
+            break;
+        }
     }
 }
 
