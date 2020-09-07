@@ -78,8 +78,7 @@ inline __device__ double Resample(
     if (GetSamplesFunction(tiles, x, y, samples[0], width, 2, no_value, use_no_data)) {
         const double ki = index->ki[0];
         const double kj = index->kj[0];
-        return samples[0][0] * (1.0 - ki) * (1.0 - kj) + samples[0][1] * ki * (1.0 - kj) +
-               samples[1][0] * (1.0 - ki) * kj + samples[1][1] * ki * kj;
+        return samples[0][0] * (1.0 - ki) * (1.0 - kj) + samples[0][1] * ki * (1.0 - kj) + samples[1][0] * (1.0 - ki) * kj + samples[1][1] * ki * kj;
     } else {
         return samples[0][0];
     }

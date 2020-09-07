@@ -108,7 +108,7 @@ inline __device__ __host__ double GetEarthPointZeroDopplerTimeImpl(
     // start binary search
     double mid_freq;
     while (upper_bound - lower_bound > 1) {
-        const auto mid = (int)((static_cast<double>(lower_bound) + upper_bound) / 2.0);
+        const auto mid = (int)((lower_bound + upper_bound) / 2.0);
         mid_freq = sensor_velocity.array[mid].x * (earth_point.x - sensor_position.array[mid].x) +
                    sensor_velocity.array[mid].y * (earth_point.y - sensor_position.array[mid].y) +
                    sensor_velocity.array[mid].z * (earth_point.z - sensor_position.array[mid].z);
@@ -183,7 +183,7 @@ inline __device__ double GetZeroDopplerTime(double line_time_interval,
         snapengine::PosVector position;
         snapengine::PosVector velocity;
 
-        orbitstatevectors::getPositionVelocity(mid_time, orbit, num_orbit_vec, dt, &position, &velocity);
+        orbitstatevectors::GetPositionVelocity(mid_time, orbit, num_orbit_vec, dt, &position, &velocity);
         mid_freq = getDopplerFrequency(earth_point, position, velocity, wavelength);
 
         if (mid_freq * lower_bound_freq > 0.0) {
@@ -232,7 +232,7 @@ inline __device__ __host__ double ComputeRangeIndexSlcImpl(double range_spacing,
 
 inline __device__ __host__ bool IsValidCellImpl(
     double range_index, double azimuth_index, int diff_lat, int src_max_range, int src_max_azimuth) {
-    if (range_index < 0.0 || range_index >= src_max_range || azimuth_index <= 0.0 | azimuth_index >= src_max_azimuth) {
+    if (range_index < 0.0 || range_index >= src_max_range || azimuth_index <= 0.0 || azimuth_index >= src_max_azimuth) {
         return false;
     }
 

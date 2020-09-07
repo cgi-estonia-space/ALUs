@@ -23,14 +23,13 @@ std::string const DEM_PATH_1{GOODS_DIR + "srtm_41_01.tif"};
 std::string const TIF_PATH_1{GOODS_DIR + "karujarve_kallas.tif"};
 
 // Test set consisting part of the Saaremaa.
-std::string const COH_1_TIF{
-    GOODS_DIR +
-    "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_"
-    "Stack_coh_deb.tif"};
-std::string const COH_1_DATA{
-    GOODS_DIR +
-    "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_"
-    "Stack_coh_deb.data"};
+std::string const COH_1_TIF{GOODS_DIR +
+                            "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_"
+                            "Stack_coh_deb.tif"};
+std::string const COH_1_DATA{GOODS_DIR +
+                             "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_"
+                             "Stack_coh_deb.data"};
+std::string const TC_OUTPUT{GOODS_DIR + "tc_output.tif"};
 
 void silentGdalErrorHandler(CPLErr, CPLErrorNum, const char*);
 

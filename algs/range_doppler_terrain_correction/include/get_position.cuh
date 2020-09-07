@@ -19,6 +19,9 @@
 #include "position_data.h"
 #include "sar_geocoding.cuh"
 
+// TODO: remove these MACROS
+#define DEBUG printf("Reached here => %s:%d\n", __FILE__, __LINE__)
+
 namespace alus {
 namespace terraincorrection {
 
@@ -31,16 +34,16 @@ inline __device__ __host__ bool GetPositionImpl(
                                                                                          satellite_pos.earth_point,
                                                                                          metadata.sensor_position,
                                                                                          metadata.sensor_velocity);
-
     if (zero_doppler_time == s1tbx::sargeocoding::NON_VALID_ZERO_DOPPLER_TIME) {
         return false;
     }
-
     satellite_pos.slant_range = s1tbx::sargeocoding::ComputeSlantRangeImpl(
         zero_doppler_time, metadata.orbit_state_vector, satellite_pos.earth_point, satellite_pos.sensor_pos);
 
     satellite_pos.range_index = s1tbx::sargeocoding::ComputeRangeIndexSlcImpl(
-        metadata.range_spacing, satellite_pos.slant_range, metadata.near_edge_slant_range);
+        metadata.range_spacing,
+        satellite_pos.slant_range,
+        metadata.near_edge_slant_range);
 
     if (satellite_pos.range_index == -1.0) {
         return false;

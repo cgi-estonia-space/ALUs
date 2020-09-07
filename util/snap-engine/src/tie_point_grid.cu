@@ -1,3 +1,5 @@
+
+#include "tie_point_grid.h"
 #include "tie_point_grid.cuh"
 
 namespace alus {

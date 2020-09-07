@@ -36,28 +36,29 @@ constexpr int NV{8}; //TODO: does anyone know what this is supposed to be?
  * @param position      position of something, perhaps the satelite? Will be filled
  * @param velocity      velocity of something, üerhaps the satelite? Makes up the lagrange Interpolating Polynomial with position. Will be filled.
  */
-inline __device__ __host__ void getPositionVelocity(double time,
+inline __device__ __host__ void GetPositionVelocity(double time,
                                                     snapengine::OrbitStateVector *orbit,
                                                     const int numOrbitVec,
                                                     const double dt,
                                                     snapengine::PosVector *position,
                                                     snapengine::PosVector *velocity) {
 
-    int i0, iN;
+    int i_0{};
+    int i_n{};
     if (numOrbitVec <= NV) {
-        i0 = 0;
-        iN = numOrbitVec - 1;
+        i_0 = 0;
+        i_n = numOrbitVec - 1;
     } else {
-        i0 = max((int) ((time - orbit[0].timeMjd_) / dt) - NV / 2 + 1, 0);
-        iN = min(i0 + NV - 1, numOrbitVec - 1);
-        i0 = (iN < numOrbitVec - 1 ? i0 : iN - NV + 1);
+        i_0 = std::max((int) ((time - orbit[0].timeMjd_) / dt) - NV / 2 + 1, 0);
+        i_n = std::min(i_0 + NV - 1, numOrbitVec - 1);
+        i_0 = (i_n < numOrbitVec - 1 ? i_0 : i_n - NV + 1);
     }
 
-    for (int i = i0; i <= iN; ++i) {
+    for (int i = i_0; i <= i_n; ++i) {
         snapengine::OrbitStateVector orbI = orbit[i];
 
         double weight = 1;
-        for (int j = i0; j <= iN; ++j) {
+        for (int j = i_0; j <= i_n; ++j) {
             if (j != i) {
                 const double time2 = orbit[j].timeMjd_;
                 weight *= (time - time2) / (orbI.timeMjd_ - time2);

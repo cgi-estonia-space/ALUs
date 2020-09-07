@@ -1,3 +1,16 @@
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #pragma once
 
 #include <cmath>
@@ -14,8 +27,8 @@ namespace rangedopplergeocoding {
 
 inline __device__ __host__ alus::Rectangle ComputeSourceRectangle(
     double range_index, double azimuth_index, int margin, int source_image_width, int source_image_height) {
-    int x = std::max(static_cast<int>(range_index - margin), 0);
-    int y = std::max(static_cast<int>(azimuth_index - margin), 0);
+    int x = std::max(static_cast<int>(range_index) - margin, 0);
+    int y = std::max(static_cast<int>(azimuth_index) - margin, 0);
     int x_max = std::min(x + 2 * margin + 1, source_image_width);
     int y_max = std::min(y + 2 * margin + 1, source_image_height);
     int width = x_max - x;
@@ -36,7 +49,10 @@ inline __device__ __host__ void GetSubTileData(const alus::snapengine::resamplin
     int offset = 0;
     for (int y = rectangle.y; y < rectangle.y + rectangle.height; y++) {
         for (int x = rectangle.x; x < rectangle.x + rectangle.width; x++) {
-            int index = y * src_tile.width + x;
+            long index = static_cast<long>(y) * src_tile.width + x;
+            if (index > static_cast<long>(src_tile.width) * src_tile.height) {
+                continue;
+            }
             dest_data_buffer[offset++] = src_tile.data_buffer[index];
         }
     }
@@ -73,22 +89,25 @@ inline __device__ int GetSamples(
 }
 
 inline __device__ double GetPixelValue(double azimuth_index,
-                                           double range_index,
-                                           int margin,
-                                           int source_image_width,
-                                           int source_image_height,
-                                           alus::snapengine::resampling::TileData *tile_data,
-                                           const double *band_data_buffer,
-                                           int &sub_swath_index) {
-    double *dest_data_buffer;
+                                       double range_index,
+                                       int margin,
+                                       int source_image_width,
+                                       int source_image_height,
+                                       alus::snapengine::resampling::TileData *tile_data,
+                                       const double *band_data_buffer,  // TODO:  unnecessary?
+                                       int &sub_swath_index) {
+//    double *dest_data_buffer;
     bool compute_new_source_rectangle = false;
+//
+//    source_image_width = tile_data->source_tile->width;
+//    source_image_height = tile_data->source_tile->height;
 
     if (tile_data->resampling_raster->source_rectangle) {
         alus::Rectangle &rectangle = *tile_data->resampling_raster->source_rectangle;
         const int x_min = rectangle.x + margin;
         const int y_min = rectangle.y + margin;
-        const int x_max = rectangle.width - 1 - 2 * margin;
-        const int y_max = rectangle.height - 1 - 2 * margin;
+        const int x_max = x_min + rectangle.width - 1 - 2 * margin;
+        const int y_max = y_min + rectangle.height - 1 - 2 * margin;
         if (range_index < x_min || range_index > x_max || azimuth_index < y_min || azimuth_index > y_max) {
             compute_new_source_rectangle = true;
         }
@@ -96,24 +115,27 @@ inline __device__ double GetPixelValue(double azimuth_index,
         compute_new_source_rectangle = true;
     }
     if (compute_new_source_rectangle) {
-        alus::Rectangle src_rectangle =
-            ComputeSourceRectangle(range_index, azimuth_index, margin, source_image_width, source_image_height);
-        alus::snapengine::resampling::SetSourceRectangleImpl(*tile_data->resampling_raster, src_rectangle);
-
-        tile_data->source_tile->data_buffer = const_cast<double *>(band_data_buffer);
-
-        dest_data_buffer = new double[src_rectangle.width * src_rectangle.height];
-        GetSubTileData(*tile_data->source_tile, src_rectangle, dest_data_buffer);
-
-        alus::snapengine::resampling::AssignTileValuesImpl(*tile_data->resampling_raster->source_tile_i,
-                                                           src_rectangle.width,
-                                                           src_rectangle.height,
-                                                           tile_data->source_tile->target,
-                                                           tile_data->source_tile->scaled,
-                                                           dest_data_buffer);
+        return 0.0;
+        // TODO: the code is currently commented out until GetSourceRectangle is correctly implemented (SNAPGPU-163)
+//        alus::Rectangle src_rectangle =
+//            ComputeSourceRectangle(range_index, azimuth_index, margin, source_image_width, source_image_height);
+//        alus::snapengine::resampling::SetSourceRectangleImpl(*tile_data->resampling_raster, src_rectangle);
+//
+//        tile_data->source_tile->data_buffer = const_cast<double *>(band_data_buffer);
+//
+//        dest_data_buffer = new double[src_rectangle.width * src_rectangle.height];
+//        GetSubTileData(
+//            *tile_data->source_tile, src_rectangle, dest_data_buffer);
+//
+//        alus::snapengine::resampling::AssignTileValuesImpl(tile_data->resampling_raster->source_tile_i,
+//                                                           src_rectangle.width,
+//                                                           src_rectangle.height,
+//                                                           tile_data->source_tile->target,
+//                                                           tile_data->source_tile->scaled,
+//                                                           dest_data_buffer);
     }
 
-    alus::snapengine::resampling::SetRangeAzimuthIndicesImpl(*tile_data->resampling_raster, range_index, azimuth_index);
+    alus::snapengine::resampling::SetRangeAzimuthIndicesImpl(tile_data->resampling_raster, range_index, azimuth_index);
 
     snapengine::bilinearinterpolation::ComputeIndex(range_index + 0.5,
                                                     azimuth_index + 0.5,
@@ -130,7 +152,8 @@ inline __device__ double GetPixelValue(double azimuth_index,
 
     double v = Resample(&p_array,
                         tile_data->image_resampling_index,
-                        tile_data->resampling_raster->source_tile_i->width,
+                        tile_data->resampling_raster->source_tile_i
+                            ->width,  // TODO: width should probably be equal to 2 -> this is samples width
                         0,
                         0,
                         GetSamples);
@@ -139,7 +162,7 @@ inline __device__ double GetPixelValue(double azimuth_index,
 
     if (compute_new_source_rectangle) {
         tile_data->resampling_raster->source_tile_i = tile_data->source_tile;
-        delete[] dest_data_buffer;
+//        delete[] dest_data_buffer;
     }
 
     return v;

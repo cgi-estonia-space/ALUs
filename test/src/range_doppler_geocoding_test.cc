@@ -84,7 +84,7 @@ class RangeDopplerGeocodingTester : public cuda::CudaFriendlyObject {
     Tile resampling_raster_tile_;
     ResamplingIndex resampling_index_{
         2098.133636393322, 1318.3823445919936, 23278, 1500, 2098, 1318, index_i_, index_j_, index_ki_, index_kj_};
-    Tile source_tile_{23278, 1500, false, false, nullptr};
+    Tile source_tile_{0, 0, 23278, 1500, false, false, nullptr};
     ResamplingRaster resampling_raster_{
         2096.0041900186766, 1317.9935169605756, 0, 0, 0, nullptr, &resampling_raster_tile_};
     TileData tile_data_{&resampling_raster_, &source_tile_, &resampling_index_};
@@ -138,7 +138,7 @@ class RangeDopplerGeocodingTester : public cuda::CudaFriendlyObject {
         index_kj_[0] = index_kj[0];
         resampling_index_ = {
             index_x, index_y, index_width, index_height, index_i0, index_j0, index_i_, index_j_, index_ki_, index_kj_};
-        source_tile_ = {source_image_width, source_image_height, false, false, nullptr};
+        source_tile_ = {0, 0, source_image_width, source_image_height, false, false, nullptr};
         resampling_raster_ = {resampling_range,
                               resampling_azimuth,
                               resampling_sub_swath,
@@ -190,7 +190,7 @@ class RangeDopplerGeocodingTester : public cuda::CudaFriendlyObject {
     }
 };
 
-TEST(RangeDopplerGeocoding, getPixelValue) {
+TEST(RangeDopplerGeocoding, DISABLED_GetPixelValue) {
     const double EXPECTED = 0.5128202235454891;
     RangeDopplerGeocodingTester tester;
     tester.HostToDevice();

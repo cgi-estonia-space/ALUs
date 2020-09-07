@@ -7,6 +7,8 @@ list(APPEND SNAP-ENGINE_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/srtm3_elevation_model.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/srtm3_formatter.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/tie_point_grid.cu
+        ${CMAKE_CURRENT_LIST_DIR}/src/tie_point_geocoding.cu
+        ${CMAKE_CURRENT_LIST_DIR}/src/crs_geocoding.cu
         )
 
 list(APPEND SNAP-ENGINE_INCLUDES
