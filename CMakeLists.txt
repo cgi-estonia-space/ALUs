@@ -70,7 +70,52 @@ add_subdirectory(app)
 # Tests
 option(ENABLE_UNIT_TESTS "Enable unit tests" ON)
 message(STATUS "Enable testing: ${ENABLE_UNIT_TESTS}")
+option(ENABLE_INTEGRATION_TESTS "Enable integration tests" ON)
+message(STATUS "Integration tests enabled: ${ENABLE_INTEGRATION_TESTS}")
+
+include(FetchContent)
+
+FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG release-1.8.1
+)
+
+FetchContent_GetProperties(googletest)
+
+if(ENABLE_UNIT_TESTS OR ENABLE_INTEGRATION_TESTS)
+
+    if(NOT googletest_POPULATED)
+        FetchContent_Populate(googletest)
+
+        # Prevent GoogleTest from overriding our compiler/linker options
+        # when building with Visual Studio
+        set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+        # Prevent GoogleTest from using PThreads
+        set(gtest_disable_pthreads ON CACHE BOOL "" FORCE)
+
+        # adds the targers: gtest, gtest_main, gmock, gmock_main
+        add_subdirectory(
+                ${googletest_SOURCE_DIR}
+                ${googletest_BINARY_DIR}
+        )
+
+        # Silence std::tr1 warning on MSVC
+        if(MSVC)
+            foreach(_tgt gtest gtest_main gmock gmock_main)
+                target_compile_definitions(${_tgt}
+                        PRIVATE
+                        "_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING"
+                        )
+            endforeach()
+        endif()
+    endif()
+endif()
 
 if (ENABLE_UNIT_TESTS)
     add_subdirectory(test)
 endif ()
+
+if (ENABLE_INTEGRATION_TESTS)
+    add_subdirectory(test_integration)
+endif()
