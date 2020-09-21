@@ -92,6 +92,10 @@ target_link_libraries(coherence-shared
         gdal
         ${TENSORFLOW_LIBS}
         )
+add_custom_command(TARGET coherence-shared
+        POST_BUILD
+        COMMAND cp ${CMAKE_CURRENT_LIST_DIR}/../../tensorflow/ubuntu_1804/lib/* ${ALUS_BINARY_OUTPUT_DIR}/.
+        )
 
 #this is main executable, no need to build object out of example.cc
 add_executable(coherence src/example_coh.cc)
@@ -105,3 +109,4 @@ target_compile_options(coherence
         -Wno-unused-parameter
         -Wno-ignored-qualifiers
         )
+
