@@ -53,6 +53,7 @@ list(APPEND TEST_SOURCES
         src/tie_point_grid_test.cc
         src/range_doppler_geocoding_test.cc
         src/zero_doppler_time_test.cc
+        src/delaunay_test.cc
         )
 
 add_executable(unit_test ${TEST_SOURCES})

@@ -1,10 +1,17 @@
 list(APPEND EXOTIC_OPERATIONS_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/comparators.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/allocators.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/delaunay_triangulator.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/delaunay_triangulator.cu
+        ${CMAKE_CURRENT_LIST_DIR}/../../external/delaunay/src/delaunay_triangulator_cpu.cc
+        ${CMAKE_CURRENT_LIST_DIR}/../../external/delaunay/src/snap_delaunay_triangulator.cc
         )
 
 list(APPEND EXOTIC_OPERATIONS_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/include
+        ${CMAKE_CURRENT_LIST_DIR}/../cuda/include
+        ${CMAKE_CURRENT_LIST_DIR}/../common/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../external/delaunay/include
         )
 
 add_library(exotic_operations-obj
@@ -31,4 +38,5 @@ set_target_properties(exotic_operations-static
 target_link_libraries(exotic_operations-static
         PUBLIC
         gdal
+        cuda_util-static
         )
