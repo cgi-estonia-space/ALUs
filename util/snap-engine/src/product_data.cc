@@ -19,7 +19,7 @@
 
 #include "product_data.h"
 
-namespace alus::snapengine {
+namespace alus::snapengine::old {
 
 Utc::Utc(int days, int seconds, int microseconds) : days_{days}, seconds_{seconds}, microseconds_{microseconds} {}
 

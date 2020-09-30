@@ -53,6 +53,17 @@ list(APPEND TEST_SOURCES
         src/tie_point_grid_test.cc
         src/range_doppler_geocoding_test.cc
         src/zero_doppler_time_test.cc
+        src/productdata_utc_test.cc
+        src/productdata_int_test.cc
+        src/productdata_uint_test.cc
+        src/productdata_short_test.cc
+        src/productdata_ushort_test.cc
+        src/productdata_ubyte_test.cc
+        src/productdata_ascii_test.cc
+        src/productdata_byte_test.cc
+        src/productdata_long_test.cc
+        src/metadata_element_test.cc
+        src/metadata_attribute_test.cc
         src/delaunay_test.cc
         )
 
@@ -72,6 +83,7 @@ target_link_libraries(unit_test
         tiePointGrid-test-static
         range-doppler-geocoding-test-static
         sar-geocoding-test-static
+        coherence-static
         )
 
 add_executable(map_cut util/map_cut.cpp)

@@ -1,24 +1,19 @@
 #pragma once
 
 #include <tuple>
-
-#include <gdal_priv.h>
+#include <vector>
 
 #include "tensorflow/cc/client/client_session.h"
 #include "tensorflow/cc/ops/standard_ops.h"
 
 #include "coh_tile.h"
-#include "coh_tiles_generator.h"
 #include "data_bands_buffer.h"
 #include "i_algo.h"
 #include "i_data_tile_reader.h"
-#include "i_data_tile_writer.h"
-#include "io_tile.h"
 #include "meta_data.h"
-#include "orbit.h"
 
 namespace alus {
-
+class MetaData;
 class Coh : virtual public IAlgo {
    private:
     const int srp_number_points_;
@@ -32,7 +27,6 @@ class Coh : virtual public IAlgo {
     MetaData &meta_master_;
     MetaData &meta_slave_;
 
-    int band_x_size_, band_y_size_;
     std::vector<tensorflow::Input> tile_calc_inputs_;
     std::vector<tensorflow::ops::Placeholder> tile_calc_placeholder_inputs_;
     // todo: Try to map correct bands from input master&slave (probaly should be user input)

@@ -1,47 +1,70 @@
 #include "meta_data.h"
 
+#include "constants.h"
+#include "date_utils.h"
+#include "ellipsoid.h"
+#include "geopoint.h"
+#include "meta_data_node_names.h"
+
 namespace alus {
-MetaData::MetaData(IDataTileReader *incidence_angle_reader,
-                   double t_azi_1,
-                   std::vector<double> time,
-                   std::vector<double> coeff_x,
-                   std::vector<double> coeff_y,
-                   std::vector<double> coeff_z) {
-    // window in jLinda, could read these using gdal
-    //  todo:fix this
-    this->band_x_min_ = 0;
-    this->band_x_max_ = 21399;
-    this->band_x_size_ = 21400;
 
-    this->band_y_min_ = 0;
-    this->band_y_max_ = 1502;
-    this->band_y_size_ = 1503;
-
-    // used debugger for that (same for slave master at least for me)
-    this->line_time_interval_ = 0.002055556299999998;
-    this->t_azi_1_ = t_azi_1;
-
-    // todo THESE COME FROM METADATA STATEVECTORS
-    this->time_ = time;
-    this->coeff_x_ = coeff_x;
-    this->coeff_y_ = coeff_y;
-    this->coeff_z_ = coeff_z;
-
-    // todo: slave and master need different values hardcoded
-    // THIS WOULD BE SLAVE VALUE
-    // this->t_azi_1 = 56909.695959
-    this->t_range_1_ = 0.002679737321566982;  // print(masterContainer.metaData.gettRange1())
-    // 1.2869047625142854E8
-    this->rsr_2_x_ = 128690476.25142854;  // took from python print(masterContainer.metaData.getRsr2x())
-
+MetaData::MetaData(IDataTileReader *incidence_angle_reader, snapengine::MetadataElement &element, int orbit_degree) {
     // get angle for first and last to understand if this is ok (need to calculate from input product...
+
+    //    todo:check slave vs master on this  if they use the same input files we should not read these again
+
     this->near_range_on_left_ = IsNearRangeOnLeft(incidence_angle_reader);
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-    // todo:where this gets populated?
-    this->approx_xyz_centre_original_ = Point(2912246.953674266, 1455420.6100392228, 5466244.152426148);
+    // todo: check what snap uses! this is custom solution
+    band_x_size_ = element.GetAttributeInt(snapengine::MetaDataNodeNames::NUM_SAMPLES_PER_LINE);
+    band_y_size_ = element.GetAttributeInt(snapengine::MetaDataNodeNames::NUM_OUTPUT_LINES);
 
-    // for slave and master these matched
-    this->approx_radar_centre_original_ = Point(10700.0, 751.5, 0.0);
+    //  todo:not sure if we still need these 4 below
+    band_x_min_ = 0;
+    band_y_min_ = 0;
+    band_x_max_ = band_x_size_ - 1;
+    band_y_max_ = band_y_size_ - 1;
+
+    line_time_interval_ = element.GetAttributeDouble(snapengine::MetaDataNodeNames::LINE_TIME_INTERVAL);
+
+    radar_wavelength_ = (kcoh::LIGHT_SPEED / kcoh::MEGA) /
+                        element.GetAttributeDouble(alus::snapengine::MetaDataNodeNames::RADAR_FREQUENCY);
+    t_azi_1_ = snapengine::DateUtils::DateTimeToSecOfDay(
+        element.GetAttributeUtc(alus::snapengine::MetaDataNodeNames::FIRST_LINE_TIME)->ToString());
+    t_range_1_ = element.GetAttributeDouble(alus::snapengine::MetaDataNodeNames::SLANT_RANGE_TO_FIRST_PIXEL) /
+                 kcoh::LIGHT_SPEED;
+    rsr_2_x_ = element.GetAttributeDouble(alus::snapengine::MetaDataNodeNames::RANGE_SAMPLING_RATE) * kcoh::MEGA * 2;
+
+    approx_radar_centre_original_.SetX(
+        element.GetAttributeDouble(alus::snapengine::MetaDataNodeNames::NUM_SAMPLES_PER_LINE) /
+        2.0);  // x direction is range!
+    approx_radar_centre_original_.SetY(
+        element.GetAttributeDouble(alus::snapengine::MetaDataNodeNames::NUM_OUTPUT_LINES) /
+        2.0);  // y direction is azimuth
+    approx_radar_centre_original_.SetZ(0.0);
+
+    jlinda::GeoPoint approx_geo_centre_original_{};
+    approx_geo_centre_original_.lat_ =
+        (float)((element.GetAttributeDouble(alus::snapengine::MetaDataNodeNames::FIRST_NEAR_LAT) +
+                 element.GetAttributeDouble(alus::snapengine::MetaDataNodeNames::FIRST_FAR_LAT) +
+                 element.GetAttributeDouble(alus::snapengine::MetaDataNodeNames::LAST_NEAR_LAT) +
+                 element.GetAttributeDouble(alus::snapengine::MetaDataNodeNames::LAST_FAR_LAT)) /
+                4);
+
+    approx_geo_centre_original_.lon_ =
+        (float)((element.GetAttributeDouble(alus::snapengine::MetaDataNodeNames::FIRST_NEAR_LONG) +
+                 element.GetAttributeDouble(alus::snapengine::MetaDataNodeNames::FIRST_FAR_LONG) +
+                 element.GetAttributeDouble(alus::snapengine::MetaDataNodeNames::LAST_NEAR_LONG) +
+                 element.GetAttributeDouble(alus::snapengine::MetaDataNodeNames::LAST_FAR_LONG)) /
+                4);
+
+    //    todo: refactor...
+    std::vector<double> xyz(3);
+    alus::jlinda::Ellipsoid::Ell2Xyz(approx_geo_centre_original_, xyz);
+    approx_xyz_centre_original_ = Point(xyz.at(0), xyz.at(1), xyz.at(2));
+
+    orbit_ = std::make_shared<Orbit>(element, orbit_degree);
 }
 
 // todo: how should we tie this to specific product in our logic?

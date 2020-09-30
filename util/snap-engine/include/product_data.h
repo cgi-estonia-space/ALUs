@@ -18,6 +18,7 @@
 
 namespace alus {
 namespace snapengine {
+namespace old {
 
 /**
  * The {@code ProductData.UTC} class is a {@code ProductData.UInt} specialisation for UTC date/time
@@ -69,5 +70,6 @@ class Utc {
     static const std::string TIME_FORMAT;
 };
 
+}  // namespace old
 }  // namespace snapengine
 }  // namespace alus

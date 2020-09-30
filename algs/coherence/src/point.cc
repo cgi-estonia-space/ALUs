@@ -1,5 +1,7 @@
 #include "point.h"
 
+#include <cmath>
+
 namespace alus {
 
 Point::Point() {

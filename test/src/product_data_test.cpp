@@ -30,8 +30,8 @@ TEST(ProductData, UtcHasCorrectMjdTimes) {
 }
 TEST(ProductData, UtcIsCorrectlyConstructedFromString) {
     const std::string DATE_TEXT = "15-JUL-2019 16:04:43.800577";
-    const alus::snapengine::Utc EXPECTED_UTC{7135, 57883, 800577};
-    const alus::snapengine::Utc RESULT(DATE_TEXT);
+    const alus::snapengine::old::Utc EXPECTED_UTC{7135, 57883, 800577};
+    const alus::snapengine::old::Utc RESULT(DATE_TEXT);
     EXPECT_EQ(EXPECTED_UTC.days_, RESULT.days_);
     EXPECT_EQ(EXPECTED_UTC.seconds_, RESULT.seconds_);
     EXPECT_EQ(EXPECTED_UTC.microseconds_, RESULT.microseconds_);

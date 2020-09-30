@@ -31,10 +31,7 @@ else (CUDA_FOUND)
     message(FATAL_ERROR "No CUDA toolchain found. Exiting.")
 endif ()
 
-find_package(Boost 1.65.1 REQUIRED COMPONENTS program_options)
-if (!Boost_FOUND)
-    message(FATAL_ERROR "Required BOOST components not found.")
-endif ()
+find_package(Boost 1.65.1 REQUIRED COMPONENTS program_options date_time filesystem iostreams)
 
 find_package(GDAL REQUIRED)
 

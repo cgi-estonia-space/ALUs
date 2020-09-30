@@ -1,5 +1,14 @@
 #include "orbit.h"
 
+#include <cmath>
+#include <string>
+
+#include "constants.h"
+#include "date_utils.h"
+#include "meta_data_node_names.h"
+#include "orbit_state_vector.h"
+#include "poly_utils.h"
+
 namespace alus {
 const double Orbit::CRITERPOS_ = pow(10, -6);
 const double Orbit::CRITERTIM_ = pow(10, -10);
@@ -25,7 +34,7 @@ Point Orbit::GetXyzDotDot(double az_time) {
     return Point(x / 100.0, y / 100.0, z / 100.0);
 }
 
-Point Orbit::Xyz2T(Point point_on_ellips, MetaData slave_meta_data) {
+Point Orbit::Xyz2T(Point point_on_ellips, MetaData &slave_meta_data) {
     Point delta;
 
     // inital value
@@ -59,24 +68,8 @@ Point Orbit::Xyz2T(Point point_on_ellips, MetaData slave_meta_data) {
     return Point(time_range, time_azimuth, 0.0);
 }
 
-Orbit::Orbit(MetaData &meta_data, int orbit_degree) : metadata_(meta_data) {
-    //    this->metadata_ = meta_data;
-    this->orbit_degree_ = orbit_degree;
-    // slave
-    this->poly_degree_ = 3;
-    this->num_state_vectors_ = 23;
-
-    //    todo:check if this is correct
-    // master
-    this->time_ = meta_data.time_;
-
-    this->coeff_x_ = meta_data.coeff_x_;
-    this->coeff_y_ = meta_data.coeff_y_;
-    this->coeff_z_ = meta_data.coeff_z_;
-}
-
-Point Orbit::RowsColumns2Xyz(int rows, int columns) {
-    return RowsColumnsHeightToXyz(rows, columns, 0, this->metadata_);
+Point Orbit::RowsColumns2Xyz(int rows, int columns, MetaData &meta_data) {
+    return RowsColumnsHeightToXyz(rows, columns, 0, meta_data);
 }
 
 // PolyUtils.PolyVal1D(azTimeNormal, coeff_X),
@@ -84,9 +77,9 @@ Point Orbit::RowsColumns2Xyz(int rows, int columns) {
 // PolyUtils.PolyVal1D(azTimeNormal, coeff_Z));
 Point Orbit::GetXyz(const double az_time) {
     double az_time_normal = (az_time - this->time_[this->time_.size() / 2]) / 10.0;
-    return Point(Utils::PolyVal1D(az_time_normal, this->coeff_x_),
-                 Utils::PolyVal1D(az_time_normal, this->coeff_y_),
-                 Utils::PolyVal1D(az_time_normal, this->coeff_z_));
+    return Point(PolyUtils::PolyVal1D(az_time_normal, this->coeff_x_),
+                 PolyUtils::PolyVal1D(az_time_normal, this->coeff_y_),
+                 PolyUtils::PolyVal1D(az_time_normal, this->coeff_z_));
 }
 
 Point Orbit::GetXyzDot(double az_time) {
@@ -163,7 +156,7 @@ Point Orbit::RowsColumnsHeightToXyz(int rows, int columns, int height, MetaData 
         partials_xyz[2][2] = (2 * ellipsoid_position.GetZ()) / (pow(alus::kcoh::ELL_B + height, 2));
 
         // solve system [NOTE!] orbit has to be normalized, otherwise close to singular
-        std::vector<double> ellipsoid_position_solution = Utils::Solve33(partials_xyz, equation_set);
+        std::vector<double> ellipsoid_position_solution = PolyUtils::Solve33(partials_xyz, equation_set);
 
         // update solution
         ellipsoid_position.SetX(ellipsoid_position.GetX() + ellipsoid_position_solution[0]);
@@ -179,6 +172,62 @@ Point Orbit::RowsColumnsHeightToXyz(int rows, int columns, int height, MetaData 
     }
 
     return Point(ellipsoid_position);
+}
+
+Orbit::Orbit(snapengine::MetadataElement &element, int degree) {
+    ///////////////////// TODO::MOVE THIS TO SOME ABSTRACT CLASS!?
+    //    std::vector<alus::snapengine::OrbitStateVector> orbit_state_vectors =
+    //    AbstractMetadata.GetOrbitStateVectors(nest_metadata_element);
+    //    todo::create AbstractMetadata???
+
+    auto elem_root = element.GetElement(snapengine::MetaDataNodeNames::ORBIT_STATE_VECTORS);
+    //       todo::move to func and comment below back in
+    //        if (elem_root == nullptr) {
+    //            return std::vector<alus::snapengine::OrbitStateVector>{};
+    //        }
+    const int num_elems = elem_root->GetNumElements();
+    std::vector<alus::snapengine::OrbitStateVector> orbit_state_vectors(num_elems);
+    for (int i = 0; i < num_elems; i++) {
+        auto sub_elem_root = elem_root->GetElement(std::string(alus::snapengine::MetaDataNodeNames::ORBIT_VECTOR) +
+                                                   std::to_string(i + 1));
+        auto vector = alus::snapengine::OrbitStateVector(
+            sub_elem_root->GetAttributeUtc(snapengine::MetaDataNodeNames::ORBIT_VECTOR_TIME),
+            sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_X_POS),
+            sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_Y_POS),
+            sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_Z_POS),
+            sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_X_VEL),
+            sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_Y_VEL),
+            sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_Z_VEL));
+        orbit_state_vectors.at(i) = vector;
+    }
+    /////////////////////
+
+    num_state_vectors_ = orbit_state_vectors.size();
+
+    time_.resize(num_state_vectors_);
+    data_x_.resize(num_state_vectors_);
+    data_y_.resize(num_state_vectors_);
+    data_z_.resize(num_state_vectors_);
+
+    for (int i = 0; i < num_state_vectors_; i++) {
+        // convert time to seconds of the acquisition day
+        time_.at(i) = alus::snapengine::DateUtils::DateTimeToSecOfDay(orbit_state_vectors.at(i).time_->ToString());
+        data_x_.at(i) = orbit_state_vectors.at(i).x_pos_;
+        data_y_.at(i) = orbit_state_vectors.at(i).y_pos_;
+        data_z_.at(i) = orbit_state_vectors.at(i).z_pos_;
+    }
+
+    poly_degree_ = degree;
+    //    todo: implement
+    ComputeCoefficients();
+}
+
+void Orbit::ComputeCoefficients() {
+    coeff_x_ = PolyUtils::PolyFitNormalized(time_, data_x_, poly_degree_);
+    coeff_y_ = PolyUtils::PolyFitNormalized(time_, data_y_, poly_degree_);
+    coeff_z_ = PolyUtils::PolyFitNormalized(time_, data_z_, poly_degree_);
+
+    is_interpolated_ = true;
 }
 
 }  // namespace alus

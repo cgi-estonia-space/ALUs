@@ -20,7 +20,7 @@ namespace alus {
 namespace snapengine {
 
 struct OrbitStateVector {
-    alus::snapengine::Utc time_{};
+    alus::snapengine::old::Utc time_{};
     double timeMjd_{};
     double xPos_{};
     double yPos_{};
@@ -31,7 +31,7 @@ struct OrbitStateVector {
 
     OrbitStateVector() = default;
     OrbitStateVector(
-        alus::snapengine::Utc time, double xPos, double yPos, double zPos, double xVel, double yVel, double zVel);
+        alus::snapengine::old::Utc time, double xPos, double yPos, double zPos, double xVel, double yVel, double zVel);
 };
 
 }  // namespace snapengine

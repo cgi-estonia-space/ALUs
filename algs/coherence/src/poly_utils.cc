@@ -1,9 +1,9 @@
-#include "utils.h"
+#include "poly_utils.h"
 
 namespace alus {
 
 // todo: rethink where this should be
-double Utils::PolyVal1D(double x, std::vector<double> coeffs) {
+double PolyUtils::PolyVal1D(double x, std::vector<double> coeffs) {
     double sum = 0.0;
     for (std::vector<double>::reverse_iterator it = coeffs.rbegin(); it != coeffs.rend(); it++) {
         sum *= x;
@@ -18,7 +18,7 @@ double Utils::PolyVal1D(double x, std::vector<double> coeffs) {
     return sum;
 }
 
-std::vector<double> Utils::Solve33(std::vector<std::vector<double>> a, std::vector<double> rhs) {
+std::vector<double> PolyUtils::Solve33(std::vector<std::vector<double>> a, std::vector<double> rhs) {
     std::vector<double> result(3);
 
     if (a[0].size() != 3 || a.size() != 3) {
@@ -49,6 +49,42 @@ std::vector<double> Utils::Solve33(std::vector<std::vector<double>> a, std::vect
     result[0] = (b_0 - a[0][1] * result[1] - a[0][2] * result[2]) / a[0][0];
 
     return result;
+}
+
+Eigen::VectorXd PolyUtils::PolyFit(Eigen::VectorXd xvals, Eigen::VectorXd yvals, int order) {
+    // todo: assert(xvals.size() == yvals.size());
+    // todo: assert(order >= 1 && order <= xvals.size() - 1);
+    Eigen::MatrixXd A(xvals.size(), order + 1);
+
+    for (int i = 0; i < xvals.size(); i++) {
+        A(i, 0) = 1.0;
+    }
+
+    for (int j = 0; j < xvals.size(); j++) {
+        for (int i = 0; i < order; i++) {
+            A(j, i + 1) = A(j, i) * xvals(j);
+        }
+    }
+
+    auto Q = A.householderQr();
+    auto result = Q.solve(yvals);
+    return result;
+}
+
+Eigen::VectorXd PolyUtils::Normalize(Eigen::VectorXd t) {
+    int i = t.size() / 2;
+    return (t - (t(i) * Eigen::VectorXd::Ones(t.size()))) / 10.0;
+}
+
+Eigen::VectorXd PolyUtils::PolyFitNormalized(Eigen::VectorXd t, Eigen::VectorXd y, int degree) {
+    return PolyFit(Normalize(t), y, degree);
+}
+
+std::vector<double> PolyUtils::PolyFitNormalized(std::vector<double> t, std::vector<double> y, int degree) {
+    auto result = PolyFit(Normalize(Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(t.data(), t.size())),
+                          Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(y.data(), y.size()),
+                          degree);
+    return std::vector<double>(result.data(), result.data() + result.rows() * result.cols());
 }
 
 }  // namespace alus

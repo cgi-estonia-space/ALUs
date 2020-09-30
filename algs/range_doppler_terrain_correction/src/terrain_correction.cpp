@@ -82,21 +82,21 @@ TerrainCorrection::~TerrainCorrection() {}
 // Only the first three vectors are being copied as later the list of vectors should be populated from .dim file
 std::vector<alus::snapengine::OrbitStateVector> GetOrbitStateVectors() {
     std::vector<alus::snapengine::OrbitStateVector> vectors;
-    vectors.push_back({alus::snapengine::Utc("15-JUL-2019 16:04:33.800577"),
+    vectors.push_back({alus::snapengine::old::Utc("15-JUL-2019 16:04:33.800577"),
                        3727040.7077331543,
                        1103842.85256958,
                        5902738.6076049805,
                        -5180.233733266592,
                        -3857.165526404977,
                        3982.913521885872});
-    vectors.push_back({alus::snapengine::Utc("15-JUL-2019 16:04:34.800577"),
+    vectors.push_back({alus::snapengine::old::Utc("15-JUL-2019 16:04:34.800577"),
                        3721858.106201172,
                        1099985.447479248,
                        5906718.189788818,
                        -5184.967764496803,
                        -3857.643955528736,
                        3976.251023232937});
-    vectors.push_back({alus::snapengine::Utc("15-JUL-2019 16:04:35.800577"),
+    vectors.push_back({alus::snapengine::old::Utc("15-JUL-2019 16:04:35.800577"),
                        3716670.7736206055,
                        1096127.5664367676,
                        5910691.107452393,
@@ -115,18 +115,18 @@ void TerrainCorrection::FillMetadata() {
     metadata_.antenna_pointing = metadata::AntennaDirection::RIGHT;
     metadata_.beams = "";
     metadata_.swath = alus::metadata::Swath::IW1;
-    metadata_.proc_time = alus::snapengine::Utc("15-JUL-2019 18:36:47.607732");
+    metadata_.proc_time = alus::snapengine::old::Utc("15-JUL-2019 18:36:47.607732");
     metadata_.processing_system_identifier = "ESA Sentinel-1 IPF 003.10";
     metadata_.orbit_cycle = 175;
     metadata_.rel_orbit = 58;
     metadata_.abs_orbit = 28130;
-    metadata_.state_vector_time = alus::snapengine::Utc("15-JUL-2019 16:03:37.964246");
+    metadata_.state_vector_time = alus::snapengine::old::Utc("15-JUL-2019 16:03:37.964246");
     metadata_.vector_source = "";
     metadata_.incidence_near = 29.786540985107422;
     metadata_.incidence_far = 36.43135039339361;
     metadata_.slice_num = 24;
-    metadata_.first_line_time = alus::snapengine::Utc("15-JUL-2019 16:04:43.800577");
-    metadata_.last_line_time = alus::snapengine::Utc("15-JUL-2019 16:04:46.885967");
+    metadata_.first_line_time = alus::snapengine::old::Utc("15-JUL-2019 16:04:43.800577");
+    metadata_.last_line_time = alus::snapengine::old::Utc("15-JUL-2019 16:04:46.885967");
     metadata_.first_near_lat = 58.21324157714844;
     metadata_.first_near_long = 21.98597526550293;
     metadata_.first_far_lat = 58.392906188964844;

@@ -1,5 +1,10 @@
 #include "coherence_calc.h"
 
+#include <cmath>
+#include <algorithm>
+
+#include "constants.h"
+
 namespace alus {
 
 Coh::Coh(const int srp_number_points,
@@ -22,9 +27,6 @@ Coh::Coh(const int srp_number_points,
       orbit_degree_{orbit_degree},
       meta_master_{meta_master},
       meta_slave_{meta_slave} {
-    // todo: take from metadata
-    this->band_x_size_ = 21400;
-    this->band_y_size_ = 1503;
 }
 
 std::tuple<std::vector<int>, std::vector<int>> Coh::DistributePoints(
@@ -166,12 +168,10 @@ auto Coh::GetA(tensorflow::Scope &root,
 std::vector<double> Coh::GenerateY(std::tuple<std::vector<int>, std::vector<int>> lines_pixels,
                                    MetaData &meta_master,
                                    MetaData &meta_slave) {
-    Orbit orbit_master{meta_master, orbit_degree_};
-    Orbit orbit_slave{meta_slave, orbit_degree_};
-    constexpr double master_min_pi_4_div_lam =
-        (-4.0l * alus::kcoh::SNAP_PI * alus::kcoh::C) / alus::kcoh::MASTER_CONTAINER_META_DATA_GET_RADAR_WAVELENGTH;
-    constexpr double slave_min_pi_4_div_lam =
-        (-4.0l * alus::kcoh::SNAP_PI * alus::kcoh::C) / alus::kcoh::SLAVE_CONTAINER_META_DATA_GET_RADAR_WAVELENGTH;
+    double master_min_pi_4_div_lam =
+        (-4.0l * kcoh::SNAP_PI * kcoh::C) / meta_master.GetRadarWaveLength();
+    double slave_min_pi_4_div_lam =
+        (-4.0l * kcoh::SNAP_PI * kcoh::C) / meta_slave.GetRadarWaveLength();
 
     std::vector<int> lines = std::get<0>(lines_pixels);
     std::vector<int> pixels = std::get<1>(lines_pixels);
@@ -180,9 +180,9 @@ std::vector<double> Coh::GenerateY(std::tuple<std::vector<int>, std::vector<int>
 
     for (int i = 0; i < srp_number_points_; i++) {
         double master_time_range = meta_master.PixelToTimeRange(pixels.at(static_cast<unsigned long>(i)) + 1);
-        Point xyz_master = orbit_master.RowsColumns2Xyz(lines.at(static_cast<unsigned long>(i)) + 1,
-                                                        pixels.at(static_cast<unsigned long>(i)) + 1);
-        Point slave_time_vector = orbit_slave.Xyz2T(xyz_master, meta_slave);
+        Point xyz_master = meta_master.GetOrbit()->RowsColumns2Xyz(lines.at(static_cast<unsigned long>(i)) + 1,
+                                                        pixels.at(static_cast<unsigned long>(i)) + 1, meta_master);
+        Point slave_time_vector = meta_slave.GetOrbit()->Xyz2T(xyz_master, meta_slave);
         double slave_time_range = slave_time_vector.GetX();
         y.push_back(static_cast<double &&>((master_min_pi_4_div_lam * master_time_range) -
                                            (slave_min_pi_4_div_lam * slave_time_range)));
@@ -257,9 +257,9 @@ auto Coh::ComputeFlatEarthPhase(tensorflow::Scope &root,
                                 tensorflow::Input y_pows,
                                 tensorflow::Input coefs) {
     auto min_line = tensorflow::ops::Const(root, static_cast<double>(0));
-    auto max_line = tensorflow::ops::Const(root, static_cast<double>(band_y_size_ - 1));
+    auto max_line = tensorflow::ops::Const(root, static_cast<double>(meta_master_.GetBandYSize() - 1));
     auto min_pixel = tensorflow::ops::Const(root, static_cast<double>(0));
-    auto max_pixel = tensorflow::ops::Const(root, static_cast<double>(band_x_size_ - 1));
+    auto max_pixel = tensorflow::ops::Const(root, static_cast<double>(meta_master_.GetBandXSize() - 1));
 
     auto xx = NormalizeDoubleMatrix3(
         root,
@@ -420,7 +420,7 @@ void Coh::CoherencePreTileCalc(tensorflow::Scope &root) {
     tensorflow::Tensor x_pows_tensor = GetTensor(x_pows_vector);
     tensorflow::Tensor y_pows_tensor = GetTensor(y_pows_vector);
     std::tuple<std::vector<int>, std::vector<int>> position_lines_pixels =
-        DistributePoints(srp_number_points_, this->band_x_size_, 0, this->band_y_size_, 0);
+        DistributePoints(srp_number_points_, meta_master_.GetBandXSize(), 0, meta_master_.GetBandYSize(), 0);
     tensorflow::Tensor position_lines_tensor = GetTensor(std::get<0>(position_lines_pixels));
     tensorflow::Tensor position_pixels_tensor = GetTensor(std::get<1>(position_lines_pixels));
 
@@ -439,9 +439,9 @@ void Coh::CoherencePreTileCalc(tensorflow::Scope &root) {
                   position_lines,
                   position_pixels,
                   0,
-                  this->band_x_size_ - 1,
+                  meta_master_.GetBandXSize() - 1,
                   0,
-                  this->band_y_size_ - 1,
+                  meta_master_.GetBandYSize() - 1,
                   x_pows_rs,
                   y_pows_rs);
     auto coefs = GetCoefs(root, a, get_y);
