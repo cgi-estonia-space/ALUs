@@ -43,6 +43,7 @@ endif ()
 find_package(Boost 1.74.0 REQUIRED COMPONENTS program_options date_time filesystem iostreams)
 
 find_package(GDAL REQUIRED)
+include_directories(${GDAL_INCLUDE_DIR})
 
 find_package(Eigen3 REQUIRED)
 

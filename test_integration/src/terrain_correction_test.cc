@@ -11,16 +11,19 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
-#include <chrono>
-#include <numeric>
+#include "terrain_correction.h"
 
 #include <openssl/md5.h>
+
 #include <boost/filesystem.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
+#include <chrono>
+#include <numeric>
+#include <memory>
+#include <vector>
 
 #include "gmock/gmock.h"
-
-#include "terrain_correction.h"
+#include "srtm3_elevation_model.h"
 
 namespace {
 
@@ -40,29 +43,39 @@ std::string Md5FromFile(const std::string& path) {
 }
 
 class TerrainCorrectionIntegrationTest : public ::testing::Test {
-   public:
+public:
     TerrainCorrectionIntegrationTest() = default;
 };
 
 TEST_F(TerrainCorrectionIntegrationTest, Saaremaa1) {
-    std::string const COH_1_TIF{
+    std::string const coh_1_tif{
         "./goods/"
         "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_"
         "Stack_coh_deb.tif"};
-    std::string const COH_1_DATA{
+    std::string const coh_1_data{
         "./goods/"
         "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_"
         "Stack_coh_deb.data"};
 
-    Metadata metadata(COH_1_DATA.substr(0, COH_1_DATA.length() - 5) + ".dim",
-                      COH_1_DATA + "/tie_point_grids/latitude.img",
-                      COH_1_DATA + "/tie_point_grids/longitude.img");
-    alus::Dataset<double> input(COH_1_TIF);
+    Metadata metadata(coh_1_data.substr(0, coh_1_data.length() - 5) + ".dim",
+                      coh_1_data + "/tie_point_grids/latitude.img", coh_1_data + "/tie_point_grids/longitude.img");
+    alus::Dataset<double> input(coh_1_tif);
+
+    auto egm_96 = std::make_shared<alus::snapengine::EarthGravitationalModel96>();
+    egm_96->HostToDevice();
+
+    std::vector<std::string> files{"./goods/srtm_41_01.tif", "./goods/srtm_42_01.tif"};
+    auto srtm_3_model = std::make_unique<alus::snapengine::Srtm3ElevationModel>(files);
+    srtm_3_model->ReadSrtmTiles(egm_96.get());
+    srtm_3_model->HostToDevice();
+
+    const auto* d_srtm_3_tiles = srtm_3_model->GetSrtmBuffersInfo();
 
     const std::string output_path{"/tmp/tc_test.tif"};
     auto const main_alg_start = std::chrono::steady_clock::now();
-    TerrainCorrection tc(
-        std::move(input), metadata.GetMetadata(), metadata.GetLatTiePoints(), metadata.GetLonTiePoints());
+
+    TerrainCorrection tc(std::move(input), metadata.GetMetadata(), metadata.GetLatTiePoints(),
+                         metadata.GetLonTiePoints(), d_srtm_3_tiles);
     tc.ExecuteTerrainCorrection(output_path, 420, 416);
 
     auto const main_alg_stop = std::chrono::steady_clock::now();
@@ -71,7 +84,7 @@ TEST_F(TerrainCorrectionIntegrationTest, Saaremaa1) {
               << std::endl;
 
     ASSERT_THAT(boost::filesystem::exists(output_path), IsTrue());
-    const std::string expected_md5{"1234bfe807838b6901f837860453f71a"};
+    const std::string expected_md5{"afe24f1adad18c44add03ff205fc0606"};
     ASSERT_THAT(Md5FromFile(output_path), Eq(expected_md5));
 }
 }  // namespace

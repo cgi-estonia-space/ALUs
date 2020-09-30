@@ -14,9 +14,10 @@
 #pragma once
 
 #include <atomic>
-#include <memory>
 #include <mutex>
+#include <thread>
 #include <vector>
+#include <memory>
 
 #include "blocking_queue.h"
 #include "executable.h"
@@ -25,11 +26,11 @@
 namespace alus {
 namespace multithreading {
 class ThreadPool {
-public:
+   public:
     explicit ThreadPool(unsigned int desired_pool_size);
     ThreadPool();
 
-    void Enqueue(std::shared_ptr<alus::multithreading::Executable> job);
+    void Enqueue(std::shared_ptr<Executable> job);
     void Start();
     bool IsRunning();
     void Synchronise();

@@ -5,7 +5,7 @@ list(APPEND TERRAIN_CORRECTION_SOURCES_CU
         ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction_kernel.cu
         )
 list(APPEND TERRAIN_CORRECTION_SOURCES
-        ${CMAKE_CURRENT_LIST_DIR}/src/execute.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction_executor.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction_metadata.cc
         )
@@ -68,6 +68,7 @@ target_link_libraries(terrain-correction-static
 add_library(terrain-correction-shared
         SHARED
         $<TARGET_OBJECTS:terrain-correction-obj>
+        $<TARGET_OBJECTS:terrain-correction-obj-cu>
         )
 target_include_directories(terrain-correction-shared
         PUBLIC
@@ -84,7 +85,7 @@ target_link_libraries(terrain-correction-shared
         gdal-util-static
         snap-engine-static
         sentinel1-util-static
-        multi_threading-static
         pugixml-static
+        multi_threading-static
         )
 

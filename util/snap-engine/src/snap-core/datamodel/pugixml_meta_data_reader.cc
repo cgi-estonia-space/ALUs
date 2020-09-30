@@ -1,7 +1,9 @@
 #include "pugixml_meta_data_reader.h"
 
+#include <ios>
 #include <iostream>
 #include <optional>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -15,6 +17,7 @@
 #include "product.h"
 #include "product_data.h"
 #include "product_data_utc.h"
+#include "spectral_band_info.h"
 
 namespace alus {
 namespace snapengine {
@@ -38,6 +41,74 @@ std::shared_ptr<MetadataElement> PugixmlMetaDataReader::Read(std::string_view el
         throw std::runtime_error("unable to load file " + file_name);
     }
     return ImplToModel(element_name);
+}
+
+SpectralBandInfo PugixmlMetaDataReader::GetSpectralBandInfo(pugi::xml_node& spectral_band) {
+    const auto band_index = std::stoi(spectral_band.child_value(DimapProductConstants::TAG_BAND_INDEX.data()));
+    const std::string band_name = spectral_band.child_value(DimapProductConstants::TAG_BAND_NAME.data());
+    const auto product_data_type =
+        ProductData::GetType(spectral_band.child_value(DimapProductConstants::TAG_DATA_TYPE.data()));
+    bool log_10_scaled;
+    std::istringstream(spectral_band.child_value(DimapProductConstants::TAG_SCALING_LOG_10.data())) >> std::boolalpha >>
+        log_10_scaled;
+    bool no_data_value_used;
+    std::istringstream(spectral_band.child_value(DimapProductConstants::TAG_NO_DATA_VALUE_USED.data())) >>
+        std::boolalpha >> no_data_value_used;
+
+    // Parse optional values
+    const auto band_description =
+        ParseChildValue<std::string>(spectral_band, DimapProductConstants::TAG_BAND_DESCRIPTION.data());
+    const auto physical_unit =
+        ParseChildValue<std::string>(spectral_band, DimapProductConstants::TAG_PHYSICAL_UNIT.data());
+    const auto solar_flux = ParseChildValue<double>(spectral_band, DimapProductConstants::TAG_SOLAR_FLUX.data());
+    const auto spectral_band_index =
+        ParseChildValue<int>(spectral_band, DimapProductConstants::TAG_SPECTRAL_BAND_INDEX);
+    const auto band_wavelength = ParseChildValue<double>(spectral_band, DimapProductConstants::TAG_BAND_WAVELEN.data());
+    const auto bandwidth = ParseChildValue<double>(spectral_band, DimapProductConstants::TAG_BANDWIDTH.data());
+    const auto scaling_factor =
+        ParseChildValue<double>(spectral_band, DimapProductConstants::TAG_SCALING_FACTOR.data());
+    const auto scaling_offset =
+        ParseChildValue<double>(spectral_band, DimapProductConstants::TAG_SCALING_OFFSET.data());
+    const auto no_data_value = ParseChildValue<double>(spectral_band, DimapProductConstants::TAG_NO_DATA_VALUE.data());
+    const auto valid_mask_term =
+        ParseChildValue<std::string>(spectral_band, DimapProductConstants::TAG_VALID_MASK_TERM.data());
+
+    return {band_index,       band_name,      product_data_type, log_10_scaled,       no_data_value_used,
+            band_description, physical_unit,  solar_flux,        spectral_band_index, band_wavelength,
+            bandwidth,        scaling_factor, scaling_offset,    no_data_value,       valid_mask_term};
+}
+
+std::vector<SpectralBandInfo> PugixmlMetaDataReader::ReadImageInterpretationTag() {
+    std::vector<SpectralBandInfo> bands_info;
+
+    std::string file_name;
+    if (product_) {
+        file_name = product_->GetFileLocation().parent_path().generic_path().string() +
+                    boost::filesystem::path::preferred_separator + product_->GetName() + ".xml";
+    } else if (!file_name_.empty()) {
+        file_name = file_name_;
+    } else {
+        throw std::runtime_error("no source file for metadata provided");
+    }
+    this->result_ = this->doc_.load_file(file_name.data(), pugi::parse_default | pugi::parse_declaration);
+    if (!this->result_) {
+        // todo: add exception handling wrapper or handle directly (use PugixmlErrorException)
+        throw std::runtime_error("unable to load file " + file_name);
+    }
+
+    const auto root = doc_.document_element();
+    const auto image_interpretation_node = root.select_node(DimapProductConstants::TAG_IMAGE_INTERPRETATION.data());
+    if (!image_interpretation_node) {
+        throw std::runtime_error(file_name + " does not contain " +
+                                 DimapProductConstants::TAG_IMAGE_INTERPRETATION.data() + " tag");
+    }
+
+    const auto spectral_bands = image_interpretation_node.node().children();
+    for (auto&& spectral_band : spectral_bands) {
+        bands_info.push_back(GetSpectralBandInfo(spectral_band));
+    }
+
+    return bands_info;
 }
 
 std::shared_ptr<MetadataElement> PugixmlMetaDataReader::ImplToModel(std::string_view element_name) {

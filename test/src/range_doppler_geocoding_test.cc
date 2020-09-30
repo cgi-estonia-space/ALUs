@@ -12,7 +12,6 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 #include "gmock/gmock.h"
-
 #include "CudaFriendlyObject.h"
 #include "cuda_util.hpp"
 #include "dataset.h"

@@ -11,9 +11,12 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
-#include <fstream>
-#include <numeric>
+#include "terrain_correction.h"
+
+#include <memory>
 #include <optional>
+#include <string>
+#include <vector>
 
 #include "gmock/gmock.h"
 
@@ -24,6 +27,7 @@
 #include "get_position.h"
 #include "position_data.h"
 #include "srtm3_elevation_model.h"
+#include "srtm3_elevation_model_constants.h"
 #include "tc_tile.h"
 #include "terrain_correction.h"
 #include "terrain_correction_kernel.h"
@@ -63,6 +67,14 @@ public:
         dem_ds_.value().LoadRasterBand(1);
         metadata_ = std::make_optional<Metadata>(main_metadata_file_, lat_tie_points_file_, lon_tie_points_file_);
         tc_metadata_ = metadata_->GetMetadata();
+
+        egm_96_ = std::make_unique<snapengine::EarthGravitationalModel96>();
+        egm_96_->HostToDevice();
+
+        std::vector<std::string> files{"./goods/srtm_41_01.tif", "./goods/srtm_42_01.tif"};
+        srtm_3_model_ = std::make_unique<snapengine::Srtm3ElevationModel>(files);
+        srtm_3_model_->ReadSrtmTiles(egm_96_.get());
+        srtm_3_model_->HostToDevice();
     }
 
     std::optional<alus::Dataset<double>> coh_ds_;
@@ -70,6 +82,8 @@ public:
     std::optional<alus::Dataset<double>> dem_ds_;
     std::optional<Metadata> metadata_;
     std::optional<RangeDopplerTerrainMetadata> tc_metadata_;
+    std::unique_ptr<snapengine::Srtm3ElevationModel> srtm_3_model_;
+    std::unique_ptr<snapengine::EarthGravitationalModel96> egm_96_;
 
 protected:
 private:
@@ -92,7 +106,14 @@ ComputationMetadata CreateComputationMetadata(RangeDopplerTerrainMetadata metada
             {orbit.time_mjd_, orbit.x_pos_, orbit.y_pos_, orbit.z_pos_, orbit.x_vel_, orbit.y_vel_, orbit.z_vel_});
     }
 
-    md.orbit_state_vectors = {computation_orbit.data(), computation_orbit.size()};
+    cuda::KernelArray<snapengine::OrbitStateVectorComputation> kernel_orbits{nullptr, computation_orbit.size()};
+    CHECK_CUDA_ERR(
+        cudaMalloc(&kernel_orbits.array, sizeof(snapengine::OrbitStateVectorComputation) * kernel_orbits.size));
+    CHECK_CUDA_ERR(cudaMemcpy(kernel_orbits.array, computation_orbit.data(),
+                              sizeof(snapengine::OrbitStateVectorComputation) * kernel_orbits.size,
+                              cudaMemcpyHostToDevice));
+
+    md.orbit_state_vectors = kernel_orbits;
     md.first_line_time_mjd = metadata.first_line_time.GetMjd();
     md.last_line_time_mjd = metadata.last_line_time.GetMjd();
     md.first_near_lat = metadata.first_near_lat;
@@ -118,8 +139,21 @@ ComputationMetadata CreateComputationMetadata(RangeDopplerTerrainMetadata metada
 
 void FillGetPositionMetadata(GetPositionMetadata& get_position_metadata,
                              const ComputationMetadata& computation_metadata, int height) {
-    get_position_metadata.sensor_position = {const_cast<PosVector*>(SENSOR_POSITION.data()), SENSOR_POSITION.size()};
-    get_position_metadata.sensor_velocity = {const_cast<PosVector*>(SENSOR_VELOCITY.data()), SENSOR_VELOCITY.size()};
+    cuda::KernelArray<PosVector> sensor_position{nullptr, SENSOR_POSITION.size()};
+
+    CHECK_CUDA_ERR(cudaMalloc(&sensor_position.array, sizeof(PosVector) * sensor_position.size));
+    CHECK_CUDA_ERR(cudaMemcpy(sensor_position.array, SENSOR_POSITION.data(), sizeof(PosVector) * sensor_position.size,
+                              cudaMemcpyHostToDevice));
+
+    get_position_metadata.sensor_position = sensor_position;
+
+    cuda::KernelArray<PosVector> sensor_velocity{nullptr, SENSOR_VELOCITY.size()};
+
+    CHECK_CUDA_ERR(cudaMalloc(&sensor_velocity.array, sizeof(PosVector) * sensor_velocity.size));
+    CHECK_CUDA_ERR(cudaMemcpy(sensor_velocity.array, SENSOR_VELOCITY.data(), sizeof(PosVector) * sensor_velocity.size,
+                              cudaMemcpyHostToDevice));
+
+    get_position_metadata.sensor_velocity = sensor_velocity;
     get_position_metadata.orbit_state_vectors = computation_metadata.orbit_state_vectors;
     get_position_metadata.first_line_utc = computation_metadata.first_line_time_mjd;
     get_position_metadata.line_time_interval =
@@ -130,15 +164,10 @@ void FillGetPositionMetadata(GetPositionMetadata& get_position_metadata,
     get_position_metadata.near_edge_slant_range = computation_metadata.slant_range_to_first_pixel;
 }
 
-TEST_F(TerrainCorrectionTest, DISABLED_fetchElevationsOnGPU) {
-    //    TerrainCorrection tc{std::move(coh_ds_.value()), std::move(dem_ds_.value())};
-    //    tc.LocalDemCuda(&coh_ds_.value());
-    //    const auto& elevations = tc.GetElevations();
-    //    const auto [min, max] = std::minmax_element(std::begin(elevations), std::end(elevations));
-    //    EXPECT_EQ(*min, 0);
-    //    EXPECT_EQ(*max, 43);
-    //    auto const avg = std::accumulate(elevations.cbegin(), elevations.cend(), 0.0) / elevations.size();
-    //    EXPECT_DOUBLE_EQ(avg, 2.960957384655039);
+void FreeMetadata(GetPositionMetadata& get_position_metadata, ComputationMetadata& comp_metadata) {
+    CHECK_CUDA_ERR(cudaFree(comp_metadata.orbit_state_vectors.array));
+    CHECK_CUDA_ERR(cudaFree(get_position_metadata.sensor_position.array));
+    CHECK_CUDA_ERR(cudaFree(get_position_metadata.sensor_velocity.array));
 }
 
 TEST_F(TerrainCorrectionTest, getPositionTrueScenario) {
@@ -384,6 +413,7 @@ TEST_F(TerrainCorrectionTest, CreateTargetProduct) {
     const int EXPECTED_WIDTH{13860};
     const int EXPECTED_HEIGHT{2906};
     const double ERROR_MARGIN{1e-9};
+
     std::vector<float> lat_tie_points{
         58.213176727294920, 58.223548889160156, 58.233741760253906, 58.243762969970700, 58.253620147705080,
         58.263313293457030, 58.272853851318360, 58.282241821289060, 58.291488647460940, 58.300598144531250,
@@ -450,9 +480,11 @@ TEST_F(TerrainCorrectionTest, CreateTargetProduct) {
 
     alus::snapengine::geocoding::TiePointGeocoding source_geocoding(lat_grid, lon_grid);
     alus::snapengine::geocoding::Geocoding* target_geocoding = nullptr;
-    alus::snapengine::old::Product target =
-        TerrainCorrection::CreateTargetProduct(&source_geocoding, target_geocoding, coh_ds_.value().GetXSize(),
-                                               coh_ds_.value().GetYSize(), 13.91157, TC_OUTPUT);
+    auto coh_dataset = alus::Dataset<double>(COH_1_TIF);
+    coh_dataset.LoadRasterBand(1);
+    terraincorrection::TerrainCorrection terrain_correction(std::move(coh_dataset), metadata_.value().GetMetadata(), metadata_.value().GetLatTiePoints(),
+                                                           metadata_.value().GetLonTiePoints(), srtm_3_model_->GetSrtmBuffersInfo());
+    auto target = terrain_correction.CreateTargetProduct(&source_geocoding, target_geocoding, TC_OUTPUT);
     double target_geo_transform[6];
     target.dataset_.GetGdalDataset()->GetGeoTransform(target_geo_transform);
 
@@ -464,13 +496,87 @@ TEST_F(TerrainCorrectionTest, CreateTargetProduct) {
     remove(TC_OUTPUT.c_str());
 }
 
+TEST_F(TerrainCorrectionTest, GetSourceRectangle) {
+    assert(SOURCE_RECTANGLES.size() == EXPECTED_RECTANGLES.size());
+
+    std::vector<Rectangle> calculated_rectangles;
+    calculated_rectangles.reserve(EXPECTED_RECTANGLES.size());
+
+    const GeoTransformParameters target_geo_transform{21.908443888855807, 58.57642850390358, 1.2495565602102545e-4,
+                                                      -1.2495565602102545e-4};
+
+    std::vector<snapengine::OrbitStateVectorComputation> computation_orbit;
+    ComputationMetadata computation_metadata =
+        CreateComputationMetadata(this->metadata_.value().GetMetadata(), computation_orbit);
+
+    GetPositionMetadata get_position_metadata{};
+    FillGetPositionMetadata(get_position_metadata, computation_metadata, coh_ds_->GetYSize());
+
+    for (auto&& source_tile : SOURCE_RECTANGLES) {
+        TcTile tile{};
+        tile.tc_tile_coordinates.target_x_0 = source_tile.x;
+        tile.tc_tile_coordinates.target_y_0 = source_tile.y;
+        tile.tc_tile_coordinates.target_width = source_tile.width;
+        tile.tc_tile_coordinates.target_height = source_tile.height;
+        Rectangle calculated_rectangle{};
+
+        bool valid = GetSourceRectangle(tile, target_geo_transform, srtm3elevationmodel::NO_DATA_VALUE,
+                                        coh_ds_->GetXSize(), coh_ds_->GetYSize(), get_position_metadata,
+                                        calculated_rectangle, srtm_3_model_->GetSrtmBuffersInfo(),
+                                        this->metadata_->GetMetadata().avg_scene_height, false);
+        calculated_rectangles.push_back(
+            {calculated_rectangle.x, calculated_rectangle.y, calculated_rectangle.width, calculated_rectangle.height});
+        EXPECT_THAT(valid, ::testing::IsTrue());
+    }
+
+    for (size_t i = 0; i < EXPECTED_RECTANGLES.size(); ++i) {
+        const Rectangle& expected_rectangle = EXPECTED_RECTANGLES[i];
+        const Rectangle& calculated_rectangle = calculated_rectangles[i];
+
+        EXPECT_THAT(calculated_rectangles.size(), ::testing::Eq(EXPECTED_RECTANGLES.size()));
+        EXPECT_THAT(calculated_rectangle.x, ::testing::Eq(expected_rectangle.x));
+        EXPECT_THAT(calculated_rectangle.y, ::testing::Eq(expected_rectangle.y));
+        EXPECT_THAT(calculated_rectangle.width, ::testing::Eq(expected_rectangle.width));
+        EXPECT_THAT(calculated_rectangle.height, ::testing::Eq(expected_rectangle.height));
+    }
+
+    FreeMetadata(get_position_metadata, computation_metadata);
+}
+
+TEST_F(TerrainCorrectionTest, GetInvalidSourceRectangle) {
+    const GeoTransformParameters target_geo_transform{21.908443888855807, 58.57642850390358, 1.2495565602102545e-4,
+                                                      -1.2495565602102545e-4};
+
+    std::vector<snapengine::OrbitStateVectorComputation> computation_orbit;
+    ComputationMetadata computation_metadata =
+        CreateComputationMetadata(this->metadata_.value().GetMetadata(), computation_orbit);
+
+    GetPositionMetadata get_position_metadata{};
+    FillGetPositionMetadata(get_position_metadata, computation_metadata, coh_ds_->GetYSize());
+
+    for (auto&& source_tile : INVALID_SOURCE_RECTANGLES) {
+        TcTile tile{};
+        tile.tc_tile_coordinates.target_x_0 = source_tile.x;
+        tile.tc_tile_coordinates.target_y_0 = source_tile.y;
+        tile.tc_tile_coordinates.target_width = source_tile.width;
+        tile.tc_tile_coordinates.target_height = source_tile.height;
+        Rectangle calculated_rectangle{};
+        bool valid = GetSourceRectangle(tile, target_geo_transform, srtm3elevationmodel::NO_DATA_VALUE,
+                                        coh_ds_->GetXSize(), coh_ds_->GetYSize(), get_position_metadata,
+                                        calculated_rectangle, srtm_3_model_->GetSrtmBuffersInfo(),
+                                        this->metadata_->GetMetadata().avg_scene_height, false);
+        EXPECT_THAT(valid, ::testing::IsFalse());
+    }
+
+    FreeMetadata(get_position_metadata, computation_metadata);
+}
+
 TEST_F(TerrainCorrectionTest, GetSourceRectangleWithAverageHeight) {
     assert(SOURCE_RECTANGLES_FOR_AVERAGE_HEIGHT.size() == EXPECTED_RECTANGLES_WITH_AVERAGE_HEIGHT.size());
 
     std::vector<Rectangle> calculated_rectangles;
     const GeoTransformParameters target_geo_transform{21.908443888855807, 58.57642850390358, 1.2495565602102545e-4,
                                                       -1.2495565602102545e-4};
-    const double dem_no_data_value = -32768.0;
 
     std::vector<snapengine::OrbitStateVectorComputation> computation_orbit;
     ComputationMetadata computation_metadata =
@@ -485,10 +591,10 @@ TEST_F(TerrainCorrectionTest, GetSourceRectangleWithAverageHeight) {
                       tile.tc_tile_coordinates.target_width = source_tile.width;
                       tile.tc_tile_coordinates.target_height = source_tile.height;
                       Rectangle calculated_rectangle{};
-                      bool valid =
-                          GetSourceRectangle(tile, target_geo_transform, dem_no_data_value,
-                                             this->metadata_->GetMetadata().avg_scene_height, coh_ds_->GetXSize(),
-                                             coh_ds_->GetYSize(), get_position_metadata, calculated_rectangle);
+                      bool valid = GetSourceRectangle(tile, target_geo_transform, srtm3elevationmodel::NO_DATA_VALUE,
+                                                      coh_ds_->GetXSize(), coh_ds_->GetYSize(), get_position_metadata,
+                                                      calculated_rectangle, srtm_3_model_->GetSrtmBuffersInfo(),
+                                                      this->metadata_->GetMetadata().avg_scene_height, true);
                       calculated_rectangles.push_back({calculated_rectangle.x, calculated_rectangle.y,
                                                        calculated_rectangle.width, calculated_rectangle.height});
                       EXPECT_THAT(valid, ::testing::IsTrue());
@@ -504,18 +610,21 @@ TEST_F(TerrainCorrectionTest, GetSourceRectangleWithAverageHeight) {
         EXPECT_THAT(calculated_rectangle.width, ::testing::Eq(expected_rectangle.width));
         EXPECT_THAT(calculated_rectangle.height, ::testing::Eq(expected_rectangle.height));
     }
+
+    FreeMetadata(get_position_metadata, computation_metadata);
 }
 
 TEST_F(TerrainCorrectionTest, GetSourceRectangleWithAverageHeightInvalid) {
     const GeoTransformParameters target_geo_transform{21.908443888855807, 58.57642850390358, 1.2495565602102545e-4,
                                                       -1.2495565602102545e-4};
-    const double dem_no_data_value = -32768.0;
 
     std::vector<snapengine::OrbitStateVectorComputation> computation_orbit;
     ComputationMetadata computation_metadata =
         CreateComputationMetadata(this->metadata_.value().GetMetadata(), computation_orbit);
     GetPositionMetadata get_position_metadata{};
     FillGetPositionMetadata(get_position_metadata, computation_metadata, coh_ds_->GetYSize());
+
+    PointerArray srtm_3_tiles{};
     std::for_each(INVALID_SOURCE_RECTANGLES_AVERAGE_HEIGHT.begin(), INVALID_SOURCE_RECTANGLES_AVERAGE_HEIGHT.end(),
                   [&](auto source_tile) {
                       TcTile tile{};
@@ -524,12 +633,13 @@ TEST_F(TerrainCorrectionTest, GetSourceRectangleWithAverageHeightInvalid) {
                       tile.tc_tile_coordinates.target_width = source_tile.width;
                       tile.tc_tile_coordinates.target_height = source_tile.height;
                       Rectangle calculated_rectangle{};
-                      bool valid =
-                          GetSourceRectangle(tile, target_geo_transform, dem_no_data_value,
-                                             this->metadata_->GetMetadata().avg_scene_height, coh_ds_->GetXSize(),
-                                             coh_ds_->GetYSize(), get_position_metadata, calculated_rectangle);
+                      bool valid = GetSourceRectangle(tile, target_geo_transform, srtm3elevationmodel::NO_DATA_VALUE,
+                                                      coh_ds_->GetXSize(), coh_ds_->GetYSize(), get_position_metadata,
+                                                      calculated_rectangle, srtm_3_tiles.array,
+                                                      this->metadata_->GetMetadata().avg_scene_height, true);
                       EXPECT_THAT(valid, ::testing::IsFalse());
                   });
+    FreeMetadata(get_position_metadata, computation_metadata);
 }
 
 TEST_F(TerrainCorrectionTest, MetadataConstructionSucceedsOnValidFiles) {

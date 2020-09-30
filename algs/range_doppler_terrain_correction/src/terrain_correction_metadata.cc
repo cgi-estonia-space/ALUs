@@ -80,6 +80,8 @@ void Metadata::FillDimMetadata(std::string_view dim_metadata_file) {
         master_root->GetAttributeDouble(snapengine::MetaDataNodeNames::LAST_VALID_LINE_TIME);
 
     metadata_fields_.azimuth_spacing = master_root->GetAttributeDouble(snapengine::MetaDataNodeNames::AZIMUTH_SPACING);
+
+    metadata_fields_.band_info = xml_reader.ReadImageInterpretationTag();
 }
 
 }  // namespace alus::terraincorrection
