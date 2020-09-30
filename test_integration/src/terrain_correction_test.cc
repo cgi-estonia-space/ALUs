@@ -14,12 +14,13 @@
 #include "terrain_correction.h"
 
 #include <openssl/md5.h>
-
 #include <boost/filesystem.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
+
 #include <chrono>
-#include <numeric>
+#include <cstddef>
 #include <memory>
+#include <numeric>
 #include <vector>
 
 #include "gmock/gmock.h"
@@ -48,6 +49,7 @@ public:
 };
 
 TEST_F(TerrainCorrectionIntegrationTest, Saaremaa1) {
+    const int selected_band{1};
     std::string const coh_1_tif{
         "./goods/"
         "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_"
@@ -70,12 +72,13 @@ TEST_F(TerrainCorrectionIntegrationTest, Saaremaa1) {
     srtm_3_model->HostToDevice();
 
     const auto* d_srtm_3_tiles = srtm_3_model->GetSrtmBuffersInfo();
+    const size_t srtm_3_tiles_length{2};
 
     const std::string output_path{"/tmp/tc_test.tif"};
     auto const main_alg_start = std::chrono::steady_clock::now();
 
     TerrainCorrection tc(std::move(input), metadata.GetMetadata(), metadata.GetLatTiePoints(),
-                         metadata.GetLonTiePoints(), d_srtm_3_tiles);
+                         metadata.GetLonTiePoints(), d_srtm_3_tiles, srtm_3_tiles_length, selected_band);
     tc.ExecuteTerrainCorrection(output_path, 420, 416);
 
     auto const main_alg_stop = std::chrono::steady_clock::now();
@@ -84,7 +87,7 @@ TEST_F(TerrainCorrectionIntegrationTest, Saaremaa1) {
               << std::endl;
 
     ASSERT_THAT(boost::filesystem::exists(output_path), IsTrue());
-    const std::string expected_md5{"afe24f1adad18c44add03ff205fc0606"};
+    const std::string expected_md5{"aa72aab946bb25eb35eee58085254cff"};
     ASSERT_THAT(Md5FromFile(output_path), Eq(expected_md5));
 }
 }  // namespace

@@ -122,7 +122,7 @@ int main(int argc, char* argv[]) {
                 }
 
                 if (dem_assistant != nullptr) {
-                    alg->SetSrtm3Buffers(dem_assistant->GetSrtm3ValuesOnGpu());
+                    alg->SetSrtm3Buffers(dem_assistant->GetSrtm3ValuesOnGpu(), dem_assistant->GetSrtm3TilesCount());
                 }
 
                 alg->Execute();

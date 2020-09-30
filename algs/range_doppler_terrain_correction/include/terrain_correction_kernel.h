@@ -37,20 +37,31 @@ struct TerrainCorrectionKernelArgs {
     GetPositionMetadata get_position_metadata;
     snapengine::resampling::ResamplingRaster resampling_raster;
     snapengine::resampling::ResamplingIndex resampling_index;
-    const PointerHolder* srtm_3_tiles;
+    const PointerArray srtm_3_tiles;
+    cuda::KernelArray<bool> valid_pixels;
 };
 
-void CalculateVelocitiesAndPositions(int source_image_height, double first_line_utc,
-                                     double line_time_interval,
+void CalculateVelocitiesAndPositions(int source_image_height, double first_line_utc, double line_time_interval,
                                      cuda::KernelArray<snapengine::OrbitStateVectorComputation> vectors,
                                      cuda::KernelArray<snapengine::PosVector> velocities,
                                      cuda::KernelArray<snapengine::PosVector> positions);
 
 cudaError_t LaunchTerrainCorrectionKernel(TcTile tile, TerrainCorrectionKernelArgs args);
 
-bool GetSourceRectangle(TcTile& tile, GeoTransformParameters target_geo_transform, double dem_no_data_value,
-                        size_t source_image_width, size_t source_image_height, GetPositionMetadata get_position_metadata,
-                        Rectangle& source_rectangle, const PointerHolder* srtm_3_tiles, double avg_scene_height,
-                        bool use_avg_height);
+/**
+ * @deprecated This method is not currently used but is left in case it used while optimising code.
+ * @todo Remove this method (SNAPGPU-216)
+ */
+bool GetNonBorderSourceRectangle(TcTile& tile, TerrainCorrectionKernelArgs args,
+                                 Rectangle& source_rectangle);
+
+/**
+ * Custom method for calculating source rectangle of a given target tile.
+ *
+ * @param tile_coordinates Struct containing pixel indices of the target tile.
+ * @param args Terrain Correction arguments.
+ * @return Rectangle containing pixels corresponding to the given target tile.
+ */
+Rectangle GetSourceRectangle(TcTileCoordinates tile_coordinates, TerrainCorrectionKernelArgs args);
 }  // namespace terraincorrection
 }  // namespace alus

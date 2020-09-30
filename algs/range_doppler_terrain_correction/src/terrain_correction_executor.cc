@@ -1,8 +1,10 @@
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #include "alg_bond.h"
 #include "srtm3_elevation_model.h"
@@ -25,7 +27,7 @@ public:
                           metadata_folder_path_ + "/tie_point_grids/longitude.img");
         Dataset<double> input(this->input_dataset_name_);
         TerrainCorrection tc(std::move(input), metadata.GetMetadata(), metadata.GetLatTiePoints(),
-                             metadata.GetLonTiePoints(), srtm3_buffers_);
+                             metadata.GetLonTiePoints(), srtm3_buffers_, srtm3_buffers_length_);
         tc.ExecuteTerrainCorrection(output_file_name_, tile_width_, tile_height_);
 
         return 0;
@@ -41,7 +43,10 @@ public:
 
     void SetParameters(const app::AlgorithmParameters::Table& param_values) override { (void)param_values; }
 
-    void SetSrtm3Buffers(const PointerHolder* buffers) override { srtm3_buffers_ = buffers; };
+    void SetSrtm3Buffers(const PointerHolder* buffers, size_t length) override {
+        srtm3_buffers_ = buffers;
+        srtm3_buffers_length_ = length;
+    };
 
     void SetTileSize(size_t width, size_t height) override {
         tile_width_ = width;
@@ -75,6 +80,7 @@ private:
     size_t tile_height_{};
     uint32_t avg_scene_height_{0};
     const PointerHolder* srtm3_buffers_{};
+    size_t srtm3_buffers_length_{};
 };
 }  // namespace alus::terraincorrection
 
