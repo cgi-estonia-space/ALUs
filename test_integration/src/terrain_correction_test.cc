@@ -1,3 +1,16 @@
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #include <chrono>
 #include <numeric>
 
@@ -50,7 +63,7 @@ TEST_F(TerrainCorrectionIntegrationTest, Saaremaa1) {
     auto const main_alg_start = std::chrono::steady_clock::now();
     TerrainCorrection tc(
         std::move(input), metadata.GetMetadata(), metadata.GetLatTiePoints(), metadata.GetLonTiePoints());
-    tc.ExecuteTerrainCorrection(output_path, 500, 500);
+    tc.ExecuteTerrainCorrection(output_path, 420, 416);
 
     auto const main_alg_stop = std::chrono::steady_clock::now();
     std::cout << "ALG spent "
@@ -58,7 +71,7 @@ TEST_F(TerrainCorrectionIntegrationTest, Saaremaa1) {
               << std::endl;
 
     ASSERT_THAT(boost::filesystem::exists(output_path), IsTrue());
-    const std::string expected_md5{"d604a86a96cb424c04c509e4f8c97eeb"};
+    const std::string expected_md5{"1234bfe807838b6901f837860453f71a"};
     ASSERT_THAT(Md5FromFile(output_path), Eq(expected_md5));
 }
 }  // namespace

@@ -13,31 +13,28 @@
  */
 #pragma once
 
-#include <cstddef>
+#include <atomic>
+#include <thread>
 
-#include "kernel_array.h"
+#include "blocking_queue.h"
+#include "executable.h"
 
 namespace alus {
+namespace multithreading {
 
-struct TcTileCoordinates {
-    double source_x_0;
-    double source_y_0;
-    size_t source_width;
-    size_t source_height;
-    double dem_x_0;
-    double dem_y_0;
-    size_t dem_width;
-    size_t dem_height;
-    double target_x_0;
-    double target_y_0;
-    size_t target_width;
-    size_t target_height;
-};
+class ThreadPool;
+class ThreadWorker {
+   public:
+    explicit ThreadWorker(alus::multithreading::ThreadPool& thread_pool);
+    void Join();
 
-struct TcTile {
-    TcTileCoordinates tc_tile_coordinates;
-    cuda::KernelArray<double> target_tile_data_buffer;
-    //alus::cuda::KernelArray<double> dem_tile_data_buffer;
-    //alus::cuda::KernelArray<double> elevation_tile_data_buffer;
+   private:
+    alus::multithreading::ThreadPool& thread_pool_;
+    std::thread thread_;
+    std::atomic<bool> is_running_;
+
+    void Work();
 };
-}
+//alus::multithreading::BlockingQueue<alus::multithreading::Executable*>& ThreadPool::GetQueue() { return jobs_; }
+}  // namespace multithreading
+}  // namespace alus

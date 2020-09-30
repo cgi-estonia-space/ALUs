@@ -13,7 +13,7 @@
  */
 #pragma once
 
-#include "cuda_util.cuh"
+#include "kernel_array.h"
 #include "orbit_state_vector_computation.h"
 #include "pos_vector.h"
 #include "position_data.h"
@@ -29,7 +29,7 @@ struct GetPositionMetadata {
     double near_edge_slant_range;
     cuda::KernelArray<snapengine::PosVector> sensor_position;
     cuda::KernelArray<snapengine::PosVector> sensor_velocity;
-    cuda::KernelArray<snapengine::OrbitStateVectorComputation> orbit_state_vector;
+    cuda::KernelArray<snapengine::OrbitStateVectorComputation> orbit_state_vectors;
 };
 
 /**

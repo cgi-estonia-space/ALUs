@@ -13,44 +13,11 @@
  */
 #pragma once
 
-#include "cuda_util.hpp"
-#include "shapes.h"
-
 namespace alus {
-namespace snapengine {
-namespace resampling {
-
-struct ResamplingIndex {
-    double x;
-    double y;
-    int width;
-    int height;
-    double i0;
-    double j0;
-    double *i;
-    double *j;
-    double *ki;
-    double *kj;
-};
-
-struct Tile {
-    int x_0;
-    int y_0;
-    size_t width;
-    size_t height;
-    bool target;
-    bool scaled;
-    double *data_buffer;
-};
-
-struct ResamplingRaster {
-    double range_index;
-    double azimuth_index;
-    int sub_swath_index = -1;
-    Rectangle source_rectangle;
-    Tile *source_tile_i;
-    bool source_rectangle_calculated;
-};
-}  // namespace resampling
-}  // namespace snapengine
+namespace terraincorrection {
+constexpr double SEMI_MAJOR_AXIS{6378137.0};
+constexpr double RTOD{57.29577951308232};
+constexpr int INVALID_SUB_SWATH_INDEX{-1};
+constexpr int BILINEAR_INTERPOLATION_MARGIN{1};
+}  // namespace terraincorrection
 }  // namespace alus

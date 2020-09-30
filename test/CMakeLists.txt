@@ -29,6 +29,7 @@ list(APPEND TEST_SOURCES
         src/burst_indices_test.cc
         src/burst_indices_kernels.cu
         src/compute_burst_offset_test.cc
+        src/multithreading_test.cc
         )
 
 add_executable(unit_test ${TEST_SOURCES})
@@ -46,6 +47,7 @@ target_link_libraries(unit_test
         range-doppler-geocoding-test-static
         sar-geocoding-test-static
         coherence-static
+        multi_threading-static
         )
 set_target_properties(unit_test
         PROPERTIES

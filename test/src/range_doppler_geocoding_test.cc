@@ -1,10 +1,26 @@
-#include "range_doppler_geocoding_test.cuh"
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
+#include "gmock/gmock.h"
+
 #include "CudaFriendlyObject.h"
 #include "cuda_util.hpp"
 #include "dataset.h"
-#include "gmock/gmock.h"
+#include "gdal_util.hpp"
 #include "resampling.h"
 #include "tests_common.hpp"
+
+#include "range_doppler_geocoding_test.cuh"
 
 using namespace alus;
 using namespace alus::tests;
@@ -12,246 +28,181 @@ using namespace alus::snapengine::resampling;
 
 namespace {
 
-class RangeDopplerGeocodingTester : public cuda::CudaFriendlyObject {
+class RangeDopplerGeocodingTest : public ::testing::Test {
    private:
-    void CopyResamplingRasterToDevice() {
-        // Prepare resampling raster tile
-        CHECK_CUDA_ERR(cudaMalloc(&d_resampling_raster_tile_, sizeof(resampling_raster_tile_)));
-        CHECK_CUDA_ERR(cudaMemcpy(d_resampling_raster_tile_,
-                                  &resampling_raster_tile_,
-                                  sizeof(resampling_raster_tile_),
-                                  cudaMemcpyHostToDevice));
-        resampling_raster_.source_tile_i = d_resampling_raster_tile_;
-
-        CHECK_CUDA_ERR(cudaMalloc(&d_resampling_raster_, sizeof(resampling_raster_)));
-        CHECK_CUDA_ERR(
-            cudaMemcpy(d_resampling_raster_, &resampling_raster_, sizeof(resampling_raster_), cudaMemcpyHostToDevice));
-    }
-
-    void CopyIndexToDevice() {
-        CHECK_CUDA_ERR(cudaMalloc((void **)&d_index_i_, sizeof(double) * 2));
-        CHECK_CUDA_ERR(cudaMemcpy(d_index_i_, &index_i_, sizeof(double) * 2, cudaMemcpyHostToDevice));
-        resampling_index_.i = d_index_i_;
-
-        CHECK_CUDA_ERR(cudaMalloc(&d_index_j_, sizeof(double) * 2));
-        CHECK_CUDA_ERR(cudaMemcpy(d_index_j_, &index_j_, sizeof(double) * 2, cudaMemcpyHostToDevice));
-        resampling_index_.j = d_index_j_;
-
-        CHECK_CUDA_ERR(cudaMalloc(&d_index_ki_, sizeof(double) * 1));
-        CHECK_CUDA_ERR(cudaMemcpy(d_index_ki_, &index_ki_, sizeof(double) * 1, cudaMemcpyHostToDevice));
-        resampling_index_.ki = d_index_ki_;
-
-        CHECK_CUDA_ERR(cudaMalloc(&d_index_kj_, sizeof(double) * 2));
-        CHECK_CUDA_ERR(cudaMemcpy(d_index_kj_, &index_kj_, sizeof(double) * 1, cudaMemcpyHostToDevice));
-        resampling_index_.kj = d_index_kj_;
-
-        CHECK_CUDA_ERR(cudaMalloc(&d_index_, sizeof(resampling_index_)));
-        CHECK_CUDA_ERR(cudaMemcpy(d_index_, &resampling_index_, sizeof(resampling_index_), cudaMemcpyHostToDevice));
-    }
-
-    void CopySourceTileToDevice() {
-        long size = sizeof(double) * dataset_.GetDataBuffer().size();
-        CHECK_CUDA_ERR(cudaMalloc(&d_data_buffer_, size));
-        CHECK_CUDA_ERR(cudaMemcpy(d_data_buffer_, tile_data_.source_tile->data_buffer, size, cudaMemcpyHostToDevice));
-        source_tile_.data_buffer = d_data_buffer_;
-
-        CHECK_CUDA_ERR(cudaMalloc(&d_source_tile_, sizeof(source_tile_)));
-        CHECK_CUDA_ERR(cudaMemcpy(d_source_tile_, &source_tile_, sizeof(source_tile_), cudaMemcpyHostToDevice));
-    }
-
-    void CopyTileDataToDevice() {
-        tile_data_.image_resampling_index = d_index_;
-        tile_data_.source_tile = d_source_tile_;
-        tile_data_.resampling_raster = d_resampling_raster_;
-        CHECK_CUDA_ERR(cudaMalloc(&d_tile_data_, sizeof(tile_data_)));
-        CHECK_CUDA_ERR(cudaMemcpy(d_tile_data_, &tile_data_, sizeof(tile_data_), cudaMemcpyHostToDevice));
-    }
-
-   public:
-    double azimuth_index_ = 1317.8823445919936;
-    double range_index_ = 2097.633636393322;
-    int source_image_width_ = 23278;
-    int source_image_height_ = 1500;
-    int margin_ = 1;
-    int sub_swath_index_ = -1;
-    double index_i_[2]{2097, 2098};
-    double index_j_[2]{1317, 1318};
-    double index_ki_[1]{0.6336363933219218};
-    double index_kj_[1]{0.8823445919933874};
-
-    Dataset dataset_{COH_1_TIF};
-
-    Tile resampling_raster_tile_;
-    ResamplingIndex resampling_index_{
-        2098.133636393322, 1318.3823445919936, 23278, 1500, 2098, 1318, index_i_, index_j_, index_ki_, index_kj_};
-    Tile source_tile_{0, 0, 23278, 1500, false, false, nullptr};
-    ResamplingRaster resampling_raster_{
-        2096.0041900186766, 1317.9935169605756, 0, 0, 0, nullptr, &resampling_raster_tile_};
-    TileData tile_data_{&resampling_raster_, &source_tile_, &resampling_index_};
-
-    double result_;
-
-    // Devices variables
-    Tile *d_resampling_raster_tile_;
-    ResamplingRaster *d_resampling_raster_;
-    ResamplingIndex *d_index_;
+    Tile *d_source_tile_;
     double *d_index_i_;
     double *d_index_j_;
     double *d_index_ki_;
     double *d_index_kj_;
-    double *d_data_buffer_;
-    Tile *d_source_tile_;
-    TileData *d_tile_data_;
+    Dataset dataset_{
+        "./goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb.tif"};
+    std::vector<double> tile_data_;
+    double *d_tile_data_;
+
+   protected:
+    double range_index_;
+    double azimuth_index_;
+    int margin_{1};
+    int source_image_width_{23278};
+    int source_image_height_{1500};
+    Tile source_tile_;
+    ResamplingRaster raster_;
+    ResamplingIndex index_;
+    int sub_swath_index_;
     int *d_sub_swath_index_;
-    double *d_result_;
 
-    RangeDopplerGeocodingTester(double azimuth,
-                                double range,
-                                int margin,
-                                int source_image_width,
-                                int source_image_height,
-                                double index_i[2],
-                                double index_j[2],
-                                double index_ki[1],
-                                double index_kj[1],
-                                double index_x,
-                                double index_y,
-                                int index_width,
-                                int index_height,
-                                double index_i0,
-                                double index_j0,
-                                double resampling_range,
-                                double resampling_azimuth,
-                                int resampling_sub_swath,
-                                int resampling_min_x,
-                                int resampling_min_y) {
-        azimuth_index_ = azimuth;
-        range_index_ = range;
-        margin_ = margin;
-        source_image_width_ = source_image_width;
-        source_image_height_ = source_image_height;
-        index_i_[0] = index_i[0];
-        index_i_[1] = index_i[1];
-        index_j_[0] = index_j[0];
-        index_j_[1] = index_j[1];
-        index_ki_[0] = index_ki[0];
-        index_kj_[0] = index_kj[0];
-        resampling_index_ = {
-            index_x, index_y, index_width, index_height, index_i0, index_j0, index_i_, index_j_, index_ki_, index_kj_};
-        source_tile_ = {0, 0, source_image_width, source_image_height, false, false, nullptr};
-        resampling_raster_ = {resampling_range,
-                              resampling_azimuth,
-                              resampling_sub_swath,
-                              resampling_min_x,
-                              resampling_min_y,
-                              nullptr,
-                              &resampling_raster_tile_};
-        tile_data_ = {&resampling_raster_, &source_tile_, &resampling_index_};
-
-        dataset_.LoadRasterBand(1);
-        tile_data_.source_tile->data_buffer = const_cast<double *>(dataset_.GetDataBuffer().data());
+    void ReadTileData(const Rectangle &source_rectangle) {
+        tile_data_.resize(source_rectangle.width * source_rectangle.height);
+        CHECK_GDAL_ERROR(dataset_.GetGdalDataset()->GetRasterBand(1)->RasterIO(GF_Read,
+                                                                               source_rectangle.x,
+                                                                               source_rectangle.y,
+                                                                               source_rectangle.width,
+                                                                               source_rectangle.height,
+                                                                               tile_data_.data(),
+                                                                               source_rectangle.width,
+                                                                               source_rectangle.height,
+                                                                               GDALDataType::GDT_Float64,
+                                                                               0,
+                                                                               0));
     }
 
-    RangeDopplerGeocodingTester() {
-        dataset_.LoadRasterBand(1);
-        tile_data_.source_tile->data_buffer = const_cast<double *>(dataset_.GetDataBuffer().data());
+    void HostToDevice() {
+        CHECK_CUDA_ERR(cudaMalloc(&d_tile_data_, sizeof(double) * tile_data_.size()));
+        CHECK_CUDA_ERR(
+            cudaMemcpy(d_tile_data_, tile_data_.data(), sizeof(double) * tile_data_.size(), cudaMemcpyHostToDevice));
+        source_tile_.data_buffer = d_tile_data_;
+
+        CHECK_CUDA_ERR(cudaMalloc(&d_source_tile_, sizeof(Tile)));
+        CHECK_CUDA_ERR(cudaMemcpy(d_source_tile_, &source_tile_, sizeof(Tile), cudaMemcpyHostToDevice));
+        raster_.source_tile_i = d_source_tile_;
+
+        CHECK_CUDA_ERR(cudaMalloc(&d_index_i_, sizeof(double) * 2));
+        CHECK_CUDA_ERR(cudaMemcpy(d_index_i_, index_.i, sizeof(double) * 2, cudaMemcpyHostToDevice));
+        index_.i = d_index_i_;
+
+        CHECK_CUDA_ERR(cudaMalloc(&d_index_j_, sizeof(double) * 2));
+        CHECK_CUDA_ERR(cudaMemcpy(d_index_j_, index_.j, sizeof(double) * 2, cudaMemcpyHostToDevice));
+        index_.j = d_index_j_;
+
+        CHECK_CUDA_ERR(cudaMalloc(&d_index_ki_, sizeof(double) * 1));
+        CHECK_CUDA_ERR(cudaMemcpy(d_index_ki_, index_.ki, sizeof(double), cudaMemcpyHostToDevice));
+        index_.ki = d_index_ki_;
+
+        CHECK_CUDA_ERR(cudaMalloc(&d_index_kj_, sizeof(double)));
+        CHECK_CUDA_ERR(cudaMemcpy(d_index_kj_, index_.kj, sizeof(double), cudaMemcpyHostToDevice));
+        index_.kj = d_index_kj_;
+
+        CHECK_CUDA_ERR(cudaMalloc(&d_sub_swath_index_, sizeof(int)));
+        CHECK_CUDA_ERR(cudaMemcpy(d_sub_swath_index_, &sub_swath_index_, sizeof(int), cudaMemcpyHostToDevice));
     }
 
-    ~RangeDopplerGeocodingTester() { this->DeviceFree(); }
-
-    void HostToDevice() override {
-        CopyIndexToDevice();
-        CopyResamplingRasterToDevice();
-        CopySourceTileToDevice();
-        CopyTileDataToDevice();
-
-        CHECK_CUDA_ERR(cudaMalloc(&d_sub_swath_index_, sizeof(double)));
-        CHECK_CUDA_ERR(cudaMemcpy(d_sub_swath_index_, &sub_swath_index_, sizeof(double), cudaMemcpyHostToDevice));
-
-        CHECK_CUDA_ERR(cudaMalloc(&d_result_, sizeof(double)));
-    }
-
-    void DeviceToHost() override {
-        CHECK_CUDA_ERR(cudaMemcpy(&result_, d_result_, sizeof(double), cudaMemcpyDeviceToHost));
-    }
-    void DeviceFree() override {
-        cudaFree(d_resampling_raster_);
-        cudaFree(d_resampling_raster_tile_);
+   public:
+    void DeviceFree() {
+        cudaFree(d_source_tile_);
+        cudaFree(d_index_i_);
         cudaFree(d_index_j_);
         cudaFree(d_index_ki_);
         cudaFree(d_index_kj_);
-        cudaFree(d_index_);
-        cudaFree(d_index_i_);
-        cudaFree(d_source_tile_);
-        cudaFree(d_data_buffer_);
         cudaFree(d_tile_data_);
         cudaFree(d_sub_swath_index_);
-        cudaFree(d_result_);
     }
+
+    virtual ~RangeDopplerGeocodingTest() { DeviceFree(); }
 };
 
-TEST(RangeDopplerGeocoding, DISABLED_GetPixelValue) {
-    const double EXPECTED = 0.5128202235454891;
-    RangeDopplerGeocodingTester tester;
-    tester.HostToDevice();
+TEST_F(RangeDopplerGeocodingTest, GetPixelValueNoNewRectangleComputation) {
+    const double expected_result = 0.42228986962026993;
 
-    LaunchGetPixelValue(1,
-                        1,
-                        tester.azimuth_index_,
-                        tester.range_index_,
-                        tester.margin_,
-                        tester.source_image_width_,
-                        tester.source_image_height_,
-                        tester.d_tile_data_,
-                        tester.d_data_buffer_,
-                        tester.d_sub_swath_index_,
-                        tester.d_result_);
+    const Rectangle source_rectangle{16195, 1008, 1019, 454};
 
-    tester.DeviceToHost();
-    ASSERT_NEAR(EXPECTED, tester.result_, 1e-9);
+    this->range_index_ = 16478.63922364263;
+    this->azimuth_index_ = 1459.017842614426;
+    this->source_tile_ = {16195, 1008, 1019, 454, false, false, nullptr};
+    this->raster_ = {16478.63922364263, 1459.017842614426, 0, source_rectangle, &source_tile_, true};
+
+    double index_i[]{0, 0};
+    double index_j[]{0, 0};
+    double index_ki[]{0};
+    double index_kj[]{0};
+    this->index_ = {
+        0, 0, 0, 0, 0, 0, index_i, index_j, index_ki, index_kj};
+
+    sub_swath_index_ = 0;
+
+    this->ReadTileData(source_rectangle);
+    this->HostToDevice();
+
+    double *d_result;
+    CHECK_CUDA_ERR(cudaMalloc(&d_result, sizeof(double)));
+
+    CHECK_CUDA_ERR(LaunchGetPixelValue({1},
+                                       {1},
+                                       azimuth_index_,
+                                       range_index_,
+                                       margin_,
+                                       source_image_width_,
+                                       source_image_height_,
+                                       raster_,
+                                       index_,
+                                       d_sub_swath_index_,
+                                       d_result));
+
+    double *computed_result;
+    //    computed_result = (double *)malloc(sizeof(double));
+    CHECK_CUDA_ERR(cudaMallocHost(&computed_result, sizeof(double)));
+    CHECK_CUDA_ERR(cudaMemcpy(computed_result, d_result, sizeof(double), cudaMemcpyDeviceToHost));
+
+    EXPECT_THAT(*computed_result, ::testing::DoubleEq(expected_result));
+
+    CHECK_CUDA_ERR(cudaFree(d_result));
+    CHECK_CUDA_ERR(cudaFreeHost(computed_result));
 }
 
-TEST(RangeDopplerGeocoding, getPixelValueZeroCase) {
-    const double EXPECTED = 0.0;
-    double index_i[2]{1315.0, 1316.0};
-    double index_j[2]{958.0, 959.0};
-    double index_ki[1]{0.8210431430734388};
-    double index_kj[1]{0.8210431430734388};
-    RangeDopplerGeocodingTester tester(958.2326312466499,
-                                       1315.8210431430734,
-                                       1,
-                                       23278,
-                                       1500,
-                                       index_i,
-                                       index_j,
-                                       index_ki,
-                                       index_kj,
-                                       0.8210431430734388,
-                                       0.8210431430734388,
-                                       23278,
-                                       1500,
-                                       1316.0,
-                                       958.0,
-                                       1314.2597546317913,
-                                       958.3443380977734,
-                                       0,
-                                       858,
-                                       734);
-    tester.HostToDevice();
+TEST_F(RangeDopplerGeocodingTest, GetPixelValueZeroCaseAndNoNewRectangleComputation) {
+    const double expected_result = 0.0;
 
-    LaunchGetPixelValue(1,
-                        1,
-                        tester.azimuth_index_,
-                        tester.range_index_,
-                        tester.margin_,
-                        tester.source_image_width_,
-                        tester.source_image_height_,
-                        tester.d_tile_data_,
-                        tester.d_data_buffer_,
-                        tester.d_sub_swath_index_,
-                        tester.d_result_);
+    const Rectangle source_rectangle{16195, 1008, 1019, 454};
 
-    tester.DeviceToHost();
-    ASSERT_DOUBLE_EQ(EXPECTED, tester.result_);
+    this->range_index_ = 16658.41527141122;
+    this->azimuth_index_ = 1448.4087841209837;
+    this->source_tile_ = {16195, 1008, 1019, 454, false, false, nullptr};
+    this->raster_ = {16658.41527141122, 1448.4087841209837, 0, source_rectangle, &source_tile_, true};
+
+    double index_i[]{0, 0};
+    double index_j[]{0, 0};
+    double index_ki[]{0};
+    double index_kj[]{0};
+    this->index_ = {
+        0, 0, 0, 0, 0, 0, index_i, index_j, index_ki, index_kj};
+
+    sub_swath_index_ = 0;
+
+    this->ReadTileData(source_rectangle);
+    this->HostToDevice();
+
+    double *d_result;
+    CHECK_CUDA_ERR(cudaMalloc(&d_result, sizeof(double)));
+
+    CHECK_CUDA_ERR(LaunchGetPixelValue({1},
+                                       {1},
+                                       azimuth_index_,
+                                       range_index_,
+                                       margin_,
+                                       source_image_width_,
+                                       source_image_height_,
+                                       raster_,
+                                       index_,
+                                       d_sub_swath_index_,
+                                       d_result));
+
+    double *computed_result;
+    CHECK_CUDA_ERR(cudaMallocHost(&computed_result, sizeof(double)));
+    CHECK_CUDA_ERR(cudaMemcpy(computed_result, d_result, sizeof(double), cudaMemcpyDeviceToHost));
+
+    EXPECT_THAT(*computed_result, ::testing::DoubleEq(expected_result));
+
+    CHECK_CUDA_ERR(cudaFree(d_result));
+    CHECK_CUDA_ERR(cudaFreeHost(computed_result));
 }
 }  // namespace

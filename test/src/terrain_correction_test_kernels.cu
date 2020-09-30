@@ -1,4 +1,16 @@
-
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #include "cuda_util.cuh"
 #include "cuda_util.hpp"
 #include "get_position.cuh"
@@ -60,7 +72,7 @@ void LaunchGetPositionKernel(const std::vector<double>& lat_args,
     auto k_metadata = metadata;
     k_metadata.sensor_position = k_sensor_position;
     k_metadata.sensor_velocity = k_sensor_velocity;
-    k_metadata.orbit_state_vector = k_orbit_state_vector;
+    k_metadata.orbit_state_vectors = k_orbit_state_vector;
 
     thrust::device_vector<bool> d_results(results.size());
     cuda::KernelArray<bool> k_results{thrust::raw_pointer_cast(d_results.data()), d_results.size()};
