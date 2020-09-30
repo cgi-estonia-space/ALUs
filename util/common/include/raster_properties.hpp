@@ -9,17 +9,13 @@ struct RasterDimension final {
     int columnsX;
     int rowsY;
 
-    RasterDimension& operator= (RasterDimension const& other) = default;
+    RasterDimension& operator=(RasterDimension const& other) = default;
 
-    RasterDimension operator+ (int increase) const {
-        return {this->columnsX + increase, this->rowsY + increase};
-    }
+    RasterDimension operator+(int increase) const { return {this->columnsX + increase, this->rowsY + increase}; }
 
-    void operator+= (int increase) {
-        *this = *this + increase;
-    }
+    void operator+=(int increase) { *this = *this + increase; }
 
-    bool operator== (RasterDimension const& other) const {
+    bool operator==(RasterDimension const& other) const {
         return this->columnsX == other.columnsX && this->rowsY == other.rowsY;
     }
 
@@ -34,6 +30,16 @@ struct RasterPoint final {
 struct Coordinates final {
     double const lon;
     double const lat;
+};
+
+struct PixelPosition final {
+    int x;
+    int y;
+};
+
+struct PrecisePixelPosition {
+    double x;
+    double y;
 };
 
 struct GeoTransformParameters final {

@@ -1,26 +1,48 @@
-#pragma once
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
+ #pragma once
 
 #include "terrain_correction_metadata.h"
+
+#include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
+
+#include "cuda_util.hpp"
 
 namespace alus {
 namespace terraincorrection {
 
+/**
+ * Specialisation of RangeDopplerTerrainMetadata struct for kernel.
+ * All std::string values are removed and vectors are transformed into alus::cudautil::KernelArrays in order to be used with thrust library.
+ */
 struct RangeDopplerKernelMetadata {
-    ProductType product_type;
-    AcquisitionMode acquisition_mode;
-    AntennaDirection antenna_pointing;
-    alus::terraincorrection::Swath swath;
-    alus::snapengine::Utc proc_time;
+    alus::metadata::ProductType product_type;
+    alus::metadata::AcquisitionMode acquisition_mode;
+    alus::metadata::AntennaDirection antenna_pointing;
+    alus::metadata::Swath swath;
+    alus::snapengine::old::Utc proc_time;
     unsigned int orbit_cycle;
     unsigned int rel_orbit;
     unsigned int abs_orbit;
-    alus::snapengine::Utc state_vector_time;
+    alus::snapengine::old::Utc state_vector_time;
     double incidence_near;
     double incidence_far;
     int slice_num;
     int data_take_id;
-    alus::snapengine::Utc first_line_time;
-    alus::snapengine::Utc last_line_time;
+    alus::snapengine::old::Utc first_line_time;
+    alus::snapengine::old::Utc last_line_time;
     double first_near_lat;
     double first_near_long;
     double first_far_lat;
@@ -29,13 +51,13 @@ struct RangeDopplerKernelMetadata {
     double last_near_long;
     double last_far_lat;
     double last_far_long;
-    alus::terraincorrection::Pass pass;
-    alus::terraincorrection::SampleType sample_type;
-    alus::terraincorrection::Polarisation mds1_tx_rx_polar;
-    alus::terraincorrection::Polarisation mds2_tx_rx_polar;
-    alus::terraincorrection::Polarisation mds3_tx_rx_polar;
-    alus::terraincorrection::Polarisation mds4_tx_rx_polar;
-    alus::terraincorrection::Algorithm algorithm;
+    alus::metadata::Pass pass;
+    alus::metadata::SampleType sample_type;
+    alus::metadata::Polarisation mds1_tx_rx_polar;
+    alus::metadata::Polarisation mds2_tx_rx_polar;
+    alus::metadata::Polarisation mds3_tx_rx_polar;
+    alus::metadata::Polarisation mds4_tx_rx_polar;
+    alus::metadata::Algorithm algorithm;
     double azimuth_looks;
     double range_looks;
     double range_spacing;
@@ -83,6 +105,8 @@ struct RangeDopplerKernelMetadata {
     double last_valid_line_time;
     alus::cudautil::KernelArray<alus::snapengine::OrbitStateVector> orbit_state_vectors;
 };
+
+RangeDopplerKernelMetadata GetKernelMetadata(const alus::terraincorrection::RangeDopplerTerrainMetadata& cpu_metadata);
 
 }  // namespace terraincorrection
 }  // namespace alus

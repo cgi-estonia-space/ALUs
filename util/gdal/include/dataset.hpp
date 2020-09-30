@@ -15,10 +15,7 @@ namespace alus {
 class DatasetError : public std::runtime_error {
    public:
     DatasetError(std::string what, std::string filename, int error_code)
-        : std::runtime_error(what),
-          m_what{std::move(what)},
-          m_fileName{std::move(filename)},
-          m_errorCode{error_code} {}
+        : std::runtime_error(what), m_what{std::move(what)}, m_fileName{std::move(filename)}, m_errorCode{error_code} {}
 
    private:
     std::string m_what;
@@ -30,6 +27,7 @@ class Dataset {
    public:
     Dataset(std::string_view filename);
     void LoadRasterBand(int band_nr);
+    Dataset(GDALDataset& dataset);
 
     GDALDataset* GetGdalDataset() { return dataset_; }
 
@@ -51,10 +49,8 @@ class Dataset {
     Dataset(Dataset const&) = delete;
     Dataset& operator=(Dataset const&) = delete;
 
-    std::tuple<double /*lon*/, double /*lat*/> GetPixelCoordinatesFromIndex(
-        int x, int y) const;
-    std::tuple<int /*x*/, int /*y*/> GetPixelIndexFromCoordinates(
-        double lon, double lat) const;
+    std::tuple<double /*lon*/, double /*lat*/> GetPixelCoordinatesFromIndex(int x, int y) const;
+    std::tuple<int /*x*/, int /*y*/> GetPixelIndexFromCoordinates(double lon, double lat) const;
 
     double const* GetTransform() const { return transform_.data(); }
 
@@ -72,8 +68,10 @@ class Dataset {
     double GetPixelSizeLon() const { return pixel_size_lon_; }
     double GetPixelSizeLat() const { return pixel_size_lat_; }
 
-    void FillGeoTransform(double& origin_lon, double& origin_lat,
-                          double& pixel_size_lon, double& pixel_size_lat) const {
+    void FillGeoTransform(double& origin_lon,
+                          double& origin_lat,
+                          double& pixel_size_lon,
+                          double& pixel_size_lat) const {
         origin_lon = GetOriginLon();
         origin_lat = GetOriginLat();
         pixel_size_lon = GetPixelSizeLon();
@@ -88,6 +86,7 @@ class Dataset {
     int GetXSize() const { return x_size_; }
     int GetYSize() const { return y_size_; }
     std::vector<double> const& GetDataBuffer() const { return data_buffer_; }
+    double GetNoDataValue() const { return no_data_value_; }
 
     ~Dataset();
 
@@ -101,6 +100,8 @@ class Dataset {
     double origin_lat_;
     double pixel_size_lon_;
     double pixel_size_lat_;
+
+    double no_data_value_;
 
     int x_size_;
     int y_size_;

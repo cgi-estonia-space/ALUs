@@ -3,7 +3,9 @@ list(APPEND TERRAIN_CORRECTION_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/execute.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/get_position.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/local_dem.cu
-        ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction.cu
+        ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction_metadata.cu
         )
 
 list(APPEND TERRAIN_CORRECTION_INCLUDE_DIRS
@@ -62,5 +64,6 @@ set_target_properties(terrain-correction-shared
 target_link_libraries(terrain-correction-shared
         PUBLIC
         gdal-util-static
+        snap-engine-static
         )
 

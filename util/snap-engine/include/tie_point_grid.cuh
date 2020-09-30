@@ -4,6 +4,10 @@
 #include "math_utils.cuh"
 #include "tie_point_grid.h"
 
+// TODO: remove these MACROS
+#define DEBUG printf("Reached here => %s:%d\n", __FILE__, __LINE__)
+#define UNUSED(x) (void)(x)
+
 namespace alus {
 namespace snapengine {
 namespace tiepointgrid {
@@ -13,14 +17,13 @@ inline __device__ __host__ double Interpolate(
     const int w = grid->grid_width;
     const int j1 = j0 + 1;
     const int i1 = i0 + 1;
-    const cudautil::KernelArray<float> TIE_POINTS = grid->tie_points;
 
     return mathutils::Interpolate2D(wi,
                                     wj,
-                                    TIE_POINTS.array[i0 + j0 * w],
-                                    TIE_POINTS.array[i1 + j0 * w],
-                                    TIE_POINTS.array[i0 + j1 * w],
-                                    TIE_POINTS.array[i1 + j1 * w]);
+                                    grid->tie_points[i0 + j0 * w],
+                                    grid->tie_points[i1 + j0 * w],
+                                    grid->tie_points[i0 + j1 * w],
+                                    grid->tie_points[i1 + j1 * w]);
 }
 
 inline __device__ __host__ double GetPixelDoubleImpl(double x, double y, const tiepointgrid::TiePointGrid *grid) {

@@ -1,18 +1,19 @@
 #pragma once
 
+#include "raster_properties.hpp"
+
 struct LocalDemKernelArgs {
-    int dem_cols;
-    int dem_rows;
-    int target_cols;
-    int target_rows;
-    double dem_pixel_size_lon;
-    double dem_pixel_size_lat;
-    double dem_origin_lon;
-    double dem_origin_lat;
-    double target_pixel_size_lon;
-    double target_pixel_size_lat;
-    double target_origin_lon;
-    double target_origin_lat;
+    double dem_x_0;
+    double dem_y_0;
+    int dem_tile_width;
+    int dem_tile_height;
+    double target_x_0;
+    double target_y_0;
+    int target_width;
+    int target_height;
+    double dem_no_data_value;
+    alus::GeoTransformParameters dem_geo_transform;
+    alus::GeoTransformParameters target_geo_transform;
 };
 
 void RunElevationKernel(double const* dem, double* target_elevations,

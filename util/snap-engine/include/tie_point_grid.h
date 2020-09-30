@@ -1,19 +1,21 @@
 #pragma once
 
+#include <cstddef>
+
 #include "cuda_util.cuh"
 
 namespace alus {
 namespace snapengine {
-namespace tiepointgrid {
+namespace tiepointgrid { // TODO: maybe move tiepointgrid under tiepointgeocoding
 
 struct TiePointGrid {
     double offset_x;
     double offset_y;
     double sub_sampling_x;
     double sub_sampling_y;
-    int grid_width;
-    int grid_height;
-    cudautil::KernelArray<float> tie_points;
+    size_t grid_width;
+    size_t grid_height;
+    float* tie_points;
 };
 
 /**

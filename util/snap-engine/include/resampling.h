@@ -21,6 +21,8 @@ struct ResamplingIndex {
 };
 
 struct Tile {
+    int x_0;
+    int y_0;
     int width;
     int height;
     bool target;

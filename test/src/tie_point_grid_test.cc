@@ -66,7 +66,7 @@ TEST(getPixelDouble, tie_point_grid) {
         0.5,
         0.5,
         tester.device_result_,
-        tiepointgrid::TiePointGrid{0, 0, 1163, 300, 21, 6, {tester.device_tie_points_, tester.tie_points_.size}}));
+        tiepointgrid::TiePointGrid{0, 0, 1163, 300, 21, 6, tester.device_tie_points_}));
 
     tester.DeviceToHost();
     EXPECT_DOUBLE_EQ(tester.end_result_, tester.EXPECTED_RESULT_);

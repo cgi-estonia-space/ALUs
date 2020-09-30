@@ -9,6 +9,8 @@ class Dem {
    public:
     Dem(Dataset ds);
 
+    alus::Dataset * GetDataset();
+
     /**
      * This is a ripoff of a Sentinel 1 Toolbox's code from
      * DEMFactory::getLocalDem() with some functionality stripped off.
