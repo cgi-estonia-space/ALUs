@@ -25,7 +25,8 @@ class DatasetError : public std::runtime_error {
 
 class Dataset {
    public:
-    Dataset(std::string_view filename);
+    Dataset() = default;
+    explicit Dataset(std::string_view filename);
     void LoadRasterBand(int band_nr);
     Dataset(GDALDataset& dataset);
 
@@ -93,19 +94,19 @@ class Dataset {
    private:
     void LoadDataset(std::string_view filename);
 
-    GDALDataset* dataset_;
+    GDALDataset* dataset_{};
 
-    std::array<double, 6> transform_;
-    double origin_lon_;
-    double origin_lat_;
-    double pixel_size_lon_;
-    double pixel_size_lat_;
+    std::array<double, 6> transform_{};
+    double origin_lon_{};
+    double origin_lat_{};
+    double pixel_size_lon_{};
+    double pixel_size_lat_{};
 
-    double no_data_value_;
+    double no_data_value_{};
 
-    int x_size_;
-    int y_size_;
-    std::vector<double> data_buffer_;
+    int x_size_{};
+    int y_size_{};
+    std::vector<double> data_buffer_{};
 
     // These are the TOP LEFT / UPPER LEFT coordinates of the image.
     static constexpr int TRANSFORM_LON_ORIGIN_INDEX{0};    // Or X origin

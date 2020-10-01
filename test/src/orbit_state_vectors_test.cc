@@ -23,7 +23,7 @@
 namespace {
 
 using namespace alus;
-using namespace alus::cudautil;
+using namespace alus::cuda;
 using namespace alus::goods;
 using namespace alus::snapengine;
 

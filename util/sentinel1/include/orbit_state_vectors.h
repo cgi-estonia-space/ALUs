@@ -67,8 +67,7 @@ namespace orbitstatevectors {
  * @param vectors Supplied here manually, in original implementation they are a member field of Orbit class.
  * @return snapengine::PosVector Position vector calculated
  */
-snapengine::PosVector GetPosition(double time,
-                                  cudautil::KernelArray<snapengine::OrbitStateVector> vectors);
+snapengine::PosVector GetPosition(double time, cuda::KernelArray<snapengine::OrbitStateVector> vectors);
 
 }
 

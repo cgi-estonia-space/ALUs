@@ -1,4 +1,4 @@
-#include "dataset.hpp"
+#include "dataset.h"
 
 #include <iostream>
 
@@ -22,15 +22,12 @@ void Dataset::LoadDataset(std::string_view filename) {
                            CPLGetLastErrorNo());
     }
 
-    if (this->dataset_->GetGeoTransform(this->transform_.data()) != CE_None) {
-        throw DatasetError(CPLGetLastErrorMsg(), this->dataset_->GetFileList()[0],
-                           CPLGetLastErrorNo());
+    if (this->dataset_->GetGeoTransform(this->transform_.data()) == CE_None) {
+        this->origin_lon_ = this->transform_[TRANSFORM_LON_ORIGIN_INDEX];
+        this->origin_lat_ = this->transform_[TRANSFORM_LAT_ORIGIN_INDEX];
+        this->pixel_size_lon_ = this->transform_[TRANSFORM_PIXEL_X_SIZE_INDEX];
+        this->pixel_size_lat_ = this->transform_[TRANSFORM_PIXEL_Y_SIZE_INDEX];
     }
-
-    this->origin_lon_ = this->transform_[TRANSFORM_LON_ORIGIN_INDEX];
-    this->origin_lat_ = this->transform_[TRANSFORM_LAT_ORIGIN_INDEX];
-    this->pixel_size_lon_ = this->transform_[TRANSFORM_PIXEL_X_SIZE_INDEX];
-    this->pixel_size_lat_ = this->transform_[TRANSFORM_PIXEL_Y_SIZE_INDEX];
 }
 
 std::tuple<double, double> Dataset::GetPixelCoordinatesFromIndex(int x,

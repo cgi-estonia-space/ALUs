@@ -10,7 +10,7 @@ class OrbitStateVectors::PositionVelocity {
     PosVector position_{};
     PosVector velocity_{};
 };
-OrbitStateVectors::OrbitStateVectors(std::vector<OrbitStateVector> orbit_state_vectors,
+OrbitStateVectors::OrbitStateVectors(std::vector<coh::OrbitStateVector> orbit_state_vectors,
                                      double first_line_Utc,
                                      double line_time_interval,
                                      int source_image_height) {
@@ -28,15 +28,15 @@ OrbitStateVectors::OrbitStateVectors(std::vector<OrbitStateVector> orbit_state_v
         sensor_velocity_.at(i) = pv->velocity_;
     }
 }
-OrbitStateVectors::OrbitStateVectors(std::vector<OrbitStateVector> orbit_state_vectors) {
+OrbitStateVectors::OrbitStateVectors(std::vector<coh::OrbitStateVector> orbit_state_vectors) {
     orbit_state_vectors_ = RemoveRedundantVectors(orbit_state_vectors);
     dt_ = (orbit_state_vectors_[orbit_state_vectors_.size() - 1].time_mjd_ - orbit_state_vectors_.at(0).time_mjd_) /
           (orbit_state_vectors_.size() - 1);
 }
 
-std::vector<OrbitStateVector> OrbitStateVectors::RemoveRedundantVectors(
-    std::vector<OrbitStateVector> orbit_state_vectors) {
-    std::vector<OrbitStateVector> vector_list;
+std::vector<coh::OrbitStateVector> OrbitStateVectors::RemoveRedundantVectors(
+    std::vector<coh::OrbitStateVector> orbit_state_vectors) {
+    std::vector<coh::OrbitStateVector> vector_list;
     auto current_time = 0.0;
     for (uint i = 0; i < orbit_state_vectors.size(); i++) {
         if (i == 0) {
@@ -67,7 +67,7 @@ std::shared_ptr<OrbitStateVectors::PositionVelocity> OrbitStateVectors::GetPosit
         auto pv = std::make_shared<PositionVelocity>();
 
         for (int i = i0; i <= in; ++i) {
-            OrbitStateVector orb_i = orbit_state_vectors_.at(i);
+            coh::OrbitStateVector orb_i = orbit_state_vectors_.at(i);
 
             double weight = 1;
             for (int j = i0; j <= in; ++j) {
@@ -141,7 +141,7 @@ std::unique_ptr<PosVector> OrbitStateVectors::GetVelocity(double time) {
     auto velocity = std::make_unique<PosVector>();
 
     for (int i = i0; i <= in; ++i) {
-        OrbitStateVector orb_i = orbit_state_vectors_.at(i);
+        coh::OrbitStateVector orb_i = orbit_state_vectors_.at(i);
 
         double weight = 1;
         for (int j = i0; j <= in; ++j) {

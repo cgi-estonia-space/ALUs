@@ -24,14 +24,14 @@ double GetEarthPointZeroDopplerTime(double first_line_utc,
                                     double line_time_interval,
                                     double wavelength,
                                     alus::snapengine::PosVector earth_point,
-                                    cudautil::KernelArray<alus::snapengine::PosVector> sensor_position,
-                                    cudautil::KernelArray<alus::snapengine::PosVector> sensor_velocity) {
+                                    cuda::KernelArray<alus::snapengine::PosVector> sensor_position,
+                                    cuda::KernelArray<alus::snapengine::PosVector> sensor_velocity) {
     return GetEarthPointZeroDopplerTimeImpl(
         first_line_utc, line_time_interval, wavelength, earth_point, sensor_position, sensor_velocity);
 }
 
 double ComputeSlantRange(double time,
-                         cudautil::KernelArray<snapengine::OrbitStateVector> vectors,
+                         cuda::KernelArray<snapengine::OrbitStateVector> vectors,
                          snapengine::PosVector earth_point,
                          snapengine::PosVector& sensor_pos) {
     return ComputeSlantRangeImpl(time, vectors, earth_point, sensor_pos);

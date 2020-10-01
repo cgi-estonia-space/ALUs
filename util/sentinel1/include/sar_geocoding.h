@@ -43,8 +43,8 @@ double GetEarthPointZeroDopplerTime(double first_line_utc,
                                     double line_time_interval,
                                     double wavelength,
                                     alus::snapengine::PosVector earth_point,
-                                    cudautil::KernelArray<alus::snapengine::PosVector> sensor_position,
-                                    cudautil::KernelArray<alus::snapengine::PosVector> sensor_velocity);
+                                    cuda::KernelArray<alus::snapengine::PosVector> sensor_position,
+                                    cuda::KernelArray<alus::snapengine::PosVector> sensor_velocity);
 
 /**
  * Compute slant range distance for given earth point and given time.
@@ -60,7 +60,7 @@ double GetEarthPointZeroDopplerTime(double first_line_utc,
  * @return The slant range distance in meters.
  */
 double ComputeSlantRange(double time,
-                         cudautil::KernelArray<snapengine::OrbitStateVector> vectors,
+                         cuda::KernelArray<snapengine::OrbitStateVector> vectors,
                          snapengine::PosVector earth_point,
                          snapengine::PosVector& sensor_pos);
 

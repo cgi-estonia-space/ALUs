@@ -41,6 +41,7 @@ list(APPEND COHERENCE_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/pugixml_meta_data_reader.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/product_data_utc.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/data_node.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/parse_exception.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/product_node.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/product_data_ushort.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/product_data_short.cc

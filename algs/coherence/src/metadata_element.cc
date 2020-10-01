@@ -1,5 +1,7 @@
 #include "metadata_element.h"
 
+#include "tensorflow/core/platform/default/logging.h"
+
 #include "guardian.h"
 
 namespace alus {

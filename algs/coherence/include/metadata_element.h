@@ -20,8 +20,6 @@
 
 #include <vector>
 
-#include "tensorflow/core/platform/default/logging.h"
-
 #include "i_meta_data_reader.h"
 #include "product_data_utc.h"
 #include "product_node.h"

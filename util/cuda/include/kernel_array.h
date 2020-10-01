@@ -11,17 +11,23 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
+#pragma once
 
-#include "cuda_util.cuh"
-#include "pos_vector.h"
-#include "orbit_state_vectors.cuh"
+#include <cstddef>
 
 namespace alus {
-namespace s1tbx {
-namespace orbitstatevectors {
-snapengine::PosVector GetPosition(double time, cuda::KernelArray<snapengine::OrbitStateVector> vectors) {
-    return GetPositionImpl(time, vectors);
-}
-}  // namespace orbitstatevectors
-}  // namespace s1tbx
+namespace cuda {
+/**
+ * Thrust containers' wrapper.
+ *
+ * CUDA kernels do not accept Thrust containers as arguments. This solves the problem.
+ * Solution inspired by https://codeyarns.com/2011/04/09/how-to-pass-thrust-device-vector-to-kernel/
+ */
+template <typename T>
+struct KernelArray {
+    T *array;
+    size_t size;
+};
+
+}  // namespace cuda
 }  // namespace alus

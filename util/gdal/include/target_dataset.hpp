@@ -4,7 +4,7 @@
 
 #include <gdal_priv.h>
 
-#include "dataset.hpp"
+#include "dataset.h"
 #include "raster_properties.hpp"
 
 namespace alus {

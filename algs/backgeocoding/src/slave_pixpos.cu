@@ -52,7 +52,7 @@ inline __device__ int GetPosition(s1tbx::DeviceSubswathInfo *subswath_info,
         (zero_doppler_time - subswath_info->device_burst_first_line_time[burst_index]) /
                                        subswath_info->azimuth_time_interval;
 
-    cudautil::KernelArray<snapengine::OrbitStateVector> orbit_vectors;
+    cuda::KernelArray<snapengine::OrbitStateVector> orbit_vectors;
     orbit_vectors.array = orbit;
     orbit_vectors.size = num_orbit_vec;
     const double slantRange = s1tbx::sargeocoding::ComputeSlantRangeImpl(

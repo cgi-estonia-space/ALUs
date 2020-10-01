@@ -12,16 +12,18 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 
-#include "cuda_util.cuh"
-#include "pos_vector.h"
-#include "orbit_state_vectors.cuh"
+#pragma once
 
 namespace alus {
-namespace s1tbx {
-namespace orbitstatevectors {
-snapengine::PosVector GetPosition(double time, cuda::KernelArray<snapengine::OrbitStateVector> vectors) {
-    return GetPositionImpl(time, vectors);
-}
-}  // namespace orbitstatevectors
-}  // namespace s1tbx
+namespace snapengine {
+struct OrbitStateVectorComputation {
+    double timeMjd_{};
+    double xPos_{};
+    double yPos_{};
+    double zPos_{};
+    double xVel_{};
+    double yVel_{};
+    double zVel_{};
+};
+}  // namespace snapengine
 }  // namespace alus

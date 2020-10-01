@@ -30,15 +30,15 @@ namespace snapengine {
 class OrbitStateVectors {
    public:
     class PositionVelocity;  // forward declaration
-    std::vector<OrbitStateVector> orbit_state_vectors_;
+    std::vector<coh::OrbitStateVector> orbit_state_vectors_;
     std::vector<PosVector> sensor_position_;
     std::vector<PosVector> sensor_velocity_;
 
-    OrbitStateVectors(std::vector<OrbitStateVector> orbit_state_vectors,
+    OrbitStateVectors(std::vector<coh::OrbitStateVector> orbit_state_vectors,
                       double first_line_Utc,
                       double line_time_interval,
                       int source_image_height);
-    explicit OrbitStateVectors(std::vector<OrbitStateVector> orbit_state_vectors);
+    explicit OrbitStateVectors(std::vector<coh::OrbitStateVector> orbit_state_vectors);
     std::shared_ptr<PositionVelocity> GetPositionVelocity(double time);
     std::unique_ptr<PosVector> GetPosition(double time, std::unique_ptr<PosVector> position);
     std::unique_ptr<PosVector> GetVelocity(double time);
@@ -48,7 +48,7 @@ class OrbitStateVectors {
     std::unordered_map<double, std::shared_ptr<PositionVelocity>> time_map_;
     static constexpr int NV_{8};
 
-    static std::vector<OrbitStateVector> RemoveRedundantVectors(std::vector<OrbitStateVector> orbit_state_vectors);
+    static std::vector<coh::OrbitStateVector> RemoveRedundantVectors(std::vector<coh::OrbitStateVector> orbit_state_vectors);
 };
 
 }  // namespace snapengine

@@ -87,8 +87,8 @@ inline __device__ __host__ double GetEarthPointZeroDopplerTimeImpl(
     double line_time_interval,
     double wavelength,
     alus::snapengine::PosVector earth_point,
-    cudautil::KernelArray<alus::snapengine::PosVector> sensor_position,
-    cudautil::KernelArray<alus::snapengine::PosVector> sensor_velocity) {
+    cuda::KernelArray<alus::snapengine::PosVector> sensor_position,
+    cuda::KernelArray<alus::snapengine::PosVector> sensor_velocity) {
     // binary search is used in finding the zero doppler time
     int lower_bound = 0;
     int upper_bound = static_cast<int>(sensor_position.size) - 1;
@@ -206,9 +206,22 @@ inline __device__ double GetZeroDopplerTime(double line_time_interval,
 }
 
 inline __device__ __host__ double ComputeSlantRangeImpl(double time,
-                                                        cudautil::KernelArray<snapengine::OrbitStateVector> vectors,
+                                                        cuda::KernelArray<snapengine::OrbitStateVector> vectors,
                                                         snapengine::PosVector earth_point,
                                                         snapengine::PosVector& sensor_pos) {
+    sensor_pos = orbitstatevectors::GetPositionImpl(time, vectors);
+    double const xDiff = sensor_pos.x - earth_point.x;
+    double const yDiff = sensor_pos.y - earth_point.y;
+    double const zDiff = sensor_pos.z - earth_point.z;
+
+    return std::sqrt(xDiff * xDiff + yDiff * yDiff + zDiff * zDiff);
+}
+
+inline __device__ __host__ double ComputeSlantRangeImpl(
+    double time,
+    cuda::KernelArray<snapengine::OrbitStateVectorComputation> vectors,
+    snapengine::PosVector earth_point,
+    snapengine::PosVector& sensor_pos) {
     sensor_pos = orbitstatevectors::GetPositionImpl(time, vectors);
     double const xDiff = sensor_pos.x - earth_point.x;
     double const yDiff = sensor_pos.y - earth_point.y;

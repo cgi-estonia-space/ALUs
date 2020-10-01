@@ -1,61 +1,39 @@
 #include <chrono>
-#include <fstream>
 #include <numeric>
 
 #include "gtest/gtest.h"
 
-#include "local_dem.cuh"
-#include "product_data.h"
-#include "terrain_correction.hpp"
+#include "terrain_correction.h"
 
 namespace {
+
+using namespace alus::terraincorrection;
 
 class TerrainCorrectionIntegrationTest : public ::testing::Test {
    public:
     TerrainCorrectionIntegrationTest() = default;
 };
 
-void ReadOrbitStateVectors(const char *file_name, alus::TerrainCorrection &terrain_correction) {
-    std::ifstream data_stream{file_name};
-    if (!data_stream.is_open()) {
-        throw std::ios::failure("Range Doppler Terrain Correction test data file not open.");
-    }
-    int test_data_size;
-    data_stream >> test_data_size;
-    terrain_correction.metadata_.orbit_state_vectors.clear();
-
-    for (int i = 0; i < test_data_size; i++) {
-        std::string utc_string1;
-        std::string utc_string2;
-        double x_pos, y_pos, z_pos, x_vel, y_vel, z_vel;
-        data_stream >> utc_string1 >> utc_string2 >> x_pos >> y_pos >> z_pos >> x_vel >> y_vel >> z_vel;
-        utc_string1.append(" ");
-        utc_string1.append(utc_string2);
-        terrain_correction.metadata_.orbit_state_vectors.emplace_back(
-            alus::snapengine::old::Utc(utc_string1), x_pos, y_pos, z_pos, x_vel, y_vel, z_vel);
-    }
-
-    data_stream.close();
-}
-
 TEST_F(TerrainCorrectionIntegrationTest, Saaremaa1) {
-    // TODO: change file locations
-    alus::Dataset input(
-        "goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb"
-        ".tif");
-    alus::Dataset dem("goods/srtm_41_01.tif");
-    alus::Dataset expectation(
-        "goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_TC"
-        ".tif");
 
-    expectation.LoadRasterBand(1);
-    alus::TerrainCorrection alg(std::move(input), std::move(dem));
+    std::string const COH_1_TIF{"./goods/"
+        "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_"
+        "Stack_coh_deb.tif"};
+    std::string const COH_1_DATA{"./goods/"
+        "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_"
+        "Stack_coh_deb.data"};
 
-    ReadOrbitStateVectors("goods/orbit_state_vectors.txt", alg);
+    Metadata metadata(COH_1_DATA.substr(0, COH_1_DATA.length() -5) + ".dim",
+                      COH_1_DATA + "/tie_point_grids/latitude.img",
+                      COH_1_DATA + "/tie_point_grids/longitude.img");
+    alus::Dataset input(COH_1_TIF);
+
     auto const main_alg_start = std::chrono::steady_clock::now();
-    alg.ExecuteTerrainCorrection("goods/tc_output.tif", 420, 416);
+    TerrainCorrection tc(
+        std::move(input), metadata.GetMetadata(), metadata.GetLatTiePoints(), metadata.GetLonTiePoints());
+    tc.ExecuteTerrainCorrection("/tmp/tc_test.tif", 500, 500);
+
     auto const main_alg_stop = std::chrono::steady_clock::now();
-    //
     std::cout << "ALG spent "
               << std::chrono::duration_cast<std::chrono::milliseconds>(main_alg_stop - main_alg_start).count() << "ms"
               << std::endl;

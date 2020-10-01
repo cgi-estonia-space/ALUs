@@ -5,7 +5,7 @@ list(APPEND TERRAIN_CORRECTION_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/local_dem.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction.cu
-        ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction_metadata.cu
+        ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction_metadata.cc
         )
 
 list(APPEND TERRAIN_CORRECTION_INCLUDE_DIRS
@@ -45,6 +45,8 @@ target_link_libraries(terrain-correction-static
         PUBLIC
         gdal-util-static
         snap-engine-static
+        coherence-static
+        sentinel1-util-static
         )
 
 add_library(terrain-correction-shared
@@ -65,5 +67,7 @@ target_link_libraries(terrain-correction-shared
         PUBLIC
         gdal-util-static
         snap-engine-static
+        coherence-static
+        sentinel1-util-static
         )
 

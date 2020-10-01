@@ -1,8 +1,4 @@
 /**
- * This file is a filtered duplicate of a SNAP's SARGeocoding.java ported for native code.
- * Copied from a snap-engine's(https://github.com/senbox-org/s1tbx) repository originally stated to be implemented
- * by "Copyright (C) 2016 by Array Systems Computing Inc. http://www.array.ca"
- *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
  * Software Foundation; either version 3 of the License, or (at your option)
@@ -21,21 +17,11 @@
 #include <thrust/device_vector.h>
 #include <vector>
 
+#include "kernel_array.h"
 #include "cuda_util.hpp"
 
 namespace alus {
-namespace cudautil {
-/**
- * Thrust containers' wrapper.
- *
- * CUDA kernels do not accept Thrust containers as arguments. This solves the problem.
- * Solution inspired by https://codeyarns.com/2011/04/09/how-to-pass-thrust-device-vector-to-kernel/
- */
-template <typename T>
-struct KernelArray {
-    T *array;
-    size_t size;
-};
+namespace cuda {
 
 template <typename T>
 KernelArray<T> GetKernelArray(thrust::device_vector<T> device_vector) {
@@ -81,5 +67,5 @@ KernelArray<T> CopyKernelArrayToHost(KernelArray<T> device_kernel_array, T *h_ar
         cudaMemcpy(h_array, device_kernel_array.array, sizeof(T) * device_kernel_array.size, cudaMemcpyDeviceToHost));
     return {h_array, device_kernel_array.size};
 }
-}  // namespace cudautil
+}  // namespace cuda
 }  // namespace alus

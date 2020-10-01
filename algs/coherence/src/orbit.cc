@@ -1,7 +1,6 @@
 #include "orbit.h"
 
 #include <cmath>
-#include <string>
 
 #include "constants.h"
 #include "date_utils.h"
@@ -10,8 +9,8 @@
 #include "poly_utils.h"
 
 namespace alus {
-const double Orbit::CRITERPOS_ = pow(10, -6);
-const double Orbit::CRITERTIM_ = pow(10, -10);
+const double Orbit::CRITERPOS = pow(10, -6);
+const double Orbit::CRITERTIM = pow(10, -10);
 
 double Orbit::Eq1DopplerDt(Point delta, Point satellite_velocity, Point satellite_acceleration) {
     return satellite_acceleration.In(delta) - satellite_velocity.GetX() * satellite_velocity.GetX() -
@@ -54,7 +53,7 @@ Point Orbit::Xyz2T(Point point_on_ellips, MetaData &slave_meta_data) {
             -Eq1Doppler(satellite_velocity, delta) / Eq1DopplerDt(delta, satellite_velocity, satellite_acceleration);
         time_azimuth += solution;
 
-        if (std::abs(solution) < CRITERTIM_) {
+        if (std::abs(solution) < CRITERTIM) {
             break;
         }
     }
@@ -164,9 +163,9 @@ Point Orbit::RowsColumnsHeightToXyz(int rows, int columns, int height, MetaData 
         ellipsoid_position.SetZ(ellipsoid_position.GetZ() + ellipsoid_position_solution[2]);
 
         // check convergence
-        if (std::abs(ellipsoid_position_solution[0]) < CRITERPOS_ &&
-            std::abs(ellipsoid_position_solution[1]) < CRITERPOS_ &&
-            std::abs(ellipsoid_position_solution[2]) < CRITERPOS_) {
+        if (std::abs(ellipsoid_position_solution[0]) < CRITERPOS &&
+            std::abs(ellipsoid_position_solution[1]) < CRITERPOS &&
+            std::abs(ellipsoid_position_solution[2]) < CRITERPOS) {
             break;
         }
     }
@@ -174,33 +173,9 @@ Point Orbit::RowsColumnsHeightToXyz(int rows, int columns, int height, MetaData 
     return Point(ellipsoid_position);
 }
 
-Orbit::Orbit(snapengine::MetadataElement &element, int degree) {
-    ///////////////////// TODO::MOVE THIS TO SOME ABSTRACT CLASS!?
-    //    std::vector<alus::snapengine::OrbitStateVector> orbit_state_vectors =
-    //    AbstractMetadata.GetOrbitStateVectors(nest_metadata_element);
-    //    todo::create AbstractMetadata???
+Orbit::Orbit(snapengine::MetadataElement& element, int degree) {
 
-    auto elem_root = element.GetElement(snapengine::MetaDataNodeNames::ORBIT_STATE_VECTORS);
-    //       todo::move to func and comment below back in
-    //        if (elem_root == nullptr) {
-    //            return std::vector<alus::snapengine::OrbitStateVector>{};
-    //        }
-    const int num_elems = elem_root->GetNumElements();
-    std::vector<alus::snapengine::OrbitStateVector> orbit_state_vectors(num_elems);
-    for (int i = 0; i < num_elems; i++) {
-        auto sub_elem_root = elem_root->GetElement(std::string(alus::snapengine::MetaDataNodeNames::ORBIT_VECTOR) +
-                                                   std::to_string(i + 1));
-        auto vector = alus::snapengine::OrbitStateVector(
-            sub_elem_root->GetAttributeUtc(snapengine::MetaDataNodeNames::ORBIT_VECTOR_TIME),
-            sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_X_POS),
-            sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_Y_POS),
-            sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_Z_POS),
-            sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_X_VEL),
-            sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_Y_VEL),
-            sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_Z_VEL));
-        orbit_state_vectors.at(i) = vector;
-    }
-    /////////////////////
+    std::vector<alus::snapengine::coh::OrbitStateVector> orbit_state_vectors = snapengine::MetaDataNodeNames::GetOrbitStateVectors(element);
 
     num_state_vectors_ = orbit_state_vectors.size();
 
@@ -218,7 +193,6 @@ Orbit::Orbit(snapengine::MetadataElement &element, int degree) {
     }
 
     poly_degree_ = degree;
-    //    todo: implement
     ComputeCoefficients();
 }
 

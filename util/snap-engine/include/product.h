@@ -1,6 +1,6 @@
 #pragma once
 
-#include "dataset.hpp"
+#include "dataset.h"
 #include "geocoding.cuh"
 
 namespace alus {
