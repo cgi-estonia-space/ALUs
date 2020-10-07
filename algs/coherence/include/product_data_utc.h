@@ -42,10 +42,10 @@ class ProductData;
  */
 class Utc : public UInt {
    private:
-    static constexpr double SECONDS_PER_DAY_{86400.0};
-    static constexpr double SECONDS_TO_DAYS_{1.0 / SECONDS_PER_DAY_};
-    static constexpr double MICROS_PER_SECOND_{1000000.0};
-    static constexpr double MICROS_TO_SECONDS_{1.0 / MICROS_PER_SECOND_};
+    static constexpr double SECONDS_PER_DAY{86400.0};
+    static constexpr double SECONDS_TO_DAYS{1.0 / SECONDS_PER_DAY};
+    static constexpr double MICROS_PER_SECOND{1000000.0};
+    static constexpr double MICROS_TO_SECONDS{1.0 / MICROS_PER_SECOND};
 
    public:
     //    todo:we already have some solution for format, check that before doing

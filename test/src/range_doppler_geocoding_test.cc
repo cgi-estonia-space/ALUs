@@ -1,7 +1,7 @@
 #include "range_doppler_geocoding_test.cuh"
 #include "CudaFriendlyObject.h"
 #include "cuda_util.hpp"
-#include "dataset.hpp"
+#include "dataset.h"
 #include "gmock/gmock.h"
 #include "resampling.h"
 #include "tests_common.hpp"

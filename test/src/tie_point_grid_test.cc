@@ -30,7 +30,7 @@ class TiePointGridTester : public cuda::CudaFriendlyObject {
         58.507614, 58.515766, 58.52381,  58.531754, 58.539593, 58.39631,  58.40671,  58.416935, 58.426983, 58.436863,
         58.446587, 58.45615,  58.465565, 58.474834, 58.483967, 58.49296,  58.501827, 58.510563, 58.51918,  58.52767,
         58.536053, 58.544315, 58.55247,  58.56052,  58.568466, 58.57631};
-    cudautil::KernelArray<float> tie_points_ = {tie_points_array_, 126};
+    cuda::KernelArray<float> tie_points_ = {tie_points_array_, 126};
 
     const double EXPECTED_RESULT_ = 58.21324222804141;
     double end_result_;

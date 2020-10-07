@@ -24,6 +24,7 @@
 
 namespace alus {
 namespace snapengine {
+namespace coh {
 class OrbitStateVector {
    public:
     std::shared_ptr<Utc> time_;
@@ -49,5 +50,6 @@ class OrbitStateVector {
           z_vel_{z_vel} {}
 };
 
+}  // namespace coh
 }  // namespace snapengine
 }  // namespace alus

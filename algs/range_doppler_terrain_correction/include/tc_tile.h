@@ -34,10 +34,10 @@ struct TcTileCoordinates {
 
 struct TcTile {
     alus::TcTileCoordinates tc_tile_coordinates;
-    alus::cudautil::KernelArray<double> target_tile_data_buffer;
-    alus::cudautil::KernelArray<double> source_tile_data_buffer;
-    alus::cudautil::KernelArray<double> dem_tile_data_buffer;
-    alus::cudautil::KernelArray<double> elevation_tile_data_buffer;
+    alus::cuda::KernelArray<double> target_tile_data_buffer;
+    alus::cuda::KernelArray<double> source_tile_data_buffer;
+    //alus::cuda::KernelArray<double> dem_tile_data_buffer;
+    //alus::cuda::KernelArray<double> elevation_tile_data_buffer;
     alus::snapengine::resampling::TileData tile_data;
 };
 }

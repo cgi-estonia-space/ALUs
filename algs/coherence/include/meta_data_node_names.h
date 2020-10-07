@@ -17,8 +17,11 @@
  */
 #pragma once
 
+#include <memory>
 #include <string_view>
 
+#include "metadata_element.h"
+#include "orbit_state_vector.h"
 #include "product_data_utc.h"
 
 namespace alus::snapengine {
@@ -31,7 +34,7 @@ class MetaDataNodeNames {
     /**
      * Default no data values
      */
-    const Utc NO_METADATA_UTC = Utc(0.0);
+    static inline std::shared_ptr<Utc> NO_METADATA_UTC = std::make_shared<Utc>(0.0);
 
     static constexpr int NO_METADATA = 99999;
     static constexpr short NO_METADATA_BYTE = 0;
@@ -60,7 +63,7 @@ class MetaDataNodeNames {
     static constexpr std::string_view ANNOTATION = "annotation";
     static constexpr std::string_view BAND_NAMES = "band_names";
     static constexpr std::string_view SWATH = "SWATH";
-    // this is against our style policy, but what can I do ...
+    // Not following style policy because of the Metadata naming context.
     static constexpr std::string_view swath = "swath";
     static constexpr std::string_view PROC_TIME = "PROC_TIME";
     static constexpr std::string_view ProcessingSystemIdentifier = "Processing_system_identifier";
@@ -124,6 +127,14 @@ class MetaDataNodeNames {
     // SRGR
     static constexpr std::string_view SRGR_FLAG = "srgr_flag";
     static constexpr std::string_view MAP_PROJECTION = "map_projection";
+
+    // Line times
+    static constexpr std::string_view FIRST_VALID_LINE_TIME = "firstValidLineTime";
+    static constexpr std::string_view LAST_VALID_LINE_TIME = "lastValidLineTime";
+
+    // Valid pixel indexes
+    static constexpr std::string_view FIRST_VALID_PIXEL = "firstValidPixel";
+    static constexpr std::string_view LAST_VALID_PIXEL = "lastValidPixel";
 
     // calibration and flags
     static constexpr std::string_view ANT_ELEV_CORR_FLAG = "ant_elev_corr_flag";
@@ -191,6 +202,20 @@ class MetaDataNodeNames {
     static constexpr std::string_view AZIMUTH_BANDWIDTH = "azimuth_bandwidth";
 
     static constexpr std::string_view COMPACT_MODE = "compact_mode";
+
+    static bool GetAttributeBoolean(MetadataElement& element, std::string_view view);
+
+    static double GetAttributeDouble(MetadataElement& element, std::string_view view);
+
+    static std::shared_ptr<Utc> ParseUtc(std::string_view time_str);
+
+    /**
+     * Get orbit state vectors.
+     *
+     * @param absRoot Abstracted metadata root.
+     * @return orbitStateVectors Array of orbit state vectors.
+     */
+    static std::vector<coh::OrbitStateVector> GetOrbitStateVectors(MetadataElement& abs_root);
 };
 
 }  // namespace alus::snapengine

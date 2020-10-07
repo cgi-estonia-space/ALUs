@@ -14,7 +14,7 @@
 #pragma once
 
 #include "cuda_util.cuh"
-#include "orbit_state_vector.h"
+#include "orbit_state_vector_computation.h"
 #include "pos_vector.h"
 #include "position_data.h"
 
@@ -27,9 +27,9 @@ struct GetPositionMetadata {
     double wavelength;
     double range_spacing;
     double near_edge_slant_range;
-    cudautil::KernelArray<snapengine::PosVector> sensor_position;
-    cudautil::KernelArray<snapengine::PosVector> sensor_velocity;
-    cudautil::KernelArray<snapengine::OrbitStateVector> orbit_state_vector;
+    cuda::KernelArray<snapengine::PosVector> sensor_position;
+    cuda::KernelArray<snapengine::PosVector> sensor_velocity;
+    cuda::KernelArray<snapengine::OrbitStateVectorComputation> orbit_state_vector;
 };
 
 /**

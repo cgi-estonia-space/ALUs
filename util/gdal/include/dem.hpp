@@ -2,11 +2,12 @@
 
 #include <vector>
 
-#include "dataset.hpp"
+#include "dataset.h"
 
 namespace alus {
 class Dem {
    public:
+    Dem() = default;
     Dem(Dataset ds);
 
     alus::Dataset * GetDataset();
@@ -64,6 +65,6 @@ class Dem {
    private:
     Dataset m_ds_;
 
-    double m_no_data_value_;
+    double m_no_data_value_{};
 };
 }  // namespace alus

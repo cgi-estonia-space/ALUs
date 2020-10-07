@@ -18,7 +18,7 @@
 #include <sstream>
 
 #include "CudaFriendlyObject.h"
-#include "dataset.hpp"
+#include "dataset.h"
 #include "earth_gravitational_model96.h"
 #include "pointer_holders.h"
 #include "shapes.h"

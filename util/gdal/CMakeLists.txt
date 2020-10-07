@@ -1,6 +1,6 @@
 
 list(APPEND GDAL_UTIL_SOURCES
-        ${CMAKE_CURRENT_LIST_DIR}/src/dataset.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/src/dataset.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/dem.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/target_dataset.cpp
         )

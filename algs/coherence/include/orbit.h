@@ -15,8 +15,8 @@ class Orbit {
     int orbit_degree_, poly_degree_, num_state_vectors_;
     bool is_interpolated_ = false;
     // might need to move this to header
-    static const double CRITERPOS_;
-    static const double CRITERTIM_;
+    static const double CRITERPOS;
+    static const double CRITERTIM;
 
     Point RowsColumnsHeightToXyz(int rows, int columns, int height, MetaData &meta_data);
     void ComputeCoefficients();

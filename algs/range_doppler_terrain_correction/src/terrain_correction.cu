@@ -7,7 +7,7 @@
 
 #include "orbit_state_vectors.h"
 #include "position_data.h"
-#include "product_data.h"
+//#include "product_data.h"
 #include "tc_tile.h"
 
 #include "crs_geocoding.cuh"
@@ -18,22 +18,12 @@
 
 #define UNUSED(x) (void)(x)
 
-// TODO: free memory
-// TODO: maybe create a struct which will hold all the data and the init method which will populate it with data as well
-//      as copy data to device
-double CalculateWavelength(double radar_frequency) {
-    const double MILLION = 1e6;  // The frequency stored in metadata is in MHz
-    const double LIGHT_SPEED = 299792458.0;
-
-    return LIGHT_SPEED / (radar_frequency * MILLION);
-}
-
 __global__ void CalculateVelocitiesAndPositionsKernel(
     const double first_line_utc,
     const double line_time_interval,
-    alus::cudautil::KernelArray<alus::snapengine::OrbitStateVector> vectors,
-    alus::cudautil::KernelArray<alus::snapengine::PosVector> velocities,
-    alus::cudautil::KernelArray<alus::snapengine::PosVector> positions) {
+    alus::cuda::KernelArray<alus::snapengine::OrbitStateVectorComputation> vectors,
+    alus::cuda::KernelArray<alus::snapengine::PosVector> velocities,
+    alus::cuda::KernelArray<alus::snapengine::PosVector> positions) {
     const auto block_id = blockIdx.x + blockIdx.y * gridDim.x + gridDim.x * gridDim.y * blockIdx.z;
     const auto index = block_id * (blockDim.x * blockDim.y * blockDim.z) + (threadIdx.z * (blockDim.x * blockDim.y)) +
                        (threadIdx.y * blockDim.x) + threadIdx.x;
@@ -52,9 +42,9 @@ __global__ void CalculateVelocitiesAndPositionsKernel(
 void CalculateVelocitiesAndPositions(const int source_image_height,
                                      const double first_line_utc,
                                      const double line_time_interval,
-                                     alus::cudautil::KernelArray<alus::snapengine::OrbitStateVector> vectors,
-                                     alus::cudautil::KernelArray<alus::snapengine::PosVector> velocities,
-                                     alus::cudautil::KernelArray<alus::snapengine::PosVector> positions) {
+                                     alus::cuda::KernelArray<alus::snapengine::OrbitStateVectorComputation> vectors,
+                                     alus::cuda::KernelArray<alus::snapengine::PosVector> velocities,
+                                     alus::cuda::KernelArray<alus::snapengine::PosVector> positions) {
     dim3 block_dim{32, 32};
     dim3 grid_dim{static_cast<unsigned int>(source_image_height / (32 * 32) + 1)};
 
@@ -65,30 +55,12 @@ void CalculateVelocitiesAndPositions(const int source_image_height,
     CHECK_CUDA_ERR(cudaDeviceSynchronize());
 };
 
-alus::terraincorrection::GetPositionMetadata GetGetPositionMetadata(
-    int src_image_height,
-    const alus::terraincorrection::RangeDopplerKernelMetadata range_doppler_metadata,
-    alus::cudautil::KernelArray<alus::snapengine::PosVector> *sensor_positions,
-    alus::cudautil::KernelArray<alus::snapengine::PosVector> *sensor_velocities) {
-    alus::terraincorrection::GetPositionMetadata get_position_metadata{
-        range_doppler_metadata.first_line_time.getMjd(),
-        (range_doppler_metadata.last_line_time.getMjd() - range_doppler_metadata.first_line_time.getMjd()) /
-            (src_image_height - 1),
-        CalculateWavelength(range_doppler_metadata.radar_frequency),
-        range_doppler_metadata.range_spacing,
-        range_doppler_metadata.slant_range_to_first_pixel,  // TODO: maybe this value is wrong
-        *sensor_positions,
-        *sensor_velocities,
-        range_doppler_metadata.orbit_state_vectors};
-
-    return get_position_metadata;
-}
-
 __device__ void SetNoDataValue(int index, double value, double *dest_data) { dest_data[index] = value; }
 
 __global__ void TerrainCorrectionKernel(alus::TcTileCoordinates tile_coordinates,
-                                        alus::cudautil::KernelArray<double> elevations,
-                                        alus::cudautil::KernelArray<double> target,
+                                        double avg_scene_height,
+                                        //alus::cuda::KernelArray<double> elevations,
+                                        alus::cuda::KernelArray<double> target,
                                         TerrainCorrectionKernelArgs args) {
     auto const thread_x = threadIdx.x + blockIdx.x * blockDim.x;
     auto const thread_y = threadIdx.y + blockIdx.y * blockDim.y;
@@ -98,7 +70,7 @@ __global__ void TerrainCorrectionKernel(alus::TcTileCoordinates tile_coordinates
     }
     auto const target_tile_index = thread_y * tile_coordinates.target_width + thread_x;
 
-    double const ALTITUDE = elevations.array[target_tile_index];
+    double const ALTITUDE = avg_scene_height;//elevations.array[target_tile_index];
 
     if (ALTITUDE == args.dem_no_data_value) {
         SetNoDataValue(target_tile_index, 0.0, target.array);  // TODO: use target no_data_value
@@ -151,32 +123,32 @@ __global__ void TerrainCorrectionKernel(alus::TcTileCoordinates tile_coordinates
         sub_swath_index);
     target.array[target_tile_index] = v;
 }
-bool DemCuda(alus::TcTile tile,
-             double dem_no_data_value,
-             alus::GeoTransformParameters dem_geo_transform,
-             alus::GeoTransformParameters target_geo_transform) {
-    thrust::device_vector<double> d_dem_array(tile.dem_tile_data_buffer.array,
-                                              tile.dem_tile_data_buffer.array + tile.dem_tile_data_buffer.size);
-    thrust::device_vector<double> d_product_array(tile.elevation_tile_data_buffer.size);
-
-    struct LocalDemKernelArgs kernel_args {
-        tile.tc_tile_coordinates.dem_x_0, tile.tc_tile_coordinates.dem_y_0, tile.tc_tile_coordinates.dem_width,
-            tile.tc_tile_coordinates.dem_height, tile.tc_tile_coordinates.target_x_0,
-            tile.tc_tile_coordinates.target_y_0, tile.tc_tile_coordinates.target_width,
-            tile.tc_tile_coordinates.target_height, dem_no_data_value, dem_geo_transform, target_geo_transform
-    };
-
-    RunElevationKernel(
-        thrust::raw_pointer_cast(d_dem_array.data()), thrust::raw_pointer_cast(d_product_array.data()), kernel_args);
-
-    thrust::device_vector<double>::iterator iterator;
-    thrust::find(thrust::device, d_product_array.begin(), d_product_array.end(), kernel_args.dem_no_data_value);
-    thrust::copy(d_product_array.begin(), d_product_array.end(), tile.elevation_tile_data_buffer.array);
-    if (iterator == d_product_array.end()) {
-        return true;
-    }
-    return false;
-}
+//bool DemCuda(alus::TcTile tile,
+//             double dem_no_data_value,
+//             alus::GeoTransformParameters dem_geo_transform,
+//             alus::GeoTransformParameters target_geo_transform) {
+//    thrust::device_vector<double> d_dem_array(tile.dem_tile_data_buffer.array,
+//                                              tile.dem_tile_data_buffer.array + tile.dem_tile_data_buffer.size);
+//    thrust::device_vector<double> d_product_array(tile.elevation_tile_data_buffer.size);
+//
+//    struct LocalDemKernelArgs kernel_args {
+//        tile.tc_tile_coordinates.dem_x_0, tile.tc_tile_coordinates.dem_y_0, tile.tc_tile_coordinates.dem_width,
+//            tile.tc_tile_coordinates.dem_height, tile.tc_tile_coordinates.target_x_0,
+//            tile.tc_tile_coordinates.target_y_0, tile.tc_tile_coordinates.target_width,
+//            tile.tc_tile_coordinates.target_height, dem_no_data_value, dem_geo_transform, target_geo_transform
+//    };
+//
+//    RunElevationKernel(
+//        thrust::raw_pointer_cast(d_dem_array.data()), thrust::raw_pointer_cast(d_product_array.data()), kernel_args);
+//
+//    thrust::device_vector<double>::iterator iterator;
+//    thrust::find(thrust::device, d_product_array.begin(), d_product_array.end(), kernel_args.dem_no_data_value);
+//    thrust::copy(d_product_array.begin(), d_product_array.end(), tile.elevation_tile_data_buffer.array);
+//    if (iterator == d_product_array.end()) {
+//        return true;
+//    }
+//    return false;
+//}
 
 void RunTerrainCorrectionKernel(alus::TcTile tile, TerrainCorrectionKernelArgs args) {
     const int BLOCK_DIM = 32;
@@ -184,16 +156,16 @@ void RunTerrainCorrectionKernel(alus::TcTile tile, TerrainCorrectionKernelArgs a
     dim3 main_kernel_grid_size{tile.tc_tile_coordinates.target_width / block_size.x + 1,
                                tile.tc_tile_coordinates.target_height / block_size.y + 1};
 
-    double *d_elevations;
-    CHECK_CUDA_ERR(cudaMalloc(&d_elevations, sizeof(double) * tile.elevation_tile_data_buffer.size));
-    CHECK_CUDA_ERR(cudaMemcpy(d_elevations,
-                              tile.elevation_tile_data_buffer.array,
-                              sizeof(double) * tile.elevation_tile_data_buffer.size,
-                              cudaMemcpyHostToDevice));
-
-    alus::cudautil::KernelArray<double> kernel_dem{d_elevations, tile.elevation_tile_data_buffer.size};
+//    double *d_elevations;
+//    CHECK_CUDA_ERR(cudaMalloc(&d_elevations, sizeof(double) * tile.elevation_tile_data_buffer.size));
+//    CHECK_CUDA_ERR(cudaMemcpy(d_elevations,
+//                              tile.elevation_tile_data_buffer.array,
+//                              sizeof(double) * tile.elevation_tile_data_buffer.size,
+//                              cudaMemcpyHostToDevice));
+//
+//    alus::cuda::KernelArray<double> kernel_dem{d_elevations, tile.elevation_tile_data_buffer.size};
     thrust::device_vector<double> d_target(tile.target_tile_data_buffer.size);
-    alus::cudautil::KernelArray<double> kernel_target{thrust::raw_pointer_cast(d_target.data()), d_target.size()};
+    alus::cuda::KernelArray<double> kernel_target{thrust::raw_pointer_cast(d_target.data()), d_target.size()};
 
     // TODO: check with cuda-gdb that method really copies all the data
     alus::Rectangle *d_source_rectangle = nullptr;
@@ -206,7 +178,7 @@ void RunTerrainCorrectionKernel(alus::TcTile tile, TerrainCorrectionKernelArgs a
 
     args.tile_data = tile.tile_data;
     TerrainCorrectionKernel<<<main_kernel_grid_size, block_size>>>(
-        tile.tc_tile_coordinates, kernel_dem, kernel_target, args);
+        tile.tc_tile_coordinates, args.avg_scene_height, kernel_target, args);
 
     CHECK_CUDA_ERR(cudaGetLastError());
     CHECK_CUDA_ERR(cudaDeviceSynchronize());
@@ -219,17 +191,17 @@ void RunTerrainCorrectionKernel(alus::TcTile tile, TerrainCorrectionKernelArgs a
     CHECK_CUDA_ERR(cudaFree(args.tile_data.source_tile));
     CHECK_CUDA_ERR(cudaFree(args.tile_data.resampling_raster));
     CHECK_CUDA_ERR(cudaFree(args.tile_data.image_resampling_index));
-    CHECK_CUDA_ERR(cudaFree(d_elevations));
+//    CHECK_CUDA_ERR(cudaFree(d_elevations));
     CHECK_CUDA_ERR(cudaFree(d_source_tile));
     CHECK_CUDA_ERR(cudaFree(d_source_tile_data_buffer));
     CHECK_CUDA_ERR(cudaFree(d_source_rectangle));
     CHECK_CUDA_ERR(cudaFree(d_resampling_raster));
-    UNUSED(kernel_dem);
 }
 
 bool GetSourceRectangle(alus::TcTile &tile,
                         alus::GeoTransformParameters target_geo_transform,
                         double dem_no_data_value,
+                        double avg_scene_height,
                         int source_image_width,
                         int source_image_height,
                         alus::terraincorrection::GetPositionMetadata get_position_metadata,
@@ -255,10 +227,10 @@ bool GetSourceRectangle(alus::TcTile &tile,
                                  ? tile.tc_tile_coordinates.target_x_0 + tile.tc_tile_coordinates.target_width - 1
                                  : tile.tc_tile_coordinates.target_x_0 + j * X_OFFSET;
 
-            int dem_index =
-                static_cast<int>(Y - tile.tc_tile_coordinates.target_y_0) * tile.tc_tile_coordinates.target_width +
-                static_cast<int>(X - tile.tc_tile_coordinates.target_x_0);
-            double altitude = tile.elevation_tile_data_buffer.array[dem_index];
+//            int dem_index =
+//                static_cast<int>(Y - tile.tc_tile_coordinates.target_y_0) * tile.tc_tile_coordinates.target_width +
+//                static_cast<int>(X - tile.tc_tile_coordinates.target_x_0);
+            double altitude = avg_scene_height;//tile.elevation_tile_data_buffer.array[dem_index];
             if (altitude == dem_no_data_value) {
                 continue;
             }

@@ -1,4 +1,4 @@
-#include "dataset.hpp"
+#include "dataset.h"
 #include "target_dataset.hpp"
 
 #include "gmock/gmock.h"
@@ -21,8 +21,8 @@ class DatasetTest : public ::testing::Test {
 };
 
 TEST_F(DatasetTest, onInvalidFilenameThrows) {
-    std::string f{"non_existent_unittest_file"};
-    ASSERT_THROW(alus::Dataset({f}), alus::DatasetError);
+    std::string_view filename = "non_existent_unittest_file";
+    ASSERT_THROW(auto a = alus::Dataset(filename), alus::DatasetError);
 }
 
 TEST_F(DatasetTest, loadsValidTifFile) {
