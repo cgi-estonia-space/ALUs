@@ -22,11 +22,11 @@ class CoherenceExecuter : public AlgBond {
         constexpr int SRP_POLYNOMIAL_DEGREE{5};
         constexpr bool SUBTRACT_FLAT_EARTH{true};
         constexpr int COH_WIN_RG{15};
-        constexpr int COH_WIN_AZ{5};
+        constexpr int COH_WIN_AZ{3};
         // orbit interpolation degree
         constexpr int ORBIT_DEGREE{3};
 
-        auto const FILE_NAME_IA = aux_location_ + "/incident_angle.img";
+        auto const FILE_NAME_IA = aux_location_ + "/tie_point_grids/incident_angle.img";
         std::vector<int> band_map_ia{1};
         int band_count_ia = 1;
         alus::GdalTileReader ia_data_reader{FILE_NAME_IA, band_map_ia, band_count_ia, false};
@@ -36,10 +36,8 @@ class CoherenceExecuter : public AlgBond {
                                             ia_data_reader.GetBandXMin(),
                                             ia_data_reader.GetBandYMin()};
         ia_data_reader.ReadTile(incidence_angle_data_set);
-        //        todo::xml file name
-        //        S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_split_Orb_Stack.dim
-        alus::snapengine::PugixmlMetaDataReader xml_reader{
-            "S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_split_Orb_Stack.dim"};
+        const auto metadata_file = aux_location_.substr(0, aux_location_.length() - 5); // Strip ".data"
+        alus::snapengine::PugixmlMetaDataReader xml_reader{metadata_file + ".dim"};
         auto master_root = xml_reader.GetElement(alus::snapengine::MetaDataNodeNames::ABSTRACT_METADATA_ROOT);
         auto slave_root =
             xml_reader.GetElement(alus::snapengine::MetaDataNodeNames::SLAVE_METADATA_ROOT).GetElements().at(0);
@@ -70,7 +68,7 @@ class CoherenceExecuter : public AlgBond {
                                                 tile_width_,
                                                 tile_height_,
                                                 COH_WIN_RG,
-                                                COH_WIN_RG};
+                                                COH_WIN_AZ};
         alus::Coh coherence{SRP_NUMBER_POINTS,
                             SRP_POLYNOMIAL_DEGREE,
                             SUBTRACT_FLAT_EARTH,
