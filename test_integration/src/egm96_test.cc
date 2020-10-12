@@ -16,7 +16,6 @@
 #include <iostream>
 
 #include "gmock/gmock.h"
-#include "tests_common.hpp"
 
 #include "CudaFriendlyObject.h"
 #include "comparators.h"

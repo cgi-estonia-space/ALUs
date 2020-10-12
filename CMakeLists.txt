@@ -55,8 +55,6 @@ add_subdirectory(algs/range_doppler_terrain_correction)
 add_subdirectory(algs/backgeocoding)
 
 # Test helpers
-add_subdirectory(test/EGM96)
-add_subdirectory(test/SRTM3TestUtil)
 add_subdirectory(test/range_doppler_geocoding)
 add_subdirectory(test/tie_point_grid)
 add_subdirectory(test/sar_geocoding)

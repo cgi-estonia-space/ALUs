@@ -18,9 +18,6 @@
 #include "backgeocoding.h"
 #include "comparators.h"
 #include "shapes.h"
-#include "tests_common.hpp"
-
-using namespace alus::tests;
 
 namespace{
 
@@ -111,7 +108,7 @@ TEST(backgeocoding, correctness){
                      "./goods/backgeocoding/masterOrbitStateVectors.txt",
                      "./goods/backgeocoding/slaveOrbitStateVectors.txt");
     backgeocoding.SetSRTMDirectory("./goods/");
-    backgeocoding.SetEGMGridFile("./goods/ww15mgh_b.grd");
+    backgeocoding.SetEGMGridFile("./goods/backgeocoding/ww15mgh_b.grd");
     backgeocoding.FeedPlaceHolders();
     backgeocoding.PrepareToCompute();
     backgeocoding.ComputeTile(tester.slave_rect_, tester.slave_tile_i, tester.slave_tile_q_);
