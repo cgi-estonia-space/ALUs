@@ -12,8 +12,8 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 #include <fstream>
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "gmock/gmock.h"
 
@@ -21,20 +21,19 @@
 #include "comparators.h"
 #include "cuda_util.hpp"
 #include "earth_gravitational_model96.h"
-#include "pointer_holders.h"
 #include "shapes.h"
 #include "srtm3_elevation_model.h"
 #include "srtm3_test_util.cuh"
-#include "tests_common.hpp"
+
+namespace {
 
 using namespace alus::tests;
 
-namespace{
-
-class Srtm3AltitudeTester: public alus::cuda::CudaFriendlyObject{
-private:
+class Srtm3AltitudeTester : public alus::cuda::CudaFriendlyObject {
+   private:
     std::string test_file_name_;
-public:
+
+   public:
     std::vector<double> lats_;
     std::vector<double> lons_;
     std::vector<double> alts_;
@@ -46,16 +45,12 @@ public:
 
     size_t size_;
 
+    Srtm3AltitudeTester(std::string test_file_name) { this->test_file_name_ = test_file_name; }
+    ~Srtm3AltitudeTester() { this->DeviceFree(); }
 
-    Srtm3AltitudeTester(std::string test_file_name){
-        this->test_file_name_ = test_file_name;
-    }
-    ~Srtm3AltitudeTester(){ this->DeviceFree();
-    }
-
-    void ReadTestData(){
+    void ReadTestData() {
         std::ifstream test_data_stream(this->test_file_name_);
-        if(!test_data_stream.is_open()){
+        if (!test_data_stream.is_open()) {
             throw std::ios::failure("srtm3 Altitude test data file not open.");
         }
         test_data_stream >> this->size_;
@@ -64,50 +59,51 @@ public:
         this->alts_.resize(this->size_);
         this->end_results_.resize(this->size_);
 
-        for(size_t i=0; i<this->size_; i++){
+        for (size_t i = 0; i < this->size_; i++) {
             test_data_stream >> this->lats_.at(i) >> this->lons_.at(i) >> this->alts_.at(i);
         }
 
         test_data_stream.close();
     }
 
-    void HostToDevice(){
-        CHECK_CUDA_ERR(cudaMalloc((void**)&device_lats_, this->size_*sizeof(double)));
-        CHECK_CUDA_ERR(cudaMalloc((void**)&device_lons_, this->size_*sizeof(double)));
-        CHECK_CUDA_ERR(cudaMalloc((void**)&device_alts_, this->size_*sizeof(double)));
+    void HostToDevice() {
+        CHECK_CUDA_ERR(cudaMalloc((void **)&device_lats_, this->size_ * sizeof(double)));
+        CHECK_CUDA_ERR(cudaMalloc((void **)&device_lons_, this->size_ * sizeof(double)));
+        CHECK_CUDA_ERR(cudaMalloc((void **)&device_alts_, this->size_ * sizeof(double)));
 
-        CHECK_CUDA_ERR(cudaMemcpy(this->device_lats_, this->lats_.data(), this->size_*sizeof(double),cudaMemcpyHostToDevice));
-        CHECK_CUDA_ERR(cudaMemcpy(this->device_lons_, this->lons_.data(), this->size_*sizeof(double),cudaMemcpyHostToDevice));
+        CHECK_CUDA_ERR(
+            cudaMemcpy(this->device_lats_, this->lats_.data(), this->size_ * sizeof(double), cudaMemcpyHostToDevice));
+        CHECK_CUDA_ERR(
+            cudaMemcpy(this->device_lons_, this->lons_.data(), this->size_ * sizeof(double), cudaMemcpyHostToDevice));
     }
 
-    void DeviceToHost(){
-        CHECK_CUDA_ERR(cudaMemcpy(this->end_results_.data(), this->device_alts_, this->size_*sizeof(double), cudaMemcpyDeviceToHost));
+    void DeviceToHost() {
+        CHECK_CUDA_ERR(cudaMemcpy(
+            this->end_results_.data(), this->device_alts_, this->size_ * sizeof(double), cudaMemcpyDeviceToHost));
     }
 
-    void DeviceFree(){
-        if(this->device_lats_ != nullptr){
+    void DeviceFree() {
+        if (this->device_lats_ != nullptr) {
             cudaFree(this->device_lats_);
             this->device_lats_ = nullptr;
         }
-        if(this->device_lons_ != nullptr){
+        if (this->device_lons_ != nullptr) {
             cudaFree(this->device_lons_);
             this->device_lons_ = nullptr;
         }
-        if(this->device_alts_ != nullptr){
+        if (this->device_alts_ != nullptr) {
             cudaFree(this->device_alts_);
             this->device_alts_ = nullptr;
         }
     }
 };
 
-
-
-TEST(SRTM3, altitudeCalc){
+TEST(SRTM3, altitudeCalc) {
     Srtm3AltitudeTester tester("./goods/altitudeTestData.txt");
     tester.ReadTestData();
     tester.HostToDevice();
     dim3 block_size(512);
-    dim3 grid_size(alus::cuda::getGridDim(block_size.x,tester.size_));
+    dim3 grid_size(alus::cuda::getGridDim(block_size.x, tester.size_));
 
     alus::snapengine::EarthGravitationalModel96 egm96("./goods/ww15mgh_b.grd");
     egm96.HostToDevice();
@@ -130,9 +126,7 @@ TEST(SRTM3, altitudeCalc){
     tester.DeviceToHost();
 
     int count = alus::EqualsArraysd(tester.end_results_.data(), tester.alts_.data(), tester.size_, 0.00001);
-    EXPECT_EQ(count,0) << "SRTM3 altitude test results do not match. Mismatches: " <<count << '\n';
+    EXPECT_EQ(count, 0) << "SRTM3 altitude test results do not match. Mismatches: " << count << '\n';
 }
 
-
-
-}//namespace
+}  // namespace

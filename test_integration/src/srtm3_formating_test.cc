@@ -12,8 +12,8 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 #include <fstream>
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "gmock/gmock.h"
 
@@ -24,15 +24,13 @@
 #include "pointer_holders.h"
 #include "shapes.h"
 #include "srtm3_elevation_model.h"
-#include "tests_common.hpp"
 
-using namespace alus::tests;
+namespace {
 
-namespace{
-
-class SRTM3TileTester{
+class SRTM3TileTester {
    private:
     std::string test_file_name_;
+
    public:
     std::vector<int> xs_;
     std::vector<int> ys_;
@@ -40,16 +38,12 @@ class SRTM3TileTester{
 
     size_t size_;
 
-    SRTM3TileTester(std::string test_file_name){
-        this->test_file_name_ = test_file_name;
-    }
-    ~SRTM3TileTester(){
+    SRTM3TileTester(std::string test_file_name) { this->test_file_name_ = test_file_name; }
+    ~SRTM3TileTester() {}
 
-    }
-
-    void ReadTestData(){
+    void ReadTestData() {
         std::ifstream test_data_reader(this->test_file_name_);
-        if(!test_data_reader.is_open()){
+        if (!test_data_reader.is_open()) {
             throw std::ios::failure("srtm3 tile test data file not open.");
         }
         test_data_reader >> this->size_;
@@ -57,17 +51,15 @@ class SRTM3TileTester{
         this->ys_.resize(this->size_);
         this->results_.resize(this->size_);
 
-        for(size_t i=0; i<this->size_; i++){
+        for (size_t i = 0; i < this->size_; i++) {
             test_data_reader >> this->xs_.at(i) >> this->ys_.at(i) >> this->results_.at(i);
         }
 
         test_data_reader.close();
     }
-
-
 };
 
-TEST(SRTM3, tileFormating){
+TEST(SRTM3, tileFormating) {
     SRTM3TileTester tester("./goods/tileFormatTestData.txt");
     tester.ReadTestData();
 
@@ -89,19 +81,20 @@ TEST(SRTM3, tileFormating){
     std::vector<alus::PointerHolder> tiles;
     tiles.resize(2);
     const int chosen_tile = 0;
-    CHECK_CUDA_ERR(cudaMemcpy(tiles.data(), srtm3_dem.device_srtm3_tiles_, 2*sizeof(alus::PointerHolder), cudaMemcpyDeviceToHost));
+    CHECK_CUDA_ERR(cudaMemcpy(
+        tiles.data(), srtm3_dem.device_srtm3_tiles_, 2 * sizeof(alus::PointerHolder), cudaMemcpyDeviceToHost));
     int tile_x_size = tiles.at(chosen_tile).x;
     int tile_y_size = tiles.at(chosen_tile).y;
     int tile_size = tile_x_size * tile_y_size;
     end_tile.resize(tile_size);
-    CHECK_CUDA_ERR(cudaMemcpy(end_tile.data(), tiles.at(chosen_tile).pointer, tile_size *sizeof(double), cudaMemcpyDeviceToHost));
+    CHECK_CUDA_ERR(
+        cudaMemcpy(end_tile.data(), tiles.at(chosen_tile).pointer, tile_size * sizeof(double), cudaMemcpyDeviceToHost));
 
-    for(size_t i=0; i<tester.size_; i++){
-        end_results.at(i) = end_tile.at(tester.xs_.at(i) + tile_x_size *tester.ys_.at(i));
+    for (size_t i = 0; i < tester.size_; i++) {
+        end_results.at(i) = end_tile.at(tester.xs_.at(i) + tile_x_size * tester.ys_.at(i));
     }
     int count = alus::EqualsArraysd(end_results.data(), tester.results_.data(), tester.size_, 0.00001);
-    EXPECT_EQ(count,0) << "SRTM3 tiling test results do not match. Mismatches: " <<count << '\n';
-
+    EXPECT_EQ(count, 0) << "SRTM3 tiling test results do not match. Mismatches: " << count << '\n';
 }
 
-}//namespace
+}  // namespace

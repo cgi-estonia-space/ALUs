@@ -7,13 +7,9 @@ list(APPEND TEST_SOURCES
         src/orbit_state_vectors_test.cc
         src/tests_common.cpp
         src/sentinel1_test.cc
-        src/backgeocoding_test.cc
-        src/egm96_test.cc
         src/geo_utils_test.cpp
         src/product_data_test.cpp
         src/sar_geocoding_test.cc
-        src/srtm3_altitude_test.cc
-        src/srtm3_formating_test.cc
         src/tie_point_grid_test.cc
         src/range_doppler_geocoding_test.cc
         src/zero_doppler_time_test.cc
@@ -41,8 +37,6 @@ target_link_libraries(unit_test
         exotic_operations-static
         backgeocoding-static
         snap-engine-static
-        egm96-test-static
-        srtm3-test-util-static
         cuda_util-static
         tiePointGrid-test-static
         range-doppler-geocoding-test-static

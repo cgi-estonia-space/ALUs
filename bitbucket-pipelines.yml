@@ -24,4 +24,3 @@ pipelines:
             - mv archive.tar.gz ~/.
             - cd ~
             - ./run_on_ec2_instance.sh "archive.tar.gz"
-            - ls -la $BITBUCKET_CLONE_DIR/build/test-reports/test-results

@@ -36,8 +36,8 @@ class CoherenceIntegrationTest : public ::testing::Test {
     CoherenceIntegrationTest() = default;
 
    protected:
-    boost::filesystem::path file_name_in_{"coherence/4_bands.tif"};
-    boost::filesystem::path file_name_out_{"4_bands_coh.tif"};
+    boost::filesystem::path file_name_in_{"./goods/coherence/4_bands.tif"};
+    boost::filesystem::path file_name_out_{"/tmp/4_bands_coh.tif"};
     std::string expected_md5_{"377f197761b36be10c8551c01ac38c62"};
 
     void SetUp() override { boost::filesystem::remove(file_name_out_); }
@@ -58,7 +58,7 @@ TEST_F(CoherenceIntegrationTest, single_burst_data_2018) {
         constexpr int TILE_X{2675};
         constexpr int TILE_Y{1503};
 
-        const char* FILE_NAME_IA = "coherence/incident_angle.img";
+        const char* FILE_NAME_IA = "./goods/coherence/incident_angle.img";
         std::vector<int> band_map_ia{1};
         int band_count_ia = 1;
         alus::GdalTileReader ia_data_reader{FILE_NAME_IA, band_map_ia, band_count_ia, false};
@@ -69,7 +69,8 @@ TEST_F(CoherenceIntegrationTest, single_burst_data_2018) {
                                             ia_data_reader.GetBandYMin()};
         ia_data_reader.ReadTile(incidence_angle_data_set);
         alus::snapengine::PugixmlMetaDataReader xml_reader{
-            "coherence/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_split_Orb_Stack.dim"};
+            "./goods/coherence/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_split_Orb_Stack"
+            ".dim"};
         auto master_root = xml_reader.GetElement(alus::snapengine::MetaDataNodeNames::ABSTRACT_METADATA_ROOT);
         auto slave_root =
             xml_reader.GetElement(alus::snapengine::MetaDataNodeNames::SLAVE_METADATA_ROOT).GetElements().at(0);
