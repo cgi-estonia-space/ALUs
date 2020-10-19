@@ -15,6 +15,17 @@
 
 namespace alus {
 
-double ** Allocate2DDoubleArray(int x, int y);
+template <typename T>
+T ** Allocate2DArray(int x, int y){
+    int i=0, size=x*y, countX=0;
+    T ** result = new T*[x];
+    T * inside = new T[size];
+
+    for(i=0; i<size; i+=y){
+        result[countX] = &inside[i];
+        countX++;
+    }
+    return result;
+}
 
 }//namespace

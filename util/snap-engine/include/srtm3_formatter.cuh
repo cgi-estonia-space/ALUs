@@ -20,15 +20,15 @@ namespace alus {
 namespace snapengine{
 
 struct DemFormatterData{
-    double m00, m01, m02, m10, m11, m12;
-    double no_data_value;
+    float m00, m01, m02, m10, m11, m12;
+    float no_data_value;
     int x_size, y_size;
     int max_lats;
     int max_lons;
-    double* egm;
+    float* egm;
 };
 
-cudaError_t LaunchDemFormatter(dim3 grid_size, dim3 block_size, double *target, double *source, DemFormatterData data);
+cudaError_t LaunchDemFormatter(dim3 grid_size, dim3 block_size, float *target, float *source, DemFormatterData data);
 
 }//namespace
 }//namespace

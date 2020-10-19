@@ -18,6 +18,7 @@
 #include <device_launch_parameters.h>
 #include <orbit_state_vector.h>
 
+#include "cuda_util.hpp"
 #include "orbit_state_vector.h"
 #include "pointer_holders.h"
 #include "sentinel1_utils.cuh"
@@ -43,14 +44,14 @@ struct SlavePixPosData{
     PointerArray tiles;
 
     //earth gravitational model
-    double *egm;
+    float *egm;
     
     int max_lats;
     int max_lons;
     double dem_no_data_value;
     int mask_out_area_without_elevation;
 
-    unsigned int *device_valid_index_counter;
+    size_t *device_valid_index_counter;
     double *device_master_az, *device_master_rg;
     double *device_slave_az, *device_slave_rg;
     double *device_lats, *device_lons;

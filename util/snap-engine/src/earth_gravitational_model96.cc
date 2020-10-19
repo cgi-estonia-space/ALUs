@@ -38,7 +38,7 @@ void EarthGravitationalModel96::ReadGridFile(){
     if(!grid_reader.is_open()){
         throw std::ios::failure("Grid file not open.");
     }
-    this->egm_ = Allocate2DDoubleArray(earthgravitationalmodel96::NUM_LATS, earthgravitationalmodel96::NUM_LONS);
+    this->egm_ = Allocate2DArray<float>(earthgravitationalmodel96::NUM_LATS, earthgravitationalmodel96::NUM_LONS);
 
     int numCharInHeader = earthgravitationalmodel96::NUM_CHAR_PER_NORMAL_LINE + earthgravitationalmodel96::NUM_CHAR_PER_EMPTY_LINE;
 
@@ -54,9 +54,9 @@ void EarthGravitationalModel96::ReadGridFile(){
 }
 
 void EarthGravitationalModel96::HostToDevice(){
-    CHECK_CUDA_ERR(cudaMalloc((void**)&device_egm_, earthgravitationalmodel96::NUM_LATS*earthgravitationalmodel96::NUM_LONS*sizeof(double)));
+    CHECK_CUDA_ERR(cudaMalloc((void**)&device_egm_, earthgravitationalmodel96::NUM_LATS*earthgravitationalmodel96::NUM_LONS*sizeof(float)));
 
-    CHECK_CUDA_ERR(cudaMemcpy(this->device_egm_, this->egm_[0], earthgravitationalmodel96::NUM_LATS*earthgravitationalmodel96::NUM_LONS*sizeof(double),cudaMemcpyHostToDevice));
+    CHECK_CUDA_ERR(cudaMemcpy(this->device_egm_, this->egm_[0], earthgravitationalmodel96::NUM_LATS*earthgravitationalmodel96::NUM_LONS*sizeof(float),cudaMemcpyHostToDevice));
 }
 
 void EarthGravitationalModel96::DeviceToHost(){

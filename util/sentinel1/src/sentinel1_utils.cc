@@ -130,11 +130,11 @@ void Sentinel1Utils::ReadPlaceHolderFiles(){
     if((num_of_geo_lines2 != this->subswath_.at(0).num_of_geo_lines_) || (num_of_geo_points_per_line2 != this->subswath_.at(0).num_of_geo_points_per_line_)){
         throw std::runtime_error("Geo lines and Geo points per lines are not equal to ones in the file.");
     }
-    this->subswath_.at(0).azimuth_time_ = Allocate2DDoubleArray(num_of_geo_lines2, num_of_geo_points_per_line2);
-    this->subswath_.at(0).slant_range_time_ = Allocate2DDoubleArray(num_of_geo_lines2, num_of_geo_points_per_line2);
-    this->subswath_.at(0).latitude_ = Allocate2DDoubleArray(num_of_geo_lines2, num_of_geo_points_per_line2);
-    this->subswath_.at(0).longitude_ = Allocate2DDoubleArray(num_of_geo_lines2, num_of_geo_points_per_line2);
-    this->subswath_.at(0).incidence_angle_ = Allocate2DDoubleArray(num_of_geo_lines2, num_of_geo_points_per_line2);
+    this->subswath_.at(0).azimuth_time_ = Allocate2DArray<double>(num_of_geo_lines2, num_of_geo_points_per_line2);
+    this->subswath_.at(0).slant_range_time_ = Allocate2DArray<double>(num_of_geo_lines2, num_of_geo_points_per_line2);
+    this->subswath_.at(0).latitude_ = Allocate2DArray<double>(num_of_geo_lines2, num_of_geo_points_per_line2);
+    this->subswath_.at(0).longitude_ = Allocate2DArray<double>(num_of_geo_lines2, num_of_geo_points_per_line2);
+    this->subswath_.at(0).incidence_angle_ = Allocate2DArray<double>(num_of_geo_lines2, num_of_geo_points_per_line2);
 
     for(int i=0; i< num_of_geo_lines2; i++){
         for(int j=0; j< num_of_geo_points_per_line2; j++){
@@ -256,7 +256,7 @@ void Sentinel1Utils::ComputeDopplerRate(){
     for (int s = 0; s < num_of_sub_swath_; s++) {
         az_time = (this->subswath_.at(s).first_line_time_ + this->subswath_.at(s).last_line_time)/2.0;
         this->subswath_.at(s).doppler_rate_ =
-            Allocate2DDoubleArray(this->subswath_.at(s).num_of_bursts_, this->subswath_.at(s).samples_per_burst_);
+            Allocate2DArray<double>(this->subswath_.at(s).num_of_bursts_, this->subswath_.at(s).samples_per_burst_);
         v = GetVelocity(az_time / alus::snapengine::constants::secondsInDay); // DLR: 7594.0232
         steering_rate = this->subswath_.at(s).azimuth_steering_rate_ * alus::snapengine::constants::DTOR;
         krot = 2*v* steering_rate / wave_length; // doppler rate by antenna steering
@@ -367,7 +367,7 @@ void Sentinel1Utils::ComputeDopplerCentroid(){
         std::vector<DCPolynomial> dc_estimate_list = GetDCEstimateList(this->subswath_.at(s).subswath_name_);
         std::vector<DCPolynomial> dc_burst_list = ComputeDCForBurstCenters(dc_estimate_list, s + 1);
         this->subswath_.at(s).doppler_centroid_ =
-            Allocate2DDoubleArray(this->subswath_.at(s).num_of_bursts_, this->subswath_.at(s).samples_per_burst_);
+            Allocate2DArray<double>(this->subswath_.at(s).num_of_bursts_, this->subswath_.at(s).samples_per_burst_);
         for (int b = 0; b < this->subswath_.at(s).num_of_bursts_; b++) {
             for (int x = 0; x < this->subswath_.at(s).samples_per_burst_; x++) {
                 slrt = GetSlantRangeTime(x, s + 1)*2;
@@ -414,7 +414,7 @@ void Sentinel1Utils::ComputeRangeDependentDopplerRate(){
     for (int s = 0; s < num_of_sub_swath_; s++) {
         std::vector<AzimuthFmRate> az_fm_rate_list = GetAzimuthFmRateList(this->subswath_.at(s).subswath_name_);
         this->subswath_.at(s).range_depend_doppler_rate_ =
-            Allocate2DDoubleArray(this->subswath_.at(s).num_of_bursts_, this->subswath_.at(s).samples_per_burst_);
+            Allocate2DArray<double>(this->subswath_.at(s).num_of_bursts_, this->subswath_.at(s).samples_per_burst_);
         for (int b = 0; b < this->subswath_.at(s).num_of_bursts_; b++) {
             for (int x = 0; x < this->subswath_.at(s).samples_per_burst_; x++) {
                 slrt = GetSlantRangeTime(x, s + 1)*2; // 1-way to 2-way
@@ -439,7 +439,7 @@ void Sentinel1Utils::ComputeReferenceTime(){
 
     for (int s = 0; s < num_of_sub_swath_; s++) {
         this->subswath_.at(s).reference_time_ =
-            Allocate2DDoubleArray(this->subswath_.at(s).num_of_bursts_, this->subswath_.at(s).samples_per_burst_);
+            Allocate2DArray<double>(this->subswath_.at(s).num_of_bursts_, this->subswath_.at(s).samples_per_burst_);
         tmp1 = this->subswath_.at(s).lines_per_burst_ * this->subswath_.at(s).azimuth_time_interval_ / 2.0;
 
         for (int b = 0; b < this->subswath_.at(s).num_of_bursts_; b++) {

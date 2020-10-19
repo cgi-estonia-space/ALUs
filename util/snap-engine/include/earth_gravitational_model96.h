@@ -72,8 +72,8 @@ private:
 
     void ReadGridFile();
 public:
-    double **egm_{nullptr};
-    double *device_egm_{nullptr};
+    float **egm_{nullptr};
+    float *device_egm_{nullptr};
 
     EarthGravitationalModel96(std::string grid_file);
     EarthGravitationalModel96();

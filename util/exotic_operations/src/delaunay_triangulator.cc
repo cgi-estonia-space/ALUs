@@ -23,7 +23,7 @@
 namespace alus {
 namespace delaunay {
 
-void DelaunayTriangulator::TriangulateCPU(double *x_coords, double *y_coords, int size) {
+void DelaunayTriangulator::TriangulateCPU(double *x_coords, double x_multiplier, double *y_coords, double y_multiplier, int size) {
     std::vector<external::delaunay::ITRIANGLE> v;
     const int end_size = size + 3;
     std::vector<alus::PointDouble> p;
@@ -33,8 +33,8 @@ void DelaunayTriangulator::TriangulateCPU(double *x_coords, double *y_coords, in
 
     p.resize(end_size);
     for(i=0; i< size; i++){
-        p.at(i).x = x_coords[i];
-        p.at(i).y = y_coords[i];
+        p.at(i).x = x_coords[i] * x_multiplier;
+        p.at(i).y = y_coords[i] * y_multiplier;
         p.at(i).index = i;
     }
 
@@ -80,14 +80,14 @@ int SnapCompareTo(const void *v1, const void *v2){
     }
 }
 
-void DelaunayTriangulator::TriangulateCPU2(double *x_coords, double *y_coords, int size){
+void DelaunayTriangulator::TriangulateCPU2(double *x_coords, double x_multiplier, double *y_coords, double y_multiplier, int size){
     std::vector<alus::PointDouble> points;
     points.resize(size);
     int i;
 
     for(i=0; i< size; i++){
-        points.at(i).x = x_coords[i];
-        points.at(i).y = y_coords[i];
+        points.at(i).x = x_coords[i] * x_multiplier;
+        points.at(i).y = y_coords[i] * y_multiplier;
         points.at(i).index = i;
     }
 

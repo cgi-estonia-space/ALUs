@@ -1,5 +1,6 @@
 #include "srtm3_elevation_model.h"
 
+
 namespace alus{
 namespace snapengine{
 
@@ -26,7 +27,7 @@ void SRTM3ElevationModel::ReadSrtmTiles(EarthGravitationalModel96 *egm96){
         tfw_file.append(this->tfw_extension_);
 
         this->srtms_.push_back(Dataset(image_file));
-        this->srtms_.at(i).LoadRasterBand(1);
+        this->srtms_.at(i).LoadRasterBandFloat(1);
 
         std::ifstream tfw_reader(tfw_file);
         if(!tfw_reader.is_open()){
@@ -113,15 +114,16 @@ void SRTM3ElevationModel::HostToDevice(){
     dim3 blockSize(20,20);
 
     for(int i=0; i<this->nr_of_tiles_; i++){
-        double *temp_buffer;
+        float *temp_buffer;
 
         size = this->srtms_.at(i).GetXSize() * this->srtms_.at(i).GetYSize();
-        CHECK_CUDA_ERR(cudaMalloc((void**)&this->device_srtms_.at(i), size*sizeof(double)));
-        CHECK_CUDA_ERR(cudaMalloc((void**)&temp_buffer, size*sizeof(double)));
-        CHECK_CUDA_ERR(cudaMemcpy(temp_buffer, this->srtms_.at(i).GetDataBuffer().data(), size*sizeof(double),cudaMemcpyHostToDevice));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&this->device_srtms_.at(i), size*sizeof(float)));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&temp_buffer, size*sizeof(float)));
+        CHECK_CUDA_ERR(cudaMemcpy(temp_buffer, this->srtms_.at(i).GetFloatDataBuffer().data(), size*sizeof(float),cudaMemcpyHostToDevice));
         this->datas_.at(i).x_size = this->srtms_.at(i).GetXSize();
         this->datas_.at(i).y_size = this->srtms_.at(i).GetYSize();
-        dim3 gridSize(cuda::getGridDim(blockSize.x, this->datas_.at(i).x_size),cuda::getGridDim(blockSize.y, this->datas_.at(i).y_size));
+        dim3 gridSize(cuda::GetGridDim(blockSize.x, this->datas_.at(i).x_size),
+                      cuda::GetGridDim(blockSize.y, this->datas_.at(i).y_size));
 
         CHECK_CUDA_ERR(
             LaunchDemFormatter(gridSize, blockSize, this->device_srtms_.at(i), temp_buffer, this->datas_.at(i)));

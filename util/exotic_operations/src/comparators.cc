@@ -13,6 +13,8 @@
  */
 #include "comparators.h"
 
+#include <iomanip>
+
 namespace {
     constexpr double ERROR_RANGE{0.0000001};
 }
@@ -26,6 +28,7 @@ int EqualsArrays(const float *a, const float *b, int elems, float delta){
     for(i=0; i<elems; i++){
         temp = (a[i]>b[i])*(a[i]-b[i]) + (a[i]<=b[i])*(b[i]-a[i]);
         if(temp > delta){
+            std::cerr << std::fixed << std::setprecision(8);
             std::cerr << "elements do not match - " <<i<<")"<< a[i] << ":"<<b[i] << '\n';
             count++;
             if(count > 50){
@@ -53,6 +56,7 @@ int EqualsArraysd(const double *a, const double *b, int elems, double delta){
     for(i=0; i<elems; i++){
         temp = (a[i]>b[i])*(a[i]-b[i]) + (a[i]<=b[i])*(b[i]-a[i]);
         if(temp > delta){
+            std::cerr << std::fixed << std::setprecision(8);
             std::cerr << "elements do not match - " <<i<<")"<< a[i] << ":"<<b[i] << '\n';
             count++;
             if(count > 50){

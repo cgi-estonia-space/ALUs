@@ -83,14 +83,14 @@ TEST(EGM96, correctness){
     EGMTester tester("./goods/egm96TestData.txt");
 
 
-    EXPECT_DOUBLE_EQ(13.606, egm96.egm_[0][0]);
-    EXPECT_DOUBLE_EQ(13.606, egm96.egm_[0][1440]);
+    EXPECT_FLOAT_EQ(13.606, egm96.egm_[0][0]);
+    EXPECT_FLOAT_EQ(13.606, egm96.egm_[0][1440]);
 
-    EXPECT_DOUBLE_EQ(-29.534, egm96.egm_[720][0]);
-    EXPECT_DOUBLE_EQ(-29.534, egm96.egm_[720][1440]);
+    EXPECT_FLOAT_EQ(-29.534, egm96.egm_[720][0]);
+    EXPECT_FLOAT_EQ(-29.534, egm96.egm_[720][1440]);
 
     dim3 blockSize(512);
-    dim3 gridSize(alus::cuda::getGridDim(blockSize.x,tester.size));
+    dim3 gridSize(alus::cuda::GetGridDim(blockSize.x, tester.size));
 
     tester.HostToDevice();
     egm96.HostToDevice();
@@ -104,7 +104,7 @@ TEST(EGM96, correctness){
 
     tester.DeviceToHost();
     //test data file is not as accurate as I would wish
-    int count = alus::EqualsArrays(tester.end_results_.data(), tester.etalon_results_.data(), tester.size, 0.00001);
+    int count = alus::EqualsArrays(tester.end_results_.data(), tester.etalon_results_.data(), tester.size, 0.0000000001);
     EXPECT_EQ(count,0) << "EGM test results do not match. Mismatches: " <<count << '\n';
 }
 

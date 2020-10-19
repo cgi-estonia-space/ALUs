@@ -48,7 +48,7 @@ private:
     int nr_of_tiles_;
     std::vector<Dataset> srtms_;
     //use this for cudaFree once you are done with image.
-    std::vector<double *> device_srtms_;
+    std::vector<float *> device_srtms_;
 
     std::vector<DemFormatterData> datas_;
 

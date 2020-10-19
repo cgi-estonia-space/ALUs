@@ -35,8 +35,8 @@ class DelaunayTriangulator {
     DelaunayTriangulator() = default;
     ~DelaunayTriangulator() = default;
 
-    void TriangulateCPU(double *x_coords, double *y_coords, int size);
-    void TriangulateCPU2(double *x_coords, double *y_coords, int size);
+    void TriangulateCPU(double *x_coords, double x_multiplier, double *y_coords, double y_multiplier, int size);
+    void TriangulateCPU2(double *x_coords, double x_multiplier, double *y_coords, double y_multiplier, int size);
     void TriangulateGPU(double *x_coords, double *y_coords, int size);
 };
 

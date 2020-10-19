@@ -95,8 +95,7 @@ TEST(backgeocoding, correctness){
     BackgeocodingTester tester;
     tester.ReadTestData();
 
-    backgeocoding.SetPlaceHolderFiles(
-        "./goods/backgeocoding/params.txt", "./goods/backgeocoding/xPoints.txt", "./goods/backgeocoding/yPoints.txt");
+    backgeocoding.SetPlaceHolderFiles("./goods/backgeocoding/params.txt");
     backgeocoding.SetSentinel1Placeholders(
                                            "./goods/backgeocoding/dcEstimateList.txt",
                                            "./goods/backgeocoding/azimuthList.txt",
@@ -116,10 +115,10 @@ TEST(backgeocoding, correctness){
     const float *i_result = backgeocoding.GetIResult();
     const float *q_result = backgeocoding.GetQResult();
 
-    int count_i = alus::EqualsArrays(i_result, tester.i_result_, tester.tile_size_);
+    int count_i = alus::EqualsArrays(i_result, tester.i_result_, tester.tile_size_, 0.00001);
     EXPECT_EQ(count_i,0) << "Results I do not match. Mismatches: " << count_i << '\n';
 
-    int count_q = alus::EqualsArrays(q_result, tester.q_result_, tester.tile_size_);
+    int count_q = alus::EqualsArrays(q_result, tester.q_result_, tester.tile_size_, 0.00001);
     EXPECT_EQ(count_q,0) << "Results Q do not match. Mismatches: " << count_q << '\n';
 }
 

@@ -28,17 +28,8 @@ using namespace alus::tests;
 
 namespace{
 
-
-
-class DelaunayTriangulatonTester: public alus::cuda::CudaFriendlyObject{
-   private:
-    static const std::string az_rg_data_file_;
-    static const std::string triangles_data_file_;
-
+class DelaunayTriangulatonTester{
    public:
-    static constexpr double RG_AZ_RATIO{0.16742323135844578};
-    static constexpr double INVALID_INDEX{-9999.0};
-
     std::vector<double> x_coords_;
     std::vector<double> y_coords_;
     std::vector<alus::delaunay::DelaunayTriangle2D> triangles_;
@@ -48,9 +39,6 @@ class DelaunayTriangulatonTester: public alus::cuda::CudaFriendlyObject{
     alus::delaunay::DelaunayTriangle2D *device_triangles_ = nullptr;
 
     DelaunayTriangulatonTester() = default;
-    ~DelaunayTriangulatonTester(){
-        this->DeviceFree();
-    }
 
     void ReadSmallTestData(){
         alus::delaunay::DelaunayTriangle2D temp_triangle;
@@ -150,86 +138,8 @@ class DelaunayTriangulatonTester: public alus::cuda::CudaFriendlyObject{
         temp_triangle.c_index = 5;
         this->triangles_.at(4) = temp_triangle;
     }
-
-    void ReadBigTestData(){
-        alus::delaunay::DelaunayTriangle2D temp_triangle;
-        double temp_index;
-        double dump_x, dump_y; //test data also includes slave figures. We don't need those for this test.
-        std::ifstream rg_az_stream(this->az_rg_data_file_);
-        std::ifstream triangles_stream(this->triangles_data_file_);
-
-        if(!rg_az_stream.is_open()){
-            throw std::ios::failure("masterSlaveAzRgData.txt is not open.");
-        }
-        if(!triangles_stream.is_open()){
-            throw std::ios::failure("masterTrianglesTestData.txt is not open.");
-        }
-
-        rg_az_stream>> this->width_ >> this->height_;
-        triangles_stream >> this->triangle_size_;
-
-        int coord_size = this->width_ * this->height_;
-
-        this->x_coords_.resize(coord_size);
-        this->y_coords_.resize(coord_size);
-        this->triangles_.resize(this->triangle_size_);
-
-
-        for(int i=0; i<coord_size; i++){
-            rg_az_stream >> this->x_coords_.at(i) >> this->y_coords_.at(i) >> dump_x >> dump_y;
-            this->y_coords_.at(i) = this->y_coords_.at(i) * this->RG_AZ_RATIO;
-        }
-
-        for(int i=0; i<this->triangle_size_; i++){
-            triangles_stream >> temp_triangle.ax >> temp_triangle.ay >> temp_index;
-            temp_index += 0.001; //fixing a possible float inaccuracy
-            temp_triangle.a_index = (int)temp_index;
-
-            triangles_stream >> temp_triangle.bx >> temp_triangle.by >> temp_index;
-            temp_index += 0.001; //fixing a possible float inaccuracy
-            temp_triangle.b_index = (int)temp_index;
-
-            triangles_stream >> temp_triangle.cx >> temp_triangle.cy >> temp_index;
-            temp_index += 0.001; //fixing a possible float inaccuracy
-            temp_triangle.c_index = (int)temp_index;
-
-            this->triangles_.at(i) = temp_triangle;
-        }
-
-        rg_az_stream.close();
-        triangles_stream.close();
-    }
-
-    void HostToDevice(){
-        CHECK_CUDA_ERR(cudaMalloc((void**)&this->device_x_coords_, this->width_* this->height_ * sizeof(double)));
-        CHECK_CUDA_ERR(cudaMalloc((void**)&this->device_y_coords_, this->width_* this->height_ * sizeof(double)));
-        CHECK_CUDA_ERR(cudaMalloc((void**)&this->device_triangles_, this->triangle_size_ * sizeof(alus::delaunay::DelaunayTriangle2Dgpu)));
-
-        CHECK_CUDA_ERR(cudaMemcpy(this->device_x_coords_, this->x_coords_.data(), this->width_* this->height_ * sizeof(double), cudaMemcpyHostToDevice));
-        CHECK_CUDA_ERR(cudaMemcpy(this->device_y_coords_, this->y_coords_.data(), this->width_* this->height_ * sizeof(double), cudaMemcpyHostToDevice));
-    }
-    void DeviceToHost() {
-        CHECK_CUDA_ERR(cudaMemcpy(this->triangles_.data(), this->device_triangles_, this->triangle_size_ * sizeof(alus::delaunay::DelaunayTriangle2Dgpu), cudaMemcpyDeviceToHost));
-    }
-    void DeviceFree() {
-        if(this->device_x_coords_ != nullptr){
-            cudaFree(this->device_x_coords_);
-            this->device_x_coords_ = nullptr;
-        }
-        if(this->device_y_coords_ != nullptr){
-            cudaFree(this->device_y_coords_);
-            this->device_y_coords_ = nullptr;
-        }
-        if(this->device_triangles_ != nullptr){
-            cudaFree(this->device_triangles_);
-            this->device_triangles_ = nullptr;
-        }
-    }
-
 };
 
-const std::string DelaunayTriangulatonTester::az_rg_data_file_ = "./goods/backgeocoding/masterSlaveAzRgData.txt";
-const std::string DelaunayTriangulatonTester::triangles_data_file_ = "./goods/backgeocoding/masterTrianglesTestData.txt";
 
 //don't run this unless you are developing the delaunay gpu algorithm or it has been finished.
 /*TEST(DelaunayTest, TriangulationTest){
@@ -257,7 +167,7 @@ TEST(DelaunayTest, SmallCPUTriangulationTest){
     tester.ReadSmallTestData();
 
     alus::delaunay::DelaunayTriangulator trianglulator;
-    trianglulator.TriangulateCPU(tester.x_coords_.data(), tester.y_coords_.data(), tester.width_);
+    trianglulator.TriangulateCPU(tester.x_coords_.data(), 1.0, tester.y_coords_.data(), 1.0,  tester.width_);
 
     int count = alus::EqualsTriangles(trianglulator.host_triangles_.data(), tester.triangles_.data(), trianglulator.triangle_count_, 0.00001);
     EXPECT_EQ(count,0) << "Triangle results do not match. Mismatches: " << count << '\n';
@@ -277,16 +187,6 @@ TEST(DelaunayTest, SmallCPUTriangulationTest){
 
 }*/
 
-TEST(DelaunayTest, BigCPUTriangulationTest){
-    DelaunayTriangulatonTester tester;
-    tester.ReadBigTestData();
 
-    alus::delaunay::DelaunayTriangulator trianglulator;
-    trianglulator.TriangulateCPU2(tester.x_coords_.data(), tester.y_coords_.data(), tester.width_ * tester.height_);
-    std::cout <<"nr of triangles: " << trianglulator.triangle_count_ <<std::endl;
-
-    int count = alus::EqualsTriangles(trianglulator.host_triangles_.data(), tester.triangles_.data(), trianglulator.triangle_count_, 0.00001);
-    EXPECT_EQ(count,0) << "Triangle results do not match. Mismatches: " << count << '\n';
-}
 
 }//namespace

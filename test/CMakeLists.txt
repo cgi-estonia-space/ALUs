@@ -25,6 +25,7 @@ list(APPEND TEST_SOURCES
         src/metadata_element_test.cc
         src/metadata_attribute_test.cc
         src/delaunay_test.cc
+        src/triangular_interpolation_test.cc
         )
 
 add_executable(unit_test ${TEST_SOURCES})

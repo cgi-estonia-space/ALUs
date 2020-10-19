@@ -54,6 +54,13 @@ inline __device__ __host__ void GetPositionVelocity(double time,
         i_n = std::min(i_0 + NV - 1, numOrbitVec - 1);
         i_0 = (i_n < numOrbitVec - 1 ? i_0 : i_n - NV + 1);
     }
+    position->x = 0.0;
+    position->y = 0.0;
+    position->z = 0.0;
+
+    velocity->x = 0.0;
+    velocity->y = 0.0;
+    velocity->z = 0.0;
 
     for (int i = i_0; i <= i_n; ++i) {
         snapengine::OrbitStateVector orbI = orbit[i];
