@@ -15,15 +15,12 @@
 
 #include <cstdio>
 #include <vector>
-#include <sstream>
 
-#include "CudaFriendlyObject.h"
 #include "dataset.h"
-#include "earth_gravitational_model96.h"
-#include "pointer_holders.h"
 #include "shapes.h"
-#include "srtm3_elevation_model_constants.h"
+#include "earth_gravitational_model96.h"
 #include "srtm3_formatter.cuh"
+#include "pointer_holders.h"
 
 namespace alus{
 namespace snapengine{

@@ -95,7 +95,7 @@ TEST(SRTM3, tileFormating) {
     }
 
     std::cout<<"tester size: " << tester.size_ << std::endl;
-    int count = alus::EqualsArrays(end_results.data(), tester.results_.data(), tester.size_, 0.0000001);
+    size_t count = alus::EqualsArrays(end_results.data(), tester.results_.data(), tester.size_, 0.0000001);
     EXPECT_EQ(count,0) << "SRTM3 tiling test results do not match. Mismatches: " <<count << '\n';
 
 }

@@ -13,23 +13,40 @@
  */
 #pragma once
 #include <cuda_runtime.h>
-#include <device_launch_parameters.h>
 
 namespace alus {
-namespace backgeocoding{
+namespace backgeocoding {
 
-cudaError_t LaunchBilinearInterpolation(
-                        dim3 grid_size,
-                        dim3 block_size,
-                        double *x_pixels,
-                        double *y_pixels,
-                        double *demod_phase,
-                        double *demod_i,
-                        double *demod_q,
-                        int *int_params,
-                        double double_params,
-                        float *results_i,
-                        float *results_q);
+struct BilinearParams {
+    int point_width;
+    int point_height;
+    int demod_width;
+    int demod_height;
+    int start_x;
+    int start_y;
 
-} //namespace
-} //namespace
+    int scanline_offset;
+    int scanline_stride;
+    int min_x;
+    int min_y;
+
+    int rectangle_x;
+    int rectangle_y;
+    bool disable_reramp;
+    int subswath_start;
+    int subswath_end;
+
+    double no_data_value;
+};
+
+cudaError_t LaunchBilinearInterpolation(double *x_pixels,
+                                        double *y_pixels,
+                                        double *demod_phase,
+                                        double *demod_i,
+                                        double *demod_q,
+                                        BilinearParams params,
+                                        float *results_i,
+                                        float *results_q);
+
+}  // namespace backgeocoding
+}  // namespace alus

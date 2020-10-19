@@ -20,25 +20,25 @@
 namespace alus {
 namespace delaunay {
 
-
 /**
  * TODO: DO NOT FORGET TO SORT OUT ALL INVALID INDEXES BEFORE ACTIVATING THIS CLASS!
  */
 class DelaunayTriangulator {
    private:
-
    public:
     std::vector<DelaunayTriangle2D> host_triangles_;
     DelaunayTriangle2D *device_triangles_ = nullptr;
-    size_t triangle_count_; //yes you can use host_triangles.size() instead, but you can't do it on the gpu
+    size_t triangle_count_;  // yes you can use host_triangles.size() instead, but you can't do it on the gpu
 
     DelaunayTriangulator() = default;
     ~DelaunayTriangulator() = default;
 
-    void TriangulateCPU(double *x_coords, double x_multiplier, double *y_coords, double y_multiplier, int size);
-    void TriangulateCPU2(double *x_coords, double x_multiplier, double *y_coords, double y_multiplier, int size);
+    void TriangulateCPU(
+        double *x_coords, double x_multiplier, double *y_coords, double y_multiplier, int size, double invalid_index);
+    void TriangulateCPU2(
+        double *x_coords, double x_multiplier, double *y_coords, double y_multiplier, int size, double invalid_index);
     void TriangulateGPU(double *x_coords, double *y_coords, int size);
 };
 
-}//namespace
-}//namespace
+}  // namespace delaunay
+}  // namespace alus

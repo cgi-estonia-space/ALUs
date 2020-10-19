@@ -21,8 +21,9 @@ namespace {
 
 namespace alus {
 
-int EqualsArrays(const float *a, const float *b, int elems, float delta){
-    int i,count =0;
+size_t EqualsArrays(const float *a, const float *b, int elems, float delta){
+    int i;
+    size_t count =0;
     float temp;
 
     for(i=0; i<elems; i++){
@@ -39,18 +40,19 @@ int EqualsArrays(const float *a, const float *b, int elems, float delta){
     return count;
 }
 
-int EqualsArrays(const float *a,const float *b, int elems){
+size_t EqualsArrays(const float *a,const float *b, int elems){
     return EqualsArrays(a, b, elems, ERROR_RANGE);
 }
 
 
 
-int EqualsArraysd(const double *a, const double *b, int elems){
+size_t EqualsArraysd(const double *a, const double *b, int elems){
     return EqualsArraysd(a, b, elems, ERROR_RANGE);
 }
 
-int EqualsArraysd(const double *a, const double *b, int elems, double delta){
-    int i,count =0;
+size_t EqualsArraysd(const double *a, const double *b, int elems, double delta){
+    int i;
+    size_t count =0;
     double temp;
 
     for(i=0; i<elems; i++){
@@ -67,8 +69,9 @@ int EqualsArraysd(const double *a, const double *b, int elems, double delta){
     return count;
 }
 
-int EqualsArrays2Dd(const double *const *a, const double *const *b, int x, int y){
-    int i,j, count=0;
+size_t EqualsArrays2Dd(const double *const *a, const double *const *b, int x, int y){
+    int i,j;
+    size_t count=0;
     double temp;
 
     for(i=0; i<x; i++){
@@ -153,8 +156,8 @@ void printTriangle(delaunay::DelaunayTriangle2D tri){
  * @param delta
  * @return the amount of mismatching triangles.
  */
-int EqualsTriangles(delaunay::DelaunayTriangle2D *a, delaunay::DelaunayTriangle2D *b,size_t length, double delta){
-    int count = 0, was_it_found = 0;
+size_t EqualsTriangles(delaunay::DelaunayTriangle2D *a, delaunay::DelaunayTriangle2D *b,size_t length, double delta){
+    size_t count = 0, was_it_found = 0;
     size_t i,j;
 
     for(i=0; i<length; i++){

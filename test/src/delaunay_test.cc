@@ -11,24 +11,25 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
-#include <vector>
 #include <fstream>
+#include <vector>
 
 #include "gmock/gmock.h"
 
-#include "delaunay_triangulator.h"
+#include "CudaFriendlyObject.h"
+#include "comparators.h"
+#include "cuda_util.hpp"
 #include "delaunay_triangle2D.h"
 #include "delaunay_triangulator.cuh"
-#include "CudaFriendlyObject.h"
+#include "delaunay_triangulator.h"
 #include "tests_common.hpp"
-#include "cuda_util.hpp"
-#include "comparators.h"
+#include "backgeocoding_constants.h"
 
 using namespace alus::tests;
 
-namespace{
+namespace {
 
-class DelaunayTriangulatonTester{
+class DelaunayTriangulatonTester {
    public:
     std::vector<double> x_coords_;
     std::vector<double> y_coords_;
@@ -37,14 +38,15 @@ class DelaunayTriangulatonTester{
     double *device_x_coords_ = nullptr;
     double *device_y_coords_ = nullptr;
     alus::delaunay::DelaunayTriangle2D *device_triangles_ = nullptr;
+    const double invalid_index = alus::backgeocoding::INVALID_INDEX;
 
     DelaunayTriangulatonTester() = default;
 
-    void ReadSmallTestData(){
+    void ReadSmallTestData() {
         alus::delaunay::DelaunayTriangle2D temp_triangle;
         this->width_ = 6;
         this->height_ = 1;
-        this->triangle_size_ = 5; //maximum triangles include 2n -2 -b
+        this->triangle_size_ = 5;  // maximum triangles include 2n -2 -b
         x_coords_.resize(this->width_);
         y_coords_.resize(this->width_);
 
@@ -140,15 +142,15 @@ class DelaunayTriangulatonTester{
     }
 };
 
-
-//don't run this unless you are developing the delaunay gpu algorithm or it has been finished.
+// don't run this unless you are developing the delaunay gpu algorithm or it has been finished.
 /*TEST(DelaunayTest, TriangulationTest){
     alus::delaunay::DelaunayTriangle2D temp_triangle;
     DelaunayTriangulatonTester tester;
     tester.readTestData();
     tester.HostToDevice();
 
-    CHECK_CUDA_ERR(alus::delaunay::LaunchDelaunayTriangulation(tester.device_x_coords_, tester.device_y_coords_, tester.width_, tester.height_, tester.device_triangles_));
+    CHECK_CUDA_ERR(alus::delaunay::LaunchDelaunayTriangulation(tester.device_x_coords_, tester.device_y_coords_,
+tester.width_, tester.height_, tester.device_triangles_));
 
     tester.DeviceToHost();
 
@@ -162,18 +164,24 @@ class DelaunayTriangulatonTester{
 
 }*/
 
-TEST(DelaunayTest, SmallCPUTriangulationTest){
+TEST(DelaunayTest, SmallCPUTriangulationTest) {
     DelaunayTriangulatonTester tester;
     tester.ReadSmallTestData();
 
     alus::delaunay::DelaunayTriangulator trianglulator;
-    trianglulator.TriangulateCPU(tester.x_coords_.data(), 1.0, tester.y_coords_.data(), 1.0,  tester.width_);
+    trianglulator.TriangulateCPU(tester.x_coords_.data(),
+                                 1.0,
+                                 tester.y_coords_.data(),
+                                 1.0,
+                                 tester.width_,
+                                 tester.invalid_index);
 
-    int count = alus::EqualsTriangles(trianglulator.host_triangles_.data(), tester.triangles_.data(), trianglulator.triangle_count_, 0.00001);
-    EXPECT_EQ(count,0) << "Triangle results do not match. Mismatches: " << count << '\n';
+    size_t count = alus::EqualsTriangles(
+        trianglulator.host_triangles_.data(), tester.triangles_.data(), trianglulator.triangle_count_, 0.00001);
+    EXPECT_EQ(count, 0) << "Triangle results do not match. Mismatches: " << count << '\n';
 }
 
-//TODO: We will bring this back once we have the full algorithm, so we can test speeds and accuracies of end results.
+// TODO: We will bring this back once we have the full algorithm, so we can test speeds and accuracies of end results.
 /*TEST(DelaunayTest, BigCPUTriangulationTest2){
     DelaunayTriangulatonTester tester;
     tester.readBigTestData();
@@ -182,11 +190,10 @@ TEST(DelaunayTest, SmallCPUTriangulationTest){
     trianglulator.TriangulateCPU(tester.x_coords_.data(), tester.y_coords_.data(), tester.width_ * tester.height_);
     std::cout <<"nr of triangles: " << trianglulator.triangle_count_ <<std::endl;
 
-    int count = alus::EqualsTriangles(trianglulator.host_triangles_.data(), tester.triangles_.data(), trianglulator.triangle_count_, 0.00001);
-    EXPECT_EQ(count,0) << "Triangle results do not match. Mismatches: " << count << '\n';
+    int count = alus::EqualsTriangles(trianglulator.host_triangles_.data(), tester.triangles_.data(),
+trianglulator.triangle_count_, 0.00001); EXPECT_EQ(count,0) << "Triangle results do not match. Mismatches: " << count <<
+'\n';
 
 }*/
 
-
-
-}//namespace
+}  // namespace

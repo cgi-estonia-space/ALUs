@@ -15,7 +15,9 @@
 
 #include <iostream>
 
+#include "backgeocoding_io.h"
 #include "backgeocoding.h"
+
 
 namespace alus {
 namespace backgeocoding{
@@ -23,16 +25,14 @@ namespace backgeocoding{
 /**
  * A helper class to manage the data intputs and threading to Backgeocoding class.
  */
-class BackgeocodingController{
+class BackgeocodingController: public BackgeocodingIO{
 private:
     Backgeocoding *backgeocoding_{nullptr};
-    double *slave_tile_i_, *slave_tile_q_;
     Rectangle slave_rect;
 
 public:
-
-    void ReadPlacehoderData();
     void ComputeImage();
+    void ReadTile(Rectangle area, double *tile_i, double *tile_q) override ;
     BackgeocodingController();
     ~BackgeocodingController();
 };

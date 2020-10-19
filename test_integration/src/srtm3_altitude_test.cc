@@ -125,7 +125,7 @@ TEST(SRTM3, altitudeCalc) {
         grid_size, block_size, tester.device_lats_, tester.device_lons_, tester.device_alts_, calc_data));
     tester.DeviceToHost();
 
-    int count = alus::EqualsArraysd(tester.end_results_.data(), tester.alts_.data(), tester.size_, 0.00001);
+    size_t count = alus::EqualsArraysd(tester.end_results_.data(), tester.alts_.data(), tester.size_, 0.00001);
     EXPECT_EQ(count, 0) << "SRTM3 altitude test results do not match. Mismatches: " << count << '\n';
 }
 
