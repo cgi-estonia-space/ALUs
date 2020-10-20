@@ -68,6 +68,7 @@ target_compile_options(integration-test-coherence
 add_custom_command(TARGET integration-test-coherence
         POST_BUILD
         COMMAND mkdir -p ${CMAKE_BINARY_DIR}/test_integration/goods
+        COMMAND rm -rf  ${CMAKE_BINARY_DIR}/test_integration/goods/coherence
         COMMAND ln -s ${CMAKE_CURRENT_LIST_DIR}/goods/coherence
                 ${CMAKE_BINARY_DIR}/test_integration/goods/coherence
         )
