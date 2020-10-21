@@ -11,7 +11,7 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
-#include "triangular_interpolation.cuh"
+#include "triangular_interpolation_computation.h"
 
 #include "cuda_util.hpp"
 

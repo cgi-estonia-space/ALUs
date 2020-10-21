@@ -26,6 +26,9 @@ list(APPEND TEST_SOURCES
         src/metadata_attribute_test.cc
         src/delaunay_test.cc
         src/triangular_interpolation_test.cc
+        src/burst_indices_test.cc
+        src/burst_indices_kernels.cu
+        src/compute_burst_offset_test.cc
         )
 
 add_executable(unit_test ${TEST_SOURCES})
@@ -44,15 +47,12 @@ target_link_libraries(unit_test
         sar-geocoding-test-static
         coherence-static
         )
-
-add_executable(map_cut util/map_cut.cpp)
-target_link_libraries(map_cut
-        PRIVATE
-        gdal-util-static
+set_target_properties(unit_test
+        PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}
         )
-
 add_custom_command(TARGET unit_test
         POST_BUILD
-        COMMAND cp -r ${CMAKE_CURRENT_LIST_DIR}/goods ${CMAKE_BINARY_DIR}/test/.
-        COMMAND cd ${CMAKE_BINARY_DIR}/test/goods && unzip -oq ${CMAKE_BINARY_DIR}/test/goods/\\*.zip
+        COMMAND cp -r ${CMAKE_CURRENT_LIST_DIR}/goods ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}/.
+        COMMAND cd ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}/goods && unzip -oq ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}/goods/\\*.zip
         )

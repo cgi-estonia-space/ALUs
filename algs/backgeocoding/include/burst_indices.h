@@ -12,23 +12,16 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 #pragma once
-#include <cuda_runtime.h>
-
-#include "general_constants.h"
-#include "shapes.h"
-#include "subswath_info.cuh"
 
 namespace alus {
 namespace backgeocoding {
 
-cudaError_t LaunchDerampDemod(Rectangle rectangle,
-                              double *slave_i,
-                              double *slave_q,
-                              double *demod_phase,
-                              double *demod_i,
-                              double *demod_q,
-                              s1tbx::DeviceSubswathInfo *sub_swath,
-                              int s_burst_index);
-
+struct BurstIndices {
+    int first_burst_index;
+    int second_burst_index;
+    bool in_upper_part_of_first_burst;
+    bool in_upper_part_of_second_burst;
+    bool valid;
+};
 }  // namespace backgeocoding
 }  // namespace alus

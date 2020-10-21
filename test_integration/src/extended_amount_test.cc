@@ -31,10 +31,10 @@ TEST(ExtendedAmountTest, ComputeExtendedAmount) {
 
     alus::backgeocoding::AzimuthAndRangeBounds result =
         backgeocoding.ComputeExtendedAmount(input.x, input.y, input.width, input.height);
-    EXPECT_THAT(result.azimuth_min, testing::DoubleNear(expected_output.azimuth_min, 0.01));
-    EXPECT_THAT(result.azimuth_max, testing::DoubleNear(expected_output.azimuth_max, 0.01));
-    EXPECT_THAT(result.range_max, testing::DoubleNear(expected_output.range_max, 0.01));
-    EXPECT_THAT(result.range_min, testing::DoubleNear(expected_output.range_min, 0.01));
+    EXPECT_THAT(result.range_max, testing::DoubleNear(expected_output.range_max, 1e-9));
+    EXPECT_THAT(result.range_min, testing::DoubleNear(expected_output.range_min, 1e-9));
+    EXPECT_THAT(result.azimuth_min, testing::DoubleEq(expected_output.azimuth_min));
+    EXPECT_THAT(result.azimuth_max, testing::DoubleEq(expected_output.azimuth_max));
 }
 
 TEST(ExtendedAmountTest, GetBurstIndexTest) {

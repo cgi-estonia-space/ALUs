@@ -17,7 +17,6 @@
 
 #include "delaunay_triangle2D.h"
 
-
 namespace alus {
 
 size_t EqualsArrays(const float *a, const float *b, int elems);
@@ -29,8 +28,5 @@ size_t EqualsArrays2Dd(const double *const *a, const double *const *b, int x, in
 int EqualsDouble(double a, double b, double delta);
 int EqualsTrianglesByIndices(delaunay::DelaunayTriangle2D a, delaunay::DelaunayTriangle2D b);
 int EqualsTrianglesByPoints(delaunay::DelaunayTriangle2D a, delaunay::DelaunayTriangle2D b, double delta);
-size_t EqualsTriangles(delaunay::DelaunayTriangle2D *a, delaunay::DelaunayTriangle2D *b,size_t length, double delta);
-
-
-
-}//namespace
+size_t EqualsTriangles(delaunay::DelaunayTriangle2D *a, delaunay::DelaunayTriangle2D *b, size_t length, double delta);
+}  // namespace alus
