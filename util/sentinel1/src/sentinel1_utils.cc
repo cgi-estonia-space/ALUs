@@ -566,6 +566,5 @@ void Sentinel1Utils::DeviceFree() {
         this->device_sentinel_1_utils_ = nullptr;
     }
 }
-
 }//namespace
 }//namespace

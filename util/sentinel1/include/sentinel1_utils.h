@@ -29,15 +29,6 @@ struct DCPolynomial {
     std::vector<double> data_dc_polynomial;
 };
 
-struct Sentinel1Index {
-    int i0;
-    int i1;
-    int j0;
-    int j1;
-    double mu_x;
-    double mu_y;
-};
-
 /**
  * This class refers to Sentinel1Utils class from s1tbx module.
  */

@@ -13,19 +13,17 @@
  */
 #pragma once
 
-#include <vector>
 #include <memory>
+#include <vector>
 
+#include "backgeocoding_io.h"
+#include "earth_gravitational_model96.h"
+#include "extended_amount.h"
 #include "sentinel1_utils.h"
 #include "srtm3_elevation_model.h"
-#include "earth_gravitational_model96.h"
-#include "backgeocoding_io.h"
 
 namespace alus {
 namespace backgeocoding {
-
-
-
 
 /**
  * The contents of this class originate from s1tbx module's BackGeocodingOp java class.
@@ -33,14 +31,14 @@ namespace backgeocoding {
 class Backgeocoding {
    private:
     /**
-     * This came from chopping up the getBoundingBox function and dividing its functionality over several other functions.
-     * You see we could not implement it as it was on the gpu. This struct should touch all of the parts of that function.
+     * This came from chopping up the getBoundingBox function and dividing its functionality over several other
+     * functions. You see we could not implement it as it was on the gpu. This struct should touch all of the parts of
+     * that function.
      */
-    struct CoordMinMax{
+    struct CoordMinMax {
         int x_min, x_max;
         int y_min, y_max;
     };
-
     std::vector<float> q_result_;
     std::vector<float> i_result_;
     double *device_x_points_{nullptr}, *device_y_points_{nullptr};
@@ -49,7 +47,7 @@ class Backgeocoding {
     double *device_slave_i_{nullptr}, *device_slave_q_{nullptr};
 
     int tile_x_, tile_y_, tile_size_, demod_size_;
-    bool disable_reramp_ = 0; //TODO: currently not implemented
+    bool disable_reramp_ = 0;  // TODO: currently not implemented
 
     std::unique_ptr<s1tbx::Sentinel1Utils> master_utils_;
     std::unique_ptr<s1tbx::Sentinel1Utils> slave_utils_;
@@ -60,17 +58,16 @@ class Backgeocoding {
 
     void AllocateGPUData();
     void CopySlaveTiles(double *slave_tile_i, double *slave_tile_q);
-    cudaError_t LaunchBilinearComp(Rectangle target_area, Rectangle source_area, int s_burst_index, Rectangle target_tile);
+    cudaError_t LaunchBilinearComp(Rectangle target_area,
+                                   Rectangle source_area,
+                                   int s_burst_index,
+                                   Rectangle target_tile);
     cudaError_t LaunchDerampDemodComp(Rectangle slave_rect, int s_burst_index);
     void GetGPUEndResults();
     void PrepareSrtm3Data();
 
-    std::vector<double> ComputeImageGeoBoundary(s1tbx::SubSwathInfo *sub_swath,
-                                                int burst_index,
-                                                int x_min,
-                                                int x_max,
-                                                int y_min,
-                                                int y_max);
+    std::vector<double> ComputeImageGeoBoundary(
+        s1tbx::SubSwathInfo *sub_swath, int burst_index, int x_min, int x_max, int y_min, int y_max);
     bool ComputeSlavePixPos(int m_burst_index,
                             int s_burst_index,
                             int x0,
@@ -81,6 +78,7 @@ class Backgeocoding {
                             CoordMinMax *coord_min_max);
 
     // placeholder files
+
     std::string slave_orbit_state_vectors_file_ = "../test/goods/backgeocoding/slaveOrbitStateVectors.txt";
     std::string master_orbit_state_vectors_file_ = "../test/goods/backgeocoding/masterOrbitStateVectors.txt";
     std::string dc_estimate_list_file_ = "../test/goods/backgeocoding/dcEstimateList.txt";
@@ -122,6 +120,7 @@ class Backgeocoding {
     const float *GetIResult() { return this->i_result_.data(); }
 
     const float *GetQResult() { return this->q_result_.data(); }
+    AzimuthAndRangeBounds ComputeExtendedAmount(int x_0, int y_0, int w, int h);
 };
 
 }  // namespace backgeocoding

@@ -53,7 +53,7 @@ inline __device__ int GetSamples(
             }
             pixel_x = x[xI] - tile_x_index * NUM_PIXELS_PER_TILE;
 
-            // TODO: placeholder. Chanage once you know how dynamic tiling will work.
+            // TODO: placeholder. Change once you know how dynamic tiling will work.
             switch (tile_x_index) {
                 case 40:
                     samples[i * width + j] = srtm_41_01_tile[pixel_x + xSize * pixel_y];

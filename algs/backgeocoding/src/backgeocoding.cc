@@ -14,22 +14,23 @@
 #include "backgeocoding.h"
 
 #include <cuda_runtime.h>
+#include <limits.h>
 #include <cmath>
 #include <iostream>
 #include <string>
-#include <limits.h>
 
 #include "backgeocoding_constants.h"
 #include "cuda_util.hpp"
+#include "extended_amount.h"
 #include "general_constants.h"
 #include "srtm3_elevation_model_constants.h"
 
 #include "bilinear.cuh"
 #include "delaunay_triangulator.h"
 #include "deramp_demod.cuh"
+#include "interpolation_constants.h"
 #include "slave_pixpos.cuh"
 #include "triangular_interpolation.cuh"
-#include "interpolation_constants.h"
 
 namespace alus {
 namespace backgeocoding {
@@ -100,11 +101,9 @@ void Backgeocoding::CopySlaveTiles(double *slave_tile_i, double *slave_tile_q) {
 
     CHECK_CUDA_ERR(cudaMalloc((void **)&device_slave_q_, demod_size_ * sizeof(double)));
 
-    CHECK_CUDA_ERR(
-        cudaMemcpy(device_slave_i_, slave_tile_i, demod_size_ * sizeof(double), cudaMemcpyHostToDevice));
+    CHECK_CUDA_ERR(cudaMemcpy(device_slave_i_, slave_tile_i, demod_size_ * sizeof(double), cudaMemcpyHostToDevice));
 
-    CHECK_CUDA_ERR(
-        cudaMemcpy(device_slave_q_, slave_tile_q, demod_size_ * sizeof(double), cudaMemcpyHostToDevice));
+    CHECK_CUDA_ERR(cudaMemcpy(device_slave_q_, slave_tile_q, demod_size_ * sizeof(double), cudaMemcpyHostToDevice));
 }
 
 void Backgeocoding::FeedPlaceHolders() {
@@ -169,7 +168,6 @@ void Backgeocoding::PrepareSrtm3Data() {
     this->srtm3Dem_->HostToDevice();
 }
 
-
 void Backgeocoding::ComputeTile(BackgeocodingIO *io,
                                 int m_burst_index,
                                 int s_burst_index,
@@ -186,7 +184,7 @@ void Backgeocoding::ComputeTile(BackgeocodingIO *io,
                                      target_area.height,
                                      extended_amount,
                                      &coord_min_max);
-    if(!result){
+    if (!result) {
         return;
     }
     const int margin = snapengine::BILINEAR_INTERPOLATION_KERNEL_SIZE;
@@ -342,12 +340,7 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index,
             master_rg.data(), calc_data.device_master_rg, az_rg_size * sizeof(double), cudaMemcpyDeviceToHost));
 
         alus::delaunay::DelaunayTriangulator triangulator;
-        triangulator.TriangulateCPU2(master_az.data(),
-                                     1.0,
-                                     master_rg.data(),
-                                     rg_az_ratio,
-                                     az_rg_size,
-                                     INVALID_INDEX);
+        triangulator.TriangulateCPU2(master_az.data(), 1.0, master_rg.data(), rg_az_ratio, az_rg_size, INVALID_INDEX);
 
         CHECK_CUDA_ERR(cudaMalloc((void **)&device_triangles,
                                   triangulator.triangle_count_ * sizeof(alus::delaunay::DelaunayTriangle2D)));
@@ -512,7 +505,10 @@ void Backgeocoding::SetSentinel1Placeholders(std::string dc_estimate_list_file,
     this->slave_geo_location_file_ = slave_geo_location_file;
 }
 
-cudaError_t Backgeocoding::LaunchBilinearComp(Rectangle target_area, Rectangle source_area, int s_burst_index, Rectangle target_tile) {
+cudaError_t Backgeocoding::LaunchBilinearComp(Rectangle target_area,
+                                              Rectangle source_area,
+                                              int s_burst_index,
+                                              Rectangle target_tile) {
     BilinearParams params;
 
     params.point_width = target_area.width;
@@ -558,6 +554,13 @@ void Backgeocoding::SetOrbitVectorsFiles(std::string master_orbit_state_vectors_
     this->master_orbit_state_vectors_file_ = master_orbit_state_vectors_file;
     this->slave_orbit_state_vectors_file_ = slave_orbit_state_vectors_file;
 }
-
+AzimuthAndRangeBounds Backgeocoding::ComputeExtendedAmount(int x_0, int y_0, int w, int h) {
+    AzimuthAndRangeBounds extended_amount{};
+    PointerArray tiles{};
+    tiles.array = this->srtm3Dem_->device_srtm3_tiles_;
+    CHECK_CUDA_ERR(LaunchComputeExtendedAmount(
+        {x_0, y_0, w, h}, extended_amount, this->master_utils_.get(), tiles, this->egm96_->device_egm_));
+    return extended_amount;
+}
 }  // namespace backgeocoding
 }  // namespace alus

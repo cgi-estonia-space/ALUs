@@ -19,6 +19,7 @@ list(APPEND TEST_SOURCES_TC
 
 list(APPEND TEST_SOURCES_BACKGEOCODING
         src/backgeocoding/backgeocoding_test.cc
+        src/extended_amount_test.cc
         )
 
 list(APPEND TEST_INCLUDE
