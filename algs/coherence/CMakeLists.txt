@@ -130,7 +130,7 @@ target_link_libraries(coherence-shared
         )
 add_custom_command(TARGET coherence-shared
         POST_BUILD
-        COMMAND cp ${CMAKE_CURRENT_LIST_DIR}/../../tensorflow/ubuntu_1804/lib/* ${ALUS_BINARY_OUTPUT_DIR}/.
+        COMMAND cp -P ${CMAKE_CURRENT_LIST_DIR}/../../tensorflow/ubuntu_1804/lib/* ${ALUS_BINARY_OUTPUT_DIR}/.
         )
 
 #this is main executable, no need to build object out of example.cc
