@@ -50,17 +50,16 @@ inline __device__ __host__ double getDopplerFrequency(alus::snapengine::PosVecto
 }
 
 /**
-     * Compute Doppler frequency for given earthPoint and sensor position.
-     *
-     * @param earthPoint     The earth point in xyz coordinate.
-     * @param orbit          OrbitStateVector
-     * @param wavelength     The radar wavelength.
-     * @return The Doppler frequency in Hz.
-     */
+ * Compute Doppler frequency for given earthPoint and sensor position.
+ *
+ * @param earthPoint     The earth point in xyz coordinate.
+ * @param orbit          OrbitStateVector
+ * @param wavelength     The radar wavelength.
+ * @return The Doppler frequency in Hz.
+ */
 inline __device__ __host__ double getDopplerFrequency(alus::snapengine::PosVector earthPoint,
                                                       alus::snapengine::OrbitStateVector orbit,
                                                       double wavelength) {
-
     double xDiff = earthPoint.x - orbit.xPos_;
     double yDiff = earthPoint.y - orbit.yPos_;
     double zDiff = earthPoint.z - orbit.zPos_;
@@ -141,9 +140,9 @@ inline __device__ __host__ double GetEarthPointZeroDopplerTimeImpl(
 inline __device__ double GetZeroDopplerTime(double line_time_interval,
                                             double wavelength,
                                             snapengine::PosVector earth_point,
-                                            snapengine::OrbitStateVector *orbit,
+                                            snapengine::OrbitStateVector* orbit,
                                             const int num_orbit_vec,
-                                            const double dt){
+                                            const double dt) {
     double first_vec_time = 0.0;
     double second_vec_time = 0.0;
     double first_vec_freq = 0.0;
@@ -180,11 +179,10 @@ inline __device__ double GetZeroDopplerTime(double line_time_interval,
     int num_iterations = 0;
     while (diff_time > abs_line_time_interval && num_iterations <= total_iterations) {
         mid_time = (upper_bound_time + lower_bound_time) / 2.0;
-        snapengine::PosVector position;
-        snapengine::PosVector velocity;
 
-        orbitstatevectors::GetPositionVelocity(mid_time, orbit, num_orbit_vec, dt, &position, &velocity);
-        mid_freq = getDopplerFrequency(earth_point, position, velocity, wavelength);
+        orbitstatevectors::PositionVelocity posvel =
+            orbitstatevectors::GetPositionVelocity(mid_time, orbit, num_orbit_vec, dt);
+        mid_freq = getDopplerFrequency(earth_point, posvel.position, posvel.velocity, wavelength);
 
         if (mid_freq * lower_bound_freq > 0.0) {
             lower_bound_time = mid_time;
@@ -192,7 +190,7 @@ inline __device__ double GetZeroDopplerTime(double line_time_interval,
         } else if (mid_freq * upper_bound_freq > 0.0) {
             upper_bound_time = mid_time;
             upper_bound_freq = mid_freq;
-            //TODO: there might be an accuracy bug here because we are missing a compare delta, but what is the delta?
+            // TODO: there might be an accuracy bug here because we are missing a compare delta, but what is the delta?
         } else if (mid_freq == 0.0) {
             return mid_time;
         }
@@ -201,8 +199,7 @@ inline __device__ double GetZeroDopplerTime(double line_time_interval,
         num_iterations++;
     }
 
-    return lower_bound_time -
-           lower_bound_freq * (upper_bound_time - lower_bound_time) / (upper_bound_freq - lower_bound_freq);
+    return lower_bound_time - lower_bound_freq * (upper_bound_time - lower_bound_time) / (upper_bound_freq - lower_bound_freq);
 }
 
 inline __device__ __host__ double ComputeSlantRangeImpl(double time,

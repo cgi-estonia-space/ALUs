@@ -177,8 +177,12 @@ __global__ void Interpolate(delaunay::DelaunayTriangle2D *triangles,
             }
             // printf("printing results at %d\n", idx);
             for (size_t d = 0; d < params.z_data_count; d++) {
-                zdata[d].output_arr[i * zdata[d].output_height + j] =
-                    abc[abc_index + d].a * xp + abc[abc_index + d].b * yp + abc[abc_index + d].c;
+                double result = abc[abc_index + d].a * xp + abc[abc_index + d].b * yp + abc[abc_index + d].c;
+                zdata[d].output_arr[i * zdata[d].output_height + j] = result;
+                int int_result = (int)floor(result);
+                atomicMin(&zdata[d].min_int, int_result);
+                atomicMax(&zdata[d].max_int, int_result);
+
             }
         }
     }

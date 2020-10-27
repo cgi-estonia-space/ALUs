@@ -32,21 +32,23 @@ void BackgeocodingController::ComputeImage(){
     this->backgeocoding_->FeedPlaceHolders();
     this->backgeocoding_->PrepareToCompute();
 
-    this->backgeocoding_->ComputeTile(this->slave_rect, this->slave_tile_i_, this->slave_tile_q_);
+    //TODO:placeholder
+    int slave_burst_offset = 0;
+    std::vector<double> extended_amount;
+    extended_amount.push_back(-0.01773467106249882);
+    extended_amount.push_back(0.0);
+    extended_amount.push_back(-3.770974349203243);
+    extended_amount.push_back(3.8862058607542167);
+    Rectangle target_area = {4000, 17000, 100, 100,};
+    Rectangle target_tile = {4000, 17000, 0, 100};
+
+    this->backgeocoding_->ComputeTile(this, 11, 11 + slave_burst_offset, target_area, target_tile, extended_amount); //TODO:placeholders
 
     std::cout << "compute image ended" << '\n';
 }
 
-void BackgeocodingController::ReadPlacehoderData(){
-    int i, size;
-
-    std::ifstream rect_stream("../test/goods/backgeocoding/rectangle.txt");
-    if(!rect_stream.is_open()){
-        throw std::ios::failure("Error opening rectangle.txt");
-    }
-    rect_stream >> slave_rect.x >> slave_rect.y >> slave_rect.width >> slave_rect.height;
-    rect_stream.close();
-
+//TODO: obviously a placeholder, but to test out a pattern.
+void BackgeocodingController::ReadTile(Rectangle area, double *tile_i, double *tile_q) {
     std::ifstream slave_i_stream("../test/goods/backgeocoding/slaveTileI.txt");
     std::ifstream slave_q_stream("../test/goods/backgeocoding/slaveTileQ.txt");
     if(!slave_i_stream.is_open()){
@@ -56,20 +58,16 @@ void BackgeocodingController::ReadPlacehoderData(){
         throw std::ios::failure("Error opening slaveTileQ.txt");
     }
 
-    size = slave_rect.width * slave_rect.height;
+    size_t size = area.width * area.height;
 
-    this->slave_tile_i_ = new double[size];
-    this->slave_tile_q_ = new double[size];
 
-    for(i=0; i< size; i++){
-        slave_i_stream >> slave_tile_i_[i];
-        slave_q_stream >> slave_tile_q_[i];
+    for(size_t i=0; i< size; i++){
+        slave_i_stream >> tile_i[i];
+        slave_q_stream >> tile_q[i];
     }
 
     slave_i_stream.close();
     slave_q_stream.close();
-
-
 }
 
 }//namespace

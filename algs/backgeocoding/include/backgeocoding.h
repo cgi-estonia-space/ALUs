@@ -13,48 +13,43 @@
  */
 #pragma once
 
+#include <vector>
 #include <memory>
-#include <cmath>
-#include <iostream>
-#include <string>
-#include <cuda_runtime.h>
-#include <device_launch_parameters.h>
 
-#include "cuda_util.hpp"
-#include "earth_gravitational_model96.h"
-#include "general_constants.h"
-#include "backgeocoding_constants.h"
-#include "pointer_holders.h"
 #include "sentinel1_utils.h"
 #include "srtm3_elevation_model.h"
-#include "srtm3_elevation_model_constants.h"
-
-#include "bilinear.cuh"
-#include "deramp_demod.cuh"
-#include "slave_pixpos.cuh"
-#include "triangular_interpolation.cuh"
-#include "delaunay_triangulator.h"
-
-
+#include "earth_gravitational_model96.h"
+#include "backgeocoding_io.h"
 
 namespace alus {
-namespace backgeocoding{
+namespace backgeocoding {
+
+
+
 
 /**
  * The contents of this class originate from s1tbx module's BackGeocodingOp java class.
  */
-class Backgeocoding{
-private:
+class Backgeocoding {
+   private:
+    /**
+     * This came from chopping up the getBoundingBox function and dividing its functionality over several other functions.
+     * You see we could not implement it as it was on the gpu. This struct should touch all of the parts of that function.
+     */
+    struct CoordMinMax{
+        int x_min, x_max;
+        int y_min, y_max;
+    };
+
     std::vector<float> q_result_;
     std::vector<float> i_result_;
-    std::vector<int> params_;
     double *device_x_points_{nullptr}, *device_y_points_{nullptr};
     double *device_demod_i_{nullptr}, *device_demod_q_{nullptr}, *device_demod_phase_{nullptr};
-    float *device_i_results_{nullptr}, *device_q_results_{nullptr}; //I phase and Q pahse
+    float *device_i_results_{nullptr}, *device_q_results_{nullptr};  // I phase and Q pahse
     double *device_slave_i_{nullptr}, *device_slave_q_{nullptr};
-    int *device_params_{nullptr};
 
-    int tile_x_, tile_y_, param_size_, tile_size_, demod_size_;
+    int tile_x_, tile_y_, tile_size_, demod_size_;
+    bool disable_reramp_ = 0; //TODO: currently not implemented
 
     std::unique_ptr<s1tbx::Sentinel1Utils> master_utils_;
     std::unique_ptr<s1tbx::Sentinel1Utils> slave_utils_;
@@ -63,40 +58,29 @@ private:
     std::unique_ptr<snapengine::EarthGravitationalModel96> egm96_;
     std::unique_ptr<snapengine::SRTM3ElevationModel> srtm3Dem_;
 
-
-
     void AllocateGPUData();
     void CopySlaveTiles(double *slave_tile_i, double *slave_tile_q);
-    void CopyGPUData();
-    cudaError_t LaunchBilinearComp();
+    cudaError_t LaunchBilinearComp(Rectangle target_area, Rectangle source_area, int s_burst_index, Rectangle target_tile);
     cudaError_t LaunchDerampDemodComp(Rectangle slave_rect, int s_burst_index);
-    cudaError_t LaunchSlavePixPosComp(SlavePixPosData calc_data);
     void GetGPUEndResults();
     void PrepareSrtm3Data();
 
-    std::vector<double> ComputeImageGeoBoundary(
-            s1tbx::SubSwathInfo *sub_swath,
-            int burst_index,
-            int x_min,
-            int x_max,
-            int y_min,
-            int y_max);
-    bool ComputeSlavePixPos(
-            int m_burst_index,
-            int s_burst_index,
-            int x0,
-            int y0,
-            int w,
-            int h,
-            std::vector<double> extended_amount);
-//            double **slavePixelPosAz,
-//            double **slavePixelPosRg); add those later.
+    std::vector<double> ComputeImageGeoBoundary(s1tbx::SubSwathInfo *sub_swath,
+                                                int burst_index,
+                                                int x_min,
+                                                int x_max,
+                                                int y_min,
+                                                int y_max);
+    bool ComputeSlavePixPos(int m_burst_index,
+                            int s_burst_index,
+                            int x0,
+                            int y0,
+                            int w,
+                            int h,
+                            std::vector<double> extended_amount,
+                            CoordMinMax *coord_min_max);
 
-
-
-    //placeholder files
-    std::string params_file_ = "../test/goods/backgeocoding/params.txt";
-
+    // placeholder files
     std::string slave_orbit_state_vectors_file_ = "../test/goods/backgeocoding/slaveOrbitStateVectors.txt";
     std::string master_orbit_state_vectors_file_ = "../test/goods/backgeocoding/masterOrbitStateVectors.txt";
     std::string dc_estimate_list_file_ = "../test/goods/backgeocoding/dcEstimateList.txt";
@@ -106,43 +90,39 @@ private:
     std::string master_geo_location_file_ = "../test/goods/backgeocoding/masterGeoLocation.txt";
     std::string slave_geo_location_file_ = "../test/goods/backgeocoding/slaveGeoLocation.txt";
 
-    //std::string srtm_41_01File = "../test/goods/srtm_41_01.tif";
-    //std::string srtm_42_01File = "../test/goods/srtm_42_01.tif";
+    // std::string srtm_41_01File = "../test/goods/srtm_41_01.tif";
+    // std::string srtm_42_01File = "../test/goods/srtm_42_01.tif";
     std::string srtms_directory_ = "../test/goods/";
     std::string grid_file_ = "../test/goods/ww15mgh_b.grd";
 
-public:
-
+   public:
     void FeedPlaceHolders();
     void PrepareToCompute();
-    void ComputeTile(Rectangle slave_rect, double *slave_tile_i, double *slave_tile_q);
+    void ComputeTile(BackgeocodingIO *io,
+                     int m_burst_index,
+                     int s_burst_index,
+                     Rectangle target_area,
+                     Rectangle target_tile,
+                     std::vector<double> extended_amount);
     Backgeocoding() = default;
     ~Backgeocoding();
 
-    void SetPlaceHolderFiles(std::string params_file);
-    void SetSentinel1Placeholders(
-        std::string dc_estimate_list_file,
-        std::string azimuth_list_file,
-        std::string master_burst_line_time_file,
-        std::string slave_burst_line_time_file,
-        std::string master_geo_location_file,
-        std::string slave_geo_location_file);
+    void SetSentinel1Placeholders(std::string dc_estimate_list_file,
+                                  std::string azimuth_list_file,
+                                  std::string master_burst_line_time_file,
+                                  std::string slave_burst_line_time_file,
+                                  std::string master_geo_location_file,
+                                  std::string slave_geo_location_file);
 
-    void SetOrbitVectorsFiles(
-        std::string master_orbit_state_vectors_file,
-        std::string slave_orbit_state_vectors_file);
+    void SetOrbitVectorsFiles(std::string master_orbit_state_vectors_file, std::string slave_orbit_state_vectors_file);
 
     void SetSRTMDirectory(std::string directory);
     void SetEGMGridFile(std::string grid_file);
 
-    float const *GetIResult(){
-        return this->i_result_.data();
-    }
+    const float *GetIResult() { return this->i_result_.data(); }
 
-    float const *GetQResult(){
-        return this->q_result_.data();
-    }
+    const float *GetQResult() { return this->q_result_.data(); }
 };
 
-}//namespace
-}//namespace
+}  // namespace backgeocoding
+}  // namespace alus

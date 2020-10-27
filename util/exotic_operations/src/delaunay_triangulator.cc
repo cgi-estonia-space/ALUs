@@ -13,17 +13,18 @@
  */
 #include "delaunay_triangulator.h"
 
+#include "delaunay_triangulator_cpu.h"
 #include "snap_delaunay_triangulator.h"
 #include "snap_triangle.h"
-#include "delaunay_triangulator_cpu.h"
 
 #include "cuda_util.hpp"
-
 
 namespace alus {
 namespace delaunay {
 
-void DelaunayTriangulator::TriangulateCPU(double *x_coords, double x_multiplier, double *y_coords, double y_multiplier, int size) {
+void DelaunayTriangulator::TriangulateCPU(
+    double *x_coords, double x_multiplier, double *y_coords, double y_multiplier, int size, double invalid_index) {
+
     std::vector<external::delaunay::ITRIANGLE> v;
     const int end_size = size + 3;
     std::vector<alus::PointDouble> p;
@@ -31,22 +32,23 @@ void DelaunayTriangulator::TriangulateCPU(double *x_coords, double x_multiplier,
     int i;
     DelaunayTriangle2D temp_triangle;
 
-    p.resize(end_size);
-    for(i=0; i< size; i++){
-        p.at(i).x = x_coords[i] * x_multiplier;
-        p.at(i).y = y_coords[i] * y_multiplier;
-        p.at(i).index = i;
+    p.reserve(end_size);
+    for (i = 0; i < size; i++) {
+        if (x_coords[i] != invalid_index && y_coords[i] != invalid_index) {
+            alus::PointDouble tempPoint = {x_coords[i] * x_multiplier, y_coords[i] * y_multiplier, i};
+            p.push_back(tempPoint);
+        }
     }
 
-
-    v.resize(3 * size);
-    qsort(p.data(), size, sizeof(alus::PointDouble), external::delaunay::XYZCompare);
-    Triangulate(size, p.data(), v.data(), ntri);
+    v.resize(3 * p.size());
+    qsort(p.data(), p.size(), sizeof(alus::PointDouble), external::delaunay::XYZCompare);
+    p.resize(p.size() + 3);
+    Triangulate(p.size() - 3, p.data(), v.data(), ntri);
 
     this->host_triangles_.resize(ntri);
     this->triangle_count_ = ntri;
 
-    for(i =0; i<ntri; i++){
+    for (i = 0; i < ntri; i++) {
         temp_triangle.ax = p.at(v.at(i).p1).x;
         temp_triangle.ay = p.at(v.at(i).p1).y;
         temp_triangle.a_index = p.at(v.at(i).p1).index;
@@ -63,11 +65,11 @@ void DelaunayTriangulator::TriangulateCPU(double *x_coords, double x_multiplier,
     }
 }
 
-int SnapCompareTo(const void *v1, const void *v2){
+int SnapCompareTo(const void *v1, const void *v2) {
     alus::PointDouble *p1, *p2;
 
-    p1 = (alus::PointDouble*)v1;
-    p2 = (alus::PointDouble*)v2;
+    p1 = (alus::PointDouble *)v1;
+    p2 = (alus::PointDouble *)v2;
 
     if (p1->x < p2->x) {
         return -1;
@@ -80,33 +82,35 @@ int SnapCompareTo(const void *v1, const void *v2){
     }
 }
 
-void DelaunayTriangulator::TriangulateCPU2(double *x_coords, double x_multiplier, double *y_coords, double y_multiplier, int size){
+void DelaunayTriangulator::TriangulateCPU2(
+    double *x_coords, double x_multiplier, double *y_coords, double y_multiplier, int size, double invalid_index) {
+
     std::vector<alus::PointDouble> points;
-    points.resize(size);
+    points.reserve(size);
     int i;
 
-    for(i=0; i< size; i++){
-        points.at(i).x = x_coords[i] * x_multiplier;
-        points.at(i).y = y_coords[i] * y_multiplier;
-        points.at(i).index = i;
+    for (i = 0; i < size; i++) {
+        if (x_coords[i] != invalid_index && y_coords[i] != invalid_index) {
+            alus::PointDouble tempPoint = {x_coords[i] * x_multiplier, y_coords[i] * y_multiplier, i};
+            points.push_back(tempPoint);
+        }
     }
 
-    qsort(points.data(), size, sizeof(alus::PointDouble), SnapCompareTo);
+    qsort(points.data(), points.size(), sizeof(alus::PointDouble), SnapCompareTo);
     external::delaunay::SnapDelaunayTriangulator triangulator;
-    triangulator.Triangulate(points.data(), size);
+    triangulator.Triangulate(points.data(), points.size());
 
     this->host_triangles_ = triangulator.Get2dTriangles();
     this->triangle_count_ = this->host_triangles_.size();
-
 }
 
-//TODO: make this proper once the algorithm actually works.
+// TODO: make this proper once the algorithm actually works.
 void DelaunayTriangulator::TriangulateGPU(double *x_coords, double *y_coords, int size) {
-    x_coords = x_coords; //getting rid of warnings
+    x_coords = x_coords;  // getting rid of warnings
     y_coords = y_coords;
     size = size;
     CHECK_CUDA_ERR(cudaErrorNotYetImplemented);
 }
 
-}//namespace
-}//namespace
+}  // namespace delaunay
+}  // namespace alus

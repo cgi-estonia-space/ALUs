@@ -112,7 +112,7 @@ class TriangularInterpolationTester : public alus::cuda::CudaFriendlyObject {
         }
 
         arrays_stream >> arr_width_ >> arr_height_;
-        int arr_size = arr_width_ * arr_height_;
+        const size_t arr_size = arr_width_ * arr_height_;
 
         rg_array_.resize(arr_size);
         az_array_.resize(arr_size);
@@ -124,7 +124,7 @@ class TriangularInterpolationTester : public alus::cuda::CudaFriendlyObject {
         results_lat_array_.resize(arr_size);
         results_lon_array_.resize(arr_size);
 
-        for (int i = 0; i < arr_size; i++) {
+        for (size_t i = 0; i < arr_size; i++) {
             arrays_stream >> az_array_.at(i) >> rg_array_.at(i) >> lat_array_.at(i) >> lon_array_.at(i);
         }
 
@@ -277,6 +277,8 @@ void PrepareParams(TriangularInterpolationTester *tester,
     zdata[0].output_arr = tester->device_az_array_;
     zdata[0].output_width = window->lines;
     zdata[0].output_height = window->pixels;
+    zdata[0].min_int = std::numeric_limits<int>::max();
+    zdata[0].max_int = std::numeric_limits<int>::lowest();
 
     zdata[1].input_arr = tester->device_slave_rg_;
     zdata[1].input_width = tester->az_rg_width_;
@@ -284,6 +286,8 @@ void PrepareParams(TriangularInterpolationTester *tester,
     zdata[1].output_arr = tester->device_rg_array_;
     zdata[1].output_width = window->lines;
     zdata[1].output_height = window->pixels;
+    zdata[1].min_int = std::numeric_limits<int>::max();
+    zdata[1].max_int = std::numeric_limits<int>::lowest();
 
     zdata[2].input_arr = tester->device_lat_;
     zdata[2].input_width = tester->az_rg_width_;
@@ -291,6 +295,8 @@ void PrepareParams(TriangularInterpolationTester *tester,
     zdata[2].output_arr = tester->device_lat_array_;
     zdata[2].output_width = window->lines;
     zdata[2].output_height = window->pixels;
+    zdata[2].min_int = std::numeric_limits<int>::max();
+    zdata[2].max_int = std::numeric_limits<int>::lowest();
 
     zdata[3].input_arr = tester->device_lon_;
     zdata[3].input_width = tester->az_rg_width_;
@@ -298,6 +304,8 @@ void PrepareParams(TriangularInterpolationTester *tester,
     zdata[3].output_arr = tester->device_lon_array_;
     zdata[3].output_width = window->lines;
     zdata[3].output_height = window->pixels;
+    zdata[3].min_int = std::numeric_limits<int>::max();
+    zdata[3].max_int = std::numeric_limits<int>::lowest();
 
     params->triangle_count = tester->triangle_size_;
     params->z_data_count = alus::backgeocoding::Z_DATA_SIZE;
@@ -334,17 +342,17 @@ TEST(TriangularInterpolation, InterpolationTest) {
 
     tester.DeviceToHost();
 
-    size_t size = window.lines * window.pixels;
-    int slave_az_count = alus::EqualsArraysd(tester.results_az_array_.data(), tester.az_array_.data(), size, 0.00001);
+    const size_t size = window.lines * window.pixels;
+    size_t slave_az_count = alus::EqualsArraysd(tester.results_az_array_.data(), tester.az_array_.data(), size, 0.00001);
     EXPECT_EQ(slave_az_count, 0) << "Slave azimuth results do not match. Mismatches: " << slave_az_count << '\n';
 
-    int slave_rg_count = alus::EqualsArraysd(tester.results_rg_array_.data(), tester.rg_array_.data(), size, 0.00001);
+    size_t slave_rg_count = alus::EqualsArraysd(tester.results_rg_array_.data(), tester.rg_array_.data(), size, 0.00001);
     EXPECT_EQ(slave_rg_count, 0) << "Slave range results do not match. Mismatches: " << slave_rg_count << '\n';
 
-    int lats_count = alus::EqualsArraysd(tester.results_lat_array_.data(), tester.lat_array_.data(), size, 0.00001);
+    size_t lats_count = alus::EqualsArraysd(tester.results_lat_array_.data(), tester.lat_array_.data(), size, 0.00001);
     EXPECT_EQ(lats_count, 0) << "Latitude results do not match. Mismatches: " << lats_count << '\n';
 
-    int lons_count = alus::EqualsArraysd(tester.results_lon_array_.data(), tester.lon_array_.data(), size, 0.00001);
+    size_t lons_count = alus::EqualsArraysd(tester.results_lon_array_.data(), tester.lon_array_.data(), size, 0.00001);
     EXPECT_EQ(lons_count, 0) << "Longitude results do not match. Mismatches: " << lons_count << '\n';
 
     CHECK_CUDA_ERR(cudaFree(device_zdata));
@@ -358,11 +366,14 @@ TEST(DelaunayTest, BigCPUTriangulationTest) {
                                  1.0,
                                  tester.master_rg_.data(),
                                  TriangularInterpolationTester::RG_AZ_RATIO,
-                                 tester.az_rg_width_ * tester.az_rg_height_);
+                                 tester.az_rg_width_ * tester.az_rg_height_,
+                                 alus::backgeocoding::INVALID_INDEX);
     std::cout << "nr of triangles: " << triangulator.triangle_count_ << std::endl;
 
-    int count = alus::EqualsTriangles(
-        triangulator.host_triangles_.data(), tester.triangles_.data(), triangulator.triangle_count_, 0.00001);
+    size_t count = alus::EqualsTriangles(triangulator.host_triangles_.data(),
+                                         tester.triangles_.data(),
+                                         triangulator.triangle_count_,
+                                         0.00001);
     EXPECT_EQ(count, 0) << "Triangle results do not match. Mismatches: " << count << '\n';
 }
 
@@ -380,7 +391,8 @@ TEST(TriangularInterpolation, InterpolationAndTriangulation) {
                                  1.0,
                                  tester.master_rg_.data(),
                                  TriangularInterpolationTester::RG_AZ_RATIO,
-                                 tester.az_rg_width_ * tester.az_rg_height_);
+                                 tester.az_rg_width_ * tester.az_rg_height_,
+                                 alus::backgeocoding::INVALID_INDEX);
     tester.triangle_size_ = triangulator.triangle_count_;
     tester.triangles_ = triangulator.host_triangles_;
 
@@ -401,17 +413,17 @@ TEST(TriangularInterpolation, InterpolationAndTriangulation) {
 
     tester.DeviceToHost();
 
-    int size = window.lines * window.pixels;
-    int slave_az_count = alus::EqualsArraysd(tester.results_az_array_.data(), tester.az_array_.data(), size, 0.00001);
+    const size_t size = window.lines * window.pixels;
+    size_t slave_az_count = alus::EqualsArraysd(tester.results_az_array_.data(), tester.az_array_.data(), size, 0.00001);
     EXPECT_EQ(slave_az_count, 0) << "Slave azimuth results do not match. Mismatches: " << slave_az_count << '\n';
 
-    int slave_rg_count = alus::EqualsArraysd(tester.results_rg_array_.data(), tester.rg_array_.data(), size, 0.00001);
+    size_t slave_rg_count = alus::EqualsArraysd(tester.results_rg_array_.data(), tester.rg_array_.data(), size, 0.00001);
     EXPECT_EQ(slave_rg_count, 0) << "Slave range results do not match. Mismatches: " << slave_rg_count << '\n';
 
-    int lats_count = alus::EqualsArraysd(tester.results_lat_array_.data(), tester.lat_array_.data(), size, 0.00001);
+    size_t lats_count = alus::EqualsArraysd(tester.results_lat_array_.data(), tester.lat_array_.data(), size, 0.00001);
     EXPECT_EQ(lats_count, 0) << "Latitude results do not match. Mismatches: " << lats_count << '\n';
 
-    int lons_count = alus::EqualsArraysd(tester.results_lon_array_.data(), tester.lon_array_.data(), size, 0.00001);
+    size_t lons_count = alus::EqualsArraysd(tester.results_lon_array_.data(), tester.lon_array_.data(), size, 0.00001);
     EXPECT_EQ(lons_count, 0) << "Longitude results do not match. Mismatches: " << lons_count << '\n';
 
     CHECK_CUDA_ERR(cudaFree(device_zdata));

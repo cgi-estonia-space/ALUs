@@ -25,6 +25,11 @@ namespace alus {
 namespace s1tbx {
 namespace orbitstatevectors {
 
+struct PositionVelocity{
+    snapengine::PosVector position;
+    snapengine::PosVector velocity;
+};
+
 constexpr int NV{8}; //TODO: does anyone know what this is supposed to be?
 
 
@@ -37,13 +42,12 @@ constexpr int NV{8}; //TODO: does anyone know what this is supposed to be?
  * @param position      position of something, perhaps the satelite? Will be filled
  * @param velocity      velocity of something, üerhaps the satelite? Makes up the lagrange Interpolating Polynomial with position. Will be filled.
  */
-inline __device__ __host__ void GetPositionVelocity(double time,
+inline __device__ __host__ PositionVelocity GetPositionVelocity(double time,
                                                     snapengine::OrbitStateVector *orbit,
                                                     const int numOrbitVec,
-                                                    const double dt,
-                                                    snapengine::PosVector *position,
-                                                    snapengine::PosVector *velocity) {
+                                                    const double dt) {
 
+    PositionVelocity result = {{0,0,0}, {0,0,0}};
     int i_0{};
     int i_n{};
     if (numOrbitVec <= NV) {
@@ -54,13 +58,6 @@ inline __device__ __host__ void GetPositionVelocity(double time,
         i_n = std::min(i_0 + NV - 1, numOrbitVec - 1);
         i_0 = (i_n < numOrbitVec - 1 ? i_0 : i_n - NV + 1);
     }
-    position->x = 0.0;
-    position->y = 0.0;
-    position->z = 0.0;
-
-    velocity->x = 0.0;
-    velocity->y = 0.0;
-    velocity->z = 0.0;
 
     for (int i = i_0; i <= i_n; ++i) {
         snapengine::OrbitStateVector orbI = orbit[i];
@@ -73,14 +70,15 @@ inline __device__ __host__ void GetPositionVelocity(double time,
             }
         }
 
-        position->x += weight * orbI.xPos_;
-        position->y += weight * orbI.yPos_;
-        position->z += weight * orbI.zPos_;
+        result.position.x += weight * orbI.xPos_;
+        result.position.y += weight * orbI.yPos_;
+        result.position.z += weight * orbI.zPos_;
 
-        velocity->x += weight * orbI.xVel_;
-        velocity->y += weight * orbI.yVel_;
-        velocity->z += weight * orbI.zVel_;
+        result.velocity.x += weight * orbI.xVel_;
+        result.velocity.y += weight * orbI.yVel_;
+        result.velocity.z += weight * orbI.zVel_;
     }
+    return result;
 }
 
 /**

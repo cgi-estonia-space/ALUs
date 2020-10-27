@@ -12,24 +12,18 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 #pragma once
-#include <cstdio>
 
 #include <cuda_runtime.h>
-#include <device_launch_parameters.h>
-#include <orbit_state_vector.h>
 
-#include "cuda_util.hpp"
-#include "orbit_state_vector.h"
 #include "pointer_holders.h"
 #include "sentinel1_utils.cuh"
-#include "shapes.h"
-#include "srtm3_elevation_model_constants.h"
 #include "subswath_info.cuh"
+#include "orbit_state_vector.h"
 
 namespace alus {
-namespace backgeocoding{
+namespace backgeocoding {
 
-struct SlavePixPosData{
+struct SlavePixPosData {
     int num_lines;
     int num_pixels;
 
@@ -43,9 +37,9 @@ struct SlavePixPosData{
 
     PointerArray tiles;
 
-    //earth gravitational model
+    // earth gravitational model
     float *egm;
-    
+
     int max_lats;
     int max_lons;
     double dem_no_data_value;
@@ -69,7 +63,7 @@ struct SlavePixPosData{
     double master_dt, slave_dt;
 };
 
-cudaError_t LaunchSlavePixPos(dim3 grid_size, dim3 block_size, SlavePixPosData calc_data);
+cudaError_t LaunchSlavePixPos(SlavePixPosData calc_data);
 
-} //namespace
-} //namespace
+}  // namespace backgeocoding
+}  // namespace alus

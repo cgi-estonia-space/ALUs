@@ -20,16 +20,16 @@
 
 namespace alus {
 
-int EqualsArrays(const float *a, const float *b, int elems);
-int EqualsArrays(const float *a, const float *b, int elems, float delta);
-int EqualsArraysd(const double *a, const double *b, int elems);
-int EqualsArraysd(const double *a, const double *b, int elems, double delta);
-int EqualsArrays2Dd(const double *const *a, const double *const *b, int x, int y);
+size_t EqualsArrays(const float *a, const float *b, int elems);
+size_t EqualsArrays(const float *a, const float *b, int elems, float delta);
+size_t EqualsArraysd(const double *a, const double *b, int elems);
+size_t EqualsArraysd(const double *a, const double *b, int elems, double delta);
+size_t EqualsArrays2Dd(const double *const *a, const double *const *b, int x, int y);
 
 int EqualsDouble(double a, double b, double delta);
 int EqualsTrianglesByIndices(delaunay::DelaunayTriangle2D a, delaunay::DelaunayTriangle2D b);
 int EqualsTrianglesByPoints(delaunay::DelaunayTriangle2D a, delaunay::DelaunayTriangle2D b, double delta);
-int EqualsTriangles(delaunay::DelaunayTriangle2D *a, delaunay::DelaunayTriangle2D *b,size_t length, double delta);
+size_t EqualsTriangles(delaunay::DelaunayTriangle2D *a, delaunay::DelaunayTriangle2D *b,size_t length, double delta);
 
 
 

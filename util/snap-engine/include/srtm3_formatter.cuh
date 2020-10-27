@@ -12,9 +12,6 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 #pragma once
-#include <cuda_runtime.h>
-#include <device_launch_parameters.h>
-
 
 namespace alus {
 namespace snapengine{

@@ -12,6 +12,7 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 #include "srtm3_formatter.cuh"
+
 #include "earth_gravitational_model96.cuh"
 
 namespace alus {

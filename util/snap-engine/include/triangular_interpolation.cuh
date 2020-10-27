@@ -62,6 +62,8 @@ struct Zdata {
     size_t input_width, input_height;
     double *output_arr;
     size_t output_width, output_height;
+    int min_int;
+    int max_int;
 };
 
 struct Zdataabc {

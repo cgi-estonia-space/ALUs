@@ -11,9 +11,9 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
-#include <vector>
 #include <fstream>
 #include <iostream>
+#include <vector>
 
 #include "gmock/gmock.h"
 
@@ -25,12 +25,11 @@
 
 using namespace alus::tests;
 
-namespace{
+namespace {
 
-class EGMTester: public alus::cuda::CudaFriendlyObject{
-private:
-
-public:
+class EGMTester : public alus::cuda::CudaFriendlyObject {
+   private:
+   public:
     std::vector<double> lats_;
     std::vector<double> lons_;
     std::vector<float> etalon_results_;
@@ -41,7 +40,7 @@ public:
     double *device_lons_{nullptr};
     float *device_results_{nullptr};
 
-    EGMTester(std::string egm_test_data_filename){
+    EGMTester(std::string egm_test_data_filename) {
         std::ifstream data_reader(egm_test_data_filename);
         data_reader >> this->size;
 
@@ -50,38 +49,38 @@ public:
         this->etalon_results_.resize(size);
         this->end_results_.resize(size);
 
-        for(size_t i=0; i<size; i++){
+        for (size_t i = 0; i < size; i++) {
             data_reader >> lats_[i] >> lons_[i] >> etalon_results_[i];
         }
 
         data_reader.close();
     }
-    ~EGMTester(){ this->DeviceFree();
-    }
+    ~EGMTester() { this->DeviceFree(); }
 
-    void HostToDevice(){
-        CHECK_CUDA_ERR(cudaMalloc((void**)&device_lats_, this->size*sizeof(double)));
-        CHECK_CUDA_ERR(cudaMalloc((void**)&device_lons_, this->size*sizeof(double)));
-        CHECK_CUDA_ERR(cudaMalloc((void**)&device_results_, this->size*sizeof(float)));
+    void HostToDevice() {
+        CHECK_CUDA_ERR(cudaMalloc((void **)&device_lats_, this->size * sizeof(double)));
+        CHECK_CUDA_ERR(cudaMalloc((void **)&device_lons_, this->size * sizeof(double)));
+        CHECK_CUDA_ERR(cudaMalloc((void **)&device_results_, this->size * sizeof(float)));
 
-        CHECK_CUDA_ERR(cudaMemcpy(this->device_lats_, this->lats_.data(), this->size*sizeof(double),cudaMemcpyHostToDevice));
-        CHECK_CUDA_ERR(cudaMemcpy(this->device_lons_, this->lons_.data(), this->size*sizeof(double),cudaMemcpyHostToDevice));
-
+        CHECK_CUDA_ERR(
+            cudaMemcpy(this->device_lats_, this->lats_.data(), this->size * sizeof(double), cudaMemcpyHostToDevice));
+        CHECK_CUDA_ERR(
+            cudaMemcpy(this->device_lons_, this->lons_.data(), this->size * sizeof(double), cudaMemcpyHostToDevice));
     }
-    void DeviceToHost(){
-        CHECK_CUDA_ERR(cudaMemcpy(this->end_results_.data(), this->device_results_, this->size*sizeof(float), cudaMemcpyDeviceToHost));
+    void DeviceToHost() {
+        CHECK_CUDA_ERR(cudaMemcpy(
+            this->end_results_.data(), this->device_results_, this->size * sizeof(float), cudaMemcpyDeviceToHost));
     }
-    void DeviceFree(){
+    void DeviceFree() {
         cudaFree(device_lats_);
         cudaFree(device_lons_);
         cudaFree(device_results_);
     }
 };
 
-TEST(EGM96, correctness){
+TEST(EGM96, correctness) {
     alus::snapengine::EarthGravitationalModel96 egm96("./goods/ww15mgh_b.grd");
     EGMTester tester("./goods/egm96TestData.txt");
-
 
     EXPECT_FLOAT_EQ(13.606, egm96.egm_[0][0]);
     EXPECT_FLOAT_EQ(13.606, egm96.egm_[0][1440]);
@@ -100,13 +99,16 @@ TEST(EGM96, correctness){
     data.size = tester.size;
     data.egm = egm96.device_egm_;
 
-    CHECK_CUDA_ERR(LaunchEGM96(gridSize, blockSize, tester.device_lats_, tester.device_lons_, tester.device_results_, data));
+    CHECK_CUDA_ERR(
+        LaunchEGM96(gridSize, blockSize, tester.device_lats_, tester.device_lons_, tester.device_results_, data));
 
     tester.DeviceToHost();
-    //test data file is not as accurate as I would wish
-    int count = alus::EqualsArrays(tester.end_results_.data(), tester.etalon_results_.data(), tester.size, 0.0000000001);
-    EXPECT_EQ(count,0) << "EGM test results do not match. Mismatches: " <<count << '\n';
+    // test data file is not as accurate as I would wish
+    size_t count = alus::EqualsArrays(tester.end_results_.data(),
+                                      tester.etalon_results_.data(),
+                                      tester.size,
+                                      0.0000000001);
+    EXPECT_EQ(count, 0) << "EGM test results do not match. Mismatches: " << count << '\n';
 }
 
-
-}//namespace
+}  // namespace
