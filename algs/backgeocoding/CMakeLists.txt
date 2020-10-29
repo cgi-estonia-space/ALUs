@@ -5,6 +5,7 @@ list(APPEND BACKGEOCODING_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/bilinear.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/deramp_demod.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/slave_pixpos.cu
+        ${CMAKE_CURRENT_LIST_DIR}/src/extended_amount.cu
         )
 
 list(APPEND BACKGEOCODING_INCLUDE_DIRS

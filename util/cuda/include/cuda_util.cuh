@@ -16,6 +16,7 @@
 #include <thrust/detail/raw_pointer_cast.h>
 #include <thrust/device_vector.h>
 #include <vector>
+#include <cuda_runtime.h>
 
 #include "kernel_array.h"
 #include "cuda_util.hpp"

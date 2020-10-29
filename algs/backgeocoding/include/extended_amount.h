@@ -13,18 +13,23 @@
  */
 #pragma once
 
+#include "pointer_holders.h"
+#include "sentinel1_utils.h"
+#include "shapes.h"
+
 namespace alus {
+namespace backgeocoding {
+struct AzimuthAndRangeBounds {
+    double azimuth_min;
+    double azimuth_max;
+    double range_min;
+    double range_max;
+};
 
-template <typename T>
-T ** Allocate2DArray(int x, int y){
-    int i=0, size=x*y, countX=0;
-    T ** result = new T*[x];
-    T * inside = new T[size];
-
-    for(i=0; i<size; i+=y){
-        result[countX] = &inside[i];
-        countX++;
-    }
-    return result;
-}
+cudaError_t LaunchComputeExtendedAmount(Rectangle bounds,
+                                        AzimuthAndRangeBounds &extended_amount,
+                                        s1tbx::Sentinel1Utils *sentinel_utils,
+                                        const PointerArray &tiles,
+                                        float *egm);
+}  // namespace backgeocoding
 }  // namespace alus
