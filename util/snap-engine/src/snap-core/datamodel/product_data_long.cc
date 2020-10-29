@@ -9,7 +9,7 @@
 namespace alus {
 namespace snapengine {
 
-Long::Long(int num_elems) : Long(std::vector<int64_t>(num_elems)){};
+Long::Long(int num_elems) : Long(std::vector<int64_t>(num_elems)){}
 
 Long::Long(std::vector<int64_t> array) : ProductData(ProductData::TYPE_INT64) { array_ = std::move(array); }
 

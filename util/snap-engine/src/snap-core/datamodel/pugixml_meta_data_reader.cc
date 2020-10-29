@@ -3,8 +3,6 @@
 #include <memory>
 #include <stdexcept>
 
-#include "tensorflow/core/platform/default/logging.h"
-
 #include <boost/algorithm/string.hpp>
 
 #include "dimap_product_constants.h"
@@ -97,7 +95,7 @@ MetadataElement PugixmlMetaDataReader::GetElement(std::string_view element_name)
                         try {
                             utc = Utc::Parse(att_value);
                         } catch (const std::exception &e) {
-                            LOG(INFO) << e.what();
+                            std::cerr << e.what();
                         }
                         data = utc;
                     }
@@ -138,5 +136,5 @@ MetadataElement PugixmlMetaDataReader::GetElement(std::string_view element_name)
     return *start_element;
 }
 
-};  // namespace snapengine
-};  // namespace alus
+}  // namespace snapengine
+}  // namespace alus

@@ -9,7 +9,6 @@
 #include "earth_gravitational_model96.h"
 #include "extended_amount.h"
 #include "general_constants.h"
-#include "orbit_state_vector.h"
 #include "pointer_holders.h"
 #include "position_data.h"
 #include "raster_properties.hpp"
@@ -39,7 +38,7 @@ struct ExtendedAmountKernelArgs {
     double* min_extended_azimuths;
     double* max_extended_ranges;
     double* min_extended_ranges;
-    snapengine::OrbitStateVector* orbit_state_vectors;
+    snapengine::OrbitStateVectorComputation* orbit_state_vectors;
     size_t nr_of_orbit_vectors;
     PointerArray tiles;
     double dt;
@@ -117,9 +116,13 @@ __global__ void ComputeExtendedAmountKernel(ExtendedAmountKernelArgs args) {
 }
 
 void PrepareArguments(ExtendedAmountKernelArgs* args,
-                      s1tbx::Sentinel1Utils* utils,
                       PointerArray tiles,
-                      s1tbx::OrbitStateVectors* vectors,
+                      const snapengine::OrbitStateVectorComputation* vectors,
+                      size_t nr_of_vectors,
+                      double vectors_dt,
+                      const s1tbx::SubSwathInfo& subswath_info,
+                      s1tbx::DeviceSentinel1Utils* d_sentinel_1_utils,
+                      s1tbx::DeviceSubswathInfo* d_subswath_info,
                       thrust::device_vector<double>& max_extended_azimuths,
                       thrust::device_vector<double>& min_extended_azimuths,
                       thrust::device_vector<double>& max_extended_ranges,
@@ -127,13 +130,18 @@ void PrepareArguments(ExtendedAmountKernelArgs* args,
                       Rectangle& bounds,
                       float* egm) {
     args->tiles.array = tiles.array;
-    args->orbit_state_vectors = vectors->device_orbit_state_vectors_;
-    args->nr_of_orbit_vectors = vectors->orbitStateVectors.size();
-    args->dt = vectors->GetDT();
+
+    CHECK_CUDA_ERR(
+        cudaMalloc(&args->orbit_state_vectors, sizeof(snapengine::OrbitStateVectorComputation) * nr_of_vectors));
+    CHECK_CUDA_ERR(cudaMemcpy(args->orbit_state_vectors,
+                              vectors,
+                              sizeof(snapengine::OrbitStateVectorComputation) * nr_of_vectors,
+                              cudaMemcpyHostToDevice));
+    args->nr_of_orbit_vectors = nr_of_vectors;
+    args->dt = vectors_dt;
     args->bounds = bounds;
 
-    s1tbx::SubSwathInfo* h_subswath = &utils->subswath_.at(0);
-    int subswath_geo_grid_size = h_subswath->num_of_geo_lines_ * h_subswath->num_of_geo_points_per_line_;
+    int subswath_geo_grid_size = subswath_info.num_of_geo_lines_ * subswath_info.num_of_geo_points_per_line_;
 
     CHECK_CUDA_ERR(cudaMalloc(&args->subswath_azimuth_times, sizeof(double) * subswath_geo_grid_size));
     CHECK_CUDA_ERR(cudaMalloc(&args->subswath_slant_range_times, sizeof(double) * subswath_geo_grid_size));
@@ -141,32 +149,39 @@ void PrepareArguments(ExtendedAmountKernelArgs* args,
     CHECK_CUDA_ERR(cudaMalloc(&args->latitudes, sizeof(double) * subswath_geo_grid_size));
 
     CHECK_CUDA_ERR(cudaMemcpy(args->subswath_azimuth_times,
-                              h_subswath->azimuth_time_[0],
+                              subswath_info.azimuth_time_[0],
                               subswath_geo_grid_size * sizeof(double),
                               cudaMemcpyHostToDevice));
     CHECK_CUDA_ERR(cudaMemcpy(args->subswath_slant_range_times,
-                              h_subswath->slant_range_time_[0],
+                              subswath_info.slant_range_time_[0],
+                              subswath_geo_grid_size * sizeof(double),
+                              cudaMemcpyHostToDevice));
+    CHECK_CUDA_ERR(cudaMemcpy(args->longitudes,
+                              subswath_info.longitude_[0],
                               subswath_geo_grid_size * sizeof(double),
                               cudaMemcpyHostToDevice));
     CHECK_CUDA_ERR(cudaMemcpy(
-        args->longitudes, h_subswath->longitude_[0], subswath_geo_grid_size * sizeof(double), cudaMemcpyHostToDevice));
-    CHECK_CUDA_ERR(cudaMemcpy(
-        args->latitudes, h_subswath->latitude_[0], subswath_geo_grid_size * sizeof(double), cudaMemcpyHostToDevice));
+        args->latitudes, subswath_info.latitude_[0], subswath_geo_grid_size * sizeof(double), cudaMemcpyHostToDevice));
 
     args->max_extended_azimuths = thrust::raw_pointer_cast(max_extended_azimuths.data());
     args->min_extended_azimuths = thrust::raw_pointer_cast(min_extended_azimuths.data());
     args->max_extended_ranges = thrust::raw_pointer_cast(max_extended_ranges.data());
     args->min_extended_ranges = thrust::raw_pointer_cast(min_extended_ranges.data());
 
-    args->sentinel_utils = utils->device_sentinel_1_utils_;
-    args->subswath_info = utils->subswath_.at(0).device_subswath_info_;
+    args->sentinel_utils = d_sentinel_1_utils;
+    args->subswath_info = d_subswath_info;
 
     args->egm = egm;
 }
 
 cudaError_t LaunchComputeExtendedAmount(Rectangle bounds,
                                         AzimuthAndRangeBounds& extended_amount,
-                                        s1tbx::Sentinel1Utils* sentinel_utils,
+                                        const snapengine::OrbitStateVectorComputation* vectors,
+                                        size_t nr_of_vectors,
+                                        double vectors_dt,
+                                        const s1tbx::SubSwathInfo& subswath_info,
+                                        s1tbx::DeviceSentinel1Utils* d_sentinel_1_utils,
+                                        s1tbx::DeviceSubswathInfo* d_subswath_info,
                                         const PointerArray& tiles,
                                         float* egm) {
     ExtendedAmountKernelArgs args{};
@@ -183,9 +198,13 @@ cudaError_t LaunchComputeExtendedAmount(Rectangle bounds,
     thrust::device_vector<double> min_extended_ranges(total_thread_count, double_max);
 
     PrepareArguments(&args,
-                     sentinel_utils,
                      tiles,
-                     sentinel_utils->GetOrbitStateVectors(),
+                     vectors,
+                     nr_of_vectors,
+                     vectors_dt,
+                     subswath_info,
+                     d_sentinel_1_utils,
+                     d_subswath_info,
                      max_extended_azimuths,
                      min_extended_azimuths,
                      max_extended_ranges,

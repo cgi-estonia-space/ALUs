@@ -39,18 +39,18 @@ std::shared_ptr<Utc> MetaDataNodeNames::ParseUtc(std::string_view time_str) {
     }
     return NO_METADATA_UTC;
 }
-std::vector<coh::OrbitStateVector> MetaDataNodeNames::GetOrbitStateVectors(
+std::vector<OrbitStateVector> MetaDataNodeNames::GetOrbitStateVectors(
     MetadataElement& abs_root) {
     auto elem_root = abs_root.GetElement(snapengine::MetaDataNodeNames::ORBIT_STATE_VECTORS);
     if (elem_root == nullptr) {
-        return std::vector<coh::OrbitStateVector>{};
+        return std::vector<OrbitStateVector>{};
     }
     const int num_elems = elem_root->GetNumElements();
-    std::vector<coh::OrbitStateVector> orbit_state_vectors;
+    std::vector<OrbitStateVector> orbit_state_vectors;
     for (int i = 0; i < num_elems; i++) {
         auto sub_elem_root = elem_root->GetElement(std::string(MetaDataNodeNames::ORBIT_VECTOR) +
                                                    std::to_string(i + 1));
-        auto vector = coh::OrbitStateVector(
+        auto vector = OrbitStateVector(
             sub_elem_root->GetAttributeUtc(snapengine::MetaDataNodeNames::ORBIT_VECTOR_TIME),
             sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_X_POS),
             sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_Y_POS),

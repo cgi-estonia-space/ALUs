@@ -1,5 +1,8 @@
 #include "sar_utils.h"
 
+#include "general_constants.h"
+#include "meta_data_node_names.h"
+
 namespace alus::s1tbx {
 
 double SarUtils::GetRadarFrequency(snapengine::MetadataElement& abs_root) {

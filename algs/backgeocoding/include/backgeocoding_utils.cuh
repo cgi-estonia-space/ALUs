@@ -39,7 +39,7 @@ inline __device__ bool GetPosition(s1tbx::DeviceSubswathInfo *subswath_info,
                                    s1tbx::DeviceSentinel1Utils *sentinel1_utils,
                                    int burst_index,
                                    s1tbx::PositionData *position_data,
-                                   snapengine::OrbitStateVector *orbit,
+                                   snapengine::OrbitStateVectorComputation *orbit,
                                    const int num_orbit_vec,
                                    const double dt,
                                    int idx,
@@ -73,7 +73,7 @@ inline __device__ bool GetPosition(s1tbx::DeviceSubswathInfo *subswath_info,
                zero_doppler_time_in_days);
     }
 
-    cuda::KernelArray<snapengine::OrbitStateVector> orbit_vectors;
+    cuda::KernelArray<snapengine::OrbitStateVectorComputation> orbit_vectors;
 
     orbit_vectors.array = orbit;
     orbit_vectors.size = num_orbit_vec;

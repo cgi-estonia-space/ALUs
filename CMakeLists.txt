@@ -35,7 +35,12 @@ find_package(Boost 1.65.1 REQUIRED COMPONENTS program_options date_time filesyst
 
 find_package(GDAL REQUIRED)
 
+find_package (Eigen3 REQUIRED)
+
 set(ALUS_BINARY_OUTPUT_DIR ${PROJECT_BINARY_DIR}/alus_package)
+
+# External libraries
+add_subdirectory(external/pugixml)
 
 # Utilities
 add_subdirectory(util/gdal)
@@ -44,7 +49,6 @@ add_subdirectory(util/exotic_operations)
 add_subdirectory(util/common)
 add_subdirectory(util/cuda)
 add_subdirectory(util/snap-engine)
-
 
 # Algorithms
 add_subdirectory(algs/coherence)

@@ -160,7 +160,7 @@ TEST_F(TerrainCorrectionTest, getPositionTrueScenario) {
 
     std::vector<OrbitStateVectorComputation> comp_orbits;
     for (auto && o : ORBIT_STATE_VECTORS) {
-        comp_orbits.push_back({o.timeMjd_, o.xPos_, o.yPos_, o.zPos_, o.xVel_, o.yVel_, o.zVel_});
+        comp_orbits.push_back({o.time_mjd_, o.x_pos_, o.y_pos_, o.z_pos_, o.x_vel_, o.y_vel_, o.z_vel_});
     }
 
     const KernelArray<OrbitStateVectorComputation> orbitStateVectors{
@@ -239,7 +239,7 @@ TEST_F(TerrainCorrectionTest, getPositionFalseScenario) {
 
     std::vector<OrbitStateVectorComputation> comp_orbits;
     for (auto && o : ORBIT_STATE_VECTORS) {
-        comp_orbits.push_back({o.timeMjd_, o.xPos_, o.yPos_, o.zPos_, o.xVel_, o.yVel_, o.zVel_});
+        comp_orbits.push_back({o.time_mjd_, o.x_pos_, o.y_pos_, o.z_pos_, o.x_vel_, o.y_vel_, o.z_vel_});
     }
 
     const KernelArray<OrbitStateVectorComputation> orbitStateVectors{
@@ -361,7 +361,7 @@ TEST_F(TerrainCorrectionTest, getPositionTrueScenarioKernel) {
 
     std::vector<OrbitStateVectorComputation> comp_orbits;
     for (auto && o : ORBIT_STATE_VECTORS) {
-        comp_orbits.push_back({o.timeMjd_, o.xPos_, o.yPos_, o.zPos_, o.xVel_, o.yVel_, o.zVel_});
+        comp_orbits.push_back({o.time_mjd_, o.x_pos_, o.y_pos_, o.z_pos_, o.x_vel_, o.y_vel_, o.z_vel_});
     }
 
     const auto series_size = POS_DATA_TRUE.size();

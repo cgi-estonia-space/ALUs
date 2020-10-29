@@ -2,10 +2,6 @@
 
 #include <vector>
 
-#include "shapes.h"
-
-#include "extended_amount.h"
-
 namespace alus::goods {
 std::vector<std::pair<int, int>> const GET_BURST_INDEX_VALUES{
     {0, 0},      {20, 0},     {40, 0},     {60, 0},     {80, 0},     {100, 0},    {120, 0},    {140, 0},    {160, 0},

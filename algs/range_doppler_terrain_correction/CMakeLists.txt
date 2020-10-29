@@ -16,8 +16,9 @@ list(APPEND TERRAIN_CORRECTION_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/../../util/gdal/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/sentinel1/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-core/datamodel
         ${CMAKE_CURRENT_LIST_DIR}/../../util/exotic_operations/include
-
+        ${CMAKE_CURRENT_LIST_DIR}/../../external/pugixml/include
         )
 
 add_library(terrain-correction-obj
@@ -45,7 +46,6 @@ target_link_libraries(terrain-correction-static
         PUBLIC
         gdal-util-static
         snap-engine-static
-        coherence-static
         sentinel1-util-static
         )
 
@@ -67,7 +67,6 @@ target_link_libraries(terrain-correction-shared
         PUBLIC
         gdal-util-static
         snap-engine-static
-        coherence-static
         sentinel1-util-static
         )
 

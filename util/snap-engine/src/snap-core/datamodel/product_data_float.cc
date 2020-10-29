@@ -62,7 +62,7 @@ bool Float::EqualElems(std::shared_ptr<ProductData> other) const {
 }
 void Float::SetElemStringAt(int index, std::string_view value) {
     array_.at(index) = boost::lexical_cast<float>(value);
-};
+}
 
 }  // namespace snapengine
 }  // namespace alus

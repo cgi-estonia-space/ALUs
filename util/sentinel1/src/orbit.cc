@@ -8,7 +8,7 @@
 #include "orbit_state_vector.h"
 #include "poly_utils.h"
 
-namespace alus {
+namespace alus::s1tbx {
 const double Orbit::CRITERPOS = pow(10, -6);
 const double Orbit::CRITERTIM = pow(10, -10);
 
@@ -33,12 +33,8 @@ Point Orbit::GetXyzDotDot(double az_time) {
     return Point(x / 100.0, y / 100.0, z / 100.0);
 }
 
-Point Orbit::Xyz2T(Point point_on_ellips, MetaData &slave_meta_data) {
+Point Orbit::Xyz2T(Point point_on_ellips, double time_azimuth) {
     Point delta;
-
-    // inital value
-    double time_azimuth =
-        slave_meta_data.Line2Ta(static_cast<int>(0.5 * slave_meta_data.GetApproxRadarCentreOriginal().GetY()));
 
     int iter;
     double solution;
@@ -61,14 +57,14 @@ Point Orbit::Xyz2T(Point point_on_ellips, MetaData &slave_meta_data) {
     // Update equations
     Point satellite_position = GetXyz(time_azimuth);
     delta = point_on_ellips.Min(satellite_position);
-    double time_range = delta.Norm() / alus::kcoh::C;
+    double time_range = delta.Norm() / C;
 
     // todo: check if 0.0 is ok for z
     return Point(time_range, time_azimuth, 0.0);
 }
 
-Point Orbit::RowsColumns2Xyz(int rows, int columns, MetaData &meta_data) {
-    return RowsColumnsHeightToXyz(rows, columns, 0, meta_data);
+Point Orbit::RowsColumns2Xyz(int rows, int columns, double az_time, double rg_time, Point &ellipsoid_position) {
+    return RowsColumnsHeightToXyz(rows, columns, 0, az_time, rg_time, ellipsoid_position);
 }
 
 // PolyUtils.PolyVal1D(azTimeNormal, coeff_X),
@@ -103,23 +99,25 @@ double Orbit::Eq1Doppler(Point &sat_velocity, Point &point_on_ellips) { return s
 // eq2_Range
 double Orbit::Eq2Range(Point &point_ellips_sat, double rg_time) {
     // SOL vs C
-    return point_ellips_sat.In(point_ellips_sat) - pow(alus::kcoh::C * rg_time, 2);
+    return point_ellips_sat.In(point_ellips_sat) - pow(C * rg_time, 2);
 }
 
 // eq3_Ellipsoid
 
-double Orbit::Eq3Ellipsoid(Point &point_on_ellips, double height) {
+double Orbit::Eq3Ellipsoid(const Point &point_on_ellips, double height) {
     return ((point_on_ellips.GetX() * point_on_ellips.GetX() + point_on_ellips.GetY() * point_on_ellips.GetY()) /
-            pow(alus::kcoh::ELL_A + height, 2)) +
-           pow(point_on_ellips.GetZ() / (alus::kcoh::ELL_B + height), 2) - 1.0;
+            pow(ELL_A + height, 2)) +
+           pow(point_on_ellips.GetZ() / (ELL_B + height), 2) - 1.0;
 }
 
 // from jlinda: Orbit class//Point lph2xyz(final double line, final double pixel, final double height, final SLCImage
 // slcimage)
-Point Orbit::RowsColumnsHeightToXyz(int rows, int columns, int height, MetaData &meta_data) {
+Point Orbit::RowsColumnsHeightToXyz(
+    int rows, int columns, int height, double az_time, double rg_time, Point &ellipsoid_position) {
+    (void)rows;
+    (void)columns;
     Point satellite_position;
     Point satellite_velocity;
-    Point ellipsoid_position;  // returned
 
     // allocate matrices
     std::vector<double> equation_set(3);
@@ -127,15 +125,9 @@ Point Orbit::RowsColumnsHeightToXyz(int rows, int columns, int height, MetaData 
     std::vector<std::vector<double>> partials_xyz;
     partials_xyz.resize(3, std::vector<double>(3));
 
-    double az_time = meta_data.Line2Ta(rows);
-    double rg_time = meta_data.PixelToTimeRange(columns);
-
     satellite_position = GetXyz(az_time);
 
     satellite_velocity = GetXyzDot(az_time);
-
-    // initial value
-    ellipsoid_position = meta_data.GetApproxXyzCentreOriginal();
 
     // iterate for the solution
     for (int iter = 0; iter <= maxiter_; iter++) {
@@ -150,9 +142,9 @@ Point Orbit::RowsColumnsHeightToXyz(int rows, int columns, int height, MetaData 
         partials_xyz[1][0] = 2 * dsat_p.GetX();
         partials_xyz[1][1] = 2 * dsat_p.GetY();
         partials_xyz[1][2] = 2 * dsat_p.GetZ();
-        partials_xyz[2][0] = (2 * ellipsoid_position.GetX()) / (pow(alus::kcoh::ELL_A + height, 2));
-        partials_xyz[2][1] = (2 * ellipsoid_position.GetY()) / (pow(alus::kcoh::ELL_A + height, 2));
-        partials_xyz[2][2] = (2 * ellipsoid_position.GetZ()) / (pow(alus::kcoh::ELL_B + height, 2));
+        partials_xyz[2][0] = (2 * ellipsoid_position.GetX()) / (pow(ELL_A + height, 2));
+        partials_xyz[2][1] = (2 * ellipsoid_position.GetY()) / (pow(ELL_A + height, 2));
+        partials_xyz[2][2] = (2 * ellipsoid_position.GetZ()) / (pow(ELL_B + height, 2));
 
         // solve system [NOTE!] orbit has to be normalized, otherwise close to singular
         std::vector<double> ellipsoid_position_solution = PolyUtils::Solve33(partials_xyz, equation_set);
@@ -173,9 +165,9 @@ Point Orbit::RowsColumnsHeightToXyz(int rows, int columns, int height, MetaData 
     return Point(ellipsoid_position);
 }
 
-Orbit::Orbit(snapengine::MetadataElement& element, int degree) {
-
-    std::vector<alus::snapengine::coh::OrbitStateVector> orbit_state_vectors = snapengine::MetaDataNodeNames::GetOrbitStateVectors(element);
+Orbit::Orbit(snapengine::MetadataElement &element, int degree) {
+    std::vector<alus::snapengine::OrbitStateVector> orbit_state_vectors =
+        snapengine::MetaDataNodeNames::GetOrbitStateVectors(element);
 
     num_state_vectors_ = orbit_state_vectors.size();
 
@@ -204,4 +196,4 @@ void Orbit::ComputeCoefficients() {
     is_interpolated_ = true;
 }
 
-}  // namespace alus
+}  // namespace alus::s1tbx

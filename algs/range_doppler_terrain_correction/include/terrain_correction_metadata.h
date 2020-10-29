@@ -16,10 +16,9 @@
 #include <string_view>
 #include <vector>
 
-#include "orbit_state_vector.h"
-#include "../../coherence/include/orbit_state_vector.h"
 #include "cuda_util.cuh"
 #include "metadata_enums.h"
+#include "orbit_state_vector.h"
 
 namespace alus {
 namespace terraincorrection {
@@ -33,12 +32,10 @@ struct RangeDopplerTerrainMetadata {
     metadata::AntennaDirection antenna_pointing;
     std::string beams;
     metadata::Swath swath;
-    alus::snapengine::old::Utc proc_time;
     std::string processing_system_identifier;
     unsigned int orbit_cycle;
     unsigned int rel_orbit;
     unsigned int abs_orbit;
-    alus::snapengine::old::Utc state_vector_time;
     std::string vector_source;
     double incidence_near;
     double incidence_far;
@@ -113,7 +110,7 @@ struct RangeDopplerTerrainMetadata {
     double first_valid_line_time;
     double last_valid_line_time;
     std::vector<alus::snapengine::OrbitStateVector> orbit_state_vectors;
-    std::vector<alus::snapengine::coh::OrbitStateVector> orbit_state_vectors2;
+    std::vector<alus::snapengine::OrbitStateVector> orbit_state_vectors2;
     bool skip_bistatic_correction;
     double wavelength{0.0};
     bool is_polsar{false};

@@ -54,7 +54,7 @@ void Ellipsoid::ShowData() {
     LOG(INFO) << "ELLIPSOID: e2' = " + std::to_string(e2b_);
 }
 
-std::vector<double> Ellipsoid::Xyz2Ell(const Point& xyz) {
+std::vector<double> Ellipsoid::Xyz2Ell(const s1tbx::Point& xyz) {
     const double r = sqrt(xyz.GetX() * xyz.GetX() + xyz.GetY() * xyz.GetY());
     const double nu = atan2((xyz.GetZ() * a_), (r * b_));
     const double sinNu = sin(nu);
@@ -67,16 +67,16 @@ std::vector<double> Ellipsoid::Xyz2Ell(const Point& xyz) {
     const double height = (r / cos(phi)) - N;
     return std::vector<double>{phi, lambda, height};
 }
-Point Ellipsoid::Ell2Xyz(const double phi, const double lambda, const double height) {
+s1tbx::Point Ellipsoid::Ell2Xyz(const double phi, const double lambda, const double height) {
     if (phi > kcoh::SNAP_PI || phi < -kcoh::SNAP_PI || lambda > kcoh::SNAP_PI || lambda < -kcoh::SNAP_PI) {
         throw std::invalid_argument("Ellipsoid.ell2xyz : input values for phi/lambda have to be in radians!");
     }
     const double N = ComputeEllipsoidNormal(phi);
     const double Nph = N + height;
     const double A = Nph * cos(phi);
-    return Point(A * cos(lambda), A * sin(lambda), (Nph - e2_ * N) * sin(phi));
+    return s1tbx::Point(A * cos(lambda), A * sin(lambda), (Nph - e2_ * N) * sin(phi));
 }
-Point Ellipsoid::Ell2Xyz(std::vector<double> phi_lambda_height) {
+s1tbx::Point Ellipsoid::Ell2Xyz(std::vector<double> phi_lambda_height) {
     const double phi = phi_lambda_height.at(0);
     const double lambda = phi_lambda_height.at(1);
     const double height = phi_lambda_height.at(2);
@@ -88,25 +88,25 @@ Point Ellipsoid::Ell2Xyz(std::vector<double> phi_lambda_height) {
     const double N = ComputeEllipsoidNormal(phi);
     const double Nph = N + height;
     const double A = Nph * cos(phi);
-    return Point(A * cos(lambda), A * sin(lambda), (Nph - e2_ * N) * sin(phi));
+    return s1tbx::Point(A * cos(lambda), A * sin(lambda), (Nph - e2_ * N) * sin(phi));
 }
 
-Point Ellipsoid::Ell2Xyz(const GeoPoint& geo_point, const double height) {
+s1tbx::Point Ellipsoid::Ell2Xyz(const GeoPoint& geo_point, const double height) {
     return Ell2Xyz(geo_point.lat_ * kcoh::DTOR, geo_point.lon_ * kcoh::DTOR, height);
 }
-Point Ellipsoid::Ell2Xyz(const GeoPoint& geo_point) {
+s1tbx::Point Ellipsoid::Ell2Xyz(const GeoPoint& geo_point) {
     return Ell2Xyz(geo_point.lat_ * kcoh::DTOR, geo_point.lon_ * kcoh::DTOR, 0.0);
 }
 
 void Ellipsoid::Ell2Xyz(const GeoPoint& geo_point, std::vector<double>& xyz) {
-    Point tempPoint = Ell2Xyz(geo_point.lat_ * kcoh::DTOR, geo_point.lon_ * kcoh::DTOR, 0.0);
+    s1tbx::Point tempPoint = Ell2Xyz(geo_point.lat_ * kcoh::DTOR, geo_point.lon_ * kcoh::DTOR, 0.0);
     xyz.at(0) = tempPoint.GetX();
     xyz.at(1) = tempPoint.GetY();
     xyz.at(2) = tempPoint.GetZ();
 }
 
 void Ellipsoid::Ell2Xyz(const GeoPoint& geo_point, const double height, std::vector<double>& xyz) {
-    Point temp_point = Ell2Xyz(geo_point.lat_ * kcoh::DTOR, geo_point.lon_ * kcoh::DTOR, height);
+    s1tbx::Point temp_point = Ell2Xyz(geo_point.lat_ * kcoh::DTOR, geo_point.lon_ * kcoh::DTOR, height);
     xyz.at(0) = temp_point.GetX();
     xyz.at(1) = temp_point.GetY();
     xyz.at(2) = temp_point.GetZ();

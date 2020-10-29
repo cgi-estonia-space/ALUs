@@ -1,7 +1,5 @@
 #include "metadata_element.h"
 
-#include "tensorflow/core/platform/default/logging.h"
-
 #include "guardian.h"
 
 namespace alus {
@@ -145,7 +143,7 @@ const std::shared_ptr<Utc> MetadataElement::GetAttributeUtc(std::string_view nam
             return Utc::Parse(attribute->GetData()->GetElemString());
         }
     } catch (std::exception &e) {
-        LOG(INFO) << e.what();
+        std::cerr << e.what();
         // continue
     }
     return default_value;
@@ -226,7 +224,8 @@ std::string MetadataElement::GetAttributeNotFoundMessage(std::string_view name) 
 }
 
 // todo:provide implementation
-std::shared_ptr<MetadataElement> MetadataElement::GetParentElement(const ProductNode &node) {
+std::shared_ptr<MetadataElement> MetadataElement::GetParentElement(const ProductNode &node){
+    (void)node;
     return std::shared_ptr<MetadataElement>();
 }
 std::shared_ptr<MetadataElement> MetadataElement::GetElement(std::string_view name) {
@@ -240,18 +239,6 @@ std::shared_ptr<MetadataElement> MetadataElement::GetElement(std::string_view na
         return std::shared_ptr<MetadataElement>(nullptr);
     }
 }
-
-// std::shared_ptr<MetadataElement> MetadataElement::GetParentElement(const ProductNode* node) {
-//    auto node = node->GetOwner();
-//    return node->GetOwner().get();
-//    while (node != nullptr) {
-//        if (node instanceof MetadataElement) {
-//            return (MetadataElement) node;
-//        }
-//        node = node.getOwner();
-//    }
-//    return nullptr;
-//}
 
 }  // namespace snapengine
 }  // namespace alus

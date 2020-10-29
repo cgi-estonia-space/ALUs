@@ -1,10 +1,3 @@
-list(APPEND PUGIXML_INCLUDES
-        ${CMAKE_CURRENT_LIST_DIR}/../../external/pugixml/include
-        )
-
-list(APPEND PUGIXML_SRC
-        ${CMAKE_CURRENT_LIST_DIR}/../../external/pugixml/pugixml.cpp
-        )
 
 list(APPEND TENSORFLOW_INCLUDES
         ${CMAKE_CURRENT_LIST_DIR}/../../tensorflow/ubuntu_1804/include
@@ -28,42 +21,14 @@ list(APPEND COHERENCE_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/tf_algorithm_runner.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/gdal_tile_writer.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/gdal_tile_reader.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/point.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/coh_tiles_generator.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/coh_tile.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/meta_data.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/orbit.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/poly_utils.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/coherence_calc.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/data_bands_buffer.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/guardian.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/string_utils.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/pugixml_meta_data_reader.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/product_data_utc.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/data_node.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/parse_exception.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/product_node.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/product_data_ushort.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/product_data_short.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/product_data_uint.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/product_data_int.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/product_data_ubyte.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/product_data_byte.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/product_data_ascii.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/product_data_long.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/product_data_float.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/product_data_double.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/product_data.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/meta_data_node_names.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/metadata_element.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/metadata_attribute.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/i_meta_data_reader.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/geopoint.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/ellipsoid.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/orbit_state_vectors.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/date_utils.cc
         ${PUGIXML_SRC}
-        ${SNAP-ENGINE_SOURCES}
         )
 
 list(APPEND COHERENCE_INCLUDE_DIRS
@@ -71,8 +36,11 @@ list(APPEND COHERENCE_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/../algorithm_bond/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/common/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/gdal/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/sentinel1/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-core/datamodel
+        ${CMAKE_CURRENT_LIST_DIR}/../../external/pugixml/include
         ${TENSORFLOW_INCLUDES}
-        ${PUGIXML_INCLUDES}
         )
 
 add_library(coherence-obj
@@ -107,6 +75,8 @@ set_target_properties(coherence-static
 target_link_libraries(coherence-static
         PUBLIC
         gdal
+        snap-engine-static
+        sentinel1-util-static
         ${TENSORFLOW_LIBS}
         )
 
@@ -126,6 +96,8 @@ set_target_properties(coherence-shared
 target_link_libraries(coherence-shared
         PUBLIC
         gdal
+        snap-engine-static
+        sentinel1-util-static
         ${TENSORFLOW_LIBS}
         )
 add_custom_command(TARGET coherence-shared

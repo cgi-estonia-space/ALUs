@@ -2,8 +2,8 @@
 
 #include <algorithm>
 
-#include "../../coherence/include/meta_data_node_names.h"
-#include "../../coherence/include/pugixml_meta_data_reader.h"
+#include "meta_data_node_names.h"
+#include "pugixml_meta_data_reader.h"
 #include "dataset.h"
 
 namespace alus::terraincorrection {

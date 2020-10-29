@@ -87,17 +87,22 @@ TEST_F(SarGeoCodingTest, ComputeSlantRangeResultsAsInSnap) {
                                                  {3659271.6043083738, 1053640.3296334823, 5953972.804162062},
                                                  {3659112.340138346, 1053522.9496627555, 5954091.181217907},
                                                  {3659113.4427363505, 1053523.7622836658, 5954090.361716833}};
-    const KernelArray<OrbitStateVector> orbitStateVectors{const_cast<OrbitStateVector*>(ORBIT_STATE_VECTORS.data()),
-                                                          ORBIT_STATE_VECTORS.size()};
+    std::vector<snapengine::OrbitStateVectorComputation> comp_orbits;
+    comp_orbits.reserve(ORBIT_STATE_VECTORS.size());
+    for (auto&& o : ORBIT_STATE_VECTORS) {
+        comp_orbits.push_back({o.time_mjd_, o.x_pos_, o.y_pos_, o.z_pos_, o.x_vel_, o.y_vel_, o.z_vel_});
+    }
+    const KernelArray<OrbitStateVectorComputation> orbit_state_vectors{comp_orbits.data(), comp_orbits.size()};
 
-    const auto seriesSize = TIME_ARGS.size();
-    for (size_t i = 0; i < seriesSize; i++) {
-        PosVector sensorPointRes{};
-        auto const res = ComputeSlantRange(TIME_ARGS.at(i), orbitStateVectors, EARTH_POINT_ARGS.at(i), sensorPointRes);
+    const auto series_size = TIME_ARGS.size();
+    for (size_t i = 0; i < series_size; i++) {
+        PosVector sensor_point_res{};
+        auto const res =
+            ComputeSlantRange(TIME_ARGS.at(i), orbit_state_vectors, EARTH_POINT_ARGS.at(i), sensor_point_res);
         EXPECT_DOUBLE_EQ(res, SLANT_RANGE_EXPECTED.at(i));
-        EXPECT_DOUBLE_EQ(sensorPointRes.x, SENSOR_POINT_EXPECTED.at(i).x);
-        EXPECT_DOUBLE_EQ(sensorPointRes.y, SENSOR_POINT_EXPECTED.at(i).y);
-        EXPECT_DOUBLE_EQ(sensorPointRes.z, SENSOR_POINT_EXPECTED.at(i).z);
+        EXPECT_DOUBLE_EQ(sensor_point_res.x, SENSOR_POINT_EXPECTED.at(i).x);
+        EXPECT_DOUBLE_EQ(sensor_point_res.y, SENSOR_POINT_EXPECTED.at(i).y);
+        EXPECT_DOUBLE_EQ(sensor_point_res.z, SENSOR_POINT_EXPECTED.at(i).z);
     }
 }
 

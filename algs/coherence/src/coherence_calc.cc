@@ -180,9 +180,17 @@ std::vector<double> Coh::GenerateY(std::tuple<std::vector<int>, std::vector<int>
 
     for (int i = 0; i < srp_number_points_; i++) {
         double master_time_range = meta_master.PixelToTimeRange(pixels.at(static_cast<unsigned long>(i)) + 1);
-        Point xyz_master = meta_master.GetOrbit()->RowsColumns2Xyz(lines.at(static_cast<unsigned long>(i)) + 1,
-                                                        pixels.at(static_cast<unsigned long>(i)) + 1, meta_master);
-        Point slave_time_vector = meta_slave.GetOrbit()->Xyz2T(xyz_master, meta_slave);
+
+        const auto rows = lines.at(static_cast<unsigned long>(i)) + 1;
+        const auto columns = pixels.at(static_cast<unsigned long>(i)) + 1;
+        const auto az_time = meta_master.Line2Ta(rows);
+        const auto rg_time = meta_master.PixelToTimeRange(columns);
+        auto ellipsoid_position = meta_master.GetApproxXyzCentreOriginal();
+        s1tbx::Point xyz_master = meta_master.GetOrbit()->RowsColumns2Xyz(rows, columns, az_time, rg_time,
+                                                                    ellipsoid_position);
+        const auto line_2_a =
+            meta_slave.Line2Ta(static_cast<int>(0.5 * meta_slave.GetApproxRadarCentreOriginal().GetY()));
+        s1tbx::Point slave_time_vector = meta_slave.GetOrbit()->Xyz2T(xyz_master, line_2_a);
         double slave_time_range = slave_time_vector.GetX();
         y.push_back(static_cast<double &&>((master_min_pi_4_div_lam * master_time_range) -
                                            (slave_min_pi_4_div_lam * slave_time_range)));
