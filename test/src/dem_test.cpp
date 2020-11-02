@@ -14,10 +14,10 @@ namespace {
 
 class DemTest : public ::testing::Test {
    public:
-    std::optional<alus::Dataset> demDataset;
+    std::optional<alus::Dataset<double>> demDataset;
 
     DemTest() {
-        demDataset = std::make_optional<alus::Dataset>(DEM_PATH_1);
+        demDataset = std::make_optional<alus::Dataset<double>>(DEM_PATH_1);
         demDataset.value().LoadRasterBand(1);
     }
 
@@ -26,7 +26,7 @@ class DemTest : public ::testing::Test {
 
 TEST_F(DemTest, getLocalDem) {
     alus::Dem dem{std::move(demDataset.value())};
-    alus::Dataset ds{TIF_PATH_1};
+    alus::Dataset<double> ds{TIF_PATH_1};
     ds.LoadRasterBand(1);
 
     const auto WIDTH{ds.GetGdalDataset()->GetRasterXSize()};

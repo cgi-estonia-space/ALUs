@@ -57,7 +57,7 @@ TEST_F(TerrainCorrectionIntegrationTest, Saaremaa1) {
     Metadata metadata(COH_1_DATA.substr(0, COH_1_DATA.length() - 5) + ".dim",
                       COH_1_DATA + "/tie_point_grids/latitude.img",
                       COH_1_DATA + "/tie_point_grids/longitude.img");
-    alus::Dataset input(COH_1_TIF);
+    alus::Dataset<double> input(COH_1_TIF);
 
     const std::string output_path{"/tmp/tc_test.tif"};
     auto const main_alg_start = std::chrono::steady_clock::now();

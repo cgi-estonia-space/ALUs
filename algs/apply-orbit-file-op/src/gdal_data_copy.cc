@@ -1,6 +1,6 @@
 #include "gdal_data_copy.h"
 
-#include "gdal_util.hpp"
+#include "gdal_util.h"
 
 namespace alus {
 

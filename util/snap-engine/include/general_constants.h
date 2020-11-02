@@ -17,7 +17,7 @@
  */
 #pragma once
 
-#include "GeoUtils.hpp"
+#include "geo_utils.h"
 
 namespace alus {
 namespace snapengine {

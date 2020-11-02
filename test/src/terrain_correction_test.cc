@@ -19,7 +19,7 @@
 
 #include "crs_geocoding.h"
 #include "cuda_util.hpp"
-#include "gdal_util.hpp"
+#include "gdal_util.h"
 #include "general_constants.h"
 #include "get_position.h"
 #include "position_data.h"
@@ -57,17 +57,17 @@ using namespace alus::snapengine;
 class TerrainCorrectionTest : public ::testing::Test {
 public:
     TerrainCorrectionTest() {
-        coh_ds_ = std::make_optional<alus::Dataset>(COH_1_TIF);
+        coh_ds_ = std::make_optional<alus::Dataset<double>>(COH_1_TIF);
         coh_ds_.value().LoadRasterBand(1);
-        dem_ds_ = std::make_optional<alus::Dataset>(DEM_PATH_1);
+        dem_ds_ = std::make_optional<alus::Dataset<double>>(DEM_PATH_1);
         dem_ds_.value().LoadRasterBand(1);
         metadata_ = std::make_optional<Metadata>(main_metadata_file_, lat_tie_points_file_, lon_tie_points_file_);
         tc_metadata_ = metadata_->GetMetadata();
     }
 
-    std::optional<alus::Dataset> coh_ds_;
-    std::optional<alus::Dataset> coh_data_ds_;
-    std::optional<alus::Dataset> dem_ds_;
+    std::optional<alus::Dataset<double>> coh_ds_;
+    std::optional<alus::Dataset<double>> coh_data_ds_;
+    std::optional<alus::Dataset<double>> dem_ds_;
     std::optional<Metadata> metadata_;
     std::optional<RangeDopplerTerrainMetadata> tc_metadata_;
 

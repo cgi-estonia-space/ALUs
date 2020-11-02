@@ -13,29 +13,101 @@
  */
 #pragma once
 
+#include <condition_variable>
 #include <iostream>
+#include <mutex>
+#include <thread>
+#include <vector>
+#include <memory>
+#include <atomic>
 
-#include "backgeocoding_io.h"
+#include "alus_file_reader.h"
+#include "alus_file_writer.h"
 #include "backgeocoding.h"
 
-
 namespace alus {
-namespace backgeocoding{
+namespace backgeocoding {
+
+struct PositionComputeResults {
+    Rectangle slave_area;
+    size_t demod_size;
+};
 
 /**
  * A helper class to manage the data intputs and threading to Backgeocoding class.
  */
-class BackgeocodingController: public BackgeocodingIO{
-private:
-    Backgeocoding *backgeocoding_{nullptr};
-    Rectangle slave_rect;
+class BackgeocodingController{
+   private:
+    std::unique_ptr<Backgeocoding> backgeocoding_;
+    int num_of_bursts_;
+    int lines_per_burst_;
+    int samples_per_burst_;
+    int recommended_tile_area_ = 4000000;
 
-public:
-    void ComputeImage();
-    void ReadTile(Rectangle area, double *tile_i, double *tile_q) override ;
-    BackgeocodingController();
+    std::shared_ptr<AlusFileReader<double>> master_input_dataset_;
+    std::shared_ptr<AlusFileReader<double>> slave_input_dataset_;
+    std::shared_ptr<AlusFileWriter<float>> output_dataset_;
+
+    std::mutex register_mutex_;
+    std::mutex master_read_mutex_;
+    std::mutex position_compute_mutex_;
+    std::mutex slave_read_mutex_;
+    std::mutex core_compute_mutex_;
+    std::mutex output_write_mutex_;
+    size_t worker_count_;         // How many were set loose
+    size_t finished_count_;       // How many have finished work
+    size_t active_worker_count_;  // How many are working concurrently
+    std::condition_variable thread_sync_;
+    std::condition_variable end_block_;
+
+    struct WorkerParams {
+        int index;
+        Rectangle master_input_area;
+        Rectangle slave_input_area;
+        size_t demod_size;
+        int master_burst_index;
+        int slave_burst_index;
+    };
+
+    class BackgeocodingWorker {
+       private:
+        WorkerParams params_;
+        BackgeocodingController *controller_;
+
+       public:
+        BackgeocodingWorker(WorkerParams params, BackgeocodingController *controller) {
+            params_ = params;
+            controller_ = controller;
+            std::thread worker(&BackgeocodingWorker::Work, this);
+            worker.detach();
+        }
+        ~BackgeocodingWorker();
+        void Work();
+    };
+
+    std::vector<BackgeocodingController::BackgeocodingWorker> workers_;
+
+   public:
+    std::mutex queue_mutex_;
+    std::atomic<size_t> worker_counter_;
+    const float output_no_data_value_ = 0.0;
+
+    void PrepareToCompute();
+    BackgeocodingController(std::shared_ptr<AlusFileReader<double>> master_input_dataset,
+                            std::shared_ptr<AlusFileReader<double>> slave_input_dataset,
+                            std::shared_ptr<AlusFileWriter<float>> output_dataset);
     ~BackgeocodingController();
+    void RegisterThreadEnd();
+    void ReadMaster(Rectangle master_area, double *i_tile, double *q_tile);
+    PositionComputeResults PositionCompute(
+        int m_burst_index, int s_burst_index, Rectangle target_area, double *device_x_points, double *device_y_points);
+    void ReadSlave(Rectangle slave_area, double *i_tile, double *q_tile);
+    void CoreCompute(CoreComputeParams params);
+    void WriteOutputs(Rectangle output_area, float *i_results, float *q_results);
+    void StartWork();
+
+    std::condition_variable *GetThreadSync() { return &thread_sync_; }
 };
 
-}//namespace
-}//namespace
+}  // namespace backgeocoding
+}  // namespace alus

@@ -20,7 +20,7 @@ class TerrainCorrectionExecuter : public AlgBond {
         Metadata metadata(metadata_dim_file_,
                           metadata_folder_path_ + "/tie_point_grids/latitude.img",
                           metadata_folder_path_ + "/tie_point_grids/longitude.img");
-        alus::Dataset input(this->input_dataset_name_);
+        alus::Dataset<double> input(this->input_dataset_name_);
 
         TerrainCorrection tc(
             std::move(input), metadata.GetMetadata(), metadata.GetLatTiePoints(), metadata.GetLonTiePoints());

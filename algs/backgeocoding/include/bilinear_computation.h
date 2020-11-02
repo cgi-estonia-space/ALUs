@@ -25,11 +25,6 @@ struct BilinearParams {
     int start_x;
     int start_y;
 
-    int scanline_offset;
-    int scanline_stride;
-    int min_x;
-    int min_y;
-
     int rectangle_x;
     int rectangle_y;
     bool disable_reramp;

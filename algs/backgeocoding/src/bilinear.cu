@@ -75,27 +75,24 @@ __global__ void BilinearInterpolation(double *x_pixels,
     double reramp_remod_i = 0.0;
     double reramp_remod_q = 0.0;
 
+    const int thread_data_index = idy * params.point_width + idx;
+
     PointerArray p_array;
     PointerHolder p_holder;
     p_array.array = &p_holder;
     p_holder.x = params.demod_width;
     p_holder.y = params.demod_height;
 
-    // y stride + x index
-    const int target_index =
-        (params.start_x + idx) -
-        (params.min_x - (((params.start_y + idy) - params.min_y) * params.scanline_stride + params.scanline_offset));
-
     if (idx >= params.point_width || idy >= params.point_height) {
         return;
     }
-    const double x = x_pixels[(idy * params.point_width) + idx];
-    const double y = y_pixels[(idy * params.point_width) + idx];
+    const double x = x_pixels[thread_data_index];
+    const double y = y_pixels[thread_data_index];
 
     if ((x == INVALID_INDEX && y == INVALID_INDEX) ||
         !(y >= params.subswath_start && y < params.subswath_end)) {
-        results_i[(idy * params.point_width) + idx] = params.no_data_value;
-        results_q[(idy * params.point_width) + idx] = params.no_data_value;
+        results_i[thread_data_index] = params.no_data_value;
+        results_q[thread_data_index] = params.no_data_value;
     } else {
         snapengine::bilinearinterpolation::ComputeIndex(x - params.rectangle_x + 0.5,
                                                         y - params.rectangle_y + 0.5,
@@ -117,11 +114,11 @@ __global__ void BilinearInterpolation(double *x_pixels,
             sin_phase = sin(sample_phase);
             reramp_remod_i = sample_i * cos_phase + sample_q * sin_phase;
             reramp_remod_q = -sample_i * sin_phase + sample_q * cos_phase;
-            results_i[target_index] = reramp_remod_i;
-            results_q[target_index] = reramp_remod_q;
+            results_i[thread_data_index] = reramp_remod_i;
+            results_q[thread_data_index] = reramp_remod_q;
         } else {
-            results_i[target_index] = sample_i;
-            results_q[target_index] = sample_q;
+            results_i[thread_data_index] = sample_i;
+            results_q[thread_data_index] = sample_q;
         }
     }
 
@@ -135,7 +132,7 @@ cudaError_t LaunchBilinearInterpolation(double *x_pixels,
                                         BilinearParams params,
                                         float *results_i,
                                         float *results_q) {
-    dim3 block_size(20, 20);
+    dim3 block_size(24, 24);
     dim3 grid_size(cuda::GetGridDim(block_size.x, params.point_width),
                    cuda::GetGridDim(block_size.y, params.point_height));
 

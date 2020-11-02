@@ -1,3 +1,16 @@
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #pragma once
 
 #include <vector>
@@ -8,9 +21,9 @@ namespace alus {
 class Dem {
    public:
     Dem() = default;
-    Dem(Dataset ds);
+    Dem(Dataset<double> ds);
 
-    alus::Dataset * GetDataset();
+    alus::Dataset<double> * GetDataset();
 
     /**
      * This is a ripoff of a Sentinel 1 Toolbox's code from
@@ -44,11 +57,11 @@ class Dem {
      * @image
      * @return 2D array of the elevation values for a specified area.
      */
-    std::vector<double> GetLocalDemFor(Dataset& image, unsigned int x_0,
+    std::vector<double> GetLocalDemFor(Dataset<double>& image, unsigned int x_0,
                                        unsigned int y_0, unsigned int width,
                                        unsigned int height);
 
-    auto const& GetData() const { return m_ds_.GetDataBuffer(); }
+    std::vector<double> const& GetData() const { return m_ds_.GetHostDataBuffer(); }
     void FillGeoTransform(double& origin_lon, double& origin_lat,
                           double& pixel_size_lon, double& pixel_size_lat) const {
         origin_lon = m_ds_.GetOriginLon();
@@ -63,7 +76,7 @@ class Dem {
     int GetRowCount() const { return GetRasterSizeY(); }
 
    private:
-    Dataset m_ds_;
+    Dataset<double> m_ds_;
 
     double m_no_data_value_{};
 };

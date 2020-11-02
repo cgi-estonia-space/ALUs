@@ -1,12 +1,29 @@
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #include "dataset.h"
 
-#include <gdal.h>
+#include <iostream>
+#include <cstdint>
+
+#include "gdal.h"
+#include "gdal_util.h"
 
 namespace {
-const std::map<alus::Dataset::GeoTransformSourcePriority, std::string> GEOREF_CONFIG_STRING_TABLE{
-    {alus::Dataset::GeoTransformSourcePriority::PAM_INTERNAL_TABFILE_WORLDFILE_NONE,
+const std::map<alus::GeoTransformSourcePriority, std::string> GEOREF_CONFIG_STRING_TABLE{
+    {alus::GeoTransformSourcePriority::PAM_INTERNAL_TABFILE_WORLDFILE_NONE,
      "PAM,INTERNAL,TABFILE,WORLDFILE,NONE"},
-    {alus::Dataset::GeoTransformSourcePriority::WORLDFILE_PAM_INTERNAL_TABFILE_NONE,
+    {alus::GeoTransformSourcePriority::WORLDFILE_PAM_INTERNAL_TABFILE_NONE,
      "WORLDFILE,PAM,INTERNAL,TABFILE,NONE"}
     };
 }
@@ -16,9 +33,11 @@ namespace alus {
 // If one wants to install custom GDAL error handler -
 // https://gdal.org/api/cpl.html#_CPPv418CPLSetErrorHandler15CPLErrorHandler
 
-Dataset::Dataset(std::string_view filename) { LoadDataset(filename); }
+template <typename BufferType>
+Dataset<BufferType>::Dataset(std::string_view filename) { LoadDataset(filename); }
 
-Dataset::Dataset(std::string_view filename, const GeoTransformSourcePriority& georef_source) {
+template <typename BufferType>
+Dataset<BufferType>::Dataset(std::string_view filename, const GeoTransformSourcePriority& georef_source) {
     CPLSetThreadLocalConfigOption("GDAL_GEOREF_SOURCES", GEOREF_CONFIG_STRING_TABLE.at(georef_source).c_str());
     try {
         LoadDataset(filename);
@@ -32,7 +51,9 @@ Dataset::Dataset(std::string_view filename, const GeoTransformSourcePriority& ge
 
 }
 
-void Dataset::LoadDataset(std::string_view filename) {
+
+template <typename BufferType>
+void Dataset<BufferType>::LoadDataset(std::string_view filename) {
     // TODO: move this to a place where it is unifiedly called once when system
     // starts.
     GDALAllRegister();  // Register all known drivers.
@@ -44,14 +65,17 @@ void Dataset::LoadDataset(std::string_view filename) {
     }
 
     if (this->dataset_->GetGeoTransform(this->transform_.data()) == CE_None) {
-        this->origin_lon_ = this->transform_[TRANSFORM_LON_ORIGIN_INDEX];
-        this->origin_lat_ = this->transform_[TRANSFORM_LAT_ORIGIN_INDEX];
-        this->pixel_size_lon_ = this->transform_[TRANSFORM_PIXEL_X_SIZE_INDEX];
-        this->pixel_size_lat_ = this->transform_[TRANSFORM_PIXEL_Y_SIZE_INDEX];
+        this->origin_lon_ = this->transform_[transform::TRANSFORM_LON_ORIGIN_INDEX];
+        this->origin_lat_ = this->transform_[transform::TRANSFORM_LAT_ORIGIN_INDEX];
+        this->pixel_size_lon_ = this->transform_[transform::TRANSFORM_PIXEL_X_SIZE_INDEX];
+        this->pixel_size_lat_ = this->transform_[transform::TRANSFORM_PIXEL_Y_SIZE_INDEX];
     }
+
+    gdal_data_type_ = FindGdalDataType<BufferType>();
 }
 
-std::tuple<double, double> Dataset::GetPixelCoordinatesFromIndex(int x,
+template <typename BufferType>
+std::tuple<double, double> Dataset<BufferType>::GetPixelCoordinatesFromIndex(int x,
                                                                  int y) const {
     auto const lon = x * this->pixel_size_lon_ +
                      this->origin_lon_;  // Optional - {'+' (this->pixel_size_lon_ / 2)};
@@ -60,7 +84,8 @@ std::tuple<double, double> Dataset::GetPixelCoordinatesFromIndex(int x,
     return {lon, lat};
 }
 
-std::tuple<int, int> Dataset::GetPixelIndexFromCoordinates(double lon,
+template <typename BufferType>
+std::tuple<int, int> Dataset<BufferType>::GetPixelIndexFromCoordinates(double lon,
                                                            double lat) const {
     auto const x = (lon - GetOriginLon()) / this->pixel_size_lon_;
     auto const y = (lat - GetOriginLat()) / this->pixel_size_lat_;
@@ -68,13 +93,16 @@ std::tuple<int, int> Dataset::GetPixelIndexFromCoordinates(double lon,
     return {x, y};
 }
 
-Dataset::~Dataset() {
+template <typename BufferType>
+Dataset<BufferType>::~Dataset() {
     if (this->dataset_) {
         GDALClose(this->dataset_);
         this->dataset_ = nullptr;
     }
 }
-void Dataset::LoadRasterBand(int band_nr) {
+
+template <typename BufferType>
+void Dataset<BufferType>::LoadRasterBand(int band_nr) {
     auto const bandCount = this->dataset_->GetRasterCount();
     if (bandCount == 0) {
         throw DatasetError("Does not support rasters with no bands.",
@@ -91,16 +119,16 @@ void Dataset::LoadRasterBand(int band_nr) {
 
     auto const inError = this->dataset_->GetRasterBand(band_nr)->RasterIO(
         GF_Read, 0, 0, this->x_size_, this->y_size_, this->data_buffer_.data(),
-        this->x_size_, this->y_size_, GDALDataType::GDT_Float64, 0, 0);
+        this->x_size_, this->y_size_, gdal_data_type_, 0, 0);
 
     if (inError != CE_None) {
         throw DatasetError(CPLGetLastErrorMsg(), this->dataset_->GetFileList()[0],
                            CPLGetLastErrorNo());
     }
-
-    this->no_data_value_ = this->dataset_->GetRasterBand(band_nr)->GetNoDataValue();
 }
-Dataset::Dataset(GDALDataset &dataset) {
+
+template <typename BufferType>
+Dataset<BufferType>::Dataset(GDALDataset &dataset) {
     this->dataset_ = &dataset;
 
     if (this->dataset_ == nullptr) {
@@ -116,13 +144,20 @@ Dataset::Dataset(GDALDataset &dataset) {
     this->x_size_ = this->dataset_->GetRasterXSize();
     this->y_size_ = this->dataset_->GetRasterYSize();
 
-    this->origin_lon_ = this->transform_[TRANSFORM_LON_ORIGIN_INDEX];
-    this->origin_lat_ = this->transform_[TRANSFORM_LAT_ORIGIN_INDEX];
-    this->pixel_size_lon_ = this->transform_[TRANSFORM_PIXEL_X_SIZE_INDEX];
-    this->pixel_size_lat_ = this->transform_[TRANSFORM_PIXEL_Y_SIZE_INDEX];
+    this->origin_lon_ = this->transform_[transform::TRANSFORM_LON_ORIGIN_INDEX];
+    this->origin_lat_ = this->transform_[transform::TRANSFORM_LAT_ORIGIN_INDEX];
+    this->pixel_size_lon_ = this->transform_[transform::TRANSFORM_PIXEL_X_SIZE_INDEX];
+    this->pixel_size_lat_ = this->transform_[transform::TRANSFORM_PIXEL_Y_SIZE_INDEX];
+
+    gdal_data_type_ = FindGdalDataType<BufferType>();
+}
+template <typename BufferType>
+BufferType *Dataset<BufferType>::GetDeviceDataBuffer(){
+    throw std::runtime_error("Get GPU buffer not implemented");
 }
 
-void Dataset::LoadRasterBandFloat(int band_nr) {
+template <typename BufferType>
+void Dataset<BufferType>::ReadRectangle(Rectangle rectangle, int band_nr, BufferType *data_buffer) {
     auto const bandCount = this->dataset_->GetRasterCount();
     if (bandCount == 0) {
         throw DatasetError("Does not support rasters with no bands.",
@@ -133,17 +168,22 @@ void Dataset::LoadRasterBandFloat(int band_nr) {
         throw DatasetError("Too big band nr! You can not read a band that isn't there.",
                            this->dataset_->GetFileList()[0], 0);
     }
-    this->x_size_ = this->dataset_->GetRasterXSize();
-    this->y_size_ = this->dataset_->GetRasterYSize();
-    this->float_data_buffer_.resize(this->x_size_ * this->y_size_);
+    if(rectangle.width == 0 || rectangle.height == 0){
+        throw DatasetError("Can not read a band with no numbers. ", this->dataset_->GetFileList()[0], 0);
+    }
 
     auto const inError = this->dataset_->GetRasterBand(band_nr)->RasterIO(
-        GF_Read, 0, 0, this->x_size_, this->y_size_, this->float_data_buffer_.data(),
-        this->x_size_, this->y_size_, GDALDataType::GDT_Float32, 0, 0);
+        GF_Read, rectangle.x, rectangle.y, rectangle.width, rectangle.height, data_buffer,
+        rectangle.width, rectangle.height, gdal_data_type_, 0, 0);
 
     if (inError != CE_None) {
         throw DatasetError(CPLGetLastErrorMsg(), this->dataset_->GetFileList()[0],
                            CPLGetLastErrorNo());
     }
 }
+
+template class Dataset<double>;
+template class Dataset<float>;
+template class Dataset<int16_t>;
+template class Dataset<int>;
 }  // namespace alus

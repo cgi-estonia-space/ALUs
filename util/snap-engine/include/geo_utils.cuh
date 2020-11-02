@@ -15,7 +15,7 @@
 
 #include <cmath>
 
-#include "GeoUtils.hpp"
+#include "geo_utils.h"
 #include "pos_vector.h"
 #include "general_constants.h"
 

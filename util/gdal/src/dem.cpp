@@ -1,18 +1,31 @@
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #include "dem.hpp"
 
 #include <iostream>
 
 namespace alus {
 
-Dem::Dem(alus::Dataset ds) : m_ds_{std::move(ds)} {
+Dem::Dem(alus::Dataset<double> ds) : m_ds_{std::move(ds)} {
     //m_ds.LoadRasterBand(1);
 }
 
 
-std::vector<double> Dem::GetLocalDemFor(Dataset& image, unsigned int x_0,
+std::vector<double> Dem::GetLocalDemFor(Dataset<double>& image, unsigned int x_0,
                                         unsigned int y_0, unsigned int width,
                                         unsigned int height){
-    auto const& data_buffer = m_ds_.GetDataBuffer();
+    auto const& data_buffer = m_ds_.GetHostDataBuffer();
     auto const band_x_size = m_ds_.GetXSize();
     std::vector<double> altitudes;
     altitudes.reserve(data_buffer.size());
@@ -33,6 +46,6 @@ std::vector<double> Dem::GetLocalDemFor(Dataset& image, unsigned int x_0,
     return altitudes;
 }
 
-alus::Dataset *Dem::GetDataset() { return &this->m_ds_;}
+alus::Dataset<double> *Dem::GetDataset() { return &this->m_ds_;}
 
 }  // namespace alus

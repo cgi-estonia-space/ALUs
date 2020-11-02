@@ -14,7 +14,7 @@
 #include <driver_types.h>
 #include <gmock/gmock.h>
 
-#include "burst_indices.h"
+#include "burst_indices_computation.h"
 #include "cuda_util.hpp"
 #include "orbit_state_vector_computation.h"
 #include "position_data.h"

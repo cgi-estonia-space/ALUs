@@ -17,11 +17,11 @@ Metadata::Metadata(std::string_view dim_metadata_file,
 }
 
 void Metadata::FetchTiePoints(std::string_view tie_points_file, TiePoints& tie_points) {
-    Dataset ds(tie_points_file);
+    Dataset<double> ds(tie_points_file);
     ds.LoadRasterBand(1);
     tie_points.grid_width = ds.GetRasterSizeX();
     tie_points.grid_height = ds.GetRasterSizeY();
-    const auto& db = ds.GetDataBuffer();
+    const auto& db = ds.GetHostDataBuffer();
     std::transform(db.cbegin(), db.cend(), std::back_inserter(tie_points.values), [](double v) -> float {
         return static_cast<float>(v);
     });

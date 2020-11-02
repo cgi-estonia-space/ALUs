@@ -28,7 +28,7 @@
 #include "crs_geocoding.h"
 #include "cuda_util.hpp"
 #include "dem.hpp"
-#include "gdal_util.hpp"
+#include "gdal_util.h"
 #include "general_constants.h"
 #include "product_old.h"
 #include "raster_properties.hpp"
@@ -78,7 +78,8 @@ void FillHostGetPositionMetadata(GetPositionMetadata& h_get_position_metadata,
     h_get_position_metadata.sensor_velocity.array = h_velocities.data();
 }
 
-TerrainCorrection::TerrainCorrection(Dataset coh_ds, RangeDopplerTerrainMetadata metadata,
+TerrainCorrection::TerrainCorrection(Dataset<double> coh_ds,
+                                     RangeDopplerTerrainMetadata metadata,
                                      const Metadata::TiePoints& lat_tie_points,
                                      const Metadata::TiePoints& lon_tie_points)
     : coh_ds_{std::move(coh_ds)},
@@ -392,7 +393,7 @@ void TerrainCorrection::TileProcessor::Execute() {
     TerrainCorrectionKernelArgs args{static_cast<unsigned int>(terrain_correction_->coh_ds_.GetXSize()),
                                      static_cast<unsigned int>(terrain_correction_->coh_ds_.GetYSize()),
                                      -32768.0,  // TODO: value should originate from DEM dataset (SNAPGPU-191)
-                                     target_product_.dataset_.GetNoDataValue(),
+                                     target_product_.dataset_.GetNoDataValue(1),
                                      terrain_correction_->metadata_.avg_scene_height,
                                      target_geo_transform_,
                                      true,  // TODO: should come from arguments (SNAPGPU-193)

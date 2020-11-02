@@ -1,4 +1,17 @@
-#include "extended_amount.h"
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
+#include "extended_amount_computation.h"
 
 #include <thrust/device_vector.h>
 #include <thrust/execution_policy.h>
@@ -7,7 +20,7 @@
 
 #include "allocators.h"
 #include "earth_gravitational_model96_computation.h"
-#include "extended_amount.h"
+#include "extended_amount_computation.h"
 #include "general_constants.h"
 #include "pointer_holders.h"
 #include "position_data.h"
@@ -42,6 +55,8 @@ struct ExtendedAmountKernelArgs {
     size_t nr_of_orbit_vectors;
     PointerArray tiles;
     double dt;
+    size_t col_count;
+    size_t row_count;
 };
 
 __global__ void ComputeExtendedAmountKernel(ExtendedAmountKernelArgs args) {
@@ -51,15 +66,12 @@ __global__ void ComputeExtendedAmountKernel(ExtendedAmountKernelArgs args) {
     const size_t pixel_index_x{index_x * index_step};
     const size_t pixel_index_y{index_y * index_step};
 
-    const size_t n_cols = args.bounds.width / index_step;
-    const size_t n_rows = args.bounds.height / index_step;
-
-    if (index_x >= n_cols || index_y >= n_rows) {
+    if (index_x >= args.col_count || index_y >= args.row_count) {
         return;
     }
     const size_t x = args.bounds.x + pixel_index_x;
     const size_t y = args.bounds.y + pixel_index_y;
-    const size_t thread_index = index_x + index_y * n_cols;
+    const size_t thread_index = index_x + index_y * args.col_count;
 
     int burst_index = GetBurstIndex(y, args.subswath_info->num_of_bursts, args.subswath_info->lines_per_burst);
 
@@ -167,6 +179,8 @@ void PrepareArguments(ExtendedAmountKernelArgs* args,
     args->min_extended_azimuths = thrust::raw_pointer_cast(min_extended_azimuths.data());
     args->max_extended_ranges = thrust::raw_pointer_cast(max_extended_ranges.data());
     args->min_extended_ranges = thrust::raw_pointer_cast(min_extended_ranges.data());
+    args->col_count = cuda::GetGridDim(index_step, bounds.width);
+    args->row_count = cuda::GetGridDim(index_step, bounds.height);
 
     args->sentinel_utils = d_sentinel_1_utils;
     args->subswath_info = d_subswath_info;
@@ -191,7 +205,7 @@ cudaError_t LaunchComputeExtendedAmount(Rectangle bounds,
 
     // Initialises thrust vectors for max and min extended amounts
     // Vectors are used in order to avoid using shared memory and atomic operations inside kernel
-    int total_thread_count = (bounds.width / index_step) * (bounds.height / index_step);
+    int total_thread_count = cuda::GetGridDim(index_step, bounds.width) * cuda::GetGridDim(index_step, bounds.height);
     thrust::device_vector<double> max_extended_azimuths(total_thread_count, double_min);
     thrust::device_vector<double> min_extended_azimuths(total_thread_count, double_max);
     thrust::device_vector<double> max_extended_ranges(total_thread_count, double_min);
@@ -213,7 +227,7 @@ cudaError_t LaunchComputeExtendedAmount(Rectangle bounds,
                      egm);
 
     dim3 block_dim{20, 20};
-    dim3 grid_dim(cuda::GetGridDim(block_dim.x, bounds.width / index_step), cuda::GetGridDim(block_dim.y, bounds.height / index_step));
+    dim3 grid_dim(cuda::GetGridDim(block_dim.x, cuda::GetGridDim(index_step, bounds.width)), cuda::GetGridDim(block_dim.y, cuda::GetGridDim(index_step, bounds.height)));
     ComputeExtendedAmountKernel<<<grid_dim, block_dim>>>(args);
 
     cudaDeviceSynchronize();

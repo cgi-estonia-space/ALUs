@@ -36,11 +36,11 @@ namespace snapengine {
 class Srtm3ElevationModel : public cuda::CudaFriendlyObject {
 private:
     std::vector<std::string> file_names_;
-
-    std::vector<Dataset> srtms_;
+    std::vector<Dataset<float>> srtms_;
     // use this for cudaFree once you are done with image.
     std::vector<float*> device_formated_srtm_buffers_;
     PointerHolder* device_formated_srtm_buffers_info_{nullptr};
+    size_t device_srtm3_tiles_count_;
     std::vector<Srtm3FormatComputation> srtm_format_info_;
 
     void DeviceFree() override;
@@ -51,6 +51,7 @@ public:
     std::vector<Srtm3FormatComputation> SrtmPlaceholderData(EarthGravitationalModel96* egm_96);
     void ReadSrtmTiles(EarthGravitationalModel96* egm_96);
     PointerHolder* GetSrtmBuffersInfo() const { return device_formated_srtm_buffers_info_; }
+    size_t GetDeviceSrtm3TilesCount(){ return device_srtm3_tiles_count_; }
 
     void HostToDevice() override;
     void DeviceToHost() override;

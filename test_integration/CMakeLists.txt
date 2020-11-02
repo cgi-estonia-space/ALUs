@@ -22,9 +22,28 @@ list(APPEND TEST_SOURCES_BACKGEOCODING
         src/extended_amount_test.cc
         )
 
+list(APPEND TEST_SOURCES_BACKGEOCODING_FULL
+        src/backgeocoding/backgeocoding_threads_test.cc
+        )
+
 list(APPEND TEST_INCLUDE
         ${CMAKE_CURRENT_LIST_DIR}/include
         )
+
+add_executable(backgeocoding-full ${TEST_SOURCES_BACKGEOCODING_FULL})
+target_include_directories(backgeocoding-full
+        PUBLIC
+        ${TEST_INCLUDE}
+        )
+
+target_link_libraries(backgeocoding-full
+        PRIVATE
+        gmock_main
+        cuda_util-static
+        backgeocoding-static
+        exotic_operations-static
+        )
+
 
 add_executable(integration-test-snap-engine ${TEST_SOURCES_SNAP_ENGINE})
 target_include_directories(integration-test-snap-engine

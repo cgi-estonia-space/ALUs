@@ -11,7 +11,7 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
-#include "deramp_demod.h"
+#include "deramp_demod_computation.h"
 
 #include "cuda_util.hpp"
 
@@ -71,7 +71,7 @@ cudaError_t LaunchDerampDemod(alus::Rectangle rectangle,
                               double *demod_q,
                               alus::s1tbx::DeviceSubswathInfo *sub_swath,
                               int s_burst_index) {
-    dim3 block_size(20, 20);
+    dim3 block_size(24, 24);
     dim3 grid_size(cuda::GetGridDim(block_size.x, rectangle.width), cuda::GetGridDim(block_size.y, rectangle.height));
 
     DerampDemod<<<grid_size, block_size>>>(
