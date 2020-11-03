@@ -112,7 +112,7 @@ target_link_libraries(integration-test-backgeocoding
 add_custom_command(TARGET integration-test-backgeocoding
         POST_BUILD
         COMMAND mkdir -p ${CMAKE_BINARY_DIR}/test_integration/goods
-        COMMAND ln -fsn ${CMAKE_CURRENT_LIST_DIR}/goods/backgeocoding ${CMAKE_BINARY_DIR}/test_integration/goods/backgeocoding
+        COMMAND ln -s ${CMAKE_CURRENT_LIST_DIR}/goods/backgeocoding ${CMAKE_BINARY_DIR}/test_integration/goods/backgeocoding
         COMMAND cp -n ${CMAKE_CURRENT_LIST_DIR}/goods/srtm_41_01.zip ${CMAKE_BINARY_DIR}/test_integration/goods/.
         COMMAND cd ${CMAKE_BINARY_DIR}/test_integration/goods && unzip -qn srtm_41_01.zip
         COMMAND cp -n ${CMAKE_CURRENT_LIST_DIR}/goods/srtm_42_01.zip ${CMAKE_BINARY_DIR}/test_integration/goods/.

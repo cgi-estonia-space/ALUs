@@ -1,5 +1,9 @@
 #include <iostream>
+#include <string_view>
 
+#include <boost/algorithm/string.hpp>
+
+#include "algorithm_parameters.h"
 #include "alg_bond.h"
 #include "coh_tiles_generator.h"
 #include "coherence_calc.h"
@@ -10,21 +14,22 @@
 #include "pugixml_meta_data_reader.h"
 #include "tf_algorithm_runner.h"
 
+namespace {
+    constexpr std::string_view PARAMETER_ID_SRP_NUMBER_POINTS{"srp_number_points"};
+    constexpr std::string_view PARAMETER_ID_SRP_POLYNOMIAL_DEGREE{"srp_polynomial_degree"};
+    constexpr std::string_view PARAMETER_ID_SUBTRACT_FLAT_EARTH_PHASE{"subtract_flat_earth_phase"};
+    constexpr std::string_view PARAMETER_ID_RG_WINDOW{"rg_window"};
+    constexpr std::string_view PARAMETER_ID_AZ_WINDOW{"az_window"};
+    constexpr std::string_view PARAMETER_ID_ORBIT_DEGREE{"orbit_degree"};
+}
+
 namespace alus {
-class CoherenceExecuter : public AlgBond {
+class CoherenceExecuter final : public AlgBond {
    public:
     CoherenceExecuter() { std::cout << __FUNCTION__ << std::endl; };
 
     int Execute() override {
-        std::cout << "Executing Coherence test" << std::endl;
-
-        constexpr int SRP_NUMBER_POINTS{501};
-        constexpr int SRP_POLYNOMIAL_DEGREE{5};
-        constexpr bool SUBTRACT_FLAT_EARTH{true};
-        constexpr int COH_WIN_RG{15};
-        constexpr int COH_WIN_AZ{3};
-        // orbit interpolation degree
-        constexpr int ORBIT_DEGREE{3};
+        PrintProcessingParameters();
 
         auto const FILE_NAME_IA = aux_location_ + "/tie_point_grids/incident_angle.img";
         std::vector<int> band_map_ia{1};
@@ -42,8 +47,8 @@ class CoherenceExecuter : public AlgBond {
         auto slave_root =
             xml_reader.GetElement(alus::snapengine::MetaDataNodeNames::SLAVE_METADATA_ROOT).GetElements().at(0);
 
-        alus::MetaData meta_master{&ia_data_reader, master_root, ORBIT_DEGREE};
-        alus::MetaData meta_slave{&ia_data_reader, *slave_root, ORBIT_DEGREE};
+        alus::MetaData meta_master{&ia_data_reader, master_root, orbit_degree_};
+        alus::MetaData meta_slave{&ia_data_reader, *slave_root, orbit_degree_};
 
         // todo:check if bandmap works correctly (e.g if input has 8 bands and we use 1,2,5,6)
         // todo:need some better thought through logic to map inputs from gdal
@@ -67,16 +72,16 @@ class CoherenceExecuter : public AlgBond {
                                                 coh_data_reader.GetBandYSize(),
                                                 tile_width_,
                                                 tile_height_,
-                                                COH_WIN_RG,
-                                                COH_WIN_AZ};
-        alus::Coh coherence{SRP_NUMBER_POINTS,
-                            SRP_POLYNOMIAL_DEGREE,
-                            SUBTRACT_FLAT_EARTH,
-                            COH_WIN_RG,
-                            COH_WIN_AZ,
+                                                coherence_window_range_,
+                                                coherence_window_azimuth_};
+        alus::Coh coherence{srp_number_points_,
+                            srp_polynomial_degree_,
+                            subtract_flat_earth_phase_,
+                            coherence_window_range_,
+                            coherence_window_azimuth_,
                             tile_width_,
                             tile_height_,
-                            ORBIT_DEGREE,
+                            orbit_degree_,
                             meta_master,
                             meta_slave};
 
@@ -100,6 +105,30 @@ class CoherenceExecuter : public AlgBond {
         aux_location_ = metadata_path;
     }
 
+    void SetParameters(const app::AlgorithmParameters::Table& param_values) override {
+        if (param_values.count(std::string(PARAMETER_ID_ORBIT_DEGREE))) {
+            orbit_degree_ = std::stoul(param_values.at(std::string(PARAMETER_ID_ORBIT_DEGREE)));
+        }
+        if (param_values.count(std::string(PARAMETER_ID_AZ_WINDOW))) {
+            coherence_window_azimuth_ = std::stoul(param_values.at(std::string(PARAMETER_ID_AZ_WINDOW)));
+        }
+        if (param_values.count(std::string(PARAMETER_ID_RG_WINDOW))) {
+            coherence_window_range_ = std::stoul(param_values.at(std::string(PARAMETER_ID_RG_WINDOW)));
+        }
+        if (param_values.count(std::string(PARAMETER_ID_SUBTRACT_FLAT_EARTH_PHASE))) {
+            const auto& value = param_values.at(std::string(PARAMETER_ID_SUBTRACT_FLAT_EARTH_PHASE));
+            if (boost::iequals(value, subtract_flat_earth_phase_ ? "false" : "true")) {
+                subtract_flat_earth_phase_ = !subtract_flat_earth_phase_;
+            }
+        }
+        if (param_values.count(std::string(PARAMETER_ID_SRP_POLYNOMIAL_DEGREE))) {
+            srp_polynomial_degree_ = std::stoul(param_values.at(std::string(PARAMETER_ID_SRP_POLYNOMIAL_DEGREE)));
+        }
+        if (param_values.count(std::string(PARAMETER_ID_SRP_NUMBER_POINTS))) {
+            srp_number_points_ = std::stoul(param_values.at(std::string(PARAMETER_ID_SRP_NUMBER_POINTS)));
+        }
+    }
+
     void SetTileSize(size_t width, size_t height) override {
         tile_width_ = width;
         tile_height_ = height;
@@ -107,14 +136,53 @@ class CoherenceExecuter : public AlgBond {
 
     void SetOutputFilename(const std::string& output_name) override { output_name_ = output_name; }
 
+    [[nodiscard]] std::string GetArgumentsHelp() const override {
+        std::stringstream help_stream;
+        help_stream << "Coherence configuration options:" << std::endl
+                    << PARAMETER_ID_SRP_NUMBER_POINTS << " - unsigned integer (default:" << srp_number_points_ << ")"
+                    << std::endl
+                    << PARAMETER_ID_SRP_POLYNOMIAL_DEGREE << " - unsigned integer (default:" << srp_polynomial_degree_
+                    << ")" << std::endl
+                    << PARAMETER_ID_SUBTRACT_FLAT_EARTH_PHASE
+                    << " - true/false (default:"
+                    << (subtract_flat_earth_phase_ ? "true" : "false") << ")" << std::endl
+                    << PARAMETER_ID_RG_WINDOW << " - range window size in pixels (default:" << coherence_window_range_
+                    << ")"
+                    << std::endl
+                    << PARAMETER_ID_AZ_WINDOW << " - azimuth window size in pixels (default:" << coherence_window_azimuth_ << ")"
+                    << std::endl
+                    << PARAMETER_ID_ORBIT_DEGREE << " - unsigned integer (default:" << orbit_degree_ << ")" << std::endl;
+
+        return help_stream.str();
+    }
+
     ~CoherenceExecuter() override { std::cout << __FUNCTION__ << std::endl; };
 
    private:
+
+    void PrintProcessingParameters() const override {
+        std::cout << "Coherence processing parameters:" << std::endl
+            << PARAMETER_ID_SRP_NUMBER_POINTS << " " << srp_number_points_ << std::endl
+            << PARAMETER_ID_SRP_POLYNOMIAL_DEGREE << " " << srp_polynomial_degree_ << std::endl
+            << PARAMETER_ID_SUBTRACT_FLAT_EARTH_PHASE << " " << (subtract_flat_earth_phase_ ? "true" : "false") << std::endl
+            << PARAMETER_ID_RG_WINDOW << " " << coherence_window_range_ << std::endl
+            << PARAMETER_ID_AZ_WINDOW << " " << coherence_window_azimuth_ << std::endl
+            << PARAMETER_ID_ORBIT_DEGREE << " " << orbit_degree_ << std::endl;
+    }
+
     std::string input_name_{};
     std::string output_name_{};
     std::string aux_location_{};
     size_t tile_width_{};
     size_t tile_height_{};
+    int srp_number_points_{501};
+    int srp_polynomial_degree_{5};
+    bool subtract_flat_earth_phase_{true};
+    int coherence_window_range_{15};
+    int coherence_window_azimuth_{3};
+    // orbit interpolation degree
+    int orbit_degree_{3};
+
 };
 }  // namespace alus
 
