@@ -5,7 +5,7 @@
 #include <string_view>
 #include <vector>
 
-#include "../../../external/pugixml/include/pugixml.hpp"
+#include "pugixml.hpp"
 
 namespace alus {
 class PugixmlErrorException : public std::runtime_error {

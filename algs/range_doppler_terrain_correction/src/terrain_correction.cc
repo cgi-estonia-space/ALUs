@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <iostream>
 
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
@@ -16,14 +15,11 @@
 #include "dem.hpp"
 #include "gdal_util.hpp"
 #include "product.h"
-#include "product_data.h"
 #include "raster_properties.hpp"
 #include "sar_utils.h"
 #include "shapes_util.cuh"
 #include "tc_tile.h"
 #include "tie_point_geocoding.cuh"
-
-#include "local_dem.cuh"
 #include "terrain_correction.cuh"
 
 #define UNUSED(x) (void)(x)  // TODO: delete me

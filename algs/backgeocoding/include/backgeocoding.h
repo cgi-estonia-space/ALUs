@@ -19,6 +19,8 @@
 #include "backgeocoding_io.h"
 #include "earth_gravitational_model96.h"
 #include "extended_amount.h"
+#include "kernel_array.h"
+#include "orbit_state_vector_computation.h"
 #include "sentinel1_utils.h"
 #include "srtm3_elevation_model.h"
 
@@ -93,6 +95,9 @@ class Backgeocoding {
     std::string srtms_directory_ = "../test/goods/";
     std::string grid_file_ = "../test/goods/ww15mgh_b.grd";
 
+    cuda::KernelArray<snapengine::OrbitStateVectorComputation> d_master_orbit_vectors_{};
+    cuda::KernelArray<snapengine::OrbitStateVectorComputation> d_slave_orbit_vectors_{};
+
    public:
     void FeedPlaceHolders();
     void PrepareToCompute();
@@ -120,6 +125,7 @@ class Backgeocoding {
     const float *GetIResult() { return this->i_result_.data(); }
 
     const float *GetQResult() { return this->q_result_.data(); }
+
     AzimuthAndRangeBounds ComputeExtendedAmount(int x_0, int y_0, int w, int h);
 };
 

@@ -78,6 +78,16 @@ Backgeocoding::~Backgeocoding() {
         cudaFree(device_slave_q_);
         device_slave_q_ = nullptr;
     }
+
+    if (d_master_orbit_vectors_.array != nullptr) {
+        cudaFree(d_master_orbit_vectors_.array);
+        d_master_orbit_vectors_ = {};
+    }
+
+    if (d_slave_orbit_vectors_.array != nullptr) {
+        cudaFree(d_slave_orbit_vectors_.array);
+        d_slave_orbit_vectors_ = {};
+    }
 }
 
 void Backgeocoding::AllocateGPUData() {
@@ -145,10 +155,27 @@ void Backgeocoding::PrepareToCompute() {
     this->master_utils_->subswath_[0].HostToDevice();
     this->master_utils_->HostToDevice();
 
-    alus::s1tbx::OrbitStateVectors *master_orbit = this->master_utils_->GetOrbitStateVectors();
-    alus::s1tbx::OrbitStateVectors *slave_orbit = this->slave_utils_->GetOrbitStateVectors();
-    master_orbit->HostToDevice();
-    slave_orbit->HostToDevice();
+    const std::vector<snapengine::OrbitStateVectorComputation> &master_orbit_vectors_computation =
+        this->master_utils_->GetOrbitStateVectors()->orbit_state_vectors_computation_;
+    const size_t master_orbit_vectors_size =
+        sizeof(snapengine::OrbitStateVectorComputation) * master_orbit_vectors_computation.size();
+    CHECK_CUDA_ERR(cudaMalloc(&d_master_orbit_vectors_.array, master_orbit_vectors_size));
+    CHECK_CUDA_ERR(cudaMemcpy(d_master_orbit_vectors_.array,
+                              master_orbit_vectors_computation.data(),
+                              master_orbit_vectors_size,
+                              cudaMemcpyHostToDevice));
+    d_master_orbit_vectors_.size = master_orbit_vectors_computation.size();
+
+    const std::vector<snapengine::OrbitStateVectorComputation> &slave_orbit_vectors_computation =
+        this->slave_utils_->GetOrbitStateVectors()->orbit_state_vectors_computation_;
+    const size_t slave_orbit_vectors_size =
+        sizeof(snapengine::OrbitStateVectorComputation) * slave_orbit_vectors_computation.size();
+    CHECK_CUDA_ERR(cudaMalloc(&d_slave_orbit_vectors_.array, slave_orbit_vectors_size));
+    CHECK_CUDA_ERR(cudaMemcpy(d_slave_orbit_vectors_.array,
+                              slave_orbit_vectors_computation.data(),
+                              slave_orbit_vectors_size,
+                              cudaMemcpyHostToDevice));
+    d_slave_orbit_vectors_.size = slave_orbit_vectors_computation.size();
 
     this->PrepareSrtm3Data();
 }
@@ -293,12 +320,12 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index,
     alus::s1tbx::OrbitStateVectors *master_orbit = this->master_utils_->GetOrbitStateVectors();
     alus::s1tbx::OrbitStateVectors *slave_orbit = this->slave_utils_->GetOrbitStateVectors();
 
-    calc_data.device_master_orbit_state_vectors = master_orbit->device_orbit_state_vectors_;
-    calc_data.device_slave_orbit_state_vectors = slave_orbit->device_orbit_state_vectors_;
-    calc_data.nr_of_master_vectors = master_orbit->orbitStateVectors.size();
-    calc_data.nr_of_slave_vectors = slave_orbit->orbitStateVectors.size();
-    calc_data.master_dt = master_orbit->GetDT();
-    calc_data.slave_dt = slave_orbit->GetDT();
+    calc_data.device_master_orbit_state_vectors = d_master_orbit_vectors_.array;
+    calc_data.device_slave_orbit_state_vectors = d_slave_orbit_vectors_.array;
+    calc_data.nr_of_master_vectors = d_master_orbit_vectors_.size;
+    calc_data.nr_of_slave_vectors = d_slave_orbit_vectors_.size;
+    calc_data.master_dt = master_orbit->GetDt();
+    calc_data.slave_dt = slave_orbit->GetDt();
 
     CHECK_CUDA_ERR(cudaMalloc((void **)&calc_data.device_master_az, az_rg_size * sizeof(double)));
     CHECK_CUDA_ERR(cudaMalloc((void **)&calc_data.device_master_rg, az_rg_size * sizeof(double)));
@@ -554,13 +581,25 @@ void Backgeocoding::SetOrbitVectorsFiles(std::string master_orbit_state_vectors_
     this->master_orbit_state_vectors_file_ = master_orbit_state_vectors_file;
     this->slave_orbit_state_vectors_file_ = slave_orbit_state_vectors_file;
 }
+
 AzimuthAndRangeBounds Backgeocoding::ComputeExtendedAmount(int x_0, int y_0, int w, int h) {
     AzimuthAndRangeBounds extended_amount{};
     PointerArray tiles{};
     tiles.array = this->srtm3Dem_->device_srtm3_tiles_;
+
     CHECK_CUDA_ERR(LaunchComputeExtendedAmount(
-        {x_0, y_0, w, h}, extended_amount, this->master_utils_.get(), tiles, this->egm96_->device_egm_));
+        {x_0, y_0, w, h},
+        extended_amount,
+        this->master_utils_->GetOrbitStateVectors()->orbit_state_vectors_computation_.data(),
+        this->master_utils_->GetOrbitStateVectors()->orbit_state_vectors_computation_.size(),
+        this->master_utils_->GetOrbitStateVectors()->GetDt(),
+        this->master_utils_->subswath_.at(0),
+        this->master_utils_->device_sentinel_1_utils_,
+        this->master_utils_->subswath_.at(0).device_subswath_info_,
+        tiles,
+        this->egm96_->device_egm_));
     return extended_amount;
 }
+
 }  // namespace backgeocoding
 }  // namespace alus

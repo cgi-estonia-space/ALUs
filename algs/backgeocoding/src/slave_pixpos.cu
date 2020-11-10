@@ -16,8 +16,6 @@
 #include <cstdio>
 
 #include "backgeocoding_constants.h"
-#include "orbit_state_vector.h"
-
 #include "backgeocoding_utils.cuh"
 #include "earth_gravitational_model96.cuh"
 #include "general_constants.h"
@@ -36,6 +34,8 @@
 
 namespace alus {
 namespace backgeocoding {
+
+
 // exclusively supports SRTM3 digital elevation map and none other
 __global__ void SlavePixPos(SlavePixPosData calc_data) {
     const int idx = threadIdx.x + (blockDim.x * blockIdx.x);

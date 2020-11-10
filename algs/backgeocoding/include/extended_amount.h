@@ -13,9 +13,11 @@
  */
 #pragma once
 
+#include "orbit_state_vector_computation.h"
 #include "pointer_holders.h"
-#include "sentinel1_utils.h"
+#include "sentinel1_utils.cuh"
 #include "shapes.h"
+#include "subswath_info.h"
 
 namespace alus {
 namespace backgeocoding {
@@ -28,7 +30,12 @@ struct AzimuthAndRangeBounds {
 
 cudaError_t LaunchComputeExtendedAmount(Rectangle bounds,
                                         AzimuthAndRangeBounds &extended_amount,
-                                        s1tbx::Sentinel1Utils *sentinel_utils,
+                                        const snapengine::OrbitStateVectorComputation* vectors,
+                                        size_t nr_of_vectors,
+                                        double vectors_dt,
+                                        const s1tbx::SubSwathInfo& subswath_info,
+                                        s1tbx::DeviceSentinel1Utils* d_sentinel_1_utils,
+                                        s1tbx::DeviceSubswathInfo* d_subswath_info,
                                         const PointerArray &tiles,
                                         float *egm);
 }  // namespace backgeocoding

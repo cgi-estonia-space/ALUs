@@ -17,9 +17,7 @@
  */
 #pragma once
 
-#include "../../../algs/coherence/include/meta_data_node_names.h"
-#include "../../../algs/coherence/include/metadata_element.h"
-#include "../../../util/snap-engine/include/general_constants.h"
+#include "metadata_element.h"
 
 namespace alus {
 namespace s1tbx {

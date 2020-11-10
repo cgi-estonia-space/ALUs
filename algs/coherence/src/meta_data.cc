@@ -62,9 +62,9 @@ MetaData::MetaData(IDataTileReader *incidence_angle_reader, snapengine::Metadata
     //    todo: refactor...
     std::vector<double> xyz(3);
     alus::jlinda::Ellipsoid::Ell2Xyz(approx_geo_centre_original_, xyz);
-    approx_xyz_centre_original_ = Point(xyz.at(0), xyz.at(1), xyz.at(2));
+    approx_xyz_centre_original_ = s1tbx::Point(xyz.at(0), xyz.at(1), xyz.at(2));
 
-    orbit_ = std::make_shared<Orbit>(element, orbit_degree);
+    orbit_ = std::make_shared<s1tbx::Orbit>(element, orbit_degree);
 }
 
 // todo: how should we tie this to specific product in our logic?
@@ -89,7 +89,7 @@ double MetaData::PixelToTimeRange(double pixel) const {
     }
 }
 
-Point MetaData::GetApproxXyzCentreOriginal() { return Point(this->approx_xyz_centre_original_); }
+s1tbx::Point MetaData::GetApproxXyzCentreOriginal() { return s1tbx::Point(this->approx_xyz_centre_original_); }
 
 // original input was double...
 double MetaData::Line2Ta(int line) {
@@ -97,5 +97,5 @@ double MetaData::Line2Ta(int line) {
     //        return t_azi_1_ + ((line - 1.0) / PRF);
 }
 
-Point MetaData::GetApproxRadarCentreOriginal() { return this->approx_radar_centre_original_; }
+s1tbx::Point MetaData::GetApproxRadarCentreOriginal() { return this->approx_radar_centre_original_; }
 }  // namespace alus

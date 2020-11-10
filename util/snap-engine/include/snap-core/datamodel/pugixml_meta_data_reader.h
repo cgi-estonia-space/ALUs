@@ -3,7 +3,7 @@
 #include <vector>
 #include <string_view>
 
-#include "../../../external/pugixml/include/pugixml.hpp"
+#include "pugixml.hpp"
 
 #include "metadata_element.h"
 #include "i_meta_data_reader.h"

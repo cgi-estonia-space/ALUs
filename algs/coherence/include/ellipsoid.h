@@ -50,7 +50,7 @@ class Ellipsoid {
      *  - void (returned double[] lam<-pi,pi>, phi<-pi,pi>, hei)
      *
      */
-    static std::vector<double> Xyz2Ell(const Point& xyz);
+    static std::vector<double> Xyz2Ell(const s1tbx::Point& xyz);
 
     /**
      * ell2xyz
@@ -60,13 +60,13 @@ class Ellipsoid {
      * output:
      * - cn XYZ
      */
-    static Point Ell2Xyz(const double phi, const double lambda, const double height);
+    static s1tbx::Point Ell2Xyz(const double phi, const double lambda, const double height);
 
-    static Point Ell2Xyz(const std::vector<double> phi_lambda_height);
+    static s1tbx::Point Ell2Xyz(const std::vector<double> phi_lambda_height);
 
-    static Point Ell2Xyz(const GeoPoint& geo_point, const double height);
+    static s1tbx::Point Ell2Xyz(const GeoPoint& geo_point, const double height);
 
-    static Point Ell2Xyz(const GeoPoint& geo_point);
+    static s1tbx::Point Ell2Xyz(const GeoPoint& geo_point);
 
     static void Ell2Xyz(const GeoPoint& geo_point, std::vector<double>& xyz);
 

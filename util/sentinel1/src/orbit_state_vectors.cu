@@ -19,7 +19,7 @@
 namespace alus {
 namespace s1tbx {
 namespace orbitstatevectors {
-snapengine::PosVector GetPosition(double time, cuda::KernelArray<snapengine::OrbitStateVector> vectors) {
+snapengine::PosVector GetPosition(double time, cuda::KernelArray<snapengine::OrbitStateVectorComputation> vectors) {
     return GetPositionImpl(time, vectors);
 }
 }  // namespace orbitstatevectors

@@ -2,14 +2,11 @@
 
 #include <thrust/device_vector.h>
 #include <thrust/execution_policy.h>
-#include <geocoding.cuh>
-#include <srtm3_elevation_calc.cuh>
 
-#include "orbit_state_vectors.h"
 #include "position_data.h"
-//#include "product_data.h"
 #include "tc_tile.h"
-
+#include "geocoding.cuh"
+#include "srtm3_elevation_calc.cuh"
 #include "crs_geocoding.cuh"
 #include "local_dem.cuh"
 #include "range_doppler_geocoding.cuh"

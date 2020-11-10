@@ -16,12 +16,12 @@
 #include <cuda_runtime.h>
 
 #include "general_constants.h"
-#include "orbit_state_vector.h"
 #include "pointer_holders.h"
 #include "position_data.h"
 #include "sar_geocoding.cuh"
 #include "sentinel1_utils.cuh"
 #include "subswath_info.cuh"
+#include "orbit_state_vector_computation.h"
 
 namespace alus {
 namespace backgeocoding {
@@ -59,8 +59,8 @@ struct SlavePixPosData {
     s1tbx::DeviceSentinel1Utils *device_master_utils;
     s1tbx::DeviceSentinel1Utils *device_slave_utils;
 
-    snapengine::OrbitStateVector *device_master_orbit_state_vectors;
-    snapengine::OrbitStateVector *device_slave_orbit_state_vectors;
+    snapengine::OrbitStateVectorComputation *device_master_orbit_state_vectors;
+    snapengine::OrbitStateVectorComputation *device_slave_orbit_state_vectors;
     int nr_of_master_vectors, nr_of_slave_vectors;
 
     double master_dt, slave_dt;

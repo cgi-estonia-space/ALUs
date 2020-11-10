@@ -31,7 +31,7 @@ double GetEarthPointZeroDopplerTime(double first_line_utc,
 }
 
 double ComputeSlantRange(double time,
-                         cuda::KernelArray<snapengine::OrbitStateVector> vectors,
+                         cuda::KernelArray<snapengine::OrbitStateVectorComputation> vectors,
                          snapengine::PosVector earth_point,
                          snapengine::PosVector& sensor_pos) {
     return ComputeSlantRangeImpl(time, vectors, earth_point, sensor_pos);

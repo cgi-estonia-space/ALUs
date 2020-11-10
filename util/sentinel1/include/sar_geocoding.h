@@ -18,7 +18,7 @@
 #pragma once
 
 #include "cuda_util.cuh"
-#include "orbit_state_vectors.h"
+#include "orbit_state_vector_computation.h"
 #include "pos_vector.h"
 
 namespace alus {
@@ -60,7 +60,7 @@ double GetEarthPointZeroDopplerTime(double first_line_utc,
  * @return The slant range distance in meters.
  */
 double ComputeSlantRange(double time,
-                         cuda::KernelArray<snapengine::OrbitStateVector> vectors,
+                         cuda::KernelArray<snapengine::OrbitStateVectorComputation> vectors,
                          snapengine::PosVector earth_point,
                          snapengine::PosVector& sensor_pos);
 

@@ -4,8 +4,8 @@
 
 #include "terrain_correction_metadata.h"
 
-#include "../../algs/coherence/include/orbit_state_vector.h"
-#include "../../algs/coherence/include/product_data_utc.h"
+#include "orbit_state_vector.h"
+#include "product_data_utc.h"
 
 namespace {
 
@@ -128,7 +128,7 @@ TEST(TerrainCorrection, ParsesMetadataCorrectlyForSaaremaa1) {
 
     EXPECT_THAT(metadata_fields.azimuth_spacing, DoubleEq(13.91157));
 
-    std::vector<coh::OrbitStateVector> const EXPECTED_ORBIT_STATE_VECTORS{{std::make_shared<Utc>(7135, 57873, 800577),
+    std::vector<OrbitStateVector> const EXPECTED_ORBIT_STATE_VECTORS{{std::make_shared<Utc>(7135, 57873, 800577),
                                                                            3727040.7077331543,
                                                                            1103842.85256958,
                                                                            5902738.6076049805,

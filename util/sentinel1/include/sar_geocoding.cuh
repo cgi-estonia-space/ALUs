@@ -13,7 +13,6 @@
  */
 #pragma once
 
-#include <pos_vector.h>
 #include <cmath>
 
 #include "cuda_util.cuh"
@@ -58,7 +57,7 @@ inline __device__ __host__ double getDopplerFrequency(alus::snapengine::PosVecto
  * @return The Doppler frequency in Hz.
  */
 inline __device__ __host__ double getDopplerFrequency(alus::snapengine::PosVector earthPoint,
-                                                      alus::snapengine::OrbitStateVector orbit,
+                                                      alus::snapengine::OrbitStateVectorComputation orbit,
                                                       double wavelength) {
     double xDiff = earthPoint.x - orbit.xPos_;
     double yDiff = earthPoint.y - orbit.yPos_;
@@ -140,7 +139,7 @@ inline __device__ __host__ double GetEarthPointZeroDopplerTimeImpl(
 inline __device__ double GetZeroDopplerTime(double line_time_interval,
                                             double wavelength,
                                             snapengine::PosVector earth_point,
-                                            snapengine::OrbitStateVector* orbit,
+                                            snapengine::OrbitStateVectorComputation* orbit,
                                             const int num_orbit_vec,
                                             const double dt) {
     double first_vec_time = 0.0;
@@ -149,7 +148,7 @@ inline __device__ double GetZeroDopplerTime(double line_time_interval,
     double second_vec_freq = 0.0;
 
     for (int i = 0; i < num_orbit_vec; i++) {
-        snapengine::OrbitStateVector orb = orbit[i];
+        snapengine::OrbitStateVectorComputation orb = orbit[i];
 
         double current_freq = getDopplerFrequency(earth_point, orb, wavelength);
         if (i == 0 || first_vec_freq * current_freq > 0) {
@@ -200,18 +199,6 @@ inline __device__ double GetZeroDopplerTime(double line_time_interval,
     }
 
     return lower_bound_time - lower_bound_freq * (upper_bound_time - lower_bound_time) / (upper_bound_freq - lower_bound_freq);
-}
-
-inline __device__ __host__ double ComputeSlantRangeImpl(double time,
-                                                        cuda::KernelArray<snapengine::OrbitStateVector> vectors,
-                                                        snapengine::PosVector earth_point,
-                                                        snapengine::PosVector& sensor_pos) {
-    sensor_pos = orbitstatevectors::GetPositionImpl(time, vectors);
-    double const xDiff = sensor_pos.x - earth_point.x;
-    double const yDiff = sensor_pos.y - earth_point.y;
-    double const zDiff = sensor_pos.z - earth_point.z;
-
-    return std::sqrt(xDiff * xDiff + yDiff * yDiff + zDiff * zDiff);
 }
 
 inline __device__ __host__ double ComputeSlantRangeImpl(

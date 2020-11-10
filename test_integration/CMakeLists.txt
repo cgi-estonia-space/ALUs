@@ -37,7 +37,8 @@ target_link_libraries(integration-test-snap-engine
         gmock_main
         egm96-test-static
         srtm3-test-util-static
-        snap-engine-static)
+        snap-engine-static
+        )
 add_custom_command(TARGET integration-test-snap-engine
         POST_BUILD
         COMMAND mkdir -p ${CMAKE_BINARY_DIR}/test_integration/goods
@@ -58,6 +59,7 @@ target_link_libraries(integration-test-coherence
         gdal-util-static
         sentinel1-util-static
         coherence-static
+        crypto
         )
 target_compile_options(integration-test-coherence
         PRIVATE
@@ -82,6 +84,7 @@ target_link_libraries(integration-test-tc
         Boost::iostreams
         gmock_main
         terrain-correction-static
+        crypto
         )
 add_custom_command(TARGET integration-test-tc
         POST_BUILD

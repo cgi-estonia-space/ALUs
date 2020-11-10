@@ -1,6 +1,6 @@
 #pragma once
 
-namespace alus {
+namespace alus::s1tbx{
 class Point {
    private:
     double x_, y_, z_;
@@ -11,9 +11,9 @@ class Point {
     [[nodiscard]] double GetX() const { return x_; }
     [[nodiscard]] double GetY() const { return y_; }
     [[nodiscard]] double GetZ() const { return z_; }
-    Point Min(Point p);
-    double In(Point &p);
-    double Norm();
+    [[nodiscard]] Point Min(const Point &p) const;
+    [[nodiscard]] double In(const Point &p) const;
+    [[nodiscard]] double Norm() const;
     void SetX(double x);
     void SetY(double y);
     void SetZ(double z);

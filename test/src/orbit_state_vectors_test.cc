@@ -17,6 +17,7 @@
 #include "gmock/gmock.h"
 
 #include "../goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_orbit.hpp"
+#include "kernel_array.h"
 #include "pos_vector.h"
 #include "orbit_state_vectors.h"
 
@@ -52,12 +53,17 @@ class OrbitStateVectorsTest : public ::testing::Test {
 };
 
 TEST_F(OrbitStateVectorsTest, getPositionCalculatesCorrectly) {
-    auto const seriesSize = POS_VECTOR_ARGS.size();
-    ASSERT_EQ(seriesSize, GET_POSITION_RESULTS.size());
-    const KernelArray<OrbitStateVector> orbitStateVectors{const_cast<OrbitStateVector*>(ORBIT_STATE_VECTORS.data()),
-                                                          ORBIT_STATE_VECTORS.size()};
-    for (size_t i = 0; i < seriesSize; i++) {
-        auto const res = alus::s1tbx::orbitstatevectors::GetPosition(TIME_ARGS.at(i), orbitStateVectors);
+    auto const series_size = POS_VECTOR_ARGS.size();
+    ASSERT_EQ(series_size, GET_POSITION_RESULTS.size());
+    std::vector<snapengine::OrbitStateVectorComputation> comp_orbits;
+    comp_orbits.reserve(ORBIT_STATE_VECTORS.size());
+    for (auto&& o : ORBIT_STATE_VECTORS) {
+        comp_orbits.push_back({o.time_mjd_, o.x_pos_, o.y_pos_, o.z_pos_, o.x_vel_, o.y_vel_, o.z_vel_});
+    }
+    const KernelArray<OrbitStateVectorComputation> orbit_state_vectors{comp_orbits.data(), comp_orbits.size()};
+
+    for (size_t i = 0; i < series_size; i++) {
+        auto const res = alus::s1tbx::orbitstatevectors::GetPosition(TIME_ARGS.at(i), orbit_state_vectors);
         EXPECT_DOUBLE_EQ(res.x, GET_POSITION_RESULTS.at(i).x);
         EXPECT_DOUBLE_EQ(res.y, GET_POSITION_RESULTS.at(i).y);
         EXPECT_DOUBLE_EQ(res.z, GET_POSITION_RESULTS.at(i).z);

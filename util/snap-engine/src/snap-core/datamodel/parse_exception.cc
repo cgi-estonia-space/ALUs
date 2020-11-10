@@ -1,4 +1,4 @@
-#include "../include/parse_exception.h"
+#include "parse_exception.h"
 
 namespace alus {
 

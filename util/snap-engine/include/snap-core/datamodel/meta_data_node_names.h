@@ -215,7 +215,7 @@ class MetaDataNodeNames {
      * @param absRoot Abstracted metadata root.
      * @return orbitStateVectors Array of orbit state vectors.
      */
-    static std::vector<coh::OrbitStateVector> GetOrbitStateVectors(MetadataElement& abs_root);
+    static std::vector<OrbitStateVector> GetOrbitStateVectors(MetadataElement& abs_root);
 };
 
 }  // namespace alus::snapengine

@@ -223,10 +223,12 @@ void Sentinel1Utils::GetProductOrbit(){
     vector_reader >> count;
     std::cout << "writing original vectors: " << count << '\n';
     for(i=0; i<count; i++){
-        vector_reader >> temp_vector.time_.days_ >> temp_vector.time_.seconds_ >> temp_vector.time_.microseconds_;
-        vector_reader >> temp_vector.timeMjd_;
-        vector_reader >> temp_vector.xPos_ >> temp_vector.yPos_ >> temp_vector.zPos_;
-        vector_reader >> temp_vector.xVel_ >> temp_vector.yVel_ >> temp_vector.zVel_;
+        int days{}, seconds{}, microseconds{};
+        vector_reader >> days >> seconds >> microseconds;
+        temp_vector.time_ = std::make_shared<Utc>(days, seconds, microseconds);
+        vector_reader >> temp_vector.time_mjd_;
+        vector_reader >> temp_vector.x_pos_ >> temp_vector.y_pos_ >> temp_vector.z_pos_;
+        vector_reader >> temp_vector.x_vel_ >> temp_vector.y_vel_ >> temp_vector.z_vel_;
         original_vectors.push_back(temp_vector);
     }
     vector_reader >> count;
@@ -237,7 +239,7 @@ void Sentinel1Utils::GetProductOrbit(){
 }
 
 double Sentinel1Utils::GetVelocity(double time){
-    PosVector velocity = orbit->GetVelocity(time);
+    PosVector velocity = *orbit->GetVelocity(time);
     return sqrt(velocity.x*velocity.x + velocity.y*velocity.y + velocity.z*velocity.z);
 }
 

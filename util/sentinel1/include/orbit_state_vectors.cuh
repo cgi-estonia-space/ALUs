@@ -14,10 +14,8 @@
 
 #pragma once
 
-#include <pos_vector.h>
 #include <cmath>
 
-#include "orbit_state_vector.h"
 #include "orbit_state_vector_computation.h"
 #include "pos_vector.h"
 
@@ -43,7 +41,7 @@ constexpr int NV{8}; //TODO: does anyone know what this is supposed to be?
  * @param velocity      velocity of something, üerhaps the satelite? Makes up the lagrange Interpolating Polynomial with position. Will be filled.
  */
 inline __device__ __host__ PositionVelocity GetPositionVelocity(double time,
-                                                    snapengine::OrbitStateVector *orbit,
+                                                    snapengine::OrbitStateVectorComputation *orbit,
                                                     const int numOrbitVec,
                                                     const double dt) {
 
@@ -60,7 +58,7 @@ inline __device__ __host__ PositionVelocity GetPositionVelocity(double time,
     }
 
     for (int i = i_0; i <= i_n; ++i) {
-        snapengine::OrbitStateVector orbI = orbit[i];
+        snapengine::OrbitStateVectorComputation orbI = orbit[i];
 
         double weight = 1;
         for (int j = i_0; j <= i_n; ++j) {
@@ -131,43 +129,6 @@ inline __device__ __host__ void GetPositionVelocity(double time,
 
 
 inline __device__ __host__ snapengine::PosVector GetPositionImpl(
-    double time, cuda::KernelArray<snapengine::OrbitStateVector> vectors) {
-    const int nv{8};
-    const int vectorsSize = vectors.size;
-    // TODO: This should be done once.
-    const double dt =
-        (vectors.array[vectorsSize - 1].timeMjd_ - vectors.array[0].timeMjd_) / static_cast<double>(vectorsSize - 1);
-
-    int i0;
-    int iN;
-    if (vectorsSize <= nv) {
-        i0 = 0;
-        iN = static_cast<int>(vectorsSize - 1);
-    } else {
-        i0 = std::max((int)((time - vectors.array[0].timeMjd_) / dt) - nv / 2 + 1, 0);
-        iN = std::min(i0 + nv - 1, vectorsSize - 1);
-        i0 = (iN < vectorsSize - 1 ? i0 : iN - nv + 1);
-    }
-
-    snapengine::PosVector result{0, 0, 0};
-    for (int i = i0; i <= iN; ++i) {
-        auto const orbI = vectors.array[i];
-
-        double weight = 1;
-        for (int j = i0; j <= iN; ++j) {
-            if (j != i) {
-                double const time2 = vectors.array[j].timeMjd_;
-                weight *= (time - time2) / (orbI.timeMjd_ - time2);
-            }
-        }
-        result.x += weight * orbI.xPos_;
-        result.y += weight * orbI.yPos_;
-        result.z += weight * orbI.zPos_;
-    }
-    return result;
-}
-
-inline __device__ __host__ snapengine::PosVector GetPositionImpl(
     double time, cuda::KernelArray<snapengine::OrbitStateVectorComputation> vectors) {
     const int nv{8};
     const int vectorsSize = vectors.size;
@@ -203,6 +164,7 @@ inline __device__ __host__ snapengine::PosVector GetPositionImpl(
     }
     return result;
 }
+
 }  // namespace orbitstatevectors
 }  // namespace s1tbx
 }  // namespace alus

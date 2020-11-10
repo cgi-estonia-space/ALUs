@@ -12,7 +12,6 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 
-#include <fstream>
 #include <vector>
 
 #include "gmock/gmock.h"
@@ -23,11 +22,14 @@
 #include "pos_vector.h"
 #include "sar_geocoding_test.cuh"
 #include "sentinel1_utils.h"
-#include "tests_common.hpp"
 
-using namespace alus::tests;
 
 namespace {
+
+using ::testing::DoubleEq;
+using ::testing::Pointwise;
+
+using namespace alus::tests;
 
 class ZeroDopplerTimeTester : public alus::cuda::CudaFriendlyObject {
    private:
@@ -129,33 +131,37 @@ TEST(SarGeoCodingTestSimple, ZeroDopplerTimeTest) {
     master_utils.subswath_[0].HostToDevice();
     master_utils.HostToDevice();
     alus::s1tbx::OrbitStateVectors *master_orbit = master_utils.GetOrbitStateVectors();
-    master_orbit->HostToDevice();
+    const auto &master_orbit_vectors_computation = master_orbit->orbit_state_vectors_computation_;
+    const size_t master_orbit_vectors_size = sizeof(alus::snapengine::OrbitStateVectorComputation) *
+        master_orbit_vectors_computation.size();
+    alus::cuda::KernelArray<alus::snapengine::OrbitStateVectorComputation> d_master_orbit_vectors{};
+    CHECK_CUDA_ERR(cudaMalloc(&d_master_orbit_vectors.array, master_orbit_vectors_size));
+    CHECK_CUDA_ERR(cudaMemcpy(d_master_orbit_vectors.array, master_orbit_vectors_computation.data(),
+                              master_orbit_vectors_size, cudaMemcpyHostToDevice));
+    d_master_orbit_vectors.size = master_orbit_vectors_computation.size();
 
     ZeroDopplerTimeTester tester;
     tester.readDataFiles();
     tester.HostToDevice();
 
-    ZeroDopplerTimeData test_data;
+    ZeroDopplerTimeData test_data{};
     test_data.device_line_time_interval = tester.device_line_time_intervals_;
     test_data.device_wavelengths = tester.device_wavelengths_;
     test_data.device_earth_points = tester.device_earth_points_;
-    test_data.orbit = master_orbit->device_orbit_state_vectors_;
-    test_data.num_orbit_vec = master_orbit->orbitStateVectors.size();
+    test_data.orbit = d_master_orbit_vectors.array;
+    test_data.num_orbit_vec = d_master_orbit_vectors.size;
     test_data.data_size = tester.data_size_;
-    test_data.dt = master_orbit->GetDT();
+    test_data.dt = master_orbit->GetDt();
 
     dim3 block_size(125);
     dim3 grid_size(alus::cuda::GetGridDim(block_size.x, tester.data_size_));
 
     CHECK_CUDA_ERR(LaunchZeroDopplerTimeTest(grid_size, block_size, tester.device_zero_doppler_times_, test_data));
 
+    cudaFree(d_master_orbit_vectors.array);
     tester.DeviceToHost();
 
-    size_t count = alus::EqualsArraysd(tester.original_zero_doppler_times_.data(),
-                                       tester.calcd_zero_doppler_times_.data(),
-                                       tester.data_size_,
-                                       0.00000000001);
-    EXPECT_EQ(count, 0) << "Zero doppler time test results do not match. Mismatches: " << count << '\n';
+    EXPECT_THAT(tester.original_zero_doppler_times_, Pointwise(DoubleEq(), tester.calcd_zero_doppler_times_));
 }
 
 }  // namespace
