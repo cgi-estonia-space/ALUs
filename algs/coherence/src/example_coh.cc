@@ -3,8 +3,8 @@
 #include "gdal_tile_reader.h"
 #include "gdal_tile_writer.h"
 #include "meta_data.h"
-#include "meta_data_node_names.h"
 #include "pugixml_meta_data_reader.h"
+#include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
 #include "tf_algorithm_runner.h"
 
 namespace alus {
@@ -22,27 +22,25 @@ constexpr int TILE_Y{1503};
 
 }  // namespace alus
 int main() {
-    const char *FILE_NAME_IA = "incident_angle.img";
+    const char* FILE_NAME_IA = "incident_angle.img";
     std::vector<int> band_map_ia{1};
     int band_count_ia = 1;
     alus::GdalTileReader ia_data_reader{FILE_NAME_IA, band_map_ia, band_count_ia, false};
     // small dataset as single tile
-    alus::Tile incidence_angle_data_set{ia_data_reader.GetBandXSize() - 1,
-                                        ia_data_reader.GetBandYSize() - 1,
-                                        ia_data_reader.GetBandXMin(),
-                                        ia_data_reader.GetBandYMin()};
+    alus::Tile incidence_angle_data_set{ia_data_reader.GetBandXSize() - 1, ia_data_reader.GetBandYSize() - 1,
+                                        ia_data_reader.GetBandXMin(), ia_data_reader.GetBandYMin()};
     ia_data_reader.ReadTile(incidence_angle_data_set);
 
     alus::snapengine::PugixmlMetaDataReader xml_reader{
         "S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_split_Orb_Stack.dim"};
-    auto master_root = xml_reader.Read(alus::snapengine::MetaDataNodeNames::ABSTRACT_METADATA_ROOT);
-    auto slave_root = xml_reader.Read(alus::snapengine::MetaDataNodeNames::SLAVE_METADATA_ROOT)->GetElements().at(0);
+    auto master_root = xml_reader.Read(alus::snapengine::AbstractMetadata::ABSTRACT_METADATA_ROOT);
+    auto slave_root = xml_reader.Read(alus::snapengine::AbstractMetadata::SLAVE_METADATA_ROOT)->GetElements().at(0);
 
     alus::MetaData meta_master{&ia_data_reader, master_root, alus::ORBIT_DEGREE};
     alus::MetaData meta_slave{&ia_data_reader, slave_root, alus::ORBIT_DEGREE};
 
-    const char *FILE_NAME_IN = "4_bands.tif";  // this has minimal needed input bands (master/slave real and imaginary)
-    const char *FILE_NAME_OUT = "4_bands_coh.tif";
+    const char* FILE_NAME_IN = "4_bands.tif";  // this has minimal needed input bands (master/slave real and imaginary)
+    const char* FILE_NAME_OUT = "4_bands_coh.tif";
 
     // todo:check if bandmap works correctly (e.g if input has 8 bands and we use 1,2,5,6)
     // todo:need some better thought through logic to map inputs from gdal
@@ -86,7 +84,7 @@ int main() {
     tensorflow::ClientSession session(root, options);
 
     // run the algorithm
-    alus::TFAlgorithmRunner tf_algo_runner{
-        &coh_data_reader, &coh_data_writer, &tiles_generator, &coherence, &session, &root};
+    alus::TFAlgorithmRunner tf_algo_runner{&coh_data_reader, &coh_data_writer, &tiles_generator,
+                                           &coherence,       &session,         &root};
     tf_algo_runner.Run();
 }

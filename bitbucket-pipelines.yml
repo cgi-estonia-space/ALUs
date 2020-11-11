@@ -22,6 +22,7 @@ pipelines:
             - echo "region = eu-central-1" >> config
             - echo "output = json" >> config
             - cd $BITBUCKET_CLONE_DIR
+            - git submodule update --init --recursive
             - mkdir -p $BITBUCKET_CLONE_DIR/build/test-reports
             - git ls-files --cached --recurse-submodules | tar Tczf - archive.tar.gz
             - $BITBUCKET_CLONE_DIR/build-automation/run_ci_on_ec2_instance.sh "archive.tar.gz" $G3_4xLARGE_INSTANCE_ID "sid_man"
@@ -30,4 +31,4 @@ pipelines:
             - >
               for file in *; do
                   [ -f "$file" ] && $BITBUCKET_CLONE_DIR/build-automation/put_to_alus_ci_artifacts.sh "${BITBUCKET_BUILD_NUMBER}_${BITBUCKET_BRANCH}_${date_stamp}" $file sid_man
-              done 
+              done

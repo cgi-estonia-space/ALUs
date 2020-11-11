@@ -25,12 +25,11 @@ float Double::GetElemFloatAt(int index) const { return (float)array_.at(index); 
 double Double::GetElemDoubleAt(int index) const { return array_.at(index); }
 std::string Double::GetElemStringAt(int index) const {
     std::ostringstream out;
-    auto max_precision = std::numeric_limits<double>::max();
     double integral;
     if (std::modf(array_.at(index), &integral) == 0) {
         out << std::fixed << std::setprecision(1) << integral;
     } else {
-        out << std::setprecision(max_precision) << array_.at(index);
+        out << std::setprecision(std::numeric_limits<double>::max_digits10) << array_.at(index);
     }
     return out.str();
 }
@@ -55,8 +54,8 @@ void Double::SetElems(std::any data) {
         array_ = std::any_cast<std::vector<double>>(data);
     } else if (data.type() == typeid(std::vector<std::string>)) {
         auto string_data = std::any_cast<std::vector<std::string>>(data);
-        std::transform(
-            string_data.begin(), string_data.end(), array_.begin(), [](const std::string &s) { return std::stod(s); });
+        std::transform(string_data.begin(), string_data.end(), array_.begin(),
+                       [](const std::string& s) { return std::stod(s); });
     } else {
         throw std::invalid_argument("data is not std::vector<double> or std::vector<std::string>");
     }

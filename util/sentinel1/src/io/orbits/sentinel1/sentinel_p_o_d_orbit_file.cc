@@ -5,7 +5,7 @@
 
 #include <boost/algorithm/string/replace.hpp>
 
-#include "meta_data_node_names.h"
+#include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
 #include "snap-engine-utilities/util/maths.h"
 #include "string_utils.h"
 
@@ -116,8 +116,8 @@ std::shared_ptr<snapengine::OrbitVector> SentinelPODOrbitFile::GetOrbitData(doub
 }
 
 boost::filesystem::path SentinelPODOrbitFile::RetrieveOrbitFile(std::string_view orbit_type) {
-    double state_vector_time = abs_root_->GetAttributeUtc(snapengine::MetaDataNodeNames::STATE_VECTOR_TIME)->GetMjd();
-    auto calendar = abs_root_->GetAttributeUtc(snapengine::MetaDataNodeNames::STATE_VECTOR_TIME)->GetAsCalendar();
+    double state_vector_time = abs_root_->GetAttributeUtc(snapengine::AbstractMetadata::STATE_VECTOR_TIME)->GetMjd();
+    auto calendar = abs_root_->GetAttributeUtc(snapengine::AbstractMetadata::STATE_VECTOR_TIME)->GetAsCalendar();
     //    int year = calendar.get(Calendar.YEAR);
     int year = calendar.date().year();
     //    int month = calendar.get(Calendar.MONTH) + 1;  // zero based
@@ -144,7 +144,7 @@ boost::filesystem::path SentinelPODOrbitFile::RetrieveOrbitFile(std::string_view
     //    }
 
     if (!orbit_file_) {
-        std::string time_str = abs_root_->GetAttributeUtc(snapengine::MetaDataNodeNames::STATE_VECTOR_TIME)->Format();
+        std::string time_str = abs_root_->GetAttributeUtc(snapengine::AbstractMetadata::STATE_VECTOR_TIME)->Format();
         // todo:replace boost directory
         boost::filesystem::path dest_folder = GetDestFolder(mission_prefix, orbit_type, year, month);
         throw std::runtime_error("No valid orbit file found for " + time_str +
@@ -163,7 +163,7 @@ boost::filesystem::path SentinelPODOrbitFile::RetrieveOrbitFile(std::string_view
 }
 
 std::string SentinelPODOrbitFile::GetMissionPrefix(std::shared_ptr<snapengine::MetadataElement> abs_root) {
-    std::string mission = abs_root->GetAttributeString(snapengine::MetaDataNodeNames::MISSION);
+    std::string mission = abs_root->GetAttributeString(snapengine::AbstractMetadata::MISSION);
     return "S1" + mission.substr(mission.length() - 1);
 }
 
@@ -343,7 +343,7 @@ void SentinelPODOrbitFile::ReadOrbitFile() {
 }
 
 void SentinelPODOrbitFile::CheckOrbitFileValidity() {
-    double state_vector_time = abs_root_->GetAttributeUtc(snapengine::MetaDataNodeNames::STATE_VECTOR_TIME)->GetMjd();
+    double state_vector_time = abs_root_->GetAttributeUtc(snapengine::AbstractMetadata::STATE_VECTOR_TIME)->GetMjd();
     std::string validity_start_time_str = GetValidityStartFromHeader();
     std::string validity_stop_time_str = GetValidityStopFromHeader();
     double validity_start_time_m_j_d = SentinelPODOrbitFile::ToUtc(validity_start_time_str)->GetMjd();

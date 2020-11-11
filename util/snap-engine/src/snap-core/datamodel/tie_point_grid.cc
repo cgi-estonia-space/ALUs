@@ -1,12 +1,12 @@
-#include "tie_point_grid.h"
+#include "snap-core/datamodel/tie_point_grid.h"
 
 #include <algorithm>
 #include <cmath>
 #include <iostream>
 
 #include "ceres-core/ceres_assert.h"
-#include "product.h"
-#include "product_data.h"
+#include "snap-core/dataio/product_subset_def.h"
+#include "snap-core/datamodel/product_data.h"
 #include "snap-core/util/math/math_utils.h"
 
 namespace alus {
@@ -96,8 +96,7 @@ std::shared_ptr<ProductData> TiePointGrid::GetRasterData() {
 
         raster_data_ = CreateCompatibleRasterData(width, height);
         // GetPixels will interpolate between tie points
-        GetPixels(0, 0, width, height,
-                  std::any_cast<std::vector<float>>(raster_data_->GetElems()) /*, ProgressMonitor::NULL*/);
+        GetPixels(0, 0, width, height, std::any_cast<std::vector<float>>(raster_data_->GetElems()), nullptr);
     }
     return raster_data_;
 }
@@ -150,7 +149,7 @@ double TiePointGrid::Interpolate(double wi, double wj, int i0, int j0) {
 }
 
 void TiePointGrid::InitDiscont() {
-    std::shared_ptr<TiePointGrid> base = SharedFromBase<TiePointGrid>();
+    auto base = SharedFromBase<TiePointGrid>();
     std::vector<float> tie_points = base->GetTiePoints();
     std::vector<float> sin_tie_points(tie_points.size());
     std::vector<float> cos_tie_points(tie_points.size());
@@ -185,23 +184,26 @@ double TiePointGrid::GetPixelDouble(double x, double y) {
     int j = MathUtils::FloorAndCrop(fj, 0, GetGridHeight() - 2);
     return Interpolate(fi - i, fj - j, i, j);
 }
-std::vector<float> TiePointGrid::GetPixels(int x, int y, int w, int h, std::vector<float> pixels) {
+std::vector<float> TiePointGrid::GetPixels(int x, int y, int w, int h, std::vector<float> pixels,
+                                           std::shared_ptr<ceres::IProgressMonitor> pm) {
     pixels = EnsureMinLengthArray(pixels, w * h);
-    std::vector<double> fpixels = GetPixels(x, y, w, h, std::vector<double>(0) /*, pm*/);
+    std::vector<double> fpixels = GetPixels(x, y, w, h, std::vector<double>(0), pm);
     for (std::size_t i = 0; i < fpixels.size(); i++) {
         pixels.at(i) = static_cast<float>(fpixels.at(i));
     }
     return pixels;
 }
-std::vector<int> TiePointGrid::GetPixels(int x, int y, int w, int h, std::vector<int> pixels) {
+std::vector<int> TiePointGrid::GetPixels(int x, int y, int w, int h, std::vector<int> pixels,
+                                         std::shared_ptr<ceres::IProgressMonitor> pm) {
     pixels = EnsureMinLengthArray(pixels, w * h);
-    std::vector<double> fpixels = GetPixels(x, y, w, h, std::vector<double>(0) /*, pm*/);
+    std::vector<double> fpixels = GetPixels(x, y, w, h, std::vector<double>(0), pm);
     for (std::size_t i = 0; i < fpixels.size(); i++) {
         pixels.at(i) = static_cast<int>(round(fpixels.at(i)));
     }
     return pixels;
 }
-std::vector<double> TiePointGrid::GetPixels(int x, int y, int w, int h, std::vector<double> pixels) {
+std::vector<double> TiePointGrid::GetPixels(int x, int y, int w, int h, std::vector<double> pixels,
+                                            [[maybe_unused]] std::shared_ptr<ceres::IProgressMonitor> pm) {
     pixels = EnsureMinLengthArray(pixels, w * h);
     if (discontinuity_ != DISCONT_NONE) {
         if (IsDiscontNotInit()) {
@@ -245,7 +247,8 @@ std::vector<double> TiePointGrid::GetPixels(int x, int y, int w, int h, std::vec
     return pixels;
 }
 void TiePointGrid::ReadRasterData(int offset_x, int offset_y, int width, int height,
-                                  std::shared_ptr<ProductData> raster_data) {
+                                  std::shared_ptr<ProductData> raster_data,
+                                  [[maybe_unused]] std::shared_ptr<ceres::IProgressMonitor> pm) {
     std::shared_ptr<ProductData> src = GetRasterData();
     int i_src;
     int i_dest = 0;
@@ -291,6 +294,94 @@ int TiePointGrid::GetRasterWidth() {
         return GetProduct()->GetSceneRasterWidth();
     }
     return static_cast<int>(round((GetGridWidth() - 1) * GetSubSamplingX() + 1));
+}
+std::shared_ptr<ProductData> TiePointGrid::ReadGridData() {
+    std::shared_ptr<ProductData> product_data = CreateCompatibleRasterData(GetGridWidth(), GetGridHeight());
+    GetProductReader()->ReadTiePointGridRasterData(SharedFromBase<TiePointGrid>(), 0, 0, GetGridWidth(),
+                                                   GetGridHeight(), product_data, nullptr);
+    return product_data;
+}
+
+std::shared_ptr<TiePointGrid> TiePointGrid::CreateSubset(const std::shared_ptr<TiePointGrid>& source_tie_point_grid,
+                                                         const std::shared_ptr<ProductSubsetDef>& subset_def) {
+    const int src_t_p_g_width = source_tie_point_grid->GetGridWidth();
+    const int src_t_p_g_height = source_tie_point_grid->GetGridHeight();
+    const double src_t_p_g_sub_sampling_x = source_tie_point_grid->GetSubSamplingX();
+    const double src_t_p_g_sub_sampling_y = source_tie_point_grid->GetSubSamplingY();
+    int subset_offset_x = 0;
+    int subset_offset_y = 0;
+    int subset_step_x = 1;
+    int subset_step_y = 1;
+    const int src_raster_width = source_tie_point_grid->GetRasterWidth();
+    const int src_raster_height = source_tie_point_grid->GetRasterHeight();
+    int subset_width = src_raster_width;
+    int subset_height = src_raster_height;
+    if (subset_def) {
+        subset_step_x = subset_def->GetSubSamplingX();
+        subset_step_y = subset_def->GetSubSamplingY();
+        if (!subset_def->GetRegionMap().empty() &&
+            subset_def->GetRegionMap().find(source_tie_point_grid->GetName()) != subset_def->GetRegionMap().end()) {
+            subset_offset_x = subset_def->GetRegionMap().at(source_tie_point_grid->GetName()).x;
+            subset_offset_y = subset_def->GetRegionMap().at(source_tie_point_grid->GetName()).y;
+            subset_width = subset_def->GetRegionMap().at(source_tie_point_grid->GetName()).width;
+            subset_height = subset_def->GetRegionMap().at(source_tie_point_grid->GetName()).height;
+        } else if (subset_def->GetRegion() != nullptr) {
+            subset_offset_x = subset_def->GetRegion()->x;
+            subset_offset_y = subset_def->GetRegion()->y;
+            subset_width = subset_def->GetRegion()->width;
+            subset_height = subset_def->GetRegion()->height;
+        }
+    }
+
+    const double new_t_p_g_sub_sampling_x = src_t_p_g_sub_sampling_x / subset_step_x;
+    const double new_t_p_g_sub_sampling_y = src_t_p_g_sub_sampling_y / subset_step_y;
+    const float pixel_center = 0.5f;
+    const double new_t_p_g_offset_x =
+        (source_tie_point_grid->GetOffsetX() - pixel_center - subset_offset_x) / subset_step_x + pixel_center;
+    const double new_t_p_g_offset_y =
+        (source_tie_point_grid->GetOffsetY() - pixel_center - subset_offset_y) / subset_step_y + pixel_center;
+    const double new_offset_x = fmod(new_t_p_g_offset_x, new_t_p_g_sub_sampling_x);
+    const double new_offset_y = fmod(new_t_p_g_offset_y, new_t_p_g_sub_sampling_y);
+    const double diff_x = new_offset_x - new_t_p_g_offset_x;
+    const double diff_y = new_offset_y - new_t_p_g_offset_y;
+    int data_offset_x;
+    if (diff_x < 0.0f) {
+        data_offset_x = 0;
+    } else {
+        data_offset_x = static_cast<int>(round(diff_x / new_t_p_g_sub_sampling_x));
+    }
+    int data_offset_y;
+    if (diff_y < 0.0f) {
+        data_offset_y = 0;
+    } else {
+        data_offset_y = static_cast<int>(round(diff_y / new_t_p_g_sub_sampling_y));
+    }
+
+    int new_t_p_g_width = static_cast<int>(ceil(subset_width / src_t_p_g_sub_sampling_x)) + 2;
+    if (data_offset_x + new_t_p_g_width > src_t_p_g_width) {
+        new_t_p_g_width = src_t_p_g_width - data_offset_x;
+    }
+    int new_t_p_g_height = static_cast<int>(ceil(subset_height / src_t_p_g_sub_sampling_y)) + 2;
+    if (data_offset_y + new_t_p_g_height > src_t_p_g_height) {
+        new_t_p_g_height = src_t_p_g_height - data_offset_y;
+    }
+
+    std::vector<float> old_tie_points = source_tie_point_grid->GetTiePoints();
+    std::vector<float> tie_points(new_t_p_g_width * new_t_p_g_height);
+    for (int y = 0; y < new_t_p_g_height; y++) {
+        const int src_pos = src_t_p_g_width * (data_offset_y + y) + data_offset_x;
+        //        todo:check if this works like expected
+        std::copy(old_tie_points.begin() + src_pos, old_tie_points.begin() + new_t_p_g_width,
+                  tie_points.begin() + y * new_t_p_g_width);
+    }
+
+    auto tie_point_grid = std::make_shared<TiePointGrid>(
+        source_tie_point_grid->GetName(), new_t_p_g_width, new_t_p_g_height, new_offset_x, new_offset_y,
+        new_t_p_g_sub_sampling_x, new_t_p_g_sub_sampling_y, tie_points);
+    tie_point_grid->SetUnit(source_tie_point_grid->GetUnit());
+    tie_point_grid->SetDescription(source_tie_point_grid->GetDescription());
+    tie_point_grid->SetDiscontinuity(source_tie_point_grid->GetDiscontinuity());
+    return tie_point_grid;
 }
 
 }  // namespace snapengine

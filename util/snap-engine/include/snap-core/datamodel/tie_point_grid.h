@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "raster_data_node.h"
+#include "ceres-core/i_progress_monitor.h"
 
 namespace alus {
 namespace snapengine {
@@ -42,7 +43,7 @@ public:
  *
  * original java version author Norman Fomferra
  */
-class TiePointGrid : public RasterDataNode {
+class TiePointGrid : public virtual RasterDataNode {
 private:
     int grid_width_;
     int grid_height_;
@@ -58,12 +59,6 @@ private:
     std::shared_ptr<ProductData> raster_data_;
 
     std::shared_ptr<ProductData> ReadGridData();
-    //    throws IOException {
-    //        ProductData productData = createCompatibleRasterData(getGridWidth(), getGridHeight());
-    //        getProductReader().readTiePointGridRasterData(
-    //        this, 0, 0, getGridWidth(), getGridHeight(), productData, ProgressMonitor.NULL);
-    //        return productData;
-    //    }
 
     double Interpolate(double wi, double wj, int i0, int j0);
     bool IsDiscontNotInit() { return sin_grid_ == nullptr || cos_grid_ == nullptr; }
@@ -384,7 +379,8 @@ public:
      * @param pm     a monitor to inform the user about progress
      * @throws IllegalArgumentException if the length of the given array is less than {@code w*h}.
      */
-    std::vector<int> GetPixels(int x, int y, int w, int h, std::vector<int> pixels /*, ProgressMonitor pm*/);
+    std::vector<int> GetPixels(int x, int y, int w, int h, std::vector<int> pixels,
+                               std::shared_ptr<ceres::IProgressMonitor> pm) override;
 
     /**
      * Retrieves an array of tie point data interpolated to the product width and height as float array. If the given
@@ -398,7 +394,8 @@ public:
      * @param pm     a monitor to inform the user about progress
      * @throws IllegalArgumentException if the length of the given array is less than {@code w*h}.
      */
-    std::vector<double> GetPixels(int x, int y, int w, int h, std::vector<double> pixels /*, ProgressMonitor pm*/);
+    std::vector<double> GetPixels(int x, int y, int w, int h, std::vector<double> pixels,
+                                  std::shared_ptr<ceres::IProgressMonitor> pm) override;
 
     /**
      * Retrieves an array of tie point data interpolated to the product with and height as double array. If the given
@@ -411,7 +408,8 @@ public:
      * @param pixels the double array to be filled with data
      * @throws IllegalArgumentException if the length of the given array is less than {@code w*h}.
      */
-    std::vector<float> GetPixels(int x, int y, int w, int h, std::vector<float> pixels /*, ProgressMonitor pm*/);
+    std::vector<float> GetPixels(int x, int y, int w, int h, std::vector<float> pixels,
+                                 std::shared_ptr<ceres::IProgressMonitor> pm) override;
 
     /**
      * This method is not implemented because pixels are read-only in tie-point grids.
@@ -448,8 +446,9 @@ public:
      * @param pixels the integer array to be filled with data
      * @throws IllegalArgumentException if the length of the given array is less than {@code w*h}.
      */
-    std::vector<int> ReadPixels(int x, int y, int w, int h, std::vector<int> pixels /*, ProgressMonitor pm*/) override {
-        return GetPixels(x, y, w, h, pixels /*, pm*/);
+    std::vector<int> ReadPixels(int x, int y, int w, int h, std::vector<int> pixels,
+                                std::shared_ptr<ceres::IProgressMonitor> pm) override {
+        return GetPixels(x, y, w, h, pixels, pm);
     }
 
     /**
@@ -464,9 +463,9 @@ public:
      * @param pm     a monitor to inform the user about progress
      * @throws IllegalArgumentException if the length of the given array is less than {@code w*h}.
      */
-    std::vector<float> ReadPixels(int x, int y, int w, int h,
-                                  std::vector<float> pixels /*, ProgressMonitor pm*/) override {
-        return GetPixels(x, y, w, h, pixels /*, pm*/);
+    std::vector<float> ReadPixels(int x, int y, int w, int h, std::vector<float> pixels,
+                                  std::shared_ptr<ceres::IProgressMonitor> pm) override {
+        return GetPixels(x, y, w, h, pixels, pm);
     }
 
     /**
@@ -481,16 +480,17 @@ public:
      * @param pm     a monitor to inform the user about progress
      * @throws IllegalArgumentException if the length of the given array is less than {@code w*h}.
      */
-    std::vector<double> ReadPixels(int x, int y, int w, int h,
-                                   std::vector<double> pixels /*, ProgressMonitor pm*/) override {
-        return GetPixels(x, y, w, h, pixels /*, pm*/);
+    std::vector<double> ReadPixels(int x, int y, int w, int h, std::vector<double> pixels,
+                                   std::shared_ptr<ceres::IProgressMonitor> pm) override {
+        return GetPixels(x, y, w, h, pixels, pm);
     }
 
     /**
      * This method is not implemented because pixels are read-only in tie-point grids.
      */
     void WritePixels([[maybe_unused]] int x, [[maybe_unused]] int y, [[maybe_unused]] int w, [[maybe_unused]] int h,
-                     [[maybe_unused]] std::vector<int> pixels /*,ProgressMonitor pm*/) override {
+                     [[maybe_unused]] std::vector<int> pixels,
+                     [[maybe_unused]] std::shared_ptr<ceres::IProgressMonitor> pm) override {
         throw PixelsAreReadOnlyException();
     }
 
@@ -498,7 +498,8 @@ public:
      * This method is not implemented because pixels are read-only in tie-point grids.
      */
     void WritePixels([[maybe_unused]] int x, [[maybe_unused]] int y, [[maybe_unused]] int w, [[maybe_unused]] int h,
-                     [[maybe_unused]] std::vector<float> pixels /*, ProgressMonitor pm*/) override {
+                     [[maybe_unused]] std::vector<float> pixels,
+                     [[maybe_unused]] std::shared_ptr<ceres::IProgressMonitor> pm) override {
         throw PixelsAreReadOnlyException();
     }
 
@@ -506,7 +507,8 @@ public:
      * This method is not implemented because pixels are read-only in tie-point grids.
      */
     void WritePixels([[maybe_unused]] int x, [[maybe_unused]] int y, [[maybe_unused]] int w, [[maybe_unused]] int h,
-                     [[maybe_unused]] std::vector<double> pixels /*, ProgressMonitor pm*/) override {
+                     [[maybe_unused]] std::vector<double> pixels,
+                     [[maybe_unused]] std::shared_ptr<ceres::IProgressMonitor> pm) override {
         throw PixelsAreReadOnlyException();
     }
 
@@ -526,15 +528,15 @@ public:
      * @throws IllegalArgumentException if the raster is null
      * @throws IllegalStateException    if this product raster was not added to a product so far, or if the product to
      *                                  which this product raster belongs to, has no associated product reader
-     * @see ProductReader#readBandRasterData(Band, int, int, int, int, ProductData, com.bc.ceres.core.ProgressMonitor)
+     * @see ProductReader#readBandRasterData(Band, int, int, int, int, ProductData, com.bc.ceres.core.ceres::IProgressMonitor)
      */
-    void ReadRasterData(int offset_x, int offset_y, int width, int height,
-                        std::shared_ptr<ProductData> raster_data /*,ProgressMonitor pm*/) override;
+    void ReadRasterData(int offset_x, int offset_y, int width, int height, std::shared_ptr<ProductData> raster_data,
+                        std::shared_ptr<ceres::IProgressMonitor> pm) override;
 
     /**
      * {@inheritDoc}
      */
-    void ReadRasterDataFully(/*ProgressMonitor pm*/) override {
+    void ReadRasterDataFully([[maybe_unused]] std::shared_ptr<ceres::IProgressMonitor> pm) override {
         //        todo: this can be unwrapped at later time when we have more clarity
         GetGridData();  // trigger reading the grid points
     }
@@ -543,15 +545,15 @@ public:
      * {@inheritDoc}
      */
     void WriteRasterData([[maybe_unused]] int offset_x, [[maybe_unused]] int offset_y, [[maybe_unused]] int width,
-                         [[maybe_unused]] int height,
-                         [[maybe_unused]] std::shared_ptr<ProductData> raster_data /*,ProgressMonitor pm*/) override {
+                         [[maybe_unused]] int height, [[maybe_unused]] std::shared_ptr<ProductData> raster_data,
+                         [[maybe_unused]] std::shared_ptr<ceres::IProgressMonitor> pm) override {
         throw PixelsAreReadOnlyException();
     }
 
     /**
      * {@inheritDoc}
      */
-    void WriteRasterDataFully(/*ProgressMonitor pm*/) override {
+    void WriteRasterDataFully([[maybe_unused]] std::shared_ptr<ceres::IProgressMonitor> pm) override {
         //        todo: this can be unwrapped at later time when we have more clarity
         throw PixelsAreReadOnlyException();
     }
@@ -573,6 +575,9 @@ public:
 
     static std::shared_ptr<TiePointGrid> CreateZenithFromElevationAngleTiePointGrid(
         const std::shared_ptr<TiePointGrid>& elevation_angle_grid);
+
+    static std::shared_ptr<TiePointGrid> CreateSubset(const std::shared_ptr<TiePointGrid>& source_tie_point_grid,
+                                                      const std::shared_ptr<ProductSubsetDef>& subset_def);
 
 protected:
     template <typename T>

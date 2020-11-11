@@ -23,7 +23,7 @@
 #include <string_view>
 #include <vector>
 
-#include "metadata_element.h"
+#include "snap-core/datamodel/metadata_element.h"
 
 namespace alus {
 namespace snapengine {
@@ -32,7 +32,7 @@ namespace snapengine {
  * represent index values (e.g. types, classes, categories).
  * @since BEAM 4.2
  */
-class SampleCoding : public virtual MetadataElement {
+class SampleCoding : public MetadataElement {
 public:
     explicit SampleCoding(std::string_view name);
 

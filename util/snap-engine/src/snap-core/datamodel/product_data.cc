@@ -38,7 +38,7 @@ ProductData::ProductData(int type) {
 }
 
 // changed to sizeof (java implementation has fixed size)
-int ProductData::GetElemSize(int type) {
+uint64_t ProductData::GetElemSize(int type) {
     switch (type) {
         case TYPE_INT8:
             return sizeof(int8_t);
@@ -76,28 +76,28 @@ std::shared_ptr<ProductData> ProductData::CreateInstance(int type, int num_elems
     }
     switch (type) {
         case ProductData::TYPE_INT8:
-            return (std::shared_ptr<ProductData>)std::make_shared<Byte>(num_elems);
+            return std::make_shared<Byte>(num_elems);
         case ProductData::TYPE_INT16:
-            return (std::shared_ptr<ProductData>)std::make_shared<Short>(num_elems);
+            return std::make_shared<Short>(num_elems);
         case ProductData::TYPE_INT32:
-            return (std::shared_ptr<ProductData>)std::make_shared<Int>(num_elems);
+            return std::make_shared<Int>(num_elems);
         case ProductData::TYPE_INT64:
-            return (std::shared_ptr<ProductData>)std::make_shared<Long>(num_elems);
+            return std::make_shared<Long>(num_elems);
         case ProductData::TYPE_UINT8:
-            return (std::shared_ptr<ProductData>)std::make_shared<UByte>(num_elems);
+            return std::make_shared<UByte>(num_elems);
         case ProductData::TYPE_UINT16:
-            return (std::shared_ptr<ProductData>)std::make_shared<UShort>(num_elems);
+            return std::make_shared<UShort>(num_elems);
         case ProductData::TYPE_UINT32:
-            return (std::shared_ptr<ProductData>)std::make_shared<UInt>(num_elems);
+            return std::make_shared<UInt>(num_elems);
         case ProductData::TYPE_FLOAT32:
             //            todo:in the end check over if underlying types are mapped correctly
-            return (std::shared_ptr<ProductData>)std::make_shared<Float>(num_elems);
+            return std::make_shared<Float>(num_elems);
         case ProductData::TYPE_FLOAT64:
-            return (std::shared_ptr<ProductData>)std::make_shared<Double>(num_elems);
+            return std::make_shared<Double>(num_elems);
         case ProductData::TYPE_ASCII:
-            return (std::shared_ptr<ProductData>)std::make_shared<ASCII>(num_elems);
+            return std::make_shared<ASCII>(num_elems);
         case ProductData::TYPE_UTC:
-            return (std::shared_ptr<ProductData>)std::make_shared<Utc>(num_elems);
+            return std::make_shared<Utc>(num_elems);
         default:
             throw std::invalid_argument("Unknown type. Cannot create product data instance.");
     }
@@ -139,6 +139,11 @@ void ProductData::SetElemBooleanAt(int index, bool value) { SetElemIntAt(index, 
 
 std::shared_ptr<ProductData> ProductData::CreateInstance(std::vector<float> elems) {
     return std::make_shared<Float>(elems);
+}
+std::shared_ptr<ProductData> ProductData::CreateInstance(std::vector<int> elems) {
+    // vector is never nullptr
+    //    snapengine::Guardian::AssertNotNull("elems", elems);
+    return std::make_shared<Int>(elems);
 }
 
 }  // namespace snapengine

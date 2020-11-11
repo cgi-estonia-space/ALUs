@@ -24,7 +24,7 @@
 #include "calibration_info.h"
 #include "calibration_vector.h"
 #include "general_constants.h"
-#include "meta_data_node_names.h"
+#include "abstract_metadata.h"
 #include "metadata_element.h"
 #include "pugixml_meta_data_reader.h"
 #include "sentinel1_calibrate.h"
@@ -39,178 +39,178 @@ namespace {
 class Sentinel1CalibrateTest : public ::testing::Test {
 private:
     static void AddFirstCalibrationFirstVector(std::shared_ptr<MetadataElement> calibration_vector_list_element) {
-        const auto vector_element = std::make_shared<MetadataElement>(MetaDataNodeNames::CALIBRATION_VECTOR);
+        const auto vector_element = std::make_shared<MetadataElement>(AbstractMetadata::CALIBRATION_VECTOR);
         calibration_vector_list_element->AddElement(vector_element);
 
-        vector_element->SetAttributeString(MetaDataNodeNames::AZIMUTH_TIME,
+        vector_element->SetAttributeString(AbstractMetadata::AZIMUTH_TIME,
                                            calibrationdata::FIRST_CALIBRATION_FIRST_VECTOR_AZIMUTH_TIME);
-        vector_element->SetAttributeInt(MetaDataNodeNames::LINE, calibrationdata::FIRST_CALIBRATION_FIRST_VECTOR_LINE);
+        vector_element->SetAttributeInt(AbstractMetadata::LINE, calibrationdata::FIRST_CALIBRATION_FIRST_VECTOR_LINE);
 
-        const auto pixel_element = std::make_shared<MetadataElement>(MetaDataNodeNames::PIXEL);
+        const auto pixel_element = std::make_shared<MetadataElement>(AbstractMetadata::PIXEL);
         vector_element->AddElement(pixel_element);
-        pixel_element->SetAttributeString(MetaDataNodeNames::PIXEL,
+        pixel_element->SetAttributeString(AbstractMetadata::PIXEL,
                                           calibrationdata::FIRST_CALIBRATION_FIRST_VECTOR_PIXEL_STRING);
-        pixel_element->SetAttributeInt(MetaDataNodeNames::COUNT,
+        pixel_element->SetAttributeInt(AbstractMetadata::COUNT,
                                        calibrationdata::FIRST_CALIBRATION_FIRST_VECTOR_PIXEL_COUNT);
 
-        const auto sigma_element = std::make_shared<MetadataElement>(MetaDataNodeNames::SIGMA_NOUGHT);
+        const auto sigma_element = std::make_shared<MetadataElement>(AbstractMetadata::SIGMA_NOUGHT);
         vector_element->AddElement(sigma_element);
-        sigma_element->SetAttributeString(MetaDataNodeNames::SIGMA_NOUGHT,
+        sigma_element->SetAttributeString(AbstractMetadata::SIGMA_NOUGHT,
                                           calibrationdata::FIRST_CALIBRATION_FIRST_VECTOR_SIGMA_STRING);
-        sigma_element->SetAttributeInt(MetaDataNodeNames::COUNT,
+        sigma_element->SetAttributeInt(AbstractMetadata::COUNT,
                                        calibrationdata::FIRST_CALIBRATION_FIRST_VECTOR_SIGMA_COUNT);
 
-        const auto beta_element = std::make_shared<MetadataElement>(MetaDataNodeNames::BETA_NOUGHT);
+        const auto beta_element = std::make_shared<MetadataElement>(AbstractMetadata::BETA_NOUGHT);
         vector_element->AddElement(beta_element);
-        beta_element->SetAttributeString(MetaDataNodeNames::BETA_NOUGHT,
+        beta_element->SetAttributeString(AbstractMetadata::BETA_NOUGHT,
                                          calibrationdata::FIRST_CALIBRATION_FIRST_VECTOR_BETA_STRING);
-        beta_element->SetAttributeInt(MetaDataNodeNames::COUNT,
+        beta_element->SetAttributeInt(AbstractMetadata::COUNT,
                                       calibrationdata::FIRST_CALIBRATION_FIRST_VECTOR_BETA_COUNT);
 
-        const auto gamma_element = std::make_shared<MetadataElement>(MetaDataNodeNames::GAMMA);
+        const auto gamma_element = std::make_shared<MetadataElement>(AbstractMetadata::GAMMA);
         vector_element->AddElement(gamma_element);
-        gamma_element->SetAttributeString(MetaDataNodeNames::GAMMA,
+        gamma_element->SetAttributeString(AbstractMetadata::GAMMA,
                                           calibrationdata::FIRST_CALIBRATION_FIRST_VECTOR_GAMMA_STRING);
-        gamma_element->SetAttributeInt(MetaDataNodeNames::COUNT,
+        gamma_element->SetAttributeInt(AbstractMetadata::COUNT,
                                        calibrationdata::FIRST_CALIBRATION_FIRST_VECTOR_GAMMA_COUNT);
 
-        const auto dn_element = std::make_shared<MetadataElement>(MetaDataNodeNames::DN);
+        const auto dn_element = std::make_shared<MetadataElement>(AbstractMetadata::DN);
         vector_element->AddElement(dn_element);
-        dn_element->SetAttributeString(MetaDataNodeNames::DN,
+        dn_element->SetAttributeString(AbstractMetadata::DN,
                                        calibrationdata::FIRST_CALIBRATION_FIRST_VECTOR_DN_STRING);
-        dn_element->SetAttributeInt(MetaDataNodeNames::COUNT, calibrationdata::FIRST_CALIBRATION_FIRST_VECTOR_DN_COUNT);
+        dn_element->SetAttributeInt(AbstractMetadata::COUNT, calibrationdata::FIRST_CALIBRATION_FIRST_VECTOR_DN_COUNT);
     }
 
     static void AddFirstCalibrationSecondVector(std::shared_ptr<MetadataElement> calibration_vector_list_element) {
-        const auto vector_element = std::make_shared<MetadataElement>(MetaDataNodeNames::CALIBRATION_VECTOR);
+        const auto vector_element = std::make_shared<MetadataElement>(AbstractMetadata::CALIBRATION_VECTOR);
         calibration_vector_list_element->AddElement(vector_element);
 
-        vector_element->SetAttributeString(MetaDataNodeNames::AZIMUTH_TIME,
+        vector_element->SetAttributeString(AbstractMetadata::AZIMUTH_TIME,
                                            calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_AZIMUTH_TIME);
-        vector_element->SetAttributeInt(MetaDataNodeNames::LINE, calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_LINE);
+        vector_element->SetAttributeInt(AbstractMetadata::LINE, calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_LINE);
 
-        const auto pixel_element = std::make_shared<MetadataElement>(MetaDataNodeNames::PIXEL);
+        const auto pixel_element = std::make_shared<MetadataElement>(AbstractMetadata::PIXEL);
         vector_element->AddElement(pixel_element);
-        pixel_element->SetAttributeString(MetaDataNodeNames::PIXEL,
+        pixel_element->SetAttributeString(AbstractMetadata::PIXEL,
                                           calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_PIXEL_STRING);
-        pixel_element->SetAttributeInt(MetaDataNodeNames::COUNT,
+        pixel_element->SetAttributeInt(AbstractMetadata::COUNT,
                                        calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_PIXEL_COUNT);
 
-        const auto sigma_element = std::make_shared<MetadataElement>(MetaDataNodeNames::SIGMA_NOUGHT);
+        const auto sigma_element = std::make_shared<MetadataElement>(AbstractMetadata::SIGMA_NOUGHT);
         vector_element->AddElement(sigma_element);
-        sigma_element->SetAttributeString(MetaDataNodeNames::SIGMA_NOUGHT,
+        sigma_element->SetAttributeString(AbstractMetadata::SIGMA_NOUGHT,
                                           calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_SIGMA_STRING);
-        sigma_element->SetAttributeInt(MetaDataNodeNames::COUNT,
+        sigma_element->SetAttributeInt(AbstractMetadata::COUNT,
                                        calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_SIGMA_COUNT);
 
-        const auto beta_element = std::make_shared<MetadataElement>(MetaDataNodeNames::BETA_NOUGHT);
+        const auto beta_element = std::make_shared<MetadataElement>(AbstractMetadata::BETA_NOUGHT);
         vector_element->AddElement(beta_element);
-        beta_element->SetAttributeString(MetaDataNodeNames::BETA_NOUGHT,
+        beta_element->SetAttributeString(AbstractMetadata::BETA_NOUGHT,
                                          calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_BETA_STRING);
-        beta_element->SetAttributeInt(MetaDataNodeNames::COUNT,
+        beta_element->SetAttributeInt(AbstractMetadata::COUNT,
                                       calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_BETA_COUNT);
 
-        const auto gamma_element = std::make_shared<MetadataElement>(MetaDataNodeNames::GAMMA);
+        const auto gamma_element = std::make_shared<MetadataElement>(AbstractMetadata::GAMMA);
         vector_element->AddElement(gamma_element);
-        gamma_element->SetAttributeString(MetaDataNodeNames::GAMMA,
+        gamma_element->SetAttributeString(AbstractMetadata::GAMMA,
                                           calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_GAMMA_STRING);
-        gamma_element->SetAttributeInt(MetaDataNodeNames::COUNT,
+        gamma_element->SetAttributeInt(AbstractMetadata::COUNT,
                                        calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_GAMMA_COUNT);
 
-        const auto dn_element = std::make_shared<MetadataElement>(MetaDataNodeNames::DN);
+        const auto dn_element = std::make_shared<MetadataElement>(AbstractMetadata::DN);
         vector_element->AddElement(dn_element);
-        dn_element->SetAttributeString(MetaDataNodeNames::DN,
+        dn_element->SetAttributeString(AbstractMetadata::DN,
                                        calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_DN_STRING);
-        dn_element->SetAttributeInt(MetaDataNodeNames::COUNT,
+        dn_element->SetAttributeInt(AbstractMetadata::COUNT,
                                     calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_DN_COUNT);
     }
 
     static void AddSecondCalibrationFirstVector(std::shared_ptr<MetadataElement> calibration_vector_list_element) {
-        const auto vector_element = std::make_shared<MetadataElement>(MetaDataNodeNames::CALIBRATION_VECTOR);
+        const auto vector_element = std::make_shared<MetadataElement>(AbstractMetadata::CALIBRATION_VECTOR);
         calibration_vector_list_element->AddElement(vector_element);
 
-        vector_element->SetAttributeString(MetaDataNodeNames::AZIMUTH_TIME,
+        vector_element->SetAttributeString(AbstractMetadata::AZIMUTH_TIME,
                                            calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_AZIMUTH_TIME);
-        vector_element->SetAttributeInt(MetaDataNodeNames::LINE, calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_LINE);
+        vector_element->SetAttributeInt(AbstractMetadata::LINE, calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_LINE);
 
-        const auto pixel_element = std::make_shared<MetadataElement>(MetaDataNodeNames::PIXEL);
+        const auto pixel_element = std::make_shared<MetadataElement>(AbstractMetadata::PIXEL);
         vector_element->AddElement(pixel_element);
-        pixel_element->SetAttributeString(MetaDataNodeNames::PIXEL,
+        pixel_element->SetAttributeString(AbstractMetadata::PIXEL,
                                           calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_PIXEL_STRING);
-        pixel_element->SetAttributeInt(MetaDataNodeNames::COUNT,
+        pixel_element->SetAttributeInt(AbstractMetadata::COUNT,
                                        calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_PIXEL_COUNT);
 
-        const auto sigma_element = std::make_shared<MetadataElement>(MetaDataNodeNames::SIGMA_NOUGHT);
+        const auto sigma_element = std::make_shared<MetadataElement>(AbstractMetadata::SIGMA_NOUGHT);
         vector_element->AddElement(sigma_element);
-        sigma_element->SetAttributeString(MetaDataNodeNames::SIGMA_NOUGHT,
+        sigma_element->SetAttributeString(AbstractMetadata::SIGMA_NOUGHT,
                                           calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_SIGMA_STRING);
-        sigma_element->SetAttributeInt(MetaDataNodeNames::COUNT,
+        sigma_element->SetAttributeInt(AbstractMetadata::COUNT,
                                        calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_SIGMA_COUNT);
 
-        const auto beta_element = std::make_shared<MetadataElement>(MetaDataNodeNames::BETA_NOUGHT);
+        const auto beta_element = std::make_shared<MetadataElement>(AbstractMetadata::BETA_NOUGHT);
         vector_element->AddElement(beta_element);
-        beta_element->SetAttributeString(MetaDataNodeNames::BETA_NOUGHT,
+        beta_element->SetAttributeString(AbstractMetadata::BETA_NOUGHT,
                                          calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_BETA_STRING);
-        beta_element->SetAttributeInt(MetaDataNodeNames::COUNT,
+        beta_element->SetAttributeInt(AbstractMetadata::COUNT,
                                       calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_BETA_COUNT);
 
-        const auto gamma_element = std::make_shared<MetadataElement>(MetaDataNodeNames::GAMMA);
+        const auto gamma_element = std::make_shared<MetadataElement>(AbstractMetadata::GAMMA);
         vector_element->AddElement(gamma_element);
-        gamma_element->SetAttributeString(MetaDataNodeNames::GAMMA,
+        gamma_element->SetAttributeString(AbstractMetadata::GAMMA,
                                           calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_GAMMA_STRING);
-        gamma_element->SetAttributeInt(MetaDataNodeNames::COUNT,
+        gamma_element->SetAttributeInt(AbstractMetadata::COUNT,
                                        calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_GAMMA_COUNT);
 
-        const auto dn_element = std::make_shared<MetadataElement>(MetaDataNodeNames::DN);
+        const auto dn_element = std::make_shared<MetadataElement>(AbstractMetadata::DN);
         vector_element->AddElement(dn_element);
-        dn_element->SetAttributeString(MetaDataNodeNames::DN,
+        dn_element->SetAttributeString(AbstractMetadata::DN,
                                        calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_DN_STRING);
-        dn_element->SetAttributeInt(MetaDataNodeNames::COUNT,
+        dn_element->SetAttributeInt(AbstractMetadata::COUNT,
                                     calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_DN_COUNT);
     }
 
     static void AddSecondCalibrationSecondVector(std::shared_ptr<MetadataElement> calibration_vector_list_element) {
-        const auto vector_element = std::make_shared<MetadataElement>(MetaDataNodeNames::CALIBRATION_VECTOR);
+        const auto vector_element = std::make_shared<MetadataElement>(AbstractMetadata::CALIBRATION_VECTOR);
         calibration_vector_list_element->AddElement(vector_element);
 
-        vector_element->SetAttributeString(MetaDataNodeNames::AZIMUTH_TIME,
+        vector_element->SetAttributeString(AbstractMetadata::AZIMUTH_TIME,
                                            calibrationdata::SECOND_CALIBRATION_SECOND_VECTOR_AZIMUTH_TIME);
-        vector_element->SetAttributeInt(MetaDataNodeNames::LINE,
+        vector_element->SetAttributeInt(AbstractMetadata::LINE,
                                         calibrationdata::SECOND_CALIBRATION_SECOND_VECTOR_LINE);
 
-        const auto pixel_element = std::make_shared<MetadataElement>(MetaDataNodeNames::PIXEL);
+        const auto pixel_element = std::make_shared<MetadataElement>(AbstractMetadata::PIXEL);
         vector_element->AddElement(pixel_element);
-        pixel_element->SetAttributeString(MetaDataNodeNames::PIXEL,
+        pixel_element->SetAttributeString(AbstractMetadata::PIXEL,
                                           calibrationdata::SECOND_CALIBRATION_SECOND_VECTOR_PIXEL_STRING);
-        pixel_element->SetAttributeInt(MetaDataNodeNames::COUNT,
+        pixel_element->SetAttributeInt(AbstractMetadata::COUNT,
                                        calibrationdata::SECOND_CALIBRATION_SECOND_VECTOR_PIXEL_COUNT);
 
-        const auto sigma_element = std::make_shared<MetadataElement>(MetaDataNodeNames::SIGMA_NOUGHT);
+        const auto sigma_element = std::make_shared<MetadataElement>(AbstractMetadata::SIGMA_NOUGHT);
         vector_element->AddElement(sigma_element);
-        sigma_element->SetAttributeString(MetaDataNodeNames::SIGMA_NOUGHT,
+        sigma_element->SetAttributeString(AbstractMetadata::SIGMA_NOUGHT,
                                           calibrationdata::SECOND_CALIBRATION_SECOND_VECTOR_SIGMA_STRING);
-        sigma_element->SetAttributeInt(MetaDataNodeNames::COUNT,
+        sigma_element->SetAttributeInt(AbstractMetadata::COUNT,
                                        calibrationdata::SECOND_CALIBRATION_SECOND_VECTOR_SIGMA_COUNT);
 
-        const auto beta_element = std::make_shared<MetadataElement>(MetaDataNodeNames::BETA_NOUGHT);
+        const auto beta_element = std::make_shared<MetadataElement>(AbstractMetadata::BETA_NOUGHT);
         vector_element->AddElement(beta_element);
-        beta_element->SetAttributeString(MetaDataNodeNames::BETA_NOUGHT,
+        beta_element->SetAttributeString(AbstractMetadata::BETA_NOUGHT,
                                          calibrationdata::SECOND_CALIBRATION_SECOND_VECTOR_BETA_STRING);
-        beta_element->SetAttributeInt(MetaDataNodeNames::COUNT,
+        beta_element->SetAttributeInt(AbstractMetadata::COUNT,
                                       calibrationdata::SECOND_CALIBRATION_SECOND_VECTOR_BETA_COUNT);
 
-        const auto gamma_element = std::make_shared<MetadataElement>(MetaDataNodeNames::GAMMA);
+        const auto gamma_element = std::make_shared<MetadataElement>(AbstractMetadata::GAMMA);
         vector_element->AddElement(gamma_element);
-        gamma_element->SetAttributeString(MetaDataNodeNames::GAMMA,
+        gamma_element->SetAttributeString(AbstractMetadata::GAMMA,
                                           calibrationdata::SECOND_CALIBRATION_SECOND_VECTOR_GAMMA_STRING);
-        gamma_element->SetAttributeInt(MetaDataNodeNames::COUNT,
+        gamma_element->SetAttributeInt(AbstractMetadata::COUNT,
                                        calibrationdata::SECOND_CALIBRATION_SECOND_VECTOR_GAMMA_COUNT);
 
-        const auto dn_element = std::make_shared<MetadataElement>(MetaDataNodeNames::DN);
+        const auto dn_element = std::make_shared<MetadataElement>(AbstractMetadata::DN);
         vector_element->AddElement(dn_element);
-        dn_element->SetAttributeString(MetaDataNodeNames::DN,
+        dn_element->SetAttributeString(AbstractMetadata::DN,
                                        calibrationdata::SECOND_CALIBRATION_SECOND_VECTOR_DN_STRING);
-        dn_element->SetAttributeInt(MetaDataNodeNames::COUNT,
+        dn_element->SetAttributeInt(AbstractMetadata::COUNT,
                                     calibrationdata::SECOND_CALIBRATION_SECOND_VECTOR_DN_COUNT);
     }
 
@@ -219,65 +219,65 @@ private:
             std::make_shared<MetadataElement>(calibrationdata::FIRST_CALIBRATION_SET_ITEM_NAME);
         calibration_root->AddElement(calibration_data_set_item);
 
-        const auto calibration_element = std::make_shared<MetadataElement>(MetaDataNodeNames::CALIBRATION);
+        const auto calibration_element = std::make_shared<MetadataElement>(AbstractMetadata::CALIBRATION);
         calibration_data_set_item->AddElement(calibration_element);
         AddFirstAdsHeader(calibration_element);
 
         const auto calibration_vector_list_element =
-            std::make_shared<MetadataElement>(MetaDataNodeNames::CALIBRATION_VECTOR_LIST);
+            std::make_shared<MetadataElement>(AbstractMetadata::CALIBRATION_VECTOR_LIST);
         calibration_element->AddElement(calibration_vector_list_element);
 
-        calibration_vector_list_element->SetAttributeInt(MetaDataNodeNames::COUNT,
+        calibration_vector_list_element->SetAttributeInt(AbstractMetadata::COUNT,
                                                          calibrationdata::FIRST_CALIBRATION_VECTOR_COUNT);
 
         AddFirstCalibrationFirstVector(calibration_vector_list_element);
         AddFirstCalibrationSecondVector(calibration_vector_list_element);
     }
     static void AddFirstAdsHeader(std::shared_ptr<MetadataElement> calibration_element) {
-        const auto ads_header_element = std::make_shared<MetadataElement>(MetaDataNodeNames::ADS_HEADER);
+        const auto ads_header_element = std::make_shared<MetadataElement>(AbstractMetadata::ADS_HEADER);
 
-        ads_header_element->SetAttributeString(MetaDataNodeNames::MISSION_ID,
+        ads_header_element->SetAttributeString(AbstractMetadata::MISSION_ID,
                                                calibrationdata::FIRST_CALIBRATION_MISSION_ID);
-        ads_header_element->SetAttributeString(MetaDataNodeNames::product_type,
+        ads_header_element->SetAttributeString(AbstractMetadata::product_type,
                                                calibrationdata::FIRST_CALIBRATION_PRODUCT_TYPE);
-        ads_header_element->SetAttributeString(MetaDataNodeNames::POLARISATION,
+        ads_header_element->SetAttributeString(AbstractMetadata::POLARISATION,
                                                calibrationdata::FIRST_CALIBRATION_POLARISATION);
-        ads_header_element->SetAttributeString(MetaDataNodeNames::MODE, calibrationdata::FIRST_CALIBRATION_MODE);
-        ads_header_element->SetAttributeString(MetaDataNodeNames::swath, calibrationdata::FIRST_CALIBRATION_SWATH);
-        ads_header_element->SetAttributeString(MetaDataNodeNames::START_TIME,
+        ads_header_element->SetAttributeString(AbstractMetadata::MODE, calibrationdata::FIRST_CALIBRATION_MODE);
+        ads_header_element->SetAttributeString(AbstractMetadata::swath, calibrationdata::FIRST_CALIBRATION_SWATH);
+        ads_header_element->SetAttributeString(AbstractMetadata::START_TIME,
                                                calibrationdata::FIRST_CALIBRATION_START_TIME);
-        ads_header_element->SetAttributeString(MetaDataNodeNames::STOP_TIME,
+        ads_header_element->SetAttributeString(AbstractMetadata::STOP_TIME,
                                                calibrationdata::FIRST_CALIBRATION_STOP_TIME);
-        ads_header_element->SetAttributeInt(MetaDataNodeNames::ABSOLUTE_ORBIT_NUMBER,
+        ads_header_element->SetAttributeInt(AbstractMetadata::ABSOLUTE_ORBIT_NUMBER,
                                             calibrationdata::FIRST_CALIBRATION_ABSOLUTE_ORBIT_NUMBER);
-        ads_header_element->SetAttributeInt(MetaDataNodeNames::MISSION_DATA_TAKE_ID,
+        ads_header_element->SetAttributeInt(AbstractMetadata::MISSION_DATA_TAKE_ID,
                                             calibrationdata::FIRST_CALIBRATION_MISSION_DATA_TAKE_ID);
-        ads_header_element->SetAttributeInt(MetaDataNodeNames::IMAGE_NUMBER,
+        ads_header_element->SetAttributeInt(AbstractMetadata::IMAGE_NUMBER,
                                             calibrationdata::FIRST_CALIBRATION_IMAGE_NUMBER);
 
         calibration_element->AddElement(ads_header_element);
     }
 
     static void AddSecondAdsHeader(std::shared_ptr<MetadataElement> calibration_element) {
-        const auto ads_header_element = std::make_shared<MetadataElement>(MetaDataNodeNames::ADS_HEADER);
+        const auto ads_header_element = std::make_shared<MetadataElement>(AbstractMetadata::ADS_HEADER);
 
-        ads_header_element->SetAttributeString(MetaDataNodeNames::MISSION_ID,
+        ads_header_element->SetAttributeString(AbstractMetadata::MISSION_ID,
                                                calibrationdata::SECOND_CALIBRATION_MISSION_ID);
-        ads_header_element->SetAttributeString(MetaDataNodeNames::product_type,
+        ads_header_element->SetAttributeString(AbstractMetadata::product_type,
                                                calibrationdata::SECOND_CALIBRATION_PRODUCT_TYPE);
-        ads_header_element->SetAttributeString(MetaDataNodeNames::POLARISATION,
+        ads_header_element->SetAttributeString(AbstractMetadata::POLARISATION,
                                                calibrationdata::SECOND_CALIBRATION_POLARISATION);
-        ads_header_element->SetAttributeString(MetaDataNodeNames::MODE, calibrationdata::SECOND_CALIBRATION_MODE);
-        ads_header_element->SetAttributeString(MetaDataNodeNames::swath, calibrationdata::SECOND_CALIBRATION_SWATH);
-        ads_header_element->SetAttributeString(MetaDataNodeNames::START_TIME,
+        ads_header_element->SetAttributeString(AbstractMetadata::MODE, calibrationdata::SECOND_CALIBRATION_MODE);
+        ads_header_element->SetAttributeString(AbstractMetadata::swath, calibrationdata::SECOND_CALIBRATION_SWATH);
+        ads_header_element->SetAttributeString(AbstractMetadata::START_TIME,
                                                calibrationdata::SECOND_CALIBRATION_START_TIME);
-        ads_header_element->SetAttributeString(MetaDataNodeNames::STOP_TIME,
+        ads_header_element->SetAttributeString(AbstractMetadata::STOP_TIME,
                                                calibrationdata::SECOND_CALIBRATION_STOP_TIME);
-        ads_header_element->SetAttributeInt(MetaDataNodeNames::ABSOLUTE_ORBIT_NUMBER,
+        ads_header_element->SetAttributeInt(AbstractMetadata::ABSOLUTE_ORBIT_NUMBER,
                                             calibrationdata::SECOND_CALIBRATION_ABSOLUTE_ORBIT_NUMBER);
-        ads_header_element->SetAttributeInt(MetaDataNodeNames::MISSION_DATA_TAKE_ID,
+        ads_header_element->SetAttributeInt(AbstractMetadata::MISSION_DATA_TAKE_ID,
                                             calibrationdata::SECOND_CALIBRATION_MISSION_DATA_TAKE_ID);
-        ads_header_element->SetAttributeInt(MetaDataNodeNames::IMAGE_NUMBER,
+        ads_header_element->SetAttributeInt(AbstractMetadata::IMAGE_NUMBER,
                                             calibrationdata::SECOND_CALIBRATION_IMAGE_NUMBER);
 
         calibration_element->AddElement(ads_header_element);
@@ -288,15 +288,15 @@ private:
             std::make_shared<MetadataElement>(calibrationdata::SECOND_CALIBRATION_SET_ITEM_NAME);
         calibration_root->AddElement(calibration_data_set_item);
 
-        const auto calibration_element = std::make_shared<MetadataElement>(MetaDataNodeNames::CALIBRATION);
+        const auto calibration_element = std::make_shared<MetadataElement>(AbstractMetadata::CALIBRATION);
         calibration_data_set_item->AddElement(calibration_element);
         AddSecondAdsHeader(calibration_element);
 
         const auto calibration_vector_list_element =
-            std::make_shared<MetadataElement>(MetaDataNodeNames::CALIBRATION_VECTOR_LIST);
+            std::make_shared<MetadataElement>(AbstractMetadata::CALIBRATION_VECTOR_LIST);
         calibration_element->AddElement(calibration_vector_list_element);
 
-        calibration_vector_list_element->SetAttributeInt(MetaDataNodeNames::COUNT,
+        calibration_vector_list_element->SetAttributeInt(AbstractMetadata::COUNT,
                                                          calibrationdata::SECOND_CALIBRATION_VECTOR_COUNT);
 
         AddSecondCalibrationFirstVector(calibration_vector_list_element);
@@ -308,16 +308,16 @@ private:
             std::make_shared<MetadataElement>(calibrationdata::FIRST_CALIBRATION_ANNOTATION_NAME);
         annotation_root->AddElement(annotation_data_set_item);
 
-        const auto product_element = std::make_shared<MetadataElement>(MetaDataNodeNames::product);
+        const auto product_element = std::make_shared<MetadataElement>(AbstractMetadata::product);
         annotation_data_set_item->AddElement(product_element);
 
-        const auto image_annotation_element = std::make_shared<MetadataElement>(MetaDataNodeNames::IMAGE_ANNOTATION);
+        const auto image_annotation_element = std::make_shared<MetadataElement>(AbstractMetadata::IMAGE_ANNOTATION);
         product_element->AddElement(image_annotation_element);
 
-        const auto image_information_element = std::make_shared<MetadataElement>(MetaDataNodeNames::IMAGE_INFORMATION);
+        const auto image_information_element = std::make_shared<MetadataElement>(AbstractMetadata::IMAGE_INFORMATION);
         image_annotation_element->AddElement(image_information_element);
 
-        image_information_element->SetAttributeInt(MetaDataNodeNames::NUMBER_OF_LINES,
+        image_information_element->SetAttributeInt(AbstractMetadata::NUMBER_OF_LINES,
                                                    calibrationdata::FIRST_CALIBRATION_NUMBER_OF_LINES);
     }
 
@@ -326,16 +326,16 @@ private:
             std::make_shared<MetadataElement>(calibrationdata::SECOND_CALIBRATION_ANNOTATION_NAME);
         annotation_root->AddElement(annotation_data_set_item);
 
-        const auto product_element = std::make_shared<MetadataElement>(MetaDataNodeNames::product);
+        const auto product_element = std::make_shared<MetadataElement>(AbstractMetadata::product);
         annotation_data_set_item->AddElement(product_element);
 
-        const auto image_annotation_element = std::make_shared<MetadataElement>(MetaDataNodeNames::IMAGE_ANNOTATION);
+        const auto image_annotation_element = std::make_shared<MetadataElement>(AbstractMetadata::IMAGE_ANNOTATION);
         product_element->AddElement(image_annotation_element);
 
-        const auto image_information_element = std::make_shared<MetadataElement>(MetaDataNodeNames::IMAGE_INFORMATION);
+        const auto image_information_element = std::make_shared<MetadataElement>(AbstractMetadata::IMAGE_INFORMATION);
         image_annotation_element->AddElement(image_information_element);
 
-        image_information_element->SetAttributeInt(MetaDataNodeNames::NUMBER_OF_LINES,
+        image_information_element->SetAttributeInt(AbstractMetadata::NUMBER_OF_LINES,
                                                    calibrationdata::SECOND_CALIBRATION_NUMBER_OF_LINES);
     }
 
@@ -344,14 +344,14 @@ protected:
 
 public:
     Sentinel1CalibrateTest() {
-        original_product_metadata_ = std::make_shared<MetadataElement>(MetaDataNodeNames::ORIGINAL_PRODUCT_METADATA);
-        const auto calibration_root_element = std::make_shared<MetadataElement>(MetaDataNodeNames::CALIBRATION_ROOT);
+        original_product_metadata_ = std::make_shared<MetadataElement>(AbstractMetadata::ORIGINAL_PRODUCT_METADATA);
+        const auto calibration_root_element = std::make_shared<MetadataElement>(AbstractMetadata::CALIBRATION_ROOT);
         original_product_metadata_->AddElement(calibration_root_element);
 
         AddFirstCalibrationSetElement(calibration_root_element);
         AddSecondCalibrationSetElement(calibration_root_element);
 
-        const auto annotation_root_element = std::make_shared<MetadataElement>(MetaDataNodeNames::ANNOTATION);
+        const auto annotation_root_element = std::make_shared<MetadataElement>(AbstractMetadata::ANNOTATION);
         original_product_metadata_->AddElement(annotation_root_element);
 
         AddFirstAnnotationSetElement(annotation_root_element);
@@ -426,98 +426,98 @@ TEST_F(Sentinel1CalibrateTest, GetNumOfLines) {
  * expecting it to throw an exception.
  */
 TEST_F(Sentinel1CalibrateTest, GetExceptions) {
-    const auto metadata = std::make_shared<MetadataElement>(MetaDataNodeNames::ORIGINAL_PRODUCT_METADATA);
+    const auto metadata = std::make_shared<MetadataElement>(AbstractMetadata::ORIGINAL_PRODUCT_METADATA);
     const std::set<std::string_view> selected_polarisations{"VH"};
     const SelectedCalibrationBands calibration_bands{true, false, false, false};
     EXPECT_THROW(GetCalibrationInfoList(metadata, selected_polarisations, calibration_bands), std::runtime_error);
 
-    const auto calibration_root_element = std::make_shared<MetadataElement>(MetaDataNodeNames::CALIBRATION_ROOT);
+    const auto calibration_root_element = std::make_shared<MetadataElement>(AbstractMetadata::CALIBRATION_ROOT);
     metadata->AddElement(calibration_root_element);
     const auto calibration_data_set_item =
         std::make_shared<MetadataElement>(calibrationdata::FIRST_CALIBRATION_SET_ITEM_NAME);
     calibration_root_element->AddElement(calibration_data_set_item);
     EXPECT_THROW(GetCalibrationInfoList(metadata, selected_polarisations, calibration_bands), std::runtime_error);
 
-    const auto calibration_element = std::make_shared<MetadataElement>(MetaDataNodeNames::CALIBRATION);
+    const auto calibration_element = std::make_shared<MetadataElement>(AbstractMetadata::CALIBRATION);
     calibration_data_set_item->AddElement(calibration_element);
     EXPECT_THROW(GetCalibrationInfoList(metadata, selected_polarisations, calibration_bands), std::runtime_error);
 
-    const auto ads_header_element = std::make_shared<MetadataElement>(MetaDataNodeNames::ADS_HEADER);
+    const auto ads_header_element = std::make_shared<MetadataElement>(AbstractMetadata::ADS_HEADER);
     calibration_element->AddElement(ads_header_element);
     EXPECT_THROW(GetCalibrationInfoList(metadata, selected_polarisations, calibration_bands), std::invalid_argument);
 
-    ads_header_element->SetAttributeString(MetaDataNodeNames::POLARISATION,
+    ads_header_element->SetAttributeString(AbstractMetadata::POLARISATION,
                                            calibrationdata::FIRST_CALIBRATION_POLARISATION);
-    ads_header_element->SetAttributeString(MetaDataNodeNames::swath, calibrationdata::FIRST_CALIBRATION_SWATH);
-    ads_header_element->SetAttributeString(MetaDataNodeNames::START_TIME,
+    ads_header_element->SetAttributeString(AbstractMetadata::swath, calibrationdata::FIRST_CALIBRATION_SWATH);
+    ads_header_element->SetAttributeString(AbstractMetadata::START_TIME,
                                            calibrationdata::FIRST_CALIBRATION_START_TIME);
-    ads_header_element->SetAttributeString(MetaDataNodeNames::STOP_TIME, calibrationdata::FIRST_CALIBRATION_STOP_TIME);
+    ads_header_element->SetAttributeString(AbstractMetadata::STOP_TIME, calibrationdata::FIRST_CALIBRATION_STOP_TIME);
     EXPECT_THROW(GetCalibrationInfoList(metadata, selected_polarisations, calibration_bands), std::runtime_error);
 
-    const auto annotation_root_element = std::make_shared<MetadataElement>(MetaDataNodeNames::ANNOTATION);
+    const auto annotation_root_element = std::make_shared<MetadataElement>(AbstractMetadata::ANNOTATION);
     metadata->AddElement(annotation_root_element);
     const auto annotation_data_set_item =
         std::make_shared<MetadataElement>(calibrationdata::FIRST_CALIBRATION_ANNOTATION_NAME);
     annotation_root_element->AddElement(annotation_data_set_item);
     EXPECT_THROW(GetCalibrationInfoList(metadata, selected_polarisations, calibration_bands), std::runtime_error);
 
-    const auto product_element = std::make_shared<MetadataElement>(MetaDataNodeNames::product);
+    const auto product_element = std::make_shared<MetadataElement>(AbstractMetadata::product);
     annotation_data_set_item->AddElement(product_element);
     EXPECT_THROW(GetCalibrationInfoList(metadata, selected_polarisations, calibration_bands), std::runtime_error);
 
-    const auto image_annotation_element = std::make_shared<MetadataElement>(MetaDataNodeNames::IMAGE_ANNOTATION);
+    const auto image_annotation_element = std::make_shared<MetadataElement>(AbstractMetadata::IMAGE_ANNOTATION);
     product_element->AddElement(image_annotation_element);
     EXPECT_THROW(GetCalibrationInfoList(metadata, selected_polarisations, calibration_bands), std::runtime_error);
 
-    const auto image_information_element = std::make_shared<MetadataElement>(MetaDataNodeNames::IMAGE_INFORMATION);
+    const auto image_information_element = std::make_shared<MetadataElement>(AbstractMetadata::IMAGE_INFORMATION);
     image_annotation_element->AddElement(image_information_element);
     EXPECT_THROW(GetCalibrationInfoList(metadata, selected_polarisations, calibration_bands), std::invalid_argument);
 
-    image_information_element->SetAttributeInt(MetaDataNodeNames::NUMBER_OF_LINES,
+    image_information_element->SetAttributeInt(AbstractMetadata::NUMBER_OF_LINES,
                                                calibrationdata::FIRST_CALIBRATION_NUMBER_OF_LINES);
     EXPECT_THROW(GetCalibrationInfoList(metadata, selected_polarisations, calibration_bands), std::runtime_error);
 
     const auto calibration_vector_list_element =
-        std::make_shared<MetadataElement>(MetaDataNodeNames::CALIBRATION_VECTOR_LIST);
+        std::make_shared<MetadataElement>(AbstractMetadata::CALIBRATION_VECTOR_LIST);
     calibration_element->AddElement(calibration_vector_list_element);
     EXPECT_THROW(GetCalibrationInfoList(metadata, selected_polarisations, calibration_bands), std::invalid_argument);
 
-    calibration_vector_list_element->SetAttributeInt(MetaDataNodeNames::COUNT,
+    calibration_vector_list_element->SetAttributeInt(AbstractMetadata::COUNT,
                                                      calibrationdata::FIRST_CALIBRATION_VECTOR_COUNT);
     EXPECT_THROW(GetCalibrationInfoList(metadata, selected_polarisations, calibration_bands), std::runtime_error);
 
-    const auto vector_element = std::make_shared<MetadataElement>(MetaDataNodeNames::CALIBRATION_VECTOR);
+    const auto vector_element = std::make_shared<MetadataElement>(AbstractMetadata::CALIBRATION_VECTOR);
     calibration_vector_list_element->AddElement(vector_element);
-    vector_element->SetAttributeString(MetaDataNodeNames::AZIMUTH_TIME,
+    vector_element->SetAttributeString(AbstractMetadata::AZIMUTH_TIME,
                                        calibrationdata::FIRST_CALIBRATION_FIRST_VECTOR_AZIMUTH_TIME);
     EXPECT_THROW(GetCalibrationInfoList(metadata, selected_polarisations, calibration_bands), std::invalid_argument);
 
-    vector_element->SetAttributeInt(MetaDataNodeNames::LINE, calibrationdata::FIRST_CALIBRATION_FIRST_VECTOR_LINE);
+    vector_element->SetAttributeInt(AbstractMetadata::LINE, calibrationdata::FIRST_CALIBRATION_FIRST_VECTOR_LINE);
     EXPECT_THROW(GetCalibrationInfoList(metadata, selected_polarisations, calibration_bands), std::runtime_error);
 
-    const auto pixel_element = std::make_shared<MetadataElement>(MetaDataNodeNames::PIXEL);
+    const auto pixel_element = std::make_shared<MetadataElement>(AbstractMetadata::PIXEL);
     vector_element->AddElement(pixel_element);
     EXPECT_THROW(GetCalibrationInfoList(metadata, selected_polarisations, calibration_bands), std::invalid_argument);
 
-    pixel_element->SetAttributeString(MetaDataNodeNames::PIXEL,
+    pixel_element->SetAttributeString(AbstractMetadata::PIXEL,
                                       calibrationdata::FIRST_CALIBRATION_FIRST_VECTOR_PIXEL_STRING);
     EXPECT_THROW(GetCalibrationInfoList(metadata, selected_polarisations, calibration_bands), std::invalid_argument);
 
-    pixel_element->SetAttributeInt(MetaDataNodeNames::COUNT,
+    pixel_element->SetAttributeInt(AbstractMetadata::COUNT,
                                    calibrationdata::FIRST_CALIBRATION_FIRST_VECTOR_PIXEL_COUNT);
     EXPECT_THROW(GetCalibrationInfoList(metadata, selected_polarisations, calibration_bands), std::runtime_error);
 
-    const auto sigma_element = std::make_shared<MetadataElement>(MetaDataNodeNames::SIGMA_NOUGHT);
+    const auto sigma_element = std::make_shared<MetadataElement>(AbstractMetadata::SIGMA_NOUGHT);
     vector_element->AddElement(sigma_element);
     EXPECT_THROW(GetCalibrationInfoList(metadata, selected_polarisations, calibration_bands), std::invalid_argument);
-    sigma_element->SetAttributeString(MetaDataNodeNames::SIGMA_NOUGHT,
+    sigma_element->SetAttributeString(AbstractMetadata::SIGMA_NOUGHT,
                                       calibrationdata::FIRST_CALIBRATION_FIRST_VECTOR_SIGMA_STRING);
 
     EXPECT_THROW(GetCalibrationInfoList(metadata, selected_polarisations, calibration_bands), std::runtime_error);
-    const auto second_vector = original_product_metadata_->GetElement(MetaDataNodeNames::CALIBRATION_ROOT)
+    const auto second_vector = original_product_metadata_->GetElement(AbstractMetadata::CALIBRATION_ROOT)
                                    ->GetElement(calibrationdata::FIRST_CALIBRATION_SET_ITEM_NAME)
-                                   ->GetElement(MetaDataNodeNames::CALIBRATION)
-                                   ->GetElement(MetaDataNodeNames::CALIBRATION_VECTOR_LIST)
+                                   ->GetElement(AbstractMetadata::CALIBRATION)
+                                   ->GetElement(AbstractMetadata::CALIBRATION_VECTOR_LIST)
                                    ->GetElements()
                                    .at(1);
     calibration_vector_list_element->AddElement(second_vector);
@@ -529,7 +529,7 @@ TEST(Sentinel1CalibrateIntegrationTest, ReadDimTest) {
                                                           calibrationdata::SECOND_CALIBRATION_INFO};
 
     PugixmlMetaDataReader xml_reader{calibrationdata::TEST_DIM_FILE};
-    const auto original_product_metadata = xml_reader.Read(MetaDataNodeNames::ORIGINAL_PRODUCT_METADATA);
+    const auto original_product_metadata = xml_reader.Read(AbstractMetadata::ORIGINAL_PRODUCT_METADATA);
 
     const std::set<std::string_view> selected_polarisations{"VV", "VH"};
 

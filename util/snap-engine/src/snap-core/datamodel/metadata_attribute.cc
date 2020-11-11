@@ -1,4 +1,6 @@
-#include "metadata_attribute.h"
+#include "snap-core/datamodel/metadata_attribute.h"
+
+#include <memory>
 
 #include "product_data.h"
 

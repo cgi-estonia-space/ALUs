@@ -21,7 +21,7 @@ double PolyUtils::PolyVal1D(double x, std::vector<double> coeffs) {
 std::vector<double> PolyUtils::Solve33(std::vector<std::vector<double>> a, std::vector<double> rhs) {
     std::vector<double> result(3);
 
-    if (a[0].size() != 3 || a.size() != 3) {
+    if (a.at(0).size() != 3 || a.size() != 3) {
         throw std::invalid_argument("Solve33: input: size of a not 33.");
     }
     if (rhs.size() != 3) {

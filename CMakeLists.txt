@@ -5,13 +5,6 @@ project(aluserer
         DESCRIPTION "Geospatial algorithms on steroids."
         )
 
-# Project wide compilation directives.
-# For specific ones make yourself acquainted with different CMake files of each algorithm/entity.
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_CXX_FLAGS "-Wall -Werror -Wextra -pedantic")
-
 set(CMAKE_CUDA_STANDARD 14)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
@@ -53,6 +46,16 @@ set(ALUS_UNIT_TEST_BINARY_OUTPUT_DIR ${PROJECT_BINARY_DIR}/unit-test)
 
 option(ENABLE_UNIT_TESTS "Enable unit tests" ON)
 option(ENABLE_INTEGRATION_TESTS "Enable integration tests" ON)
+
+#external library as git submodule with separate CMakeLists.txt project
+add_subdirectory(external/zipper)
+
+# Project wide compilation directives.
+# For specific ones make yourself acquainted with different CMake files of each algorithm/entity.
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_CXX_FLAGS "-Wall -Werror -Wextra -pedantic")
 
 # External libraries
 add_subdirectory(external/pugixml)

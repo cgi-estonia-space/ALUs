@@ -8,8 +8,8 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include "abstract_metadata.h"
 #include "general_constants.h"
-#include "meta_data_node_names.h"
 #include "product_data_utc.h"
 
 namespace alus {
@@ -166,9 +166,9 @@ void Sentinel1Utils::ReadPlaceHolderFiles() {
     geo_location_reader.close();
 }
 
-void Sentinel1Utils::SetPlaceHolderFiles(std::string_view orbit_state_vectors_file, std::string_view dc_estimate_list_file,
-                                         std::string_view azimuth_list_file, std::string_view burst_line_time_file,
-                                         std::string_view geo_location_file) {
+void Sentinel1Utils::SetPlaceHolderFiles(std::string_view orbit_state_vectors_file,
+                                         std::string_view dc_estimate_list_file, std::string_view azimuth_list_file,
+                                         std::string_view burst_line_time_file, std::string_view geo_location_file) {
     orbit_state_vectors_file_ = orbit_state_vectors_file;
     dc_estimate_list_file_ = dc_estimate_list_file;
     azimuth_list_file_ = azimuth_list_file;
@@ -197,10 +197,9 @@ double* Sentinel1Utils::ComputeDerampDemodPhase(int subswath_index, int s_burst_
         for (x = x0; x < x_max; x++) {
             xx = x - x0;
             kt = subswath_.at(s).doppler_rate_[s_burst_index][x];
-            deramp = -alus::snapengine::constants::PI * kt *
-                     pow(ta - subswath_.at(s).reference_time_[s_burst_index][x], 2);
-            demod =
-                -alus::snapengine::constants::TWO_PI * subswath_.at(s).doppler_centroid_[s_burst_index][x] * ta;
+            deramp =
+                -alus::snapengine::constants::PI * kt * pow(ta - subswath_.at(s).reference_time_[s_burst_index][x], 2);
+            demod = -alus::snapengine::constants::TWO_PI * subswath_.at(s).doppler_centroid_[s_burst_index][x] * ta;
             result[yy * w + xx] = deramp + demod;
         }
     }
@@ -264,9 +263,8 @@ void Sentinel1Utils::ComputeDopplerRate() {
 
         for (int b = 0; b < subswath_.at(s).num_of_bursts_; b++) {
             for (int x = 0; x < subswath_.at(s).samples_per_burst_; x++) {
-                subswath_.at(s).doppler_rate_[b][x] =
-                    subswath_.at(s).range_depend_doppler_rate_[b][x] * krot /
-                    (subswath_.at(s).range_depend_doppler_rate_[b][x] - krot);
+                subswath_.at(s).doppler_rate_[b][x] = subswath_.at(s).range_depend_doppler_rate_[b][x] * krot /
+                                                      (subswath_.at(s).range_depend_doppler_rate_[b][x] - krot);
             }
         }
     }
@@ -449,14 +447,12 @@ void Sentinel1Utils::ComputeReferenceTime() {
         tmp1 = subswath_.at(s).lines_per_burst_ * subswath_.at(s).azimuth_time_interval_ / 2.0;
 
         for (int b = 0; b < subswath_.at(s).num_of_bursts_; b++) {
-            tmp2 = tmp1 +
-                   subswath_.at(s).doppler_centroid_[b][subswath_.at(s).first_valid_pixel_] /
-                       subswath_.at(s).range_depend_doppler_rate_[b][subswath_.at(s).first_valid_pixel_];
+            tmp2 = tmp1 + subswath_.at(s).doppler_centroid_[b][subswath_.at(s).first_valid_pixel_] /
+                              subswath_.at(s).range_depend_doppler_rate_[b][subswath_.at(s).first_valid_pixel_];
 
             for (int x = 0; x < subswath_.at(s).samples_per_burst_; x++) {
                 subswath_.at(s).reference_time_[b][x] =
-                    tmp2 - subswath_.at(s).doppler_centroid_[b][x] /
-                               subswath_.at(s).range_depend_doppler_rate_[b][x];
+                    tmp2 - subswath_.at(s).doppler_centroid_[b][x] / subswath_.at(s).range_depend_doppler_rate_[b][x];
             }
         }
     }
@@ -572,7 +568,7 @@ void Sentinel1Utils::DeviceFree() {
 
 std::shared_ptr<snapengine::Utc> Sentinel1Utils::GetTime(std::shared_ptr<snapengine::MetadataElement> element,
                                                          std::string_view tag) {
-    auto start = element->GetAttributeString(tag, snapengine::MetaDataNodeNames::NO_METADATA_STRING);
+    auto start = element->GetAttributeString(tag, snapengine::AbstractMetadata::NO_METADATA_STRING);
 
     return snapengine::Utc::Parse(start, "%Y-%m-%dT%H:%M:%S");
 }
@@ -604,10 +600,10 @@ std::vector<CalibrationVector> Sentinel1Utils::GetCalibrationVectors(
         return element;
     };
 
-    std::map<std::string_view, bool> selected_bands{{snapengine::MetaDataNodeNames::SIGMA_NOUGHT, output_sigma_band},
-                                                    {snapengine::MetaDataNodeNames::BETA_NOUGHT, output_beta_band},
-                                                    {snapengine::MetaDataNodeNames::GAMMA, output_gamma_band},
-                                                    {snapengine::MetaDataNodeNames::DN, output_dn_band}};
+    std::map<std::string_view, bool> selected_bands{{snapengine::AbstractMetadata::SIGMA_NOUGHT, output_sigma_band},
+                                                    {snapengine::AbstractMetadata::BETA_NOUGHT, output_beta_band},
+                                                    {snapengine::AbstractMetadata::GAMMA, output_gamma_band},
+                                                    {snapengine::AbstractMetadata::DN, output_dn_band}};
 
     const auto calibration_vector_elements = calibration_vector_list_element->GetElements();
 
@@ -615,17 +611,17 @@ std::vector<CalibrationVector> Sentinel1Utils::GetCalibrationVectors(
     calibration_vectors.reserve(calibration_vector_elements.size());
 
     for (auto&& calibration_vector_element : calibration_vector_elements) {
-        std::map<std::string_view, std::vector<float>> unit_data{{snapengine::MetaDataNodeNames::SIGMA_NOUGHT, {}},
-                                                                 {snapengine::MetaDataNodeNames::BETA_NOUGHT, {}},
-                                                                 {snapengine::MetaDataNodeNames::GAMMA, {}},
-                                                                 {snapengine::MetaDataNodeNames::DN, {}}};
+        std::map<std::string_view, std::vector<float>> unit_data{{snapengine::AbstractMetadata::SIGMA_NOUGHT, {}},
+                                                                 {snapengine::AbstractMetadata::BETA_NOUGHT, {}},
+                                                                 {snapengine::AbstractMetadata::GAMMA, {}},
+                                                                 {snapengine::AbstractMetadata::DN, {}}};
 
-        const auto time = GetTime(calibration_vector_element, snapengine::MetaDataNodeNames::AZIMUTH_TIME);
-        const auto line = calibration_vector_element->GetAttributeInt(snapengine::MetaDataNodeNames::LINE);
+        const auto time = GetTime(calibration_vector_element, snapengine::AbstractMetadata::AZIMUTH_TIME);
+        const auto line = calibration_vector_element->GetAttributeInt(snapengine::AbstractMetadata::LINE);
 
-        const auto pixel_element = get_element(calibration_vector_element, snapengine::MetaDataNodeNames::PIXEL);
-        const auto pixel_string = pixel_element->GetAttributeString(snapengine::MetaDataNodeNames::PIXEL);
-        const auto count = pixel_element->GetAttributeInt(snapengine::MetaDataNodeNames::COUNT);
+        const auto pixel_element = get_element(calibration_vector_element, snapengine::AbstractMetadata::PIXEL);
+        const auto pixel_string = pixel_element->GetAttributeString(snapengine::AbstractMetadata::PIXEL);
+        const auto count = pixel_element->GetAttributeInt(snapengine::AbstractMetadata::COUNT);
 
         std::vector<int> pixels;
         pixels.reserve(count);
@@ -645,10 +641,10 @@ std::vector<CalibrationVector> Sentinel1Utils::GetCalibrationVectors(
             }
         }
 
-        calibration_vectors.push_back({time->GetMjd(), line, pixels, unit_data.at(snapengine::MetaDataNodeNames::SIGMA_NOUGHT),
-                                       unit_data.at(snapengine::MetaDataNodeNames::BETA_NOUGHT),
-                                       unit_data.at(snapengine::MetaDataNodeNames::GAMMA), unit_data.at(snapengine::MetaDataNodeNames::DN),
-                                       static_cast<size_t>(count)});
+        calibration_vectors.push_back(
+            {time->GetMjd(), line, pixels, unit_data.at(snapengine::AbstractMetadata::SIGMA_NOUGHT),
+             unit_data.at(snapengine::AbstractMetadata::BETA_NOUGHT), unit_data.at(snapengine::AbstractMetadata::GAMMA),
+             unit_data.at(snapengine::AbstractMetadata::DN), static_cast<size_t>(count)});
     }
 
     return calibration_vectors;

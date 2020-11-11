@@ -1,8 +1,9 @@
 #pragma once
 
-#include <memory>
 #include <string_view>
+#include <memory>
 #include <vector>
+#include <optional>
 
 #include <boost/lexical_cast.hpp>
 

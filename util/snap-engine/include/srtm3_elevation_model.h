@@ -18,6 +18,7 @@
 
 #include "CudaFriendlyObject.h"
 #include "dataset.h"
+#include "shapes.h"
 #include "earth_gravitational_model96.h"
 #include "pointer_holders.h"
 #include "srtm3_format_computation.h"

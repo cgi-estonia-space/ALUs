@@ -18,8 +18,10 @@
  */
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <optional>
+#include <regex>
 #include <string>
 #include <string_view>
 
@@ -33,6 +35,8 @@ namespace snapengine {
  * java version @author Norman Fomferra
  */
 class Product;
+class IProductReader;
+class ProductSubsetDef;
 class ProductNode : public std::enable_shared_from_this<ProductNode> {
 private:
     std::string name_{};
@@ -63,6 +67,17 @@ protected:
     template <typename T>
     std::shared_ptr<T> SharedFromBase();
 
+    void SetNodeName(std::string_view trimmed_name, bool silent);
+
+    /**
+     * Returns whether or not this node is part of the given subset.
+     *
+     * @param subsetDef The subset definition.
+     * @return <code>true</code> if the subset is not <code>null</code> and it contains a node name equal to this node's
+     * name.
+     */
+    bool IsPartOfSubset(const std::shared_ptr<ProductSubsetDef>& subset_def);
+
 public:
     static constexpr std::string_view PROPERTY_NAME_NAME{"name"};
     static constexpr std::string_view PROPERTY_NAME_DESCRIPTION{"description"};
@@ -85,7 +100,7 @@ public:
     /**
      * @return The owner node of this node.
      */
-    [[nodiscard]] std::shared_ptr<ProductNode> GetOwner() const { return owner_; }
+    [[nodiscard]] std::shared_ptr<ProductNode> GetOwner() { return owner_; }
 
     /**
      * Sets the the owner node of this node.
@@ -94,6 +109,28 @@ public:
      * @param owner the new owner
      */
     void SetOwner(const std::shared_ptr<ProductNode>& owner);
+
+    /**
+     * Returns this node's display name. The display name is the product reference string with the node name appended.
+     * <p>Example: The string <code>"[2] <i>node-name</i>"</code> means node <code><i>node-name</i></code> of the
+     * product with the reference number <code>2</code>.
+     *
+     * @return this node's name with a product prefix <br>or this node's name only if this node's product prefix is
+     * <code>null</code>
+     *
+     * @see #getProductRefString
+     */
+    virtual std::string GetDisplayName();
+
+    /**
+     * Gets the product reference string. The product reference string is the product reference number enclosed in
+     * square brackets. <p>Example: The string <code>"[2]"</code> stands for a product with the reference number
+     * <code>2</code>.
+     *
+     * @return the product reference string. <br>or <code>null</code> if this node has no product <br>or
+     * <code>null</code> if its product reference number was inactive
+     */
+    std::optional<std::string> GetProductRefString();
 
     /**
      * Sets this node's modified flag.
@@ -105,6 +142,13 @@ public:
      * @see Product#fireNodeChanged
      */
     virtual void SetModified(bool modified);
+
+    /**
+     * Sets this product's name.
+     *
+     * @param name The name.
+     */
+    void SetName(std::string_view name);
 
     /**
      * Returns whether or not this node is modified.
@@ -122,18 +166,48 @@ public:
     std::shared_ptr<Product> GetProduct();
 
     /**
+     * Returns the product reader for the product to which this node belongs to.
+     *
+     * @return the product reader, or <code>null</code> if no such exists
+     */
+    virtual std::shared_ptr<IProductReader> GetProductReader();
+
+    /**
      * Releases all of the resources used by this object instance and all of its owned children. Its primary use is to
      * allow the garbage collector to perform a vanilla job.
      * <p>This method should be called only if it is for sure that this object instance will never be used again. The
      * results of referencing an instance of this class after a call to <code>dispose()</code> are undefined.
      * <p>Overrides of this method should always call <code>super.dispose();</code> after disposing this instance.
      */
-    virtual void Dispose() {
-        owner_ = nullptr;
-        product_ = nullptr;
-        description_ = nullptr;
-        name_ = nullptr;
-    }
+    virtual void Dispose();
+
+    //////////////////////////////////////////////////////////////////////////
+    // General utility methods
+
+    /**
+     * Tests whether the given name is valid name for a node.
+     * A valid node name must not start with a dot. Also a valid node name must not contain
+     * any of the character  <code>\/:*?"&lt;&gt;|</code>
+     *
+     * @param name the name to test
+     * @return <code>true</code> if the name is a valid node identifier, <code>false</code> otherwise
+     */
+    static bool IsValidNodeName(std::string_view name);
+
+    /**
+     * Gets an estimated, raw storage size in bytes of this product node.
+     *
+     * @return the size in bytes.
+     */
+    virtual uint64_t GetRawStorageSize() { return GetRawStorageSize(nullptr); }
+
+    /**
+     * Gets an estimated, raw storage size in bytes of this product node.
+     *
+     * @param subsetDef if not <code>null</code> the subset may limit the size returned
+     * @return the size in bytes.
+     */
+    virtual uint64_t GetRawStorageSize(const std::shared_ptr<ProductSubsetDef>& subset_def) = 0;
 };
 
 ////////////////////////////////////////////////////////////////////////

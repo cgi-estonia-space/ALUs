@@ -1,9 +1,11 @@
-#include "metadata_element.h"
+#include "snap-core/datamodel/metadata_element.h"
 
 #include <stdexcept>
 
 #include "guardian.h"
 #include "product_node_group.h"
+#include "snap-core/dataio/product_subset_def.h"
+#include "snap-core/datamodel/metadata_attribute.h"
 
 namespace alus {
 namespace snapengine {
@@ -45,7 +47,7 @@ void MetadataElement::AddAttribute(std::shared_ptr<MetadataAttribute> attribute)
     }
     if (attributes_ == nullptr) {
         attributes_ = std::make_shared<ProductNodeGroup<std::shared_ptr<MetadataAttribute>>>(
-            SharedFromBase<MetadataAttribute>(), "attributes", true);
+            SharedFromBase<MetadataElement>(), "attributes", true);
     }
     attributes_->Add(attribute);
 }
@@ -260,9 +262,10 @@ std::string MetadataElement::GetAttributeNotFoundMessage(std::string_view name) 
     return "Metadata attribute '" + std::string{name} + "' not found";
 }
 
-std::shared_ptr<MetadataElement> MetadataElement::GetParentElement([[maybe_unused]]const ProductNode& node) {
+std::shared_ptr<MetadataElement> MetadataElement::GetParentElement([[maybe_unused]] const ProductNode& node) {
     // todo:provide implementation and remove "maybe_unused"
-    throw std::runtime_error("called not yet implemented method MetadataElement::GetParentElement(const ProductNode& node)");
+    throw std::runtime_error(
+        "called not yet implemented method MetadataElement::GetParentElement(const ProductNode& node)");
 }
 
 std::shared_ptr<MetadataElement> MetadataElement::GetElement(std::string_view name) {
@@ -307,6 +310,36 @@ std::shared_ptr<MetadataAttribute> MetadataElement::GetAttributeAt(int index) co
         throw std::runtime_error("index out of bounds exception");
     }
     return attributes_->Get(index);
+}
+uint64_t MetadataElement::GetRawStorageSize(const std::shared_ptr<ProductSubsetDef>& subset_def) {
+    if (subset_def != nullptr && !subset_def->ContainsNodeName(GetName())) {
+        return 0L;
+    }
+    uint64_t size = 0;
+    for (int i = 0; i < GetNumElements(); i++) {
+        size += GetElementAt(i)->GetRawStorageSize(subset_def);
+    }
+    for (int i = 0; i < GetNumAttributes(); i++) {
+        size += GetAttributeAt(i)->GetRawStorageSize(subset_def);
+    }
+    return size;
+}
+std::shared_ptr<MetadataElement> MetadataElement::GetElementAt(int index) {
+    if (elements_ == nullptr) {
+        throw std::runtime_error("no elements available at index: " + std::to_string(index));
+    }
+    return elements_->Get(index);
+}
+void MetadataElement::Dispose() {
+    if (attributes_) {
+        attributes_->Dispose();
+        attributes_ = nullptr;
+    }
+    if (elements_) {
+        elements_->Dispose();
+        elements_ = nullptr;
+    }
+    ProductNode::Dispose();
 }
 
 }  // namespace snapengine

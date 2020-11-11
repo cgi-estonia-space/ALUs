@@ -18,12 +18,12 @@
  */
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
 
-#include "ceres_assert.h"
 #include "product_node.h"
 #include "product_node_list.h"
 
@@ -41,13 +41,13 @@ private:
     std::shared_ptr<ProductNodeList<T>> node_list_;
     bool taking_over_node_ownership_;
 
+public:
     /**
      * Constructs a node group with no owner and which will not take ownership of added children.
      *
      * @param name The group name.
      * @since BEAM 4.8
      */
-public:
     explicit ProductNodeGroup(std::string_view name);
 
     /**
@@ -57,7 +57,7 @@ public:
      * @param name                    The group name.
      * @param takingOverNodeOwnership If {@code true}, child nodes will have this group as owner after adding.
      */
-    ProductNodeGroup(std::shared_ptr<ProductNode> owner, std::string_view name, bool taking_over_node_ownership);
+    ProductNodeGroup(const std::shared_ptr<ProductNode>& owner, std::string_view name, bool taking_over_node_ownership);
 
     /**
      * Adds the given node to this group.
@@ -78,14 +78,20 @@ public:
      * @param index The node index.
      * @return The product node at the given index.
      */
-    T Get(int index) { return node_list_->GetAt(index); }
+    T Get(int index);
 
     /**
      * @param name the name
      * @return the product node with the given name.
      */
-    T Get(std::string_view name) { return node_list_->Get(name); }
+    T Get(std::string_view name);
 
+    /**
+     * Returns an array of all products currently managed.
+     *
+     * @return an array containing the products, never <code>null</code>, but the array can have zero length
+     */
+    std::vector<T> ToArray() { return node_list_->ToArray(); };
     /**
      * @param array the array into which the elements of the list are to be stored, if it is big enough; otherwise, a
      *              new array of the same runtime type is allocated for this purpose.
@@ -124,60 +130,15 @@ public:
     int IndexOf(T element);
 
     int IndexOf(std::string_view name);
+
+    uint64_t GetRawStorageSize(const std::shared_ptr<ProductSubsetDef>& subset_def) override;
+
+    void ClearRemovedList();
+
+    void SetModified(bool modified) override;
+
+    void Dispose() override;
 };
-
-////////////////////////////////////////////////////////////////////////
-/////TEMPLATED IMPLEMENTATION NEEDS TO BE IN THE SAME FILE
-////////////////////////////////////////////////////////////////////////
-
-template <typename T>
-ProductNodeGroup<T>::ProductNodeGroup(std::shared_ptr<ProductNode> owner, std::string_view name,
-                                      bool taking_over_node_ownership)
-    : ProductNode(name, "") {
-    node_list_ = std::make_shared<ProductNodeList<T>>();
-    taking_over_node_ownership_ = taking_over_node_ownership;
-    SetOwner(owner);
-}
-
-template <typename T>
-ProductNodeGroup<T>::ProductNodeGroup(std::string_view name) : ProductNodeGroup(nullptr, name, false) {}
-
-template <typename T>
-bool ProductNodeGroup<T>::Add(T node) {
-    Assert::NotNull(node, "node");
-    bool added = node_list_->Add(node);
-    return added;
-}
-
-template <typename T>
-void ProductNodeGroup<T>::Add(int index, T node) {
-    Assert::NotNull(node, "node");
-    node_list_->Add(index, node);
-}
-
-template <typename T>
-bool ProductNodeGroup<T>::Remove(T node) {
-    Assert::NotNull(node, "node");
-    bool removed = node_list_->Remove(node);
-    return removed;
-}
-template <typename T>
-std::vector<std::string> ProductNodeGroup<T>::GetNodeNames() {
-    return node_list_->GetNames();
-}
-template <typename T>
-bool ProductNodeGroup<T>::Contains(std::string_view name) {
-    return node_list_->Contains(name);
-}
-template <typename T>
-int ProductNodeGroup<T>::IndexOf(T element) {
-    return node_list_->IndexOf(element);
-}
-
-template <typename T>
-int ProductNodeGroup<T>::IndexOf(std::string_view name) {
-    return node_list_->IndexOf(name);
-}
 
 }  // namespace snapengine
 }  // namespace alus

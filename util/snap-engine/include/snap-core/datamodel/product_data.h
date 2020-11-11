@@ -18,6 +18,7 @@
 #pragma once
 
 #include <any>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -169,7 +170,7 @@ public:
      *
      * @throws IllegalArgumentException if the type is not supported.
      */
-    static int GetElemSize(int type);
+    static uint64_t GetElemSize(int type);
 
     /**
      * Factory method which creates a value instance of the given type and with exactly one element.
@@ -197,6 +198,7 @@ public:
 
     static std::shared_ptr<ProductData> CreateInstance(std::vector<float> elems);
 
+    static std::shared_ptr<ProductData> CreateInstance(std::vector<int> elems);
     /**
      * Returns a textual representation of the given data type.
      *

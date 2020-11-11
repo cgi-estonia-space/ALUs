@@ -174,3 +174,33 @@ add_custom_command(TARGET integration-test-apply-orbit-file-op
         COMMAND ln -s ${CMAKE_CURRENT_LIST_DIR}/goods/apply_orbit_file_op
         ${CMAKE_BINARY_DIR}/test_integration/goods/apply_orbit_file_op
         )
+
+#--------------------------sentinel1 product reader integration test-----------------------
+list(APPEND TEST_SOURCES_SENTINEL1_PRODUCT_READER
+        src/test_sentinel1_product_reader.cc
+        )
+add_executable(integration-sentinel1_product_reader ${TEST_SOURCES_SENTINEL1_PRODUCT_READER})
+
+target_include_directories(integration-sentinel1_product_reader PUBLIC ${TEST_INCLUDE})
+
+#todo: probably not everything used what is declared, check these over
+target_link_libraries(integration-sentinel1_product_reader
+        PRIVATE
+        Boost::filesystem
+        Boost::iostreams
+        gmock_main
+        cuda_util-static
+        gdal-util-static
+        sentinel1-util-static
+        snap-engine-static
+        crypto
+        staticZipper
+        )
+
+add_custom_command(TARGET integration-sentinel1_product_reader
+        POST_BUILD
+        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/test_integration/goods
+        COMMAND rm -rf ${CMAKE_BINARY_DIR}/test_integration/goods/sentinel1_product_reader
+        COMMAND cp -al ${CMAKE_CURRENT_LIST_DIR}/goods/sentinel1_product_reader ${CMAKE_BINARY_DIR}/test_integration/goods/sentinel1_product_reader
+        COMMAND cd ${CMAKE_BINARY_DIR}/test_integration/goods/sentinel1_product_reader && unzip -qn ${CMAKE_BINARY_DIR}/test_integration/goods/sentinel1_product_reader/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563.zip
+        )

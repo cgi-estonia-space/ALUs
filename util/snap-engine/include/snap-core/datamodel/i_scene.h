@@ -1,6 +1,7 @@
 /**
- * This file is a filtered duplicate of a SNAP's org.esa.snap.core.util.Guardian.java ported
- * for native code. Copied from a snap-engine's(https://github.com/senbox-org/snap-engine) repository originally stated
+ * This file is a filtered duplicate of a SNAP's org.esa.snap.core.datamodel.Scene.java
+ * ported for native code.
+ * Copied from a snap-engine's(https://github.com/senbox-org/snap-engine) repository originally stated
  * to be implemented by "Copyright (C) 2010 Brockmann Consult GmbH (info@brockmann-consult.de)"
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -19,23 +20,29 @@
 
 #include <memory>
 
-#include <boost/date_time/posix_time/posix_time.hpp>
-
-#include "band.h"
-#include "product.h"
-#include "product_data.h"
-
 namespace alus {
 namespace snapengine {
-class Guardian {
+
+class Product;
+class ProductSubsetDef;
+class IGeoCoding;
+/**
+ * Represents a geo-coded scene. This interface is not ment to be implemented by clients.
+ */
+class IScene {
 public:
-    static void AssertNotNullOrEmpty(std::string_view expr_text, std::string_view text);
-    template <typename T>
-    static void AssertNotNull(std::string_view expr_text, T expr_value) {
-        if (expr_value == nullptr) {
-            throw std::invalid_argument(std::string(expr_text) + " argument is nullptr");
-        }
-    }
+    virtual void SetGeoCoding(const std::shared_ptr<IGeoCoding>& geo_coding) = 0;
+
+    virtual std::shared_ptr<IGeoCoding> GetGeoCoding() = 0;
+
+    virtual bool TransferGeoCodingTo(const std::shared_ptr<IScene>& dest_scene,
+                                     const std::shared_ptr<ProductSubsetDef>& subset_def) = 0;
+
+    virtual int GetRasterWidth() = 0;
+
+    virtual int GetRasterHeight() = 0;
+
+    virtual std::shared_ptr<Product> GetProduct() = 0;
 };
 
 }  // namespace snapengine

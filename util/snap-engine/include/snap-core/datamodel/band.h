@@ -21,12 +21,20 @@
 #include <memory>
 #include <string_view>
 
-#include "abstract_band.h"
-#include "flag_coding.h"
-#include "index_coding.h"
+#include "snap-core/datamodel/abstract_band.h"
 
 namespace alus {
+
+namespace ceres {
+// pre-declare
+class IProgressMonitor;
+}  // namespace ceres
 namespace snapengine {
+
+// pre-declare
+class IndexCoding;
+class FlagCoding;
+class SampleCoding;
 
 /**
  * A band contains the data for geophysical parameter in remote sensing data products. Bands are two-dimensional images
@@ -48,7 +56,7 @@ namespace snapengine {
  * original java version author Norman Fomferra
  * @see ProductData
  */
-class Band : virtual public AbstractBand {
+class Band : public AbstractBand {
 private:
     int spectral_band_index_;
     float spectral_wavelength_;
@@ -176,6 +184,31 @@ public:
      * @return a non-null value if this band is a flag dataset, <code>null</code> otherwise
      */
     std::shared_ptr<IndexCoding> GetIndexCoding();
+
+    /**
+     * Reads raster data from its associated data source into the given data buffer.
+     *
+     * @param offsetX    the X-offset in the band's pixel co-ordinates where reading starts
+     * @param offsetY    the Y-offset in the band's pixel co-ordinates where reading starts
+     * @param width      the width of the raster data buffer
+     * @param height     the height of the raster data buffer
+     * @param rasterData a raster data buffer receiving the pixels to be read
+     * @param pm         a monitor to inform the user about progress
+     * @throws java.io.IOException      if an I/O error occurs
+     * @throws IllegalArgumentException if the raster is null
+     * @throws IllegalStateException    if this product raster was not added to a product so far, or if the product to
+     * which this product raster belongs to, has no associated product reader
+     * @see ProductReader#readBandRasterData(Band, int, int, int, int, ProductData, com.bc.ceres.core.ProgressMonitor)
+     */
+    void ReadRasterData(int offset_x, int offset_y, int width, int height, std::shared_ptr<ProductData> raster_data,
+                        std::shared_ptr<ceres::IProgressMonitor> pm) override;
+
+    void ReadRasterDataFully(std::shared_ptr<ceres::IProgressMonitor> pm) override;
+
+    void WriteRasterData(int offset_x, int offset_y, int width, int height, std::shared_ptr<ProductData> raster_data,
+                         std::shared_ptr<ceres::IProgressMonitor> pm) override;
+
+    void WriteRasterDataFully(std::shared_ptr<ceres::IProgressMonitor> pm) override;
 };
 }  // namespace snapengine
 }  // namespace alus

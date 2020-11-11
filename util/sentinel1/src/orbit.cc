@@ -4,9 +4,9 @@
 
 #include "constants.h"
 #include "date_utils.h"
-#include "meta_data_node_names.h"
 #include "orbit_state_vector.h"
 #include "poly_utils.h"
+#include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
 
 namespace alus::s1tbx {
 const double Orbit::CRITERPOS = pow(10, -6);
@@ -63,7 +63,7 @@ Point Orbit::Xyz2T(Point point_on_ellips, double time_azimuth) {
     return Point(time_range, time_azimuth, 0.0);
 }
 
-Point Orbit::RowsColumns2Xyz(int rows, int columns, double az_time, double rg_time, Point &ellipsoid_position) {
+Point Orbit::RowsColumns2Xyz(int rows, int columns, double az_time, double rg_time, Point& ellipsoid_position) {
     return RowsColumnsHeightToXyz(rows, columns, 0, az_time, rg_time, ellipsoid_position);
 }
 
@@ -94,17 +94,17 @@ Point Orbit::GetXyzDot(double az_time) {
 }
 
 // eq1_Doppler
-double Orbit::Eq1Doppler(Point &sat_velocity, Point &point_on_ellips) { return sat_velocity.In(point_on_ellips); }
+double Orbit::Eq1Doppler(Point& sat_velocity, Point& point_on_ellips) { return sat_velocity.In(point_on_ellips); }
 
 // eq2_Range
-double Orbit::Eq2Range(Point &point_ellips_sat, double rg_time) {
+double Orbit::Eq2Range(Point& point_ellips_sat, double rg_time) {
     // SOL vs C
     return point_ellips_sat.In(point_ellips_sat) - pow(jlinda::LIGHT_SPEED * rg_time, 2);
 }
 
 // eq3_Ellipsoid
 
-double Orbit::Eq3Ellipsoid(const Point &point_on_ellips, double height) {
+double Orbit::Eq3Ellipsoid(const Point& point_on_ellips, double height) {
     return ((point_on_ellips.GetX() * point_on_ellips.GetX() + point_on_ellips.GetY() * point_on_ellips.GetY()) /
             pow(jlinda::ELL_A + height, 2)) +
            pow(point_on_ellips.GetZ() / (jlinda::ELL_B + height), 2) - 1.0;
@@ -112,8 +112,8 @@ double Orbit::Eq3Ellipsoid(const Point &point_on_ellips, double height) {
 
 // from jlinda: Orbit class//Point lph2xyz(final double line, final double pixel, final double height, final SLCImage
 // slcimage)
-Point Orbit::RowsColumnsHeightToXyz(
-    int rows, int columns, int height, double az_time, double rg_time, Point &ellipsoid_position) {
+Point Orbit::RowsColumnsHeightToXyz(int rows, int columns, int height, double az_time, double rg_time,
+                                    Point& ellipsoid_position) {
     (void)rows;
     (void)columns;
     Point satellite_position;
@@ -165,9 +165,9 @@ Point Orbit::RowsColumnsHeightToXyz(
     return Point(ellipsoid_position);
 }
 
-Orbit::Orbit(std::shared_ptr<snapengine::MetadataElement>element, int degree) {
+Orbit::Orbit(std::shared_ptr<snapengine::MetadataElement> element, int degree) {
     std::vector<snapengine::OrbitStateVector> orbit_state_vectors =
-        snapengine::MetaDataNodeNames::GetOrbitStateVectors(element);
+        snapengine::AbstractMetadata::GetOrbitStateVectors(element);
 
     num_state_vectors_ = orbit_state_vectors.size();
 

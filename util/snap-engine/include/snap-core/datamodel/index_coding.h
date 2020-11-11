@@ -35,7 +35,7 @@ class MetadataAttribute;
  * represent index values (e.g. types, classes, categories).
  * @since BEAM 4.2
  */
-class IndexCoding : public virtual SampleCoding {
+class IndexCoding : public SampleCoding {
 public:
     /**
      * Constructs a new index coding object with the given name.

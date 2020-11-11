@@ -3,6 +3,7 @@
 #include <stdexcept>
 
 #include "guardian.h"
+#include "snap-core/datamodel/metadata_attribute.h"
 
 namespace alus {
 namespace snapengine {

@@ -7,10 +7,10 @@
 #include "gdal_data_copy.h"
 #include "general_constants.h"
 #include "io/orbits/sentinel1/sentinel_p_o_d_orbit_file.h"
-#include "meta_data_node_names.h"
 #include "orbit_state_vector.h"
 #include "product_data_utc.h"
 #include "product_utils.h"
+#include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
 
 namespace alus {
 namespace s1tbx {
@@ -19,21 +19,19 @@ ApplyOrbitFileOp::ApplyOrbitFileOp(const std::shared_ptr<snapengine::Product>& s
     : source_product_(source_product) {}
 
 void ApplyOrbitFileOp::GetSourceMetadata() {
-    // original snap version creates Product when it is opened inside snap, it uses DimapProductHelpers and calls createProduct which
-    // calls addAnnotationDataset which attaches metadata to root element source_product_ already has everything set,
-    // snap version is absRoot = AbstractMetadata.getAbstractedMetadata(sourceProduct);  which uses a bit different
-    // logic
-    // copy is using root element which is metadata
-    // todo: check if source product already gets respective elements attached before (this logic is deviation from
-    // original snap logic)
+    // original snap version creates Product when it is opened inside snap, it uses DimapProductHelpers and calls
+    // createProduct which calls addAnnotationDataset which attaches metadata to root element source_product_ already
+    // has everything set, snap version is absRoot = AbstractMetadata.getAbstractedMetadata(sourceProduct);  which uses
+    // a bit different logic copy is using root element which is metadata todo: check if source product already gets
+    // respective elements attached before (this logic is deviation from original snap logic)
     source_product_->GetMetadataRoot()->AddElement(
-        source_product_->GetMetadataReader()->Read(alus::snapengine::MetaDataNodeNames::ABSTRACT_METADATA_ROOT));
+        source_product_->GetMetadataReader()->Read(alus::snapengine::AbstractMetadata::ABSTRACT_METADATA_ROOT));
     // get abstracted metadata from source product
-    abs_root_ = snapengine::MetaDataNodeNames::GetAbstractedMetadata(source_product_);
-    mission_ = abs_root_->GetAttributeString(snapengine::MetaDataNodeNames::MISSION);
+    abs_root_ = snapengine::AbstractMetadata::GetAbstractedMetadata(source_product_);
+    mission_ = abs_root_->GetAttributeString(snapengine::AbstractMetadata::MISSION);
     // todo:check these, took from metadata vs from product dimensions in java (if something is missing)
-    source_image_width_ = abs_root_->GetAttributeInt(snapengine::MetaDataNodeNames::NUM_SAMPLES_PER_LINE);
-    source_image_height_ = abs_root_->GetAttributeInt(snapengine::MetaDataNodeNames::NUM_OUTPUT_LINES);
+    source_image_width_ = abs_root_->GetAttributeInt(snapengine::AbstractMetadata::NUM_SAMPLES_PER_LINE);
+    source_image_height_ = abs_root_->GetAttributeInt(snapengine::AbstractMetadata::NUM_OUTPUT_LINES);
 }
 
 void ApplyOrbitFileOp::Initialize() {
@@ -117,12 +115,12 @@ void ApplyOrbitFileOp::UpdateOrbits() {
 }
 
 void ApplyOrbitFileOp::UpdateOrbitStateVectors() {
-    double first_line_utc = snapengine::MetaDataNodeNames::ParseUtc(
-                                abs_root_->GetAttributeString(snapengine::MetaDataNodeNames::FIRST_LINE_TIME))
+    double first_line_utc = snapengine::AbstractMetadata::ParseUtc(
+                                abs_root_->GetAttributeString(snapengine::AbstractMetadata::FIRST_LINE_TIME))
                                 ->GetMjd();  // in days
 
-    double last_line_utc = snapengine::MetaDataNodeNames::ParseUtc(
-                               abs_root_->GetAttributeString(snapengine::MetaDataNodeNames::LAST_LINE_TIME))
+    double last_line_utc = snapengine::AbstractMetadata::ParseUtc(
+                               abs_root_->GetAttributeString(snapengine::AbstractMetadata::LAST_LINE_TIME))
                                ->GetMjd();  // in days
 
     double delta = 1.0 / snapengine::constants::secondsInDay;  // time interval = 1s
@@ -147,8 +145,8 @@ void ApplyOrbitFileOp::UpdateOrbitStateVectors() {
                                          orbit_data->x_vel_, orbit_data->y_vel_, orbit_data->z_vel_);
     }
 
-    auto tgt_abs_root = snapengine::MetaDataNodeNames::GetAbstractedMetadata(target_product_);
-    snapengine::MetaDataNodeNames::SetOrbitStateVectors(tgt_abs_root, orbit_state_vectors);
+    auto tgt_abs_root = snapengine::AbstractMetadata::GetAbstractedMetadata(target_product_);
+    snapengine::AbstractMetadata::SetOrbitStateVectors(tgt_abs_root, orbit_state_vectors);
     // save orbit file name
     std::string orb_type = orbit_type_;
     std::size_t pos = orb_type.find('(');
@@ -156,11 +154,15 @@ void ApplyOrbitFileOp::UpdateOrbitStateVectors() {
         orb_type = orbit_type_.substr(0, pos);
     }
     auto orbit_file = orbit_provider_->GetOrbitFile();
-    tgt_abs_root->SetAttributeString(snapengine::MetaDataNodeNames::ORBIT_STATE_VECTOR_FILE,
+    tgt_abs_root->SetAttributeString(snapengine::AbstractMetadata::ORBIT_STATE_VECTOR_FILE,
                                      orb_type + " " + orbit_file.filename().string());
 }
 void ApplyOrbitFileOp::CreateTargetProduct() {
-    target_product_ = std::make_shared<snapengine::Product>(
+    //    todo: remove if static CreateProduct works like expected
+    //    target_product_ = std::make_shared<snapengine::Product>(
+    //        std::string(source_product_->GetName()) + std::string(PRODUCT_SUFFIX), source_product_->GetProductType(),
+    //        source_product_->GetSceneRasterWidth(), source_product_->GetSceneRasterHeight());
+    target_product_ = snapengine::Product::CreateProduct(
         std::string(source_product_->GetName()) + std::string(PRODUCT_SUFFIX), source_product_->GetProductType(),
         source_product_->GetSceneRasterWidth(), source_product_->GetSceneRasterHeight());
     // todo::workaround should probably hide similar functionality inside this function
@@ -171,7 +173,7 @@ void ApplyOrbitFileOp::CreateTargetProduct() {
         boost::filesystem::path::preferred_separator + target_product_->GetName() +
         boost::filesystem::path::preferred_separator + target_product_->GetName() + ".tif");
 
-    //todo: look this over when we decide on jai replacement
+    // todo: look this over when we decide on jai replacement
     /*
     for (std::shared_ptr<Band> src_band : source_product_->GetBands()) {
         if (src_band instanceof VirtualBand) {

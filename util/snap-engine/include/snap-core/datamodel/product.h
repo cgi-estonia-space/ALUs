@@ -1,15 +1,20 @@
 #pragma once
 
-#include <boost/filesystem.hpp>
+#include <cstdint>
+#include <memory>
+#include <string>
 #include <string_view>
+#include <vector>
 
-#include "../../../../../algs/apply-orbit-file-op/include/dimension.h"
+#include <boost/filesystem.hpp>
+
+// TEMPORARY// todo: move readers writers behind IProductReader/writer interface
 #include "../../../../../algs/coherence/include/i_data_tile_reader.h"
 #include "../../../../../algs/coherence/include/i_data_tile_writer.h"
-#include "band.h"
-//#include "mask.h"
-#include "product_node.h"
-#include "tie_point_grid.h"
+
+#include "custom/dimension.h"
+#include "snap-core/dataio/i_product_reader.h"
+#include "snap-core/datamodel/product_node.h"
 
 /**
  * This file is a filtered and modified duplicate of a SNAP's  org.esa.snap.core.datamodel.Product.java ported
@@ -44,50 +49,68 @@ namespace snapengine {
  *
  * java version author was Norman Fomferra
  */
+// TEMPORARY// todo: try to move behind IProductReader/IProductWriter interfaces, these are custom relics
+class IMetaDataReader;
+class IMetaDataWriter;
+
 template <typename T>
 class ProductNodeGroup;
 class MetadataElement;
-class IMetaDataReader;
-class IMetaDataWriter;
-class Product : virtual public ProductNode {
+class IProductWriter;
+class RasterDataNode;
+class FlagCoding;
+class IndexCoding;
+class TiePointGrid;
+class Utc;
+class Band;
+class Mask;
+class IGeoCoding;
+class Quicklook;
+class GeoPos;
+class PixelPos;
+class Product : public ProductNode {
 private:
+    /**
+     * The internal reference number of this product
+     */
+    int ref_no_ = 0;
+
     /**
      * This product's type ID.
      */
     std::string product_type_;
 
-    std::string quick_look_band_name_;
+    std::string quicklook_band_name_;
 
     /**
      * The location file of this product.
      */
     boost::filesystem::path file_location_;
 
-    /**
-     * The reader for this product. Once the reader is set, and can never be changed again.
-     */
-    //     todo: this is currently placeholder for any reader interface, might want to add different abstractions
-    std::shared_ptr<IDataTileReader> reader_;
-    std::shared_ptr<IDataTileWriter> writer_;
+    // TEMPORARY//todo: this is currently placeholder for any reader interface, might want to add different abstractions
+    std::shared_ptr<IDataTileReader> reader_old_;
+    std::shared_ptr<IDataTileWriter> writer_old_;
     std::shared_ptr<IMetaDataReader> metadata_reader_;
     std::shared_ptr<IMetaDataWriter> metadata_writer_;
 
-    // todo: maybe make it better in the future
-    //    /**
-    //    * The reader for this product. Once the reader is set, and can never be changed again.
-    //    */
-    //    std::shared_ptr<ProductReader> reader_;
+    /**
+     * The reader for this product. Once the reader is set, and can never be changed again.
+     */
+    std::shared_ptr<IProductReader> reader_;
+    /**
+     * The writer for this product. The writer is an exchangeable property of a product.
+     */
+    std::shared_ptr<IProductWriter> writer_;
 
     std::shared_ptr<MetadataElement> metadata_root_;
 
     std::shared_ptr<ProductNodeGroup<std::shared_ptr<Band>>> band_group_;
-
     std::shared_ptr<ProductNodeGroup<std::shared_ptr<TiePointGrid>>> tie_point_grid_group_;
-
     //    std::shared_ptr < ProductNodeGroup<std::shared_ptr<VectorDataNode>>> vector_data_group_;
     std::shared_ptr<ProductNodeGroup<std::shared_ptr<FlagCoding>>> flag_coding_group_;
     std::shared_ptr<ProductNodeGroup<std::shared_ptr<IndexCoding>>> index_coding_group_;
-    //    std::shared_ptr<ProductNodeGroup<std::shared_ptr<Mask>>> mask_group_;
+    std::shared_ptr<ProductNodeGroup<std::shared_ptr<Mask>>> mask_group_;
+    std::shared_ptr<ProductNodeGroup<std::shared_ptr<Quicklook>>> quicklook_group_;
 
     std::shared_ptr<ProductNodeGroup<std::shared_ptr<ProductNode>>> groups_;
 
@@ -104,47 +127,27 @@ private:
     /**
      * The product's scene raster size in pixels.
      */
-    std::shared_ptr<Dimension> scene_raster_size_;
+    std::shared_ptr<custom::Dimension> scene_raster_size_;
+
+    std::shared_ptr<custom::Dimension> preferred_tile_size_;
 
     /**
      * The geo-coding of this product, if any.
      */
-    //    std::shared_ptr<GeoCoding> scene_geo_coding_;
-    /*
-     * Internally used constructor. Is kept private to keep product name and file location consistent.
+    std::shared_ptr<IGeoCoding> scene_geo_coding_;
+
+    /**
+     * The internal reference string of this product
      */
-    Product(std::string_view name, std::string_view type, const std::shared_ptr<Dimension>& scene_raster_size,
-            const std::shared_ptr<IDataTileReader>& reader, const std::shared_ptr<IMetaDataReader>& metadata_reader);
+    std::string ref_str_;
 
-public:
-    static constexpr std::string_view TIE_POINT_GRID_DIR_NAME = "tie_point_grids";
-
-    static constexpr std::string_view METADATA_ROOT_NAME = "metadata";
-    static constexpr std::string_view HISTORY_ROOT_NAME = "history";
-
-    static constexpr std::string_view PROPERTY_NAME_SCENE_CRS = "sceneCRS";
-    static constexpr std::string_view PROPERTY_NAME_SCENE_GEO_CODING = "sceneGeoCoding";
-    static constexpr std::string_view PROPERTY_NAME_SCENE_TIME_CODING = "sceneTimeCoding";
-    static constexpr std::string_view PROPERTY_NAME_PRODUCT_TYPE = "productType";
-    static constexpr std::string_view PROPERTY_NAME_FILE_LOCATION = "fileLocation";
-
-    // modified
-    static constexpr std::string_view GEOMETRY_FEATURE_TYPE_NAME = "org.esa.snap.Geometry";
-    static constexpr std::string_view PIN_GROUP_NAME = "pins";
-    static constexpr std::string_view GCP_GROUP_NAME = "ground_control_points";
-
-    // todo:probably good idea to provide single parent reader/writer which is composition of different implementations
-    // e.g pugixml to write metadata and gdal to write geotiff etc.
-    const std::shared_ptr<IDataTileReader>& GetReader() const;
-    void SetReader(const std::shared_ptr<IDataTileReader>& reader);
-    const std::shared_ptr<IDataTileWriter>& GetWriter() const;
-    void SetWriter(const std::shared_ptr<IDataTileWriter>& writer);
-
-    const std::shared_ptr<IMetaDataReader>& GetMetadataReader() const;
-    void SetMetadataReader(const std::shared_ptr<IMetaDataReader>& metadata_reader);
-    const std::shared_ptr<IMetaDataWriter>& GetMetadataWriter() const;
-    void SetMetadataWriter(const std::shared_ptr<IMetaDataWriter>& metadata_writer);
-
+    /**
+     * workaround from snap implementation to provide shared_from_this after Product construction (currently can't use
+     * shared_from_this inside constructor)
+     * @param product
+     * @return
+     */
+    static std::shared_ptr<Product> InitProductMembers(const std::shared_ptr<Product>& product);
     /**
      * Creates a new product without any reader (in-memory product)
      *
@@ -166,7 +169,7 @@ public:
      * @see ProductReader
      */
     Product(std::string_view name, std::string_view type, int scene_raster_width, int scene_raster_height,
-            const std::shared_ptr<IDataTileReader>& reader, const std::shared_ptr<IMetaDataReader>& metadata_reader);
+            const std::shared_ptr<IProductReader>& reader);
 
     /**
      * Constructs a new product with the given name and type.
@@ -184,8 +187,95 @@ public:
      * @param reader the reader used to create this product and read data from it.
      * @see ProductReader
      */
-    Product(std::string_view name, std::string_view type, const std::shared_ptr<IDataTileReader>& reader,
-            const std::shared_ptr<IMetaDataReader>& metadata_reader);
+    Product(std::string_view name, std::string_view type, const std::shared_ptr<IProductReader>& reader);
+
+    /**
+     * Internally used constructor. Is kept private to keep product name and file location consistent.
+     *
+     */
+    Product(std::string_view name, std::string_view type, const std::shared_ptr<custom::Dimension>& scene_raster_size,
+            const std::shared_ptr<IProductReader>& reader);
+
+    void CheckGeoCoding(const std::shared_ptr<IGeoCoding>& geo_coding);
+    static bool EqualsLatLon(const std::shared_ptr<GeoPos>& pos1, const std::shared_ptr<GeoPos>& pos2, float eps);
+    static bool EqualsOrNaN(double v1, double v2, float eps);
+
+public:
+    static constexpr std::string_view TIE_POINT_GRID_DIR_NAME = "tie_point_grids";
+
+    static constexpr std::string_view METADATA_ROOT_NAME = "metadata";
+    static constexpr std::string_view HISTORY_ROOT_NAME = "history";
+
+    static constexpr std::string_view PROPERTY_NAME_SCENE_CRS = "sceneCRS";
+    static constexpr std::string_view PROPERTY_NAME_SCENE_GEO_CODING = "sceneGeoCoding";
+    static constexpr std::string_view PROPERTY_NAME_SCENE_TIME_CODING = "sceneTimeCoding";
+    static constexpr std::string_view PROPERTY_NAME_PRODUCT_TYPE = "productType";
+    static constexpr std::string_view PROPERTY_NAME_FILE_LOCATION = "fileLocation";
+
+    // modified
+    static constexpr std::string_view GEOMETRY_FEATURE_TYPE_NAME = "org.esa.snap.Geometry";
+    static constexpr std::string_view PIN_GROUP_NAME = "pins";
+    static constexpr std::string_view GCP_GROUP_NAME = "ground_control_points";
+
+    //    // todo:probably good idea to provide single parent reader/writer which is composition of different
+    //    implementations
+    //    // e.g pugixml to write metadata and gdal to write geotiff etc.
+    const std::shared_ptr<IDataTileReader>& GetReader() const;
+    void SetReader(const std::shared_ptr<IDataTileReader>& reader);
+    const std::shared_ptr<IDataTileWriter>& GetWriter() const;
+    void SetWriter(const std::shared_ptr<IDataTileWriter>& writer);
+
+    const std::shared_ptr<IMetaDataReader>& GetMetadataReader() const;
+    void SetMetadataReader(const std::shared_ptr<IMetaDataReader>& metadata_reader);
+    const std::shared_ptr<IMetaDataWriter>& GetMetadataWriter() const;
+    void SetMetadataWriter(const std::shared_ptr<IMetaDataWriter>& metadata_writer);
+
+    /**
+     * Workaround static function which calls constructor with same parameters and also inits members which need
+     * construction time shared_from_this Creates a new product without any reader (in-memory product)
+     *
+     * @param name              the product name
+     * @param type              the product type
+     * @param sceneRasterWidth  the scene width in pixels for this data product
+     * @param sceneRasterHeight the scene height in pixels for this data product
+     */
+    static std::shared_ptr<Product> CreateProduct(std::string_view name, std::string_view type, int scene_raster_width,
+                                                  int scene_raster_height);
+
+    /**
+     * Workaround static function which calls constructor with same parameters and also inits members which need
+     * construction time shared_from_this Constructs a new product with the given name and the given reader.
+     *
+     * @param name              the product identifier
+     * @param type              the product type
+     * @param sceneRasterWidth  the scene width in pixels for this data product
+     * @param sceneRasterHeight the scene height in pixels for this data product
+     * @param reader            the reader used to create this product and read data from it.
+     * @see ProductReader
+     */
+    static std::shared_ptr<Product> CreateProduct(std::string_view name, std::string_view type, int scene_raster_width,
+                                                  int scene_raster_height,
+                                                  const std::shared_ptr<IProductReader>& reader);
+    /**
+     * Workaround static function which calls constructor with same parameters and also inits members which need
+     * construction time shared_from_this Constructs a new product with the given name and type.
+     *
+     * @param name the product identifier
+     * @param type the product type
+     */
+    static std::shared_ptr<Product> CreateProduct(std::string_view name, std::string_view type);
+
+    /**
+     * Workaround static function which calls constructor with same parameters and also inits members which need
+     * construction time shared_from_this Constructs a new product with the given name, type and the reader.
+     *
+     * @param name   the product identifier
+     * @param type   the product type
+     * @param reader the reader used to create this product and read data from it.
+     * @see ProductReader
+     */
+    static std::shared_ptr<Product> CreateProduct(std::string_view name, std::string_view type,
+                                                  const std::shared_ptr<IProductReader>& reader);
 
     void SetModified(bool modified) override;
 
@@ -223,13 +313,14 @@ public:
      *
      * @param startTime the sensing start time, can be null
      */
-    void SetStartTime(std::shared_ptr<Utc> start_time) {
-        std::shared_ptr<Utc> old = start_time_;
-        if (start_time != old) {
-            SetModified(true);
-        }
-        start_time_ = start_time;
-    }
+    void SetStartTime(std::shared_ptr<Utc> start_time);
+
+    /**
+     * Sets the product type of this product.
+     *
+     * @param productType the product type.
+     */
+    void SetProductType(std::string_view product_type);
 
     /**
      * Sets the (sensing) stop time associated with the first raster data line.
@@ -240,13 +331,7 @@ public:
      *
      * @param endTime the sensing stop time, can be null
      */
-    void SetEndTime(const std::shared_ptr<Utc>& end_time) {
-        std::shared_ptr<Utc> old = end_time_;
-        if (end_time != old) {
-            SetModified(true);
-        }
-        end_time_ = end_time;
-    }
+    void SetEndTime(const std::shared_ptr<Utc>& end_time);
 
     /**
      * Gets the (sensing) stop time associated with the last raster data line.
@@ -258,6 +343,30 @@ public:
      * @return the stop time , can be null e.g. for non-swath products
      */
     std::shared_ptr<Utc> GetEndTime() { return end_time_; }
+
+    /**
+     * Sets the geo-coding to be associated with the scene raster.
+     *
+     * @param sceneGeoCoding the geo-coding, or {@code null}
+     * @throws IllegalArgumentException <br>- if the given {@code GeoCoding} is a {@code TiePointGeoCoding}
+     *                                  and {@code latGrid} or {@code lonGrid} are not instances of tie point
+     *                                  grids in this product. <br>- if the given {@code GeoCoding} is a
+     *                                  {@code MapGeoCoding} and its {@code MapInfo} is {@code null}
+     *                                  <br>- if the given {@code GeoCoding} is a {@code MapGeoCoding} and the
+     *                                  {@code sceneWith} or {@code sceneHeight} of its {@code MapInfo}
+     *                                  is not equal to this products {@code sceneRasterWidth} or
+     *                                  {@code sceneRasterHeight}
+     */
+    void SetSceneGeoCoding(const std::shared_ptr<IGeoCoding>& scene_geo_coding);
+
+    /**
+     * Tests if all bands of this product are using a single, uniform geo-coding. Uniformity is tested by comparing
+     * the band's geo-coding against the geo-coding of this product using the {@link Object#equals(Object)} method.
+     * If this product does not have a geo-coding, the method returns false.
+     *
+     * @return true, if so
+     */
+    bool IsUsingSingleGeoCoding();
 
     /**
      * @return The scene raster width in pixels.
@@ -275,7 +384,68 @@ public:
      * @return The scene size in pixels.
      * @throws IllegalStateException if the scene size wasn't specified yet and cannot be derived
      */
-    std::shared_ptr<Dimension> GetSceneRasterSize();
+    std::shared_ptr<custom::Dimension> GetSceneRasterSize();
+
+    /**
+     * Sets the product reader which will be used to create this product in-memory represention from an external source
+     * and which will be used to (re-)load band rasters.
+     *
+     * @param reader the product reader.
+     * @throws IllegalArgumentException if the given reader is null.
+     */
+    void SetProductReader(std::shared_ptr<IProductReader> reader);
+
+    /**
+     * Sets the preferred tile size which may be used for a the {@link java.awt.image.RenderedImage rendered image}
+     * created for a {@link RasterDataNode} of this product.
+     *
+     * @param preferred_tile_size the preferred tile size, may be {@code null} if not specified
+     * @see RasterDataNode#getSourceImage()
+     * @see RasterDataNode#setSourceImage(java.awt.image.RenderedImage)
+     */
+    void SetPreferredTileSize(std::shared_ptr<custom::Dimension> preferred_tile_size);
+
+    /**
+     * Gets the geo-coding associated with the scene raster.
+     *
+     * @return the geo-coding, can be {@code null} if this product is not geo-coded.
+     */
+    std::shared_ptr<IGeoCoding> GetSceneGeoCoding() { return scene_geo_coding_; }
+
+    /**
+     * Gets the preferred tile size which may be used for a the {@link java.awt.image.RenderedImage rendered image}
+     * created for a {@link RasterDataNode} of this product.
+     *
+     * @return the preferred tile size, may be {@code null} if not specified
+     * @see RasterDataNode#getSourceImage()
+     * @see RasterDataNode#setSourceImage(java.awt.image.RenderedImage)
+     */
+    std::shared_ptr<custom::Dimension> GetPreferredTileSize() { return preferred_tile_size_; }
+
+    /**
+     * Returns the reference string of this product.
+     *
+     * @return the reference string.
+     */
+    std::string GetRefStr() { return ref_str_; }
+
+    /**
+     * @return The reference number of this product.
+     */
+    int GetRefNo() const { return ref_no_; }
+
+    /**
+     * Sets the reference number.
+     *
+     * @param refNo the reference number to set must be in the range 1 .. Integer.MAX_VALUE
+     * @throws IllegalArgumentException if the refNo is out of range
+     */
+    void SetRefNo(int ref_no);
+
+    void ResetRefNo() {
+        ref_no_ = 0;
+        ref_str_ = nullptr;
+    }
 
     /**
      * Sets the file location for this product.
@@ -308,7 +478,7 @@ public:
     //        }
     //        if (refBand != nullptr) {
     //            if (scene_raster_size_ == nullptr) {
-    //                scene_raster_size_ = std::make_shared<Dimension>(refBand.GetRasterWidth(),
+    //                scene_raster_size_ = std::make_shared<custom::Dimension>(refBand.GetRasterWidth(),
     //                refBand.GetRasterHeight()); if (scene_geo_coding_ == nullptr) {
     //                    scene_geo_coding_ = refBand.GetGeoCoding();
     //                }
@@ -319,22 +489,28 @@ public:
     //    }
 
     /**
-     * Returns an array of bands contained in this product
-     *
-     * @return an array of bands contained in this product. If this product has no bands a zero-length-array is
-     * returned.
-     */
-    //    std::vector<Band> GetBands() { return band_group_->ToArray(std::vector<std::shared_ptr<Band>>(GetNumBands()));
-    //    }
-
-    /**
      * Returns the reader which was used to create this product in-memory represention from an external source and which
      * will be used to (re-)load band rasters.
      *
      * @return the product reader, can be {@code null}
      */
-    //    std::shared_ptr<ProductReader> GetProductReader() override {
-    auto GetProductReader() { return reader_; }
+    std::shared_ptr<IProductReader> GetProductReader() override { return reader_; }
+
+    //////////////////////////////////////////////////////////////////////////
+    // Group support
+
+    /**
+     * @return The group which contains all other product node groups.
+     * @since BEAM 5.0
+     */
+    std::shared_ptr<ProductNodeGroup<std::shared_ptr<ProductNode>>> GetGroups();
+
+    /**
+     * @param name The group name.
+     * @return The group with the given name, or {@code null} if no such group exists.
+     * @since BEAM 5.0
+     */
+    std::shared_ptr<ProductNode> GetGroup(std::string_view name);
 
     //////////////////////////////////////////////////////////////////////////
     // Tie-point grid support
@@ -345,25 +521,14 @@ public:
      * @return The group of all tie-point grids.
      * @since BEAM 4.7
      */
-    std::shared_ptr<ProductNodeGroup<std::shared_ptr<TiePointGrid>>> GetTiePointGridGroup() {
-        return tie_point_grid_group_;
-    }
+    std::shared_ptr<ProductNodeGroup<std::shared_ptr<TiePointGrid>>> GetTiePointGridGroup();
 
     /**
      * Adds the given tie-point grid to this product.
      *
      * @param tiePointGrid the tie-point grid to added, ignored if {@code null}
      */
-
     void AddTiePointGrid(std::shared_ptr<TiePointGrid> tie_point_grid);
-    //    {
-    //        if (containsRasterDataNode(tiePointGrid.getName())) {
-    //            throw new IllegalArgumentException("The Product '" + getName() + "' already contains " +
-    //                                               "a tie-point grid with the name '" + tiePointGrid.getName() +
-    //                                               "'.");
-    //        }
-    //        tiePointGridGroup.add(tiePointGrid);
-    //    }
 
     /**
      * Removes the tie-point grid from this product.
@@ -405,13 +570,6 @@ public:
      * zero-length-array is returned.
      */
     std::vector<std::shared_ptr<TiePointGrid>> GetTiePointGrids();
-    //    {
-    //        final TiePointGrid[] tiePointGrids = new TiePointGrid[getNumTiePointGrids()];
-    //        for (int i = 0; i < tiePointGrids.length; i++) {
-    //            tiePointGrids[i] = getTiePointGridAt(i);
-    //        }
-    //        return tiePointGrids;
-    //    }
 
     /**
      * Returns the tie-point grid with the given name.
@@ -506,19 +664,6 @@ public:
     std::shared_ptr<Band> GetBandAt(int index);
 
     /**
-     * Gets the name of the band suitable for quicklook generation.
-     *
-     * @return the name of the quicklook band, or null if none has been defined
-     */
-    std::string GetQuicklookBandName() { return quick_look_band_name_; }
-    /**
-     * Sets the name of the band suitable for quicklook generation.
-     *
-     * @param quicklookBandName the name of the quicklook band, or null
-     */
-    void SetQuicklookBandName(std::string_view quick_look_band_name) { quick_look_band_name_ = quick_look_band_name; }
-
-    /**
      * Returns a string array containing the names of the bands contained in this product
      *
      * @return a string array containing the names of the bands contained in this product. If this product has no bands
@@ -598,7 +743,38 @@ public:
     //////////////////////////////////////////////////////////////////////////
     // Mask support
 
-    //    std::shared_ptr<ProductNodeGroup<std::shared_ptr<Mask>>> GetMaskGroup() { return mask_group_; }
+    std::shared_ptr<ProductNodeGroup<std::shared_ptr<Mask>>> GetMaskGroup() { return mask_group_; }
+
+    //////////////////////////////////////////////////////////////////////////
+    // Quicklook support
+
+    std::shared_ptr<ProductNodeGroup<std::shared_ptr<Quicklook>>> GetQuicklookGroup() { return quicklook_group_; }
+
+    std::shared_ptr<Quicklook> GetDefaultQuicklook();
+
+    /**
+     * Returns the Quicklook with the given name.
+     *
+     * @param name the quicklook name
+     * @return the quicklook with the given name or {@code null} if a quicklook with the given name is not contained in
+     * this product.
+     * @throws IllegalArgumentException if the given name is {@code null} or empty.
+     */
+    std::shared_ptr<Quicklook> GetQuicklook(std::string_view name);
+
+    /**
+     * Gets the name of the band suitable for quicklook generation.
+     *
+     * @return the name of the quicklook band, or null if none has been defined
+     */
+    std::string GetQuicklookBandName() { return quicklook_band_name_; }
+
+    /**
+     * Sets the name of the band suitable for quicklook generation.
+     *
+     * @param quicklookBandName the name of the quicklook band, or null
+     */
+    void SetQuicklookBandName(std::string_view quicklook_band_name) { quicklook_band_name_ = quicklook_band_name; }
 
     //////////////////////////////////////////////////////////////////////////
     // Sample-coding support
@@ -608,6 +784,85 @@ public:
     std::shared_ptr<ProductNodeGroup<std::shared_ptr<IndexCoding>>> GetIndexCodingGroup() {
         return index_coding_group_;
     }
+    //////////////////////////////////////////////////////////////////////////
+    // Pixel Coordinate Tests
+
+    /**
+     * Tests if the given pixel position is within the product pixel bounds.
+     *
+     * @param x the x coordinate of the pixel position
+     * @param y the y coordinate of the pixel position
+     * @return true, if so
+     * @see #containsPixel(PixelPos)
+     */
+    bool ContainsPixel(double x, double y);
+
+    /**
+     * Tests if the given pixel position is within the product pixel bounds.
+     *
+     * @param pixelPos the pixel position, must not be null
+     * @return true, if so
+     * @see #containsPixel(double, double)
+     */
+    bool ContainsPixel(const std::shared_ptr<PixelPos>& pixel_pos);
+
+    /**
+     * Gets an estimated, raw storage size in bytes of this product node.
+     *
+     * @param subsetDef if not {@code null} the subset may limit the size returned
+     * @return the size in bytes.
+     */
+
+    uint64_t GetRawStorageSize(const std::shared_ptr<ProductSubsetDef>& subsetDef) override;
+
+    /**
+     * Checks whether or not the given product is compatible with this product.
+     *
+     * @param product the product to compare with
+     * @param eps     the maximum lat/lon error in degree
+     * @return {@code false} if the scene dimensions or geocoding are different, {@code true} otherwise.
+     */
+    bool IsCompatibleProduct(const std::shared_ptr<Product>& product, float eps);
+
+    /**
+     * Closes and clears this product's reader (if any).
+     *
+     * @throws IOException if an I/O error occurs
+     * @see #closeIO
+     */
+    void CloseProductReader();
+
+    /**
+     * Closes and clears this product's writer (if any).
+     *
+     * @throws IOException if an I/O error occurs
+     * @see #closeIO
+     */
+    void CloseProductWriter();
+
+    /**
+     * Closes the file I/O for this product. Calls in sequence <code>{@link #closeProductReader}</code>  and
+     * <code>{@link #closeProductWriter}</code>. The <code>{@link #dispose}</code> method is <b>not</b> called, but
+     * should be called if the product instance is no longer in use.
+     *
+     * @throws IOException if an I/O error occurs
+     * @see #closeProductReader
+     * @see #closeProductWriter
+     * @see #dispose
+     */
+    void CloseIO();
+
+    /**
+     * Releases all of the resources used by this object instance and all of its owned children. Its primary use is to
+     * allow the garbage collector to perform a vanilla job.
+     * <p>This method should be called only if it is for sure that this object instance will never be used again. The
+     * results of referencing an instance of this class after a call to {@code dispose()} are undefined.
+     * <p>
+     * <p>Overrides of this method should always call {@code super.dispose();} after disposing this instance.
+     * <p>
+     * <p>This implementation also calls the {@code closeIO} in order to release all open I/O resources.
+     */
+    void Dispose() override;
 };
 
 }  // namespace snapengine
