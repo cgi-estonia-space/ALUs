@@ -18,6 +18,9 @@
  */
 #pragma once
 
+#include <memory>
+#include <string>
+#include <string_view>
 #include <vector>
 
 #include "i_meta_data_reader.h"
@@ -27,44 +30,42 @@
 namespace alus {
 namespace snapengine {
 
+template <typename T>
+class ProductNodeGroup;
 class IMetaDataReader;
+class MetadataAttribute;
 
 class MetadataElement : public ProductNode {
-   private:
+private:
     MetadataElement(std::string_view name, std::string_view description, IMetaDataReader* meta_data_reader);
     IMetaDataReader* meta_data_reader_{};
-    //    std::vector<MetadataElement> elements_{};
-    std::vector<std::shared_ptr<MetadataElement>> elements_{};
-    std::vector<std::shared_ptr<MetadataAttribute>> attributes_{};
-    // todo:name and description to superclass ProductNode same for attribtue node?
+    std::shared_ptr<ProductNodeGroup<std::shared_ptr<MetadataElement>>> elements_{};
+    std::shared_ptr<ProductNodeGroup<std::shared_ptr<MetadataAttribute>>> attributes_{};
 
     [[nodiscard]] static std::string GetAttributeNotFoundMessage(std::string_view name);
     [[nodiscard]] static std::shared_ptr<MetadataElement> GetParentElement(const ProductNode& node);
 
     std::shared_ptr<MetadataAttribute> GetAndMaybeCreateAttribute(std::string_view name, int type, int num_elems);
 
-   public:
+public:
     explicit MetadataElement() : ProductNode(nullptr) {}
     explicit MetadataElement(std::string_view name) : ProductNode(name) {}
-    MetadataElement(std::string_view name,
-                    std::vector<std::shared_ptr<MetadataElement>> elements,
-                    std::vector<std::shared_ptr<MetadataAttribute>> attributes);
-    //    void AddElement(const MetadataElement& me);
-    void AddElement(const std::shared_ptr<MetadataElement>& me);
+    virtual void AddElement(std::shared_ptr<MetadataElement> me);
 
     /**
      * Adds an attribute to this node.
      *
      * @param attribute the attribute to be added, <code>null</code> is ignored
      */
-    void AddAttribute(const std::shared_ptr<MetadataAttribute>& ma);
-    //    MetadataElement GetElementAt(int index);
+    virtual void AddAttribute(std::shared_ptr<MetadataAttribute> ma);
+
     /**
      * Returns an std::vector of elements contained in this element.
      *
      * @return an std::vector of elements contained in this product.
      */
-    [[nodiscard]] std::vector<std::shared_ptr<MetadataElement>> GetElements() const { return elements_; };
+    [[nodiscard]] std::vector<std::shared_ptr<MetadataElement>> GetElements();
+
     /**
      * Returns the element with the given name.
      *
@@ -75,7 +76,8 @@ class MetadataElement : public ProductNode {
      */
     [[nodiscard]] std::shared_ptr<MetadataElement> GetElement(std::string_view name);
 
-    [[nodiscard]] std::vector<std::shared_ptr<MetadataAttribute>> GetAttributes() const { return attributes_; };
+    [[nodiscard]] std::vector<std::shared_ptr<MetadataAttribute>> GetAttributes();
+
     /**
      * @return the number of elements contained in this element.
      */
@@ -97,7 +99,7 @@ class MetadataElement : public ProductNode {
      *
      * @throws std::out_of_range
      */
-    [[nodiscard]] auto GetAttributeAt(int index) const { return attributes_.at(index); }
+    [[nodiscard]] std::shared_ptr<MetadataAttribute> GetAttributeAt(int index) const;
 
     /**
      * Tests if a element with the given name is contained in this element.
@@ -107,7 +109,7 @@ class MetadataElement : public ProductNode {
      * @return <code>true</code> if a element with the given name is contained in this element, <code>false</code>
      *         otherwise
      */
-    [[nodiscard]] auto ContainsElement(std::string_view name) const;
+    [[nodiscard]] bool ContainsElement(std::string_view name) const;
 
     /**
      * Checks whether this node has an element with the given name.
@@ -125,15 +127,6 @@ class MetadataElement : public ProductNode {
      */
     [[nodiscard]] std::vector<std::string> GetAttributeNames() const;
 
-    /**
-     * Removes the given attribute from this annotation. If an attribute with the same name already exists, the method
-     * does nothing.
-     *
-     * @param attribute the attribute to be removed, <code>null</code> is ignored
-     *
-     * @return <code>true</code> if it was removed
-     */
-    bool RemoveAttribute(std::shared_ptr<MetadataAttribute>& ma);
     /**
      * Gets the index of the given element.
      *
@@ -219,8 +212,7 @@ class MetadataElement : public ProductNode {
      *
      * @return the attribute value as UTC.
      */
-    [[nodiscard]] const std::shared_ptr<Utc> GetAttributeUtc(std::string_view name,
-                                                             std::shared_ptr<Utc> default_value) const;
+    [[nodiscard]] std::shared_ptr<Utc> GetAttributeUtc(std::string_view name, std::shared_ptr<Utc> default_value) const;
 
     /**
      * Returns the UTC value of the attribute with the given name.
@@ -231,7 +223,7 @@ class MetadataElement : public ProductNode {
      *
      * @throws IllegalArgumentException if an attribute with the given name could not be found
      */
-    [[nodiscard]] const std::shared_ptr<Utc> GetAttributeUtc(std::string_view name) const;
+    [[nodiscard]] std::shared_ptr<Utc> GetAttributeUtc(std::string_view name) const;
 
     /**
      * Returns the string value of the attribute with the given name. <p>The given default value is returned if an
@@ -284,7 +276,7 @@ class MetadataElement : public ProductNode {
      * @param name  the attribute name
      * @param value the new value
      */
-    void SetAttributeUTC(std::string_view name, const Utc& value);
+    void SetAttributeUtc(std::string_view name, const std::shared_ptr<Utc>& value);
 
     /**
      * Sets the attribute with the given name to the given string value. <p>A new attribute with
@@ -297,6 +289,32 @@ class MetadataElement : public ProductNode {
     void SetAttributeString(std::string_view name, std::string_view value);
 
     std::shared_ptr<MetadataElement> CreateDeepClone();
+
+    /**
+     * Adds the given element to this element at index.
+     *
+     * @param element the element to added, ignored if <code>null</code>
+     * @param index   where to put it
+     */
+    void AddElementAt(const std::shared_ptr<MetadataElement>& element, int index);
+
+    /**
+     * Removes the given element from this element.
+     *
+     * @param element the element to be removed, ignored if <code>null</code>
+     *
+     * @return true, if so
+     */
+    bool RemoveElement(const std::shared_ptr<MetadataElement>& element);
+    /**
+     * Removes the given attribute from this annotation. If an attribute with the same name already exists, the method
+     * does nothing.
+     *
+     * @param attribute the attribute to be removed, <code>null</code> is ignored
+     *
+     * @return <code>true</code> if it was removed
+     */
+    bool RemoveAttribute(std::shared_ptr<MetadataAttribute> attribute);
 };
 }  // namespace snapengine
 }  // namespace alus

@@ -11,11 +11,12 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
+#include "product_data.h"
 
 #include <sstream>
 #include <stdexcept>
 
-#include "product_data.h"
+#include "guardian.h"
 #include "product_data_ascii.h"
 #include "product_data_byte.h"
 #include "product_data_double.h"
@@ -105,16 +106,15 @@ std::shared_ptr<ProductData> ProductData::CreateInstance(int type, int num_elems
 std::string ProductData::GetElemString() {
     if (IsScalar()) {
         return GetElemStringAt(0);
-    } else {
-        std::stringstream ss;
-        for (int i = 0; i < GetNumElems(); i++) {
-            if (i > 0) {
-                ss << (",");
-            }
-            ss << GetElemStringAt(i);
-        }
-        return ss.str();
     }
+    std::stringstream ss;
+    for (int i = 0; i < GetNumElems(); i++) {
+        if (i > 0) {
+            ss << (",");
+        }
+        ss << GetElemStringAt(i);
+    }
+    return ss.str();
 }
 
 std::shared_ptr<ProductData> ProductData::CreateInstance(std::string_view data) {
@@ -136,6 +136,10 @@ void ProductData::SetElemBoolean(bool value) { SetElemBooleanAt(0, value); }
 void ProductData::SetElemLong(long value) { SetElemLongAt(0, value); }
 
 void ProductData::SetElemBooleanAt(int index, bool value) { SetElemIntAt(index, value ? 1 : 0); }
+
+std::shared_ptr<ProductData> ProductData::CreateInstance(std::vector<float> elems) {
+    return std::make_shared<Float>(elems);
+}
 
 }  // namespace snapengine
 }  // namespace alus

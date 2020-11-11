@@ -10,3 +10,5 @@ AccessModifierOffset: -4
 # "int& foo" for this project:
 DerivePointerAlignment: false
 PointerAlignment: Left
+
+IncludeBlocks: Preserve

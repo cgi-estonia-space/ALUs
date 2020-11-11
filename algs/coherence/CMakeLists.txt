@@ -1,4 +1,3 @@
-
 list(APPEND TENSORFLOW_INCLUDES
         ${CMAKE_CURRENT_LIST_DIR}/../../tensorflow/ubuntu_1804/include
         ${CMAKE_CURRENT_LIST_DIR}/../../tensorflow/ubuntu_1804/include/external/com_google_absl
@@ -26,9 +25,6 @@ list(APPEND COHERENCE_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/meta_data.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/coherence_calc.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/data_bands_buffer.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/geopoint.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/ellipsoid.cc
-        ${PUGIXML_SRC}
         )
 
 list(APPEND COHERENCE_INCLUDE_DIRS
@@ -36,11 +32,20 @@ list(APPEND COHERENCE_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/../algorithm_bond/include
         ${CMAKE_CURRENT_LIST_DIR}/../../app/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/common/include
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/gdal/include
+        #      SENTINEL1
         ${CMAKE_CURRENT_LIST_DIR}/../../util/sentinel1/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/sentinel1/include/io/orbits/sentinel1
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/sentinel1/include/jlinda-core
+        #      SNAP-ENGINE
         ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-core/datamodel
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-core/util
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-core/util/math
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-engine-utilities
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-engine-utilities/util
+        #       other
         ${CMAKE_CURRENT_LIST_DIR}/../../external/pugixml/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/gdal/include
         ${TENSORFLOW_INCLUDES}
         )
 
@@ -59,6 +64,7 @@ target_compile_options(coherence-obj
         -Wno-ignored-qualifiers
         -Wno-unused-variable
         -Wno-narrowing
+        -Wno-unused-but-set-variable
         )
 
 add_library(coherence-static
@@ -75,9 +81,12 @@ set_target_properties(coherence-static
         )
 target_link_libraries(coherence-static
         PUBLIC
+        Boost::filesystem
+        Boost::iostreams
         gdal
         snap-engine-static
         sentinel1-util-static
+        pugixml-static
         ${TENSORFLOW_LIBS}
         )
 
@@ -96,9 +105,12 @@ set_target_properties(coherence-shared
         )
 target_link_libraries(coherence-shared
         PUBLIC
+        Boost::filesystem
+        Boost::iostreams
         gdal
         snap-engine-static
         sentinel1-util-static
+        pugixml-static
         ${TENSORFLOW_LIBS}
         )
 add_custom_command(TARGET coherence-shared

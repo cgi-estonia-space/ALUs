@@ -17,20 +17,33 @@
  */
 #pragma once
 
+#include <iostream>
 #include <memory>
+#include <optional>
+#include <string>
 #include <string_view>
+#include <vector>
 
 #include "metadata_element.h"
 #include "orbit_state_vector.h"
+#include "product.h"
 #include "product_data_utc.h"
 
 namespace alus::snapengine {
 
 class MetaDataNodeNames {
-   private:
+private:
     static constexpr std::string_view METADATA_VERSION = "6.0";
 
-   public:
+    // todo:MigrateToCurrentVersion is half backed already inside snap, we need to decide what to do with that (future)
+    static void MigrateToCurrentVersion(std::shared_ptr<MetadataElement> abstracted_metadata);
+
+    static void PatchMissingMetadata(std::shared_ptr<MetadataElement> abstracted_metadata);
+
+    static void DefaultToProduct(std::shared_ptr<MetadataElement> abstracted_metadata,
+                                 std::shared_ptr<Product> product);
+
+public:
     /**
      * Default no data values
      */
@@ -203,9 +216,9 @@ class MetaDataNodeNames {
 
     static constexpr std::string_view COMPACT_MODE = "compact_mode";
 
-    static bool GetAttributeBoolean(MetadataElement& element, std::string_view view);
+    static bool GetAttributeBoolean(std::shared_ptr<MetadataElement> element, std::string_view view);
 
-    static double GetAttributeDouble(MetadataElement& element, std::string_view view);
+    static double GetAttributeDouble(std::shared_ptr<MetadataElement> element, std::string_view view);
 
     static std::shared_ptr<Utc> ParseUtc(std::string_view time_str);
 
@@ -215,7 +228,73 @@ class MetaDataNodeNames {
      * @param absRoot Abstracted metadata root.
      * @return orbitStateVectors Array of orbit state vectors.
      */
-    static std::vector<OrbitStateVector> GetOrbitStateVectors(MetadataElement& abs_root);
+    static std::vector<OrbitStateVector> GetOrbitStateVectors(std::shared_ptr<MetadataElement> abs_root);
+
+    /**
+     * Get abstracted metadata.
+     *
+     * @param sourceProduct the product
+     * @return MetadataElement or null if no root found
+     */
+    static std::shared_ptr<MetadataElement> GetAbstractedMetadata(std::shared_ptr<Product> source_product);
+
+    /**
+     * Adds an attribute into dest
+     *
+     * @param dest     the destination element
+     * @param tag      the name of the attribute
+     * @param dataType the ProductData type
+     * @param unit     The unit
+     * @param desc     The description
+     * @return the newly created attribute
+     */
+    static std::shared_ptr<MetadataAttribute> AddAbstractedAttribute(std::shared_ptr<MetadataElement> dest,
+                                                                     std::string_view tag, int data_type,
+                                                                     std::string_view unit, std::string_view desc);
+    /**
+     * Sets an attribute as an int
+     *
+     * @param dest  the destination element
+     * @param tag   the name of the attribute
+     * @param value the string value
+     */
+    static void SetAttribute(std::shared_ptr<MetadataElement> dest, std::string_view tag, int value);
+
+    /**
+     * Sets an attribute as a string
+     *
+     * @param dest  the destination element
+     * @param tag   the name of the attribute
+     * @param value the string value
+     */
+    static void SetAttribute(std::shared_ptr<MetadataElement> dest, std::string_view tag,
+                             std::optional<std::string> value);
+    /**
+     * Sets an attribute as a UTC
+     *
+     * @param dest  the destination element
+     * @param tag   the name of the attribute
+     * @param value the UTC value
+     */
+    static void SetAttribute(std::shared_ptr<MetadataElement> dest, std::string_view tag, std::shared_ptr<Utc> value);
+
+    /**
+     * Abstract common metadata from products to be used uniformly by all operators
+     *
+     * @param root the product metadata root
+     * @return abstracted metadata root
+     */
+    static std::shared_ptr<MetadataElement> AddAbstractedMetadataHeader(std::shared_ptr<MetadataElement> root);
+
+    /**
+     * Set orbit state vectors.
+     *
+     * @param absRoot           Abstracted metadata root.
+     * @param orbitStateVectors The orbit state vectors.
+     * @throws Exception if orbit state vector length is not correct
+     */
+    static void SetOrbitStateVectors(std::shared_ptr<MetadataElement> abs_root,
+                                     std::vector<OrbitStateVector> orbit_state_vectors);
 };
 
 }  // namespace alus::snapengine

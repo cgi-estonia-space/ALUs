@@ -1,4 +1,3 @@
-
 add_library(pugixml-static
         STATIC
         ${CMAKE_CURRENT_LIST_DIR}/pugixml.cpp

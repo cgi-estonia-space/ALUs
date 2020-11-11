@@ -21,7 +21,7 @@ class MetaData {
     bool IsNearRangeOnLeft(IDataTileReader *incidence_angle_reader);
 
    public:
-    MetaData(IDataTileReader *incidence_angle_reader, snapengine::MetadataElement &root_element, int orbit_degree);
+    MetaData(IDataTileReader *incidence_angle_reader, std::shared_ptr<snapengine::MetadataElement> root_element, int orbit_degree);
     // Convert pixel number to range time (1 is first pixel)
     [[nodiscard]] double PixelToTimeRange(double pixel) const;
     double Line2Ta(int line);

@@ -21,13 +21,14 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace alus {
 namespace snapengine {
 
 class ProductData {
     //    todo:check over type mappings e.g in java Int is long int here?
-   private:
+private:
     /**
      * The type ID of this value.
      */
@@ -36,7 +37,7 @@ class ProductData {
     // todo: remove this comment if done _elemSize
     int elem_size_;
 
-   protected:
+protected:
     /**
      * Constructs a new value of the given type.
      *
@@ -51,7 +52,7 @@ class ProductData {
      */
     [[nodiscard]] virtual std::shared_ptr<ProductData> CreateDeepClone() const = 0;
 
-   public:
+public:
     /**
      * The ID for an undefined data type.
      */
@@ -178,6 +179,7 @@ class ProductData {
      * @return a new value instance, {@code null} if the given type is not known
      */
     static std::shared_ptr<ProductData> CreateInstance(int type);
+
     /**
      * Factory method which creates a value instance of the given type and with the specified number of elements.
      *
@@ -192,6 +194,42 @@ class ProductData {
 
     static std::shared_ptr<ProductData> CreateInstance(std::string_view data);
     //    static ProductData* CreateInstance(std::vector<int8_t> data);
+
+    static std::shared_ptr<ProductData> CreateInstance(std::vector<float> elems);
+
+    /**
+     * Returns a textual representation of the given data type.
+     *
+     * @return a data type string, {@code null} if the type is unknown
+     */
+    static std::string GetTypeString(int type) {
+        switch (type) {
+            case TYPE_INT8:
+                return std::string(TYPESTRING_INT8);
+            case TYPE_INT16:
+                return std::string(TYPESTRING_INT16);
+            case TYPE_INT32:
+                return std::string(TYPESTRING_INT32);
+            case TYPE_INT64:
+                return std::string(TYPESTRING_INT64);
+            case TYPE_UINT8:
+                return std::string(TYPESTRING_UINT8);
+            case TYPE_UINT16:
+                return std::string(TYPESTRING_UINT16);
+            case TYPE_UINT32:
+                return std::string(TYPESTRING_UINT32);
+            case TYPE_FLOAT32:
+                return std::string(TYPESTRING_FLOAT32);
+            case TYPE_FLOAT64:
+                return std::string(TYPESTRING_FLOAT64);
+            case TYPE_ASCII:
+                return std::string(TYPESTRING_ASCII);
+            case TYPE_UTC:
+                return std::string(TYPESTRING_UTC);
+            default:
+                return nullptr;
+        }
+    }
 
     /**
      * Returns a integer representation of the given data type string.
@@ -239,6 +277,13 @@ class ProductData {
      * @return true, if so
      */
     static bool IsIntType(int type) { return type >= 10 && type < 30; }
+
+    /**
+     * Tests whether the given value type is a floating point type.
+     *
+     * @return true, if so
+     */
+    static bool IsFloatingPointType(int type) { return type >= 30 && type < 40; }
 
     /**
      * Gets the element size of an element of this product data in bytes.
@@ -571,6 +616,11 @@ class ProductData {
      * Returns a string representation of this value which can be used for debugging purposes.
      */
     [[nodiscard]] std::string ToString() { return GetElemString(); }
+
+    /**
+     * Returns this value's data type String.
+     */
+    virtual std::string GetTypeString() { return GetTypeString(GetType()); }
 
     friend class MetadataAttribute;  // friend class
     friend class DataNode;           // friend class

@@ -1,38 +1,57 @@
 #include "pugixml_meta_data_reader.h"
 
-#include <memory>
+#include <iostream>
+#include <optional>
 #include <stdexcept>
+#include <string>
+#include <vector>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 
 #include "dimap_product_constants.h"
 #include "metadata_attribute.h"
+#include "metadata_element.h"
+#include "product.h"
 #include "product_data.h"
 #include "product_data_utc.h"
 
 namespace alus {
 namespace snapengine {
 
-PugixmlMetaDataReader::PugixmlMetaDataReader(const std::string_view &file_name) : IMetaDataReader(file_name) {
+PugixmlMetaDataReader::PugixmlMetaDataReader(const std::shared_ptr<Product>& product) : IMetaDataReader(product) {}
+PugixmlMetaDataReader::PugixmlMetaDataReader(const std::string_view file_name) : IMetaDataReader(file_name) {}
+
+std::shared_ptr<MetadataElement> PugixmlMetaDataReader::Read(std::string_view element_name) {
+    std::string file_name;
+    if (product_) {
+        file_name = product_->GetFileLocation().parent_path().generic_path().string() +
+                    boost::filesystem::path::preferred_separator + product_->GetName() + ".xml";
+    } else if (!file_name_.empty()) {
+        file_name = file_name_;
+    } else {
+        throw std::runtime_error("no source file for metadata provided");
+    }
     this->result_ = this->doc_.load_file(file_name.data(), pugi::parse_default | pugi::parse_declaration);
     if (!this->result_) {
         // todo: add exception handling wrapper or handle directly (use PugixmlErrorException)
-        throw std::runtime_error("unable to load file " + std::string{file_name});
+        throw std::runtime_error("unable to load file " + file_name);
     }
+    return ImplToModel(element_name);
 }
 
-PugixmlMetaDataReader::~PugixmlMetaDataReader() = default;
-
-MetadataElement PugixmlMetaDataReader::GetElement(std::string_view element_name) {
+std::shared_ptr<MetadataElement> PugixmlMetaDataReader::ImplToModel(std::string_view element_name) {
     std::shared_ptr<MetadataElement> start_element = std::make_shared<MetadataElement>(element_name);
 
-    struct simple_walker : pugi::xml_tree_walker {
+    struct SimpleWalker : pugi::xml_tree_walker {
         // simple access to latest element on each depth level
         std::vector<std::shared_ptr<MetadataElement>> meta_data_latest_level_element_{};
 
-        simple_walker(std::shared_ptr<MetadataElement> e) { meta_data_latest_level_element_.push_back(e); }
+        explicit SimpleWalker(const std::shared_ptr<MetadataElement>& e) {
+            meta_data_latest_level_element_.push_back(e);
+        }
 
-        bool for_each(pugi::xml_node &node) override {
+        bool for_each(pugi::xml_node& node) override {
             if (node.name() == DimapProductConstants::TAG_METADATA_ELEMENT) {
                 for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
                     if (ait->name() == std::string_view{"name"} && ait->value() != std::string_view{""}) {
@@ -54,8 +73,8 @@ MetadataElement PugixmlMetaDataReader::GetElement(std::string_view element_name)
                 std::string_view att_name;
                 std::string_view att_type;
                 //		std::string_view att_mode;
-                std::string_view att_desc;
-                std::string_view att_unit;
+                std::optional<std::string> att_desc;
+                std::optional<std::string> att_unit;
                 bool read_only = true;
                 std::string_view att_value{node.text().as_string()};
                 for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
@@ -87,21 +106,21 @@ MetadataElement PugixmlMetaDataReader::GetElement(std::string_view element_name)
                         // this case is necessary for backward compatibility
                         // *************************************************
                         std::vector<std::string> data_values;
-                        boost::split(data_values,att_value,boost::is_any_of(","));
+                        boost::split(data_values, att_value, boost::is_any_of(","));
                         data = ProductData::CreateInstance(type);
                         data->SetElems(data_values);
                     } else {
                         std::shared_ptr<Utc> utc;
                         try {
                             utc = Utc::Parse(att_value);
-                        } catch (const std::exception &e) {
+                        } catch (const std::exception& e) {
                             std::cerr << e.what();
                         }
                         data = utc;
                     }
                 } else {
                     std::vector<std::string> data_values;
-                    boost::split(data_values,att_value,boost::is_any_of(","));
+                    boost::split(data_values, att_value, boost::is_any_of(","));
                     auto length = data_values.size();
                     data = ProductData::CreateInstance(type, length);
                     data->SetElems(data_values);
@@ -130,11 +149,14 @@ MetadataElement PugixmlMetaDataReader::GetElement(std::string_view element_name)
     vars.set("name", element_name.data());
     pugi::xpath_node_set query_result = name_query.evaluate_node_set(doc_);
     // translate from xpath_node_set to MetaDataElement
-    simple_walker walker(start_element);
+    SimpleWalker walker(start_element);
     query_result.first().node().traverse(walker);
 
-    return *start_element;
+    return start_element;
 }
 
+void PugixmlMetaDataReader::SetProduct(const std::shared_ptr<Product>& product) { product_ = product; }
+
+PugixmlMetaDataReader::~PugixmlMetaDataReader() = default;
 }  // namespace snapengine
 }  // namespace alus

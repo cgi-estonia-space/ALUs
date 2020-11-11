@@ -5,15 +5,15 @@
 namespace alus {
 namespace snapengine {
 
-bool MetaDataNodeNames::GetAttributeBoolean(MetadataElement& element, std::string_view tag) {
-    int val = element.GetAttributeInt(tag);
+bool MetaDataNodeNames::GetAttributeBoolean(std::shared_ptr<MetadataElement> element, std::string_view tag) {
+    int val = element->GetAttributeInt(tag);
     if (val == NO_METADATA) {
         throw std::runtime_error("Metadata " + std::string(tag) + " has not been set");
     }
     return val != 0;
 }
-double MetaDataNodeNames::GetAttributeDouble(MetadataElement& element, std::string_view tag) {
-    double val = element.GetAttributeDouble(tag);
+double MetaDataNodeNames::GetAttributeDouble(std::shared_ptr<MetadataElement> element, std::string_view tag) {
+    double val = element->GetAttributeDouble(tag);
     if (val == NO_METADATA) {
         throw std::runtime_error("Metadata " + std::string(tag) + " has not been set");
     }
@@ -39,28 +39,308 @@ std::shared_ptr<Utc> MetaDataNodeNames::ParseUtc(std::string_view time_str) {
     }
     return NO_METADATA_UTC;
 }
-std::vector<OrbitStateVector> MetaDataNodeNames::GetOrbitStateVectors(
-    MetadataElement& abs_root) {
-    auto elem_root = abs_root.GetElement(snapengine::MetaDataNodeNames::ORBIT_STATE_VECTORS);
+std::vector<OrbitStateVector> MetaDataNodeNames::GetOrbitStateVectors(std::shared_ptr<MetadataElement> abs_root) {
+    auto elem_root = abs_root->GetElement(snapengine::MetaDataNodeNames::ORBIT_STATE_VECTORS);
     if (elem_root == nullptr) {
         return std::vector<OrbitStateVector>{};
     }
     const int num_elems = elem_root->GetNumElements();
     std::vector<OrbitStateVector> orbit_state_vectors;
     for (int i = 0; i < num_elems; i++) {
-        auto sub_elem_root = elem_root->GetElement(std::string(MetaDataNodeNames::ORBIT_VECTOR) +
-                                                   std::to_string(i + 1));
-        auto vector = OrbitStateVector(
-            sub_elem_root->GetAttributeUtc(snapengine::MetaDataNodeNames::ORBIT_VECTOR_TIME),
-            sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_X_POS),
-            sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_Y_POS),
-            sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_Z_POS),
-            sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_X_VEL),
-            sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_Y_VEL),
-            sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_Z_VEL));
+        auto sub_elem_root =
+            elem_root->GetElement(std::string(MetaDataNodeNames::ORBIT_VECTOR) + std::to_string(i + 1));
+        auto vector =
+            OrbitStateVector(sub_elem_root->GetAttributeUtc(snapengine::MetaDataNodeNames::ORBIT_VECTOR_TIME),
+                             sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_X_POS),
+                             sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_Y_POS),
+                             sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_Z_POS),
+                             sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_X_VEL),
+                             sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_Y_VEL),
+                             sub_elem_root->GetAttributeDouble(snapengine::MetaDataNodeNames::ORBIT_VECTOR_Z_VEL));
         orbit_state_vectors.push_back(vector);
     }
     return orbit_state_vectors;
+}
+std::shared_ptr<MetadataElement> MetaDataNodeNames::GetAbstractedMetadata(std::shared_ptr<Product> source_product) {
+    auto root = source_product->GetMetadataRoot();
+    if (root == nullptr) {
+        return nullptr;
+    }
+    auto abstracted_metadata = root->GetElement(ABSTRACT_METADATA_ROOT);
+    if (abstracted_metadata == nullptr) {
+        abstracted_metadata = root->GetElement("Abstracted Metadata");  // legacy
+        if (abstracted_metadata == nullptr) {
+            bool is_modified = source_product->IsModified();
+            abstracted_metadata = AddAbstractedMetadataHeader(root);
+            DefaultToProduct(abstracted_metadata, source_product);
+            source_product->SetModified(is_modified);
+        }
+    }
+    MigrateToCurrentVersion(abstracted_metadata);
+    PatchMissingMetadata(abstracted_metadata);
+
+    return abstracted_metadata;
+}
+std::shared_ptr<MetadataAttribute> MetaDataNodeNames::AddAbstractedAttribute(std::shared_ptr<MetadataElement> dest,
+                                                                             std::string_view tag, int data_type,
+                                                                             std::string_view unit,
+                                                                             std::string_view desc) {
+    auto attribute = std::make_shared<MetadataAttribute>(tag, data_type, 1);
+    if (data_type == ProductData::TYPE_ASCII) {
+        attribute->GetData()->SetElems(NO_METADATA_STRING);
+    } else if (data_type == ProductData::TYPE_INT8 || data_type == ProductData::TYPE_UINT8) {
+        attribute->GetData()->SetElems(std::vector<std::string>{NO_METADATA_BYTE});
+    } else if (data_type != ProductData::TYPE_UTC) {
+        attribute->GetData()->SetElems(std::vector<std::string>{NO_METADATA});
+    }
+    attribute->SetUnit(unit);
+    attribute->SetDescription(desc);
+    attribute->SetReadOnly(false);
+    dest->AddAttribute(attribute);
+    return attribute;
+}
+void MetaDataNodeNames::SetAttribute(std::shared_ptr<MetadataElement> dest, std::string_view tag, int value) {
+    if (dest == nullptr) return;
+    std::shared_ptr<MetadataAttribute> attrib = dest->GetAttribute(tag);
+    if (attrib == nullptr) {
+        std::cerr << tag << " not found in metadata";
+    } else {
+        attrib->GetData()->SetElemInt(value);
+    }
+}
+void MetaDataNodeNames::SetAttribute(std::shared_ptr<MetadataElement> dest, std::string_view tag,
+                                     std::optional<std::string> value) {
+    if (dest == nullptr) return;
+    std::shared_ptr<MetadataAttribute> attrib = dest->GetAttribute(tag);
+    if (attrib == nullptr) {
+        attrib = std::make_shared<MetadataAttribute>(tag, ProductData::TYPE_ASCII);
+        dest->AddAttribute(attrib);
+    }
+    if (!value || value.value().empty())
+        attrib->GetData()->SetElems(NO_METADATA_STRING);
+    else
+        attrib->GetData()->SetElems(value);
+}
+void MetaDataNodeNames::SetAttribute(std::shared_ptr<MetadataElement> dest, std::string_view tag,
+                                     std::shared_ptr<Utc> value) {
+    if (dest == nullptr) {
+        return;
+    }
+    std::shared_ptr<MetadataAttribute> attrib = dest->GetAttribute(tag);
+    if (attrib != nullptr && value != nullptr) {
+        attrib->GetData()->SetElems(value->GetArray());
+    } else {
+        if (attrib == nullptr) {
+            std::cerr << tag << " not found in metadata";
+        }
+        if (value == nullptr) {
+            std::cerr << tag << " metadata value is nullptr";
+        }
+    }
+}
+std::shared_ptr<MetadataElement> MetaDataNodeNames::AddAbstractedMetadataHeader(std::shared_ptr<MetadataElement> root) {
+    std::shared_ptr<MetadataElement> abs_root;
+    if (root == nullptr) {
+        abs_root = std::make_shared<MetadataElement>(ABSTRACT_METADATA_ROOT);
+    } else {
+        abs_root = root->GetElement(ABSTRACT_METADATA_ROOT);
+        if (abs_root == nullptr) {
+            abs_root = std::make_shared<MetadataElement>(ABSTRACT_METADATA_ROOT);
+            root->AddElementAt(abs_root, 0);
+        }
+    }
+
+    // MPH
+    AddAbstractedAttribute(abs_root, PRODUCT, ProductData::TYPE_ASCII, "", "Product name");
+    AddAbstractedAttribute(abs_root, PRODUCT_TYPE, ProductData::TYPE_ASCII, "", "Product type");
+    AddAbstractedAttribute(abs_root, SPH_DESCRIPTOR, ProductData::TYPE_ASCII, "", "Description");
+    AddAbstractedAttribute(abs_root, MISSION, ProductData::TYPE_ASCII, "", "Satellite mission");
+    AddAbstractedAttribute(abs_root, ACQUISITION_MODE, ProductData::TYPE_ASCII, "", "Acquisition mode");
+    AddAbstractedAttribute(abs_root, ANTENNA_POINTING, ProductData::TYPE_ASCII, "", "Right or left facing");
+    AddAbstractedAttribute(abs_root, BEAMS, ProductData::TYPE_ASCII, "", "Beams used");
+    AddAbstractedAttribute(abs_root, SWATH, ProductData::TYPE_ASCII, "", "Swath name");
+    AddAbstractedAttribute(abs_root, PROC_TIME, ProductData::TYPE_UTC, "utc", "Processed time");
+    AddAbstractedAttribute(abs_root, ProcessingSystemIdentifier, ProductData::TYPE_ASCII, "",
+                           "Processing system identifier");
+    AddAbstractedAttribute(abs_root, CYCLE, ProductData::TYPE_INT32, "", "Cycle");
+    AddAbstractedAttribute(abs_root, REL_ORBIT, ProductData::TYPE_INT32, "", "Track");
+    AddAbstractedAttribute(abs_root, ABS_ORBIT, ProductData::TYPE_INT32, "", "Orbit");
+    AddAbstractedAttribute(abs_root, STATE_VECTOR_TIME, ProductData::TYPE_UTC, "utc", "Time of orbit state vector");
+    AddAbstractedAttribute(abs_root, VECTOR_SOURCE, ProductData::TYPE_ASCII, "", "State vector source");
+
+    AddAbstractedAttribute(abs_root, INCIDENCE_NEAR, ProductData::TYPE_FLOAT64, "deg", "");
+    AddAbstractedAttribute(abs_root, INCIDENCE_FAR, ProductData::TYPE_FLOAT64, "deg", "");
+
+    // SPH
+    AddAbstractedAttribute(abs_root, SLICE_NUM, ProductData::TYPE_INT32, "", "Slice number");
+    AddAbstractedAttribute(abs_root, DATA_TAKE_ID, ProductData::TYPE_INT32, "", "Data take identifier");
+    AddAbstractedAttribute(abs_root, FIRST_LINE_TIME, ProductData::TYPE_UTC, "utc", "First zero doppler azimuth time");
+    AddAbstractedAttribute(abs_root, LAST_LINE_TIME, ProductData::TYPE_UTC, "utc", "Last zero doppler azimuth time");
+    AddAbstractedAttribute(abs_root, FIRST_NEAR_LAT, ProductData::TYPE_FLOAT64, "deg", "");
+    AddAbstractedAttribute(abs_root, FIRST_NEAR_LONG, ProductData::TYPE_FLOAT64, "deg", "");
+    AddAbstractedAttribute(abs_root, FIRST_FAR_LAT, ProductData::TYPE_FLOAT64, "deg", "");
+    AddAbstractedAttribute(abs_root, FIRST_FAR_LONG, ProductData::TYPE_FLOAT64, "deg", "");
+    AddAbstractedAttribute(abs_root, LAST_NEAR_LAT, ProductData::TYPE_FLOAT64, "deg", "");
+    AddAbstractedAttribute(abs_root, LAST_NEAR_LONG, ProductData::TYPE_FLOAT64, "deg", "");
+    AddAbstractedAttribute(abs_root, LAST_FAR_LAT, ProductData::TYPE_FLOAT64, "deg", "");
+    AddAbstractedAttribute(abs_root, LAST_FAR_LONG, ProductData::TYPE_FLOAT64, "deg", "");
+
+    AddAbstractedAttribute(abs_root, PASS, ProductData::TYPE_ASCII, "", "ASCENDING or DESCENDING");
+    AddAbstractedAttribute(abs_root, SAMPLE_TYPE, ProductData::TYPE_ASCII, "", "DETECTED or COMPLEX");
+    AddAbstractedAttribute(abs_root, MDS1_TX_RX_POLAR, ProductData::TYPE_ASCII, "", "Polarization");
+    AddAbstractedAttribute(abs_root, MDS2_TX_RX_POLAR, ProductData::TYPE_ASCII, "", "Polarization");
+    AddAbstractedAttribute(abs_root, MDS3_TX_RX_POLAR, ProductData::TYPE_ASCII, "", "Polarization");
+    AddAbstractedAttribute(abs_root, MDS4_TX_RX_POLAR, ProductData::TYPE_ASCII, "", "Polarization");
+    AddAbstractedAttribute(abs_root, POLSARDATA, ProductData::TYPE_UINT8, "flag", "Polarimetric Matrix");
+    AddAbstractedAttribute(abs_root, ALGORITHM, ProductData::TYPE_ASCII, "", "Processing algorithm");
+    AddAbstractedAttribute(abs_root, AZIMUTH_LOOKS, ProductData::TYPE_FLOAT64, "", "");
+    AddAbstractedAttribute(abs_root, RANGE_LOOKS, ProductData::TYPE_FLOAT64, "", "");
+    AddAbstractedAttribute(abs_root, RANGE_SPACING, ProductData::TYPE_FLOAT64, "m", "Range sample spacing");
+    AddAbstractedAttribute(abs_root, AZIMUTH_SPACING, ProductData::TYPE_FLOAT64, "m", "Azimuth sample spacing");
+    AddAbstractedAttribute(abs_root, PULSE_REPETITION_FREQUENCY, ProductData::TYPE_FLOAT64, "Hz", "PRF");
+    AddAbstractedAttribute(abs_root, RADAR_FREQUENCY, ProductData::TYPE_FLOAT64, "MHz", "Radar frequency");
+    AddAbstractedAttribute(abs_root, LINE_TIME_INTERVAL, ProductData::TYPE_FLOAT64, "s", "");
+
+    AddAbstractedAttribute(abs_root, TOT_SIZE, ProductData::TYPE_UINT32, "MB", "Total product size");
+    AddAbstractedAttribute(abs_root, NUM_OUTPUT_LINES, ProductData::TYPE_UINT32, "lines", "Raster height");
+    AddAbstractedAttribute(abs_root, NUM_SAMPLES_PER_LINE, ProductData::TYPE_UINT32, "samples", "Raster width");
+
+    AddAbstractedAttribute(abs_root, SUBSET_OFFSET_X, ProductData::TYPE_UINT32, "samples",
+                           "X coordinate of UL corner of subset in original image");
+    AddAbstractedAttribute(abs_root, SUBSET_OFFSET_Y, ProductData::TYPE_UINT32, "samples",
+                           "Y coordinate of UL corner of subset in original image");
+    SetAttribute(abs_root, SUBSET_OFFSET_X, 0);
+    SetAttribute(abs_root, SUBSET_OFFSET_Y, 0);
+
+    // SRGR
+    AddAbstractedAttribute(abs_root, SRGR_FLAG, ProductData::TYPE_UINT8, "flag", "SRGR applied");
+    auto att = AddAbstractedAttribute(abs_root, AVG_SCENE_HEIGHT, ProductData::TYPE_FLOAT64, "m",
+                                      "Average scene height ellipsoid");
+    att->GetData()->SetElemInt(0);
+    AddAbstractedAttribute(abs_root, MAP_PROJECTION, ProductData::TYPE_ASCII, "", "Map projection applied");
+
+    // orthorectification
+    AddAbstractedAttribute(abs_root, IS_TERRAIN_CORRECTED, ProductData::TYPE_UINT8, "flag",
+                           "orthorectification applied");
+    AddAbstractedAttribute(abs_root, DEM, ProductData::TYPE_ASCII, "", "Digital Elevation Model used");
+    AddAbstractedAttribute(abs_root, GEO_REF_SYSTEM, ProductData::TYPE_ASCII, "", "geographic reference system");
+    AddAbstractedAttribute(abs_root, LAT_PIXEL_RES, ProductData::TYPE_FLOAT64, "deg",
+                           "pixel resolution in geocoded image");
+    AddAbstractedAttribute(abs_root, LON_PIXEL_RES, ProductData::TYPE_FLOAT64, "deg",
+                           "pixel resolution in geocoded image");
+    AddAbstractedAttribute(abs_root, SLANT_RANGE_TO_FIRST_PIXEL, ProductData::TYPE_FLOAT64, "m",
+                           "Slant range to 1st data sample");
+
+    // calibration
+    AddAbstractedAttribute(abs_root, ANT_ELEV_CORR_FLAG, ProductData::TYPE_UINT8, "flag", "Antenna elevation applied");
+    AddAbstractedAttribute(abs_root, RANGE_SPREAD_COMP_FLAG, ProductData::TYPE_UINT8, "flag",
+                           "range spread compensation applied");
+    AddAbstractedAttribute(abs_root, REPLICA_POWER_CORR_FLAG, ProductData::TYPE_UINT8, "flag",
+                           "Replica pulse power correction applied");
+    AddAbstractedAttribute(abs_root, ABS_CALIBRATION_FLAG, ProductData::TYPE_UINT8, "flag", "Product calibrated");
+    AddAbstractedAttribute(abs_root, CALIBRATION_FACTOR, ProductData::TYPE_FLOAT64, "dB", "Calibration constant");
+    AddAbstractedAttribute(abs_root, CHIRP_POWER, ProductData::TYPE_FLOAT64, "", "Chirp power");
+    AddAbstractedAttribute(abs_root, INC_ANGLE_COMP_FLAG, ProductData::TYPE_UINT8, "flag",
+                           "incidence angle compensation applied");
+    AddAbstractedAttribute(abs_root, REF_INC_ANGLE, ProductData::TYPE_FLOAT64, "", "Reference incidence angle");
+    AddAbstractedAttribute(abs_root, REF_SLANT_RANGE, ProductData::TYPE_FLOAT64, "", "Reference slant range");
+    AddAbstractedAttribute(abs_root, REF_SLANT_RANGE_EXP, ProductData::TYPE_FLOAT64, "",
+                           "Reference slant range exponent");
+    AddAbstractedAttribute(abs_root, RESCALING_FACTOR, ProductData::TYPE_FLOAT64, "", "Rescaling factor");
+    AddAbstractedAttribute(abs_root, BISTATIC_CORRECTION_APPLIED, ProductData::TYPE_UINT8, "flag", "");
+
+    AddAbstractedAttribute(abs_root, RANGE_SAMPLING_RATE, ProductData::TYPE_FLOAT64, "MHz", "Range Sampling Rate");
+
+    // range and azimuth bandwidths for InSAR
+    AddAbstractedAttribute(abs_root, RANGE_BANDWIDTH, ProductData::TYPE_FLOAT64, "MHz", "Bandwidth total in range");
+    AddAbstractedAttribute(abs_root, AZIMUTH_BANDWIDTH, ProductData::TYPE_FLOAT64, "Hz", "Bandwidth total in azimuth");
+
+    // Multilook
+    AddAbstractedAttribute(abs_root, MULTILOOK_FLAG, ProductData::TYPE_UINT8, "flag", "Multilook applied");
+
+    // coregistration
+    AddAbstractedAttribute(abs_root, COREGISTERED_STACK, ProductData::TYPE_UINT8, "flag", "Coregistration applied");
+
+    AddAbstractedAttribute(abs_root, EXTERNAL_CALIBRATION_FILE, ProductData::TYPE_ASCII, "",
+                           "External calibration file used");
+    AddAbstractedAttribute(abs_root, ORBIT_STATE_VECTOR_FILE, ProductData::TYPE_ASCII, "", "Orbit file used");
+
+    abs_root->AddElement(std::make_shared<MetadataElement>(ORBIT_STATE_VECTORS));
+    abs_root->AddElement(std::make_shared<MetadataElement>(SRGR_COEFFICIENTS));
+    abs_root->AddElement(std::make_shared<MetadataElement>(DOP_COEFFICIENTS));
+
+    att = AddAbstractedAttribute(abs_root, ABSTRACTED_METADATA_VERSION, ProductData::TYPE_ASCII, "",
+                                 "AbsMetadata version");
+    att->GetData()->SetElems(METADATA_VERSION);
+
+    return abs_root;
+}
+void MetaDataNodeNames::SetOrbitStateVectors(std::shared_ptr<MetadataElement> abs_root,
+                                             std::vector<OrbitStateVector> orbit_state_vectors) {
+    std::shared_ptr<MetadataElement> elem_root = abs_root->GetElement(ORBIT_STATE_VECTORS);
+
+    // remove old
+    std::vector<std::shared_ptr<MetadataElement>> old_list = elem_root->GetElements();
+    for (std::shared_ptr<MetadataElement> old : old_list) {
+        elem_root->RemoveElement(old);
+    }
+    // add new
+    int i = 1;
+    for (OrbitStateVector vector : orbit_state_vectors) {
+        std::shared_ptr<MetadataElement> sub_elem_root =
+            std::make_shared<MetadataElement>(std::string{ORBIT_VECTOR} + std::to_string(i));
+        elem_root->AddElement(sub_elem_root);
+        ++i;
+        sub_elem_root->SetAttributeUtc(ORBIT_VECTOR_TIME, vector.time_);
+        sub_elem_root->SetAttributeDouble(ORBIT_VECTOR_X_POS, vector.x_pos_);
+        sub_elem_root->SetAttributeDouble(ORBIT_VECTOR_Y_POS, vector.y_pos_);
+        sub_elem_root->SetAttributeDouble(ORBIT_VECTOR_Z_POS, vector.z_pos_);
+        sub_elem_root->SetAttributeDouble(ORBIT_VECTOR_X_VEL, vector.x_vel_);
+        sub_elem_root->SetAttributeDouble(ORBIT_VECTOR_Y_VEL, vector.y_vel_);
+        sub_elem_root->SetAttributeDouble(ORBIT_VECTOR_Z_VEL, vector.z_vel_);
+    }
+}
+void MetaDataNodeNames::DefaultToProduct(std::shared_ptr<MetadataElement> abstracted_metadata,
+                                         std::shared_ptr<Product> product) {
+    SetAttribute(abstracted_metadata, PRODUCT, product->GetName());
+    SetAttribute(abstracted_metadata, PRODUCT_TYPE, product->GetProductType());
+    SetAttribute(abstracted_metadata, SPH_DESCRIPTOR, product->GetDescription());
+
+    SetAttribute(abstracted_metadata, NUM_OUTPUT_LINES, product->GetSceneRasterHeight());
+    SetAttribute(abstracted_metadata, NUM_SAMPLES_PER_LINE, product->GetSceneRasterWidth());
+
+    SetAttribute(abstracted_metadata, FIRST_LINE_TIME, product->GetStartTime());
+    SetAttribute(abstracted_metadata, LAST_LINE_TIME, product->GetEndTime());
+
+    //        todo:add support
+    //        if (product->GetProductReader() != nullptr && product->GetProductReader().getReaderPlugIn() !=
+    //        nullptr) {
+    //            SetAttribute(
+    //                abstracted_metadata, MISSION,
+    //                product->GetProductReader().getReaderPlugIn().getFormatNames()[0]);
+    //        }
+}
+void MetaDataNodeNames::PatchMissingMetadata(std::shared_ptr<MetadataElement> abstracted_metadata) {
+    std::string version = abstracted_metadata->GetAttributeString(ABSTRACTED_METADATA_VERSION, "");
+    if (version == METADATA_VERSION) {
+        return;
+    }
+    auto tmp_elem = std::make_shared<MetadataElement>("tmp");
+    std::shared_ptr<MetadataElement> complete_metadata = AddAbstractedMetadataHeader(tmp_elem);
+
+    auto attribs = complete_metadata->GetAttributes();
+    for (std::shared_ptr<MetadataAttribute> at : attribs) {
+        if (!abstracted_metadata->ContainsAttribute(at->GetName())) {
+            abstracted_metadata->AddAttribute(at);
+            abstracted_metadata->GetProduct()->SetModified(false);
+        }
+    }
+}
+void MetaDataNodeNames::MigrateToCurrentVersion(std::shared_ptr<MetadataElement> abstracted_metadata) {
+    // check if version has changed
+    std::string version = abstracted_metadata->GetAttributeString(ABSTRACTED_METADATA_VERSION, "");
+    if (version == METADATA_VERSION) return;
+    // todo
 }
 
 }  // namespace snapengine

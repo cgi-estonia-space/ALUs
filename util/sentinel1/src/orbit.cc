@@ -57,7 +57,7 @@ Point Orbit::Xyz2T(Point point_on_ellips, double time_azimuth) {
     // Update equations
     Point satellite_position = GetXyz(time_azimuth);
     delta = point_on_ellips.Min(satellite_position);
-    double time_range = delta.Norm() / C;
+    double time_range = delta.Norm() / jlinda::LIGHT_SPEED;
 
     // todo: check if 0.0 is ok for z
     return Point(time_range, time_azimuth, 0.0);
@@ -99,15 +99,15 @@ double Orbit::Eq1Doppler(Point &sat_velocity, Point &point_on_ellips) { return s
 // eq2_Range
 double Orbit::Eq2Range(Point &point_ellips_sat, double rg_time) {
     // SOL vs C
-    return point_ellips_sat.In(point_ellips_sat) - pow(C * rg_time, 2);
+    return point_ellips_sat.In(point_ellips_sat) - pow(jlinda::LIGHT_SPEED * rg_time, 2);
 }
 
 // eq3_Ellipsoid
 
 double Orbit::Eq3Ellipsoid(const Point &point_on_ellips, double height) {
     return ((point_on_ellips.GetX() * point_on_ellips.GetX() + point_on_ellips.GetY() * point_on_ellips.GetY()) /
-            pow(ELL_A + height, 2)) +
-           pow(point_on_ellips.GetZ() / (ELL_B + height), 2) - 1.0;
+            pow(jlinda::ELL_A + height, 2)) +
+           pow(point_on_ellips.GetZ() / (jlinda::ELL_B + height), 2) - 1.0;
 }
 
 // from jlinda: Orbit class//Point lph2xyz(final double line, final double pixel, final double height, final SLCImage
@@ -142,9 +142,9 @@ Point Orbit::RowsColumnsHeightToXyz(
         partials_xyz[1][0] = 2 * dsat_p.GetX();
         partials_xyz[1][1] = 2 * dsat_p.GetY();
         partials_xyz[1][2] = 2 * dsat_p.GetZ();
-        partials_xyz[2][0] = (2 * ellipsoid_position.GetX()) / (pow(ELL_A + height, 2));
-        partials_xyz[2][1] = (2 * ellipsoid_position.GetY()) / (pow(ELL_A + height, 2));
-        partials_xyz[2][2] = (2 * ellipsoid_position.GetZ()) / (pow(ELL_B + height, 2));
+        partials_xyz[2][0] = (2 * ellipsoid_position.GetX()) / (pow(jlinda::ELL_A + height, 2));
+        partials_xyz[2][1] = (2 * ellipsoid_position.GetY()) / (pow(jlinda::ELL_A + height, 2));
+        partials_xyz[2][2] = (2 * ellipsoid_position.GetZ()) / (pow(jlinda::ELL_B + height, 2));
 
         // solve system [NOTE!] orbit has to be normalized, otherwise close to singular
         std::vector<double> ellipsoid_position_solution = PolyUtils::Solve33(partials_xyz, equation_set);
@@ -165,8 +165,8 @@ Point Orbit::RowsColumnsHeightToXyz(
     return Point(ellipsoid_position);
 }
 
-Orbit::Orbit(snapengine::MetadataElement &element, int degree) {
-    std::vector<alus::snapengine::OrbitStateVector> orbit_state_vectors =
+Orbit::Orbit(std::shared_ptr<snapengine::MetadataElement>element, int degree) {
+    std::vector<snapengine::OrbitStateVector> orbit_state_vectors =
         snapengine::MetaDataNodeNames::GetOrbitStateVectors(element);
 
     num_state_vectors_ = orbit_state_vectors.size();

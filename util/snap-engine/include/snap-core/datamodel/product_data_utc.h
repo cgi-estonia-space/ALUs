@@ -139,11 +139,12 @@ class Utc : public UInt {
     static std::shared_ptr<Utc> Create(boost::posix_time::ptime date, long micros);
 
     /**
-     * Returns this UTC date/time value as a Date. The method interpretes this UTC value as a MJD 2000 date
-     * (Modified Julian Day where the  first day is the 01.01.2000).
+     * Retuns a "deep" copy of this product data.
      *
-     * @see #getAsCalendar()
+     * @return a copy of this product data
      */
+   protected:
+    [[nodiscard]] std::shared_ptr<ProductData> CreateDeepClone() const override;
    public:
     /**
      * Constructs a new {@code UTC} value.
@@ -216,7 +217,7 @@ class Utc : public UInt {
      * @see #createCalendar
      * @see #createDateFormat
      */
-    std::string Format();
+    std::string Format() const;
     /**
      * Gets the MJD 2000 calendar on which this UTC date/time is based.
      * The date of the calendar is set to this UTC value.
@@ -227,7 +228,7 @@ class Utc : public UInt {
      * @see #getAsDate()
      */
     // this should be good enough to derive whatever was used in java
-    boost::posix_time::ptime GetAsCalendar();
+    boost::posix_time::ptime GetAsCalendar() const;
 
     /**
      * Returns this UTC date/time value as a Date. The method interpretes this UTC value as a MJD 2000 date
@@ -243,6 +244,11 @@ class Utc : public UInt {
      */
 
     [[nodiscard]] std::string GetElemString() override;
+
+    /**
+     * Returns this value's data type String.
+     */
+    std::string GetTypeString() override { return ProductData::GetTypeString(TYPE_UTC); }
 
     ~Utc() = default;
 };

@@ -17,10 +17,10 @@
 #include <vector>
 
 #include "dataset.h"
-#include "shapes.h"
 #include "earth_gravitational_model96.h"
-#include "srtm3_formatter.cuh"
 #include "pointer_holders.h"
+#include "shapes.h"
+#include "srtm3_formatter.cuh"
 
 namespace alus{
 namespace snapengine{

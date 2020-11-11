@@ -24,20 +24,15 @@
 
 namespace alus::snapengine {
 class OrbitStateVector {
-   public:
+public:
     std::shared_ptr<Utc> time_;
     double time_mjd_;
     double x_pos_, y_pos_, z_pos_;
     double x_vel_, y_vel_, z_vel_;
 
     OrbitStateVector() = default;
-    OrbitStateVector(std::shared_ptr<Utc> t,
-                     const double x_pos,
-                     const double y_pos,
-                     const double z_pos,
-                     const double x_vel,
-                     const double y_vel,
-                     const double z_vel)
+    OrbitStateVector(const std::shared_ptr<Utc>& t, const double x_pos, const double y_pos, const double z_pos,
+                     const double x_vel, const double y_vel, const double z_vel)
         : time_{t},
           time_mjd_{t->GetMjd()},
           x_pos_{x_pos},

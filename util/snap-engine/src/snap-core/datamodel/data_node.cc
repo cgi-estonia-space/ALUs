@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+#include <boost/format.hpp>
+
 #include "guardian.h"
 
 namespace alus::snapengine {
@@ -14,20 +16,21 @@ DataNode::DataNode(std::string_view name, int data_type, long num_elems) : Produ
         data_type != ProductData::TYPE_ASCII && data_type != ProductData::TYPE_UTC) {
         throw std::invalid_argument("dataType is invalid");
     }
-    this->data_type_ = data_type;
-    this->num_elems_ = num_elems;
-    this->data_ = nullptr;
-    this->read_only_ = false;
+    data_type_ = data_type;
+    num_elems_ = num_elems;
+    data_ = nullptr;
+    read_only_ = false;
 }
 DataNode::DataNode(std::string_view name, std::shared_ptr<ProductData> data, bool read_only) : ProductNode(name) {
     Guardian::AssertNotNull("data", data);
-    this->data_type_ = data->GetType();
-    this->num_elems_ = data->GetNumElems();
-    this->data_ = std::move(data);
-    this->read_only_ = read_only;
+    data_type_ = data->GetType();
+    num_elems_ = data->GetNumElems();
+    data_ = std::move(data);
+    read_only_ = read_only;
 }
 
-void DataNode::SetUnit(std::string_view unit) { this->unit_ = unit; }
+void DataNode::SetUnit(std::string_view unit) { unit_ = unit; }
+void DataNode::SetUnit(std::optional<std::string> unit) { unit_ = unit; }
 
 void DataNode::SetSynthetic(bool synthetic) { synthetic_ = synthetic; }
 
@@ -69,6 +72,62 @@ void DataNode::SetDataElems(const std::any& elems) {
     //        }
     //        return false;
     //    }
+}
+void DataNode::SetReadOnly(bool read_only) {
+    bool old_value = read_only_;
+    if (old_value != read_only) {
+        read_only_ = read_only;
+        SetModified(true);
+    }
+}
+
+void DataNode::CheckDataCompatibility(const std::shared_ptr<ProductData>& data) {
+    //    todo: check this debug and provide similar functionality
+    //    Debug::AssertNotNull(data);
+
+    if (data->GetType() != GetDataType()) {
+        std::string msg_pattern = "Illegal data for data node ''%1%'', type %2% expected";
+        throw std::invalid_argument(
+            boost::str(boost::format(msg_pattern) % GetName() % ProductData::GetTypeString(GetDataType())));
+    }
+
+    if (data->GetNumElems() != GetNumDataElems()) {
+        std::string msg_pattern =
+            "Illegal number of data elements for data node ''%1%'', %2% elements expected but was %3%";
+        throw std::invalid_argument(
+            boost::str(boost::format(msg_pattern) % GetName() % GetNumDataElems() % data->GetNumElems()));
+    }
+}
+
+void DataNode::SetData(const std::shared_ptr<ProductData>& data) {
+    if (IsReadOnly()) {
+        throw std::invalid_argument("data node '" + std::string(GetName()) + "' is read-only");
+    }
+
+    if (data_ == data) {
+        return;
+    }
+
+    if (data != nullptr) {
+        CheckDataCompatibility(data);
+    }
+
+    std::shared_ptr<ProductData> old_data = data_;
+    data_ = data;
+
+    // if data node already had data before, mark that it has been modified so
+    // new data is stored on next incremental save
+    if (old_data != nullptr) {
+        SetModified(true);
+    }
+}
+
+void DataNode::Dispose() {
+    if (data_ != nullptr) {
+        data_->Dispose();
+        data_ = nullptr;
+    }
+    ProductNode::Dispose();
 }
 
 }  // namespace alus::snapengine

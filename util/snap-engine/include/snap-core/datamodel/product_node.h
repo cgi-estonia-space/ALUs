@@ -19,6 +19,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -31,13 +32,18 @@ namespace snapengine {
  *
  * java version @author Norman Fomferra
  */
-class ProductNode {
-   private:
+class Product;
+class ProductNode : public std::enable_shared_from_this<ProductNode> {
+private:
     std::string name_{};
-    std::string description_{};
+    std::optional<std::string> description_;
     std::shared_ptr<ProductNode> owner_;
-    //    bool modified_;
-   protected:
+    // transient in java version
+    bool modified_;
+    std::shared_ptr<Product> product_;
+
+protected:
+    ProductNode() = default;
     /**
      * Constructs a new product node with the given name.
      *
@@ -52,15 +58,17 @@ class ProductNode {
      * @param description a descriptive string, can be <code>null</code>
      * @throws IllegalArgumentException if the given name is not a valid node identifier
      */
-    ProductNode(std::string_view name, std::string_view description);
-    //        : name_(name), description_(description) {}
+    ProductNode(std::string_view name, const std::optional<std::string_view>& description);
 
-   public:
+    template <typename T>
+    std::shared_ptr<T> SharedFromBase();
+
+public:
     static constexpr std::string_view PROPERTY_NAME_NAME{"name"};
     static constexpr std::string_view PROPERTY_NAME_DESCRIPTION{"description"};
     // todo:make abstract?
-    [[nodiscard]] virtual std::string_view GetName() const { return name_; };
-    [[nodiscard]] virtual std::string_view GetDescription() const { return description_; }
+    [[nodiscard]] virtual std::string GetName() const { return name_; };
+    [[nodiscard]] virtual std::optional<std::string> GetDescription() const { return description_; }
 
     /**
      * Sets a short textual description for this products node.
@@ -68,7 +76,12 @@ class ProductNode {
      * @param description a description, can be <code>null</code>
      */
     void SetDescription(std::string_view description);
-
+    /**
+     * Sets a short textual description for this products node.
+     *
+     * @param description a description, can be <code>null</code>
+     */
+    void SetDescription(const std::optional<std::string_view>& description);
     /**
      * @return The owner node of this node.
      */
@@ -82,15 +95,55 @@ class ProductNode {
      */
     void SetOwner(const std::shared_ptr<ProductNode>& owner);
 
-    //    /**
-    //     * Returns whether or not this node is modified.
-    //     *
-    //     * @return <code>true</code> if so
-    //     */
-    //   [[nodiscard]] bool IsModified() const{
-    //        return modified_;
-    //    }
+    /**
+     * Sets this node's modified flag.
+     * <p>
+     * If the modified flag changes to true and this node has an owner, the owner's modified flag is also set to
+     * true.
+     *
+     * @param modified whether or not this node is beeing marked as modified.
+     * @see Product#fireNodeChanged
+     */
+    virtual void SetModified(bool modified);
+
+    /**
+     * Returns whether or not this node is modified.
+     *
+     * @return <code>true</code> if so
+     */
+    [[nodiscard]] bool IsModified() const { return modified_; }
+
+    /**
+     * Returns the product to which this node belongs to.
+     *
+     * @return the product, or <code>null</code> if this node was not owned by a product at the time this method was
+     * called
+     */
+    std::shared_ptr<Product> GetProduct();
+
+    /**
+     * Releases all of the resources used by this object instance and all of its owned children. Its primary use is to
+     * allow the garbage collector to perform a vanilla job.
+     * <p>This method should be called only if it is for sure that this object instance will never be used again. The
+     * results of referencing an instance of this class after a call to <code>dispose()</code> are undefined.
+     * <p>Overrides of this method should always call <code>super.dispose();</code> after disposing this instance.
+     */
+    virtual void Dispose() {
+        owner_ = nullptr;
+        product_ = nullptr;
+        description_ = nullptr;
+        name_ = nullptr;
+    }
 };
+
+////////////////////////////////////////////////////////////////////////
+/////TEMPLATED IMPLEMENTATION NEEDS TO BE IN THE SAME FILE
+////////////////////////////////////////////////////////////////////////
+
+template <typename T>
+std::shared_ptr<T> ProductNode::SharedFromBase() {
+    return std::dynamic_pointer_cast<T>(shared_from_this());
+}
 
 }  // namespace snapengine
 }  // namespace alus

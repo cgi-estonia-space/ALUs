@@ -12,7 +12,7 @@ namespace alus {
 namespace jlinda {
 
 class GeoPoint {
-   private:
+private:
     static constexpr double _MIN_PER_DEG{60.0};
     static constexpr double _SEC_PER_DEG{_MIN_PER_DEG * 60.0};
 
@@ -26,9 +26,9 @@ class GeoPoint {
 
     static bool IsLonValid(double lon);
 
-    static int FloorInt(const double value);
+    static int FloorInt(double value);
 
-   public:
+public:
     /**
      * The geographical latitude in decimal degree, valid range is -90 to +90.
      */
@@ -48,7 +48,7 @@ class GeoPoint {
      *
      * @param geoPoint the  geo-position providing the latitude and longitude, must not be <code>null</code>
      */
-    GeoPoint(const GeoPoint &geoPoint);
+    GeoPoint(const GeoPoint& geoPoint);
 
     /**
      * Constructs a new geo-position with the given latitude and longitude values.
@@ -85,15 +85,15 @@ class GeoPoint {
      *
      * @return true, if so
      */
-    const bool IsValid() const;
+    [[nodiscard]] bool IsValid() const;
 
     /**
      * Tests whether or not all given geo-positions are valid.
      *
      * @return true, if so
      */
-    static bool AreValid(std::vector<GeoPoint> a){
-        return std::all_of(a.cbegin(), a.cend(), [](GeoPoint gp) { return gp.IsValid(); });
+    static bool AreValid(std::vector<GeoPoint> a) {
+        return std::all_of(a.cbegin(), a.cend(), [](const GeoPoint& gp) { return gp.IsValid(); });
     };
 
     /**
@@ -138,7 +138,7 @@ class GeoPoint {
      *
      * @return a string representation of the object.
      */
-    std::string ToString() const;
+    [[nodiscard]] std::string ToString() const;
 
     /**
      * Normalizes this position so that its longitude is in the range -180 to +180 degree.
@@ -160,14 +160,14 @@ class GeoPoint {
      *
      * @return a string of the form DDD?[MM'[SS"]] [N|S].
      */
-    std::string GetLatString() const;
+    [[nodiscard]] std::string GetLatString() const;
 
     /**
      * Returns a string representation of the latitude value.
      *
      * @return a string of the form DDD?[MM'[SS"]] [W|E].
      */
-    std::string GetLonString() const;
+    [[nodiscard]] std::string GetLonString() const;
 
     /**
      * Returns a string representation of the given longitude value.

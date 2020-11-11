@@ -1,5 +1,7 @@
 #include "string_utils.h"
 
+#include <sstream>
+
 namespace alus{
 namespace snapengine{
 
@@ -15,6 +17,16 @@ std::vector<std::string> StringUtils::StringToVectorByDelimiter(std::string_view
     tokens.emplace_back(str);
     // add last also ??
     return tokens;
+}
+std::string StringUtils::PadNum(int num, int max, char c) {
+        std::stringstream str;
+        size_t len = std::to_string(num).length();
+        while (len < (size_t) max) {
+            str << c;
+            len++;
+        }
+        str << num;
+        return str.str();
 }
 } //namespace snapengine
 } //namespace alus

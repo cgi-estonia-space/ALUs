@@ -1,33 +1,80 @@
+list(APPEND SENTINEL1_UTIL_SOURCES-GPU
+        ${CMAKE_CURRENT_LIST_DIR}/src/orbit_state_vectors.cu
+        ${CMAKE_CURRENT_LIST_DIR}/src/sar_geocoding.cu
+        )
 list(APPEND SENTINEL1_UTIL_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/sentinel1_utils.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/subswath_info.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/point.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/sar_utils.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/orbit_state_vectors.cu
-        ${CMAKE_CURRENT_LIST_DIR}/src/sar_geocoding.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/poly_utils.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/orbit.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/orbit_state_vectors.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/io/orbits/sentinel1/sentinel_p_o_d_orbit_file.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/jlinda-core/ellipsoid.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/jlinda-core/geopoint.cc
         )
 
 list(APPEND SENTINEL1_UTIL_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/include
+        ${CMAKE_CURRENT_LIST_DIR}/include/io/orbits/sentinel1
+        ${CMAKE_CURRENT_LIST_DIR}/include/jlinda-core
         ${CMAKE_CURRENT_LIST_DIR}/../cuda/include
         ${CMAKE_CURRENT_LIST_DIR}/../common/include
+        )
+#/*********************************************/
+add_library(sentinel1-util-obj-cuda
+        OBJECT
+        ${SENTINEL1_UTIL_SOURCES-GPU}
+        )
+
+target_include_directories(sentinel1-util-obj-cuda
+        PRIVATE
+        ${SENTINEL1_UTIL_INCLUDE_DIRS}
+        )
+
+target_link_libraries(sentinel1-util-obj-cuda
+        PUBLIC
+        gdal
+        snap-engine-static
+        exotic_operations-static
+        Eigen3::Eigen
+        )
+
+add_library(sentinel1-util-obj
+        OBJECT
+        ${SENTINEL1_UTIL_SOURCES}
+        )
+
+target_include_directories(sentinel1-util-obj
+        PRIVATE
+        ${SENTINEL1_UTIL_INCLUDE_DIRS}
+        )
+
+target_link_libraries(sentinel1-util-obj
+        PUBLIC
+        gdal
+        snap-engine-static
+        exotic_operations-static
+        Eigen3::Eigen
         )
 
 add_library(sentinel1-util-static
         STATIC
-        ${SENTINEL1_UTIL_SOURCES}
+        $<TARGET_OBJECTS:sentinel1-util-obj>
+        $<TARGET_OBJECTS:sentinel1-util-obj-cuda>
         )
+
 target_include_directories(sentinel1-util-static
         PUBLIC
         ${SENTINEL1_UTIL_INCLUDE_DIRS}
         )
+
 set_target_properties(sentinel1-util-static
         PROPERTIES
         OUTPUT_NAME sentinel1-util
         )
+
 target_link_libraries(sentinel1-util-static
         PUBLIC
         gdal
@@ -35,3 +82,4 @@ target_link_libraries(sentinel1-util-static
         exotic_operations-static
         Eigen3::Eigen
         )
+

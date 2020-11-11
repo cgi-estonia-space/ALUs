@@ -19,27 +19,17 @@
 #pragma once
 
 #include "data_node.h"
-#include "product_data.h"
 
 namespace alus::snapengine {
-// todo: snap extends DataNode which extends ProductNode (change if need arises)
 class MetadataAttribute : public DataNode {
-   public:
-    MetadataAttribute(std::string_view name, int type) : MetadataAttribute(name, type, 1) {}
-    MetadataAttribute(std::string_view name, int type, int num_elems)
-        : MetadataAttribute(name, ProductData::CreateInstance(type, num_elems), false) {}
-    MetadataAttribute(std::string_view name, std::shared_ptr<ProductData> data, bool read_only)
-        : DataNode(name, data, read_only) {}
+public:
+    MetadataAttribute(std::string_view name, int type);
+    MetadataAttribute(std::string_view name, int type, int num_elems);
+    MetadataAttribute(std::string_view name, std::shared_ptr<ProductData> data, bool read_only);
 
-    bool Equals(MetadataAttribute &object) { return (object.GetData() == GetData()); }
+    bool Equals(MetadataAttribute& object);
 
-    std::shared_ptr<MetadataAttribute> CreateDeepClone() {
-        auto clone = std::make_shared<MetadataAttribute>(GetName(), (GetData())->CreateDeepClone(), IsReadOnly());
-        clone->SetDescription(GetDescription());
-        clone->SetSynthetic(IsSynthetic());
-        clone->SetUnit(GetUnit());
-        return clone;
-    }
+    std::shared_ptr<MetadataAttribute> CreateDeepClone();
 };
 
 }  // namespace alus::snapengine

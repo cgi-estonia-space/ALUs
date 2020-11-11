@@ -40,6 +40,16 @@ void ASCII::SetElems(std::any data) {
             "char*");
     }
 }
+std::shared_ptr<ProductData> ASCII::CreateDeepClone() const {
+    std::shared_ptr<ASCII> data = std::make_shared<ASCII>(array_.size());
+
+
+    std::copy( array_.begin(), array_.end(), data->array_.begin());
+//    final ASCII data = new ASCII(_array.length);
+//    System.arraycopy(_array, 0, data._array, 0, _array.length);
+//    return data;
+    return data;
+}
 
 }  // namespace snapengine
 }  // namespace alus

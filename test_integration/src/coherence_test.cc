@@ -71,12 +71,12 @@ TEST_F(CoherenceIntegrationTest, single_burst_data_2018) {
         alus::snapengine::PugixmlMetaDataReader xml_reader{
             "./goods/coherence/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_split_Orb_Stack"
             ".dim"};
-        auto master_root = xml_reader.GetElement(alus::snapengine::MetaDataNodeNames::ABSTRACT_METADATA_ROOT);
+        auto master_root = xml_reader.Read(alus::snapengine::MetaDataNodeNames::ABSTRACT_METADATA_ROOT);
         auto slave_root =
-            xml_reader.GetElement(alus::snapengine::MetaDataNodeNames::SLAVE_METADATA_ROOT).GetElements().at(0);
+            xml_reader.Read(alus::snapengine::MetaDataNodeNames::SLAVE_METADATA_ROOT)->GetElements().at(0);
 
         alus::MetaData meta_master{&ia_data_reader, master_root, ORBIT_DEGREE};
-        alus::MetaData meta_slave{&ia_data_reader, *slave_root, ORBIT_DEGREE};
+        alus::MetaData meta_slave{&ia_data_reader, slave_root, ORBIT_DEGREE};
 
         ASSERT_TRUE(boost::filesystem::exists(file_name_in_));
         ASSERT_FALSE(boost::filesystem::exists(file_name_out_));

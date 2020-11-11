@@ -5,7 +5,7 @@
 #include "computation_metadata.h"
 #include "dataset.h"
 #include "dem.hpp"
-#include "product.h"
+#include "product_old.h"
 #include "resampling.h"
 #include "tc_tile.h"
 #include "terrain_correction_metadata.h"
@@ -22,7 +22,7 @@ class TerrainCorrection {
                                const Metadata::TiePoints& lat_tie_points,
                                const Metadata::TiePoints& lon_tie_points);
 
-    static alus::snapengine::Product CreateTargetProduct(
+    static alus::snapengine::old::Product CreateTargetProduct(
         const alus::snapengine::geocoding::Geocoding* geocoding,
         snapengine::geocoding::Geocoding*& target_geocoding,
         int source_width,

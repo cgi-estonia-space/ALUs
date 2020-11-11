@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <iomanip>
+#include <limits>
 #include <utility>
 
 #include <boost/lexical_cast.hpp>
@@ -21,7 +23,17 @@ long Double::GetElemUIntAt(int index) const { return std::round(array_.at(index)
 long Double::GetElemLongAt(int index) const { return std::round(array_.at(index)); }
 float Double::GetElemFloatAt(int index) const { return (float)array_.at(index); }
 double Double::GetElemDoubleAt(int index) const { return array_.at(index); }
-std::string Double::GetElemStringAt(int index) const { return std::to_string(array_.at(index)); }
+std::string Double::GetElemStringAt(int index) const {
+    std::ostringstream out;
+    auto max_precision = std::numeric_limits<double>::max();
+    double integral;
+    if (std::modf(array_.at(index), &integral) == 0) {
+        out << std::fixed << std::setprecision(1) << integral;
+    } else {
+        out << std::setprecision(max_precision) << array_.at(index);
+    }
+    return out.str();
+}
 
 void Double::SetElemIntAt(int index, int value) { array_.at(index) = value; }
 void Double::SetElemUIntAt(int index, long value) { array_.at(index) = value; }
@@ -54,10 +66,12 @@ bool Double::EqualElems(const std::shared_ptr<ProductData> other) const {
     if (other.get() == this) {
         return true;
     } else {
-//        return array_ == ((std::shared_ptr<Double>)other)->GetArray();
+        //        return array_ == ((std::shared_ptr<Double>)other)->GetArray();
         return (array_ == std::any_cast<std::vector<double>>(other->GetElems()));
     }
 }
-void Double::SetElemStringAt(int index, std::string_view value) {array_.at(index) = boost::lexical_cast<double>(value);}
+void Double::SetElemStringAt(int index, std::string_view value) {
+    array_.at(index) = boost::lexical_cast<double>(value);
+}
 }  // namespace snapengine
 }  // namespace alus
