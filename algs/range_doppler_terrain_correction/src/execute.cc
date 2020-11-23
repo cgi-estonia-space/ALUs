@@ -1,8 +1,13 @@
 #include <iostream>
+#include <string_view>
 
 #include "alg_bond.h"
 #include "terrain_correction.h"
 #include "terrain_correction_metadata.h"
+
+namespace {
+constexpr std::string_view kParameterIdAvgSceneHeight{"avg_scene_height"};
+}
 
 namespace alus::terraincorrection {
 class TerrainCorrectionExecuter : public AlgBond {
@@ -10,7 +15,7 @@ class TerrainCorrectionExecuter : public AlgBond {
     TerrainCorrectionExecuter() { std::cout << __FUNCTION__ << std::endl; };
 
     int Execute() override {
-        std::cout << "Executing TC exec test" << std::endl;
+        PrintProcessingParameters();
 
         Metadata metadata(metadata_dim_file_,
                           metadata_folder_path_ + "/tie_point_grids/latitude.img",
@@ -32,6 +37,10 @@ class TerrainCorrectionExecuter : public AlgBond {
         metadata_dim_file_ = metadata_folder_path_.substr(0, metadata_folder_path_.length() - 5) + ".dim";
     }
 
+    void SetParameters(const app::AlgorithmParameters::Table& param_values) override {
+        (void) param_values;
+    }
+
     void SetTileSize(size_t width, size_t height) override {
         tile_width_ = width;
         tile_height_ = height;
@@ -39,15 +48,31 @@ class TerrainCorrectionExecuter : public AlgBond {
 
     void SetOutputFilename(const std::string& output_name) override { output_file_name_ = output_name; }
 
+    [[nodiscard]] std::string GetArgumentsHelp() const override {
+        std::stringstream help_stream;
+        help_stream << "Range Doppler Terrain Correction configurable parameters:" << std::endl
+                    << kParameterIdAvgSceneHeight
+                    << " - average scene height to be used instead SRTM values (default:" << avg_scene_height_ << ")"
+                    << std::endl;
+        return help_stream.str();
+    }
+
     ~TerrainCorrectionExecuter() override { std::cout << __FUNCTION__ << std::endl; }
 
    private:
+
+    void PrintProcessingParameters() const override {
+        std::cout << "Range Doppler Terrain Correction parameters:" << std::endl
+        << kParameterIdAvgSceneHeight << " " << avg_scene_height_ << std::endl;
+    }
+
     std::string input_dataset_name_{};
     std::string metadata_folder_path_{};
     std::string metadata_dim_file_{};
     std::string output_file_name_{};
     size_t tile_width_{};
     size_t tile_height_{};
+    uint32_t avg_scene_height_{0};
 };
 }  // namespace alus::terraincorrection
 

@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cstddef>
+#include <string>
 
+#include "algorithm_parameters.h"
 #include "raster_properties.hpp"
 
 namespace alus {
@@ -16,12 +18,18 @@ class AlgBond {
     AlgBond() = default;
 
     virtual void SetInputs(const std::string& input_dataset, const std::string& metadata_path) = 0;
+    virtual void SetParameters(const app::AlgorithmParameters::Table& param_values) = 0;
     virtual void SetTileSize(size_t width, size_t height) = 0;
     virtual void SetOutputFilename(const std::string& output_name) = 0;
     virtual int Execute() = 0;
     [[nodiscard]] virtual RasterDimension CalculateInputTileFrom(RasterDimension output) const = 0;
 
+    [[nodiscard]] virtual std::string GetArgumentsHelp() const = 0;
+
     virtual ~AlgBond() = default;
+
+   private:
+    virtual void PrintProcessingParameters() const {}
 };
 }  // namespace alus
 
