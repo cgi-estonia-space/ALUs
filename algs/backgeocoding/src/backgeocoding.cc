@@ -14,23 +14,22 @@
 #include "backgeocoding.h"
 
 #include <cuda_runtime.h>
-#include <limits.h>
 #include <cmath>
 #include <iostream>
 #include <string>
 
 #include "backgeocoding_constants.h"
+#include "bilinear_computation.h"
+#include "burst_offset.h"
 #include "cuda_util.hpp"
+#include "delaunay_triangulator.h"
+#include "deramp_demod.h"
 #include "extended_amount.h"
 #include "general_constants.h"
-#include "srtm3_elevation_model_constants.h"
-
-#include "bilinear.cuh"
-#include "delaunay_triangulator.h"
-#include "deramp_demod.cuh"
 #include "interpolation_constants.h"
-#include "slave_pixpos.cuh"
-#include "triangular_interpolation.cuh"
+#include "slave_pixpos_computation.h"
+#include "srtm3_elevation_model_constants.h"
+#include "triangular_interpolation_computation.h"
 
 namespace alus {
 namespace backgeocoding {
@@ -599,6 +598,91 @@ AzimuthAndRangeBounds Backgeocoding::ComputeExtendedAmount(int x_0, int y_0, int
         tiles,
         this->egm96_->device_egm_));
     return extended_amount;
+}
+
+void PrepareBurstOffsetKernelArguments(BurstOffsetKernelArgs &args,
+                                       PointerArray srtm3_tiles,
+                                       s1tbx::Sentinel1Utils *master_utils,
+                                       s1tbx::Sentinel1Utils *slave_utils) {
+    s1tbx::OrbitStateVectors *master_vectors = master_utils->GetOrbitStateVectors();
+    s1tbx::OrbitStateVectors *slave_vectors = slave_utils->GetOrbitStateVectors();
+
+    snapengine::OrbitStateVectorComputation *d_master_orbit_state_vector;
+    snapengine::OrbitStateVectorComputation *d_slave_orbit_state_vector;
+
+    const size_t master_orbit_byte_size =
+        sizeof(snapengine::OrbitStateVectorComputation) * master_vectors->orbit_state_vectors_computation_.size();
+    const size_t slave_orbit_byte_size =
+        sizeof(snapengine::OrbitStateVectorComputation) * slave_vectors->orbit_state_vectors_computation_.size();
+    CHECK_CUDA_ERR(cudaMalloc(&d_master_orbit_state_vector, master_orbit_byte_size));
+    CHECK_CUDA_ERR(cudaMalloc(&d_slave_orbit_state_vector, slave_orbit_byte_size));
+
+    CHECK_CUDA_ERR(cudaMemcpy(d_master_orbit_state_vector,
+                              master_vectors->orbit_state_vectors_computation_.data(),
+                              master_orbit_byte_size,
+                              cudaMemcpyHostToDevice));
+    CHECK_CUDA_ERR(cudaMemcpy(d_slave_orbit_state_vector,
+                              slave_vectors->orbit_state_vectors_computation_.data(),
+                              slave_orbit_byte_size,
+                              cudaMemcpyHostToDevice));
+
+    args.srtm3_tiles.array = srtm3_tiles.array;
+
+    args.master_sentinel_utils = master_utils->device_sentinel_1_utils_;
+    args.master_subswath_info = master_utils->subswath_.at(0).device_subswath_info_;
+    args.master_orbit = d_master_orbit_state_vector;
+    args.master_num_orbit_vec = master_vectors->orbit_state_vectors_computation_.size();
+    args.master_dt = master_vectors->GetDt();
+
+    args.slave_sentinel_utils = slave_utils->device_sentinel_1_utils_;
+    args.slave_subswath_info = slave_utils->subswath_.at(0).device_subswath_info_;
+    args.slave_orbit = d_slave_orbit_state_vector;
+    args.slave_num_orbit_vec = slave_vectors->orbit_state_vectors_computation_.size();
+    args.slave_dt = slave_vectors->GetDt();
+
+    s1tbx::SubSwathInfo *h_master_subswath = &master_utils->subswath_.at(0);
+    int subswath_geo_grid_size = h_master_subswath->num_of_geo_lines_ * h_master_subswath->num_of_geo_points_per_line_;
+
+    args.width = h_master_subswath->num_of_geo_points_per_line_;
+    args.height = h_master_subswath->num_of_geo_lines_;
+
+    int burst_offset = INVALID_BURST_OFFSET;
+    CHECK_CUDA_ERR(cudaMalloc(&args.burst_offset, sizeof(int)));
+    CHECK_CUDA_ERR(cudaMemcpy(args.burst_offset, &burst_offset, sizeof(int), cudaMemcpyHostToDevice));
+
+    CHECK_CUDA_ERR(cudaMalloc(&args.longitudes, sizeof(double) * subswath_geo_grid_size));
+    CHECK_CUDA_ERR(cudaMalloc(&args.latitudes, sizeof(double) * subswath_geo_grid_size));
+
+    CHECK_CUDA_ERR(cudaMemcpy(args.longitudes,
+                              h_master_subswath->longitude_[0],
+                              sizeof(double) * subswath_geo_grid_size,
+                              cudaMemcpyHostToDevice));
+    CHECK_CUDA_ERR(cudaMemcpy(args.latitudes,
+                              h_master_subswath->latitude_[0],
+                              sizeof(double) * subswath_geo_grid_size,
+                              cudaMemcpyHostToDevice));
+}
+
+void FreeBurstOffsetArguments(BurstOffsetKernelArgs &args) {
+    CHECK_CUDA_ERR(cudaFree(args.latitudes));
+    CHECK_CUDA_ERR(cudaFree(args.longitudes));
+    CHECK_CUDA_ERR(cudaFree(args.burst_offset));
+    CHECK_CUDA_ERR(cudaFree(args.master_orbit));
+    CHECK_CUDA_ERR(cudaFree(args.slave_orbit));
+}
+
+int Backgeocoding::ComputeBurstOffset() {
+    PointerArray srtm3_tiles{};
+
+    BurstOffsetKernelArgs args{};
+    srtm3_tiles.array = this->srtm3Dem_->device_srtm3_tiles_;
+    PrepareBurstOffsetKernelArguments(args, srtm3_tiles, this->master_utils_.get(), this->slave_utils_.get());
+
+    int burst_offset;
+    CHECK_CUDA_ERR(LaunchBurstOffsetKernel(args, &burst_offset));
+    FreeBurstOffsetArguments(args);
+
+    return burst_offset;
 }
 
 }  // namespace backgeocoding

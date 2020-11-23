@@ -16,12 +16,11 @@
 #include <cuda_runtime.h>
 
 #include "general_constants.h"
+#include "orbit_state_vector_computation.h"
 #include "pointer_holders.h"
 #include "position_data.h"
-#include "sar_geocoding.cuh"
-#include "sentinel1_utils.cuh"
-#include "subswath_info.cuh"
-#include "orbit_state_vector_computation.h"
+#include "subswath_info_computation.h"
+#include "sentinel1_utils_computation.h"
 
 namespace alus {
 namespace backgeocoding {

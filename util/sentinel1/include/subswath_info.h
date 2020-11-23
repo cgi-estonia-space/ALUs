@@ -5,7 +5,7 @@
 #include "CudaFriendlyObject.h"
 #include "cuda_util.hpp"
 
-#include "subswath_info.cuh"
+#include "subswath_info_computation.h"
 
 namespace alus {
 namespace s1tbx {

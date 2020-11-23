@@ -13,10 +13,12 @@
  */
 #pragma once
 
+#include "burst_indices.h"
 #include "general_constants.h"
 #include "position_data.h"
 
 #include "sar_geocoding.cuh"
+#include "sentinel1_utils.cuh"
 
 namespace alus {
 namespace backgeocoding {
@@ -96,6 +98,58 @@ inline __device__ bool GetPosition(s1tbx::DeviceSubswathInfo *subswath_info,
     }
 
     return true;
+}
+
+__device__ inline BurstIndices GetBurstIndices(double line_time_interval,
+                                               double wavelength,
+                                               int num_of_bursts,
+                                               const double *burst_first_line_times,
+                                               const double *burst_last_line_times,
+                                               snapengine::PosVector earth_point,
+                                               snapengine::OrbitStateVectorComputation *orbit,
+                                               const size_t num_orbit_vec,
+                                               const double dt) {
+    BurstIndices burst_indices{-1, -1, false, false, false};
+    const double zero_doppler_time_in_days = s1tbx::sargeocoding::GetZeroDopplerTime(
+        line_time_interval, wavelength, earth_point, orbit, num_orbit_vec, dt);
+    if (zero_doppler_time_in_days == s1tbx::sargeocoding::NON_VALID_ZERO_DOPPLER_TIME) {
+        return burst_indices;
+    }
+
+    const double zero_doppler_time = zero_doppler_time_in_days * snapengine::constants::secondsInDay;
+    for (int i = 0, k = 0; i < num_of_bursts; i++) {
+        if (zero_doppler_time >= burst_first_line_times[i] && zero_doppler_time < burst_last_line_times[i]) {
+            bool in_upper_part = (zero_doppler_time >= (burst_first_line_times[i] + burst_last_line_times[i]) / 2.0);
+            if (k == 0) {
+                burst_indices.first_burst_index = i;
+                burst_indices.in_upper_part_of_first_burst = in_upper_part;
+            } else {
+                burst_indices.second_burst_index = i;
+                burst_indices.in_upper_part_of_second_burst = in_upper_part;
+                break;
+            }
+            k++;
+        }
+    }
+    burst_indices.valid = (burst_indices.first_burst_index != -1) || (burst_indices.second_burst_index != -1);
+    return burst_indices;
+}
+
+__device__ inline BurstIndices GetBurstIndices(const s1tbx::DeviceSentinel1Utils *sentinel_utils,
+                                               const s1tbx::DeviceSubswathInfo *subswath_info,
+                                               snapengine::PosVector earth_point,
+                                               snapengine::OrbitStateVectorComputation *orbit,
+                                               const size_t num_orbit_vec,
+                                               const double dt) {
+    return GetBurstIndices(sentinel_utils->line_time_interval,
+                           sentinel_utils->wavelength,
+                           subswath_info->num_of_bursts,
+                           subswath_info->device_burst_first_line_time,
+                           subswath_info->device_burst_last_line_time,
+                           earth_point,
+                           orbit,
+                           num_orbit_vec,
+                           dt);
 }
 }  // namespace backgeocoding
 }  // namespace alus

@@ -1,34 +1,11 @@
 #pragma once
 
-#include "subswath_info.cuh"
+#include "sentinel1_utils_computation.h"
+
+#include "subswath_info_computation.h"
 
 namespace alus {
 namespace s1tbx {
-
-struct DeviceSentinel1Utils {
-    double first_line_utc;
-    double last_line_utc;
-    double line_time_interval;
-    double near_edge_slant_range;
-    double wavelength;
-    double range_spacing;
-    double azimuth_spacing;
-
-    int source_image_width;
-    int source_image_height;
-    int near_range_on_left;
-    int srgr_flag;
-};
-
-struct Sentinel1Index {
-    int i0;
-    int i1;
-    int j0;
-    int j1;
-    double mu_x;
-    double mu_y;
-};
-
 __device__ inline Sentinel1Index ComputeIndex(double azimuth_time,
                                                   double slant_range_time,
                                                   DeviceSubswathInfo* subswath_info,

@@ -2,9 +2,8 @@
 
 namespace alus {
 namespace s1tbx {
-
-struct DeviceSubswathInfo{
-    //subswath info
+struct DeviceSubswathInfo {
+    // subswath info
     int first_valid_pixel;
     int last_valid_pixel;
     double first_line_time;
@@ -35,8 +34,6 @@ struct DeviceSubswathInfo{
     // GeoLocationGridPoint
     int num_of_geo_lines;
     int num_of_geo_points_per_line;
-
 };
-
-}//namespace
-}//namespace
+}  // namespace s1tbx
+}  // namespace alus

@@ -38,6 +38,10 @@ find_package(GDAL REQUIRED)
 find_package (Eigen3 REQUIRED)
 
 set(ALUS_BINARY_OUTPUT_DIR ${PROJECT_BINARY_DIR}/alus_package)
+set(ALUS_UNIT_TEST_BINARY_OUTPUT_DIR ${PROJECT_BINARY_DIR}/unit-test)
+
+option(ENABLE_UNIT_TESTS "Enable unit tests" ON)
+option(ENABLE_INTEGRATION_TESTS "Enable integration tests" ON)
 
 # External libraries
 add_subdirectory(external/pugixml)
@@ -67,9 +71,7 @@ add_subdirectory(test/sar_geocoding)
 add_subdirectory(app)
 
 # Tests
-option(ENABLE_UNIT_TESTS "Enable unit tests" ON)
 message(STATUS "Enable testing: ${ENABLE_UNIT_TESTS}")
-option(ENABLE_INTEGRATION_TESTS "Enable integration tests" ON)
 message(STATUS "Integration tests enabled: ${ENABLE_INTEGRATION_TESTS}")
 
 include(FetchContent)

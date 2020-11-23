@@ -1,3 +1,16 @@
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #pragma once
 
 #include <cmath>
@@ -32,6 +45,26 @@ inline __device__ __host__ double Interpolate2D(
     double i_weight, double j_weight, double anchor_1, double anchor_2, double anchor_3, double anchor_4) {
     return anchor_1 + i_weight * (anchor_2 - anchor_1) + j_weight * (anchor_3 - anchor_1) +
            i_weight * j_weight * (anchor_4 + anchor_1 - anchor_3 - anchor_2);
+}
+
+inline __device__ __host__ bool Xor(const bool &a, const bool &b) { return !a != !b; }
+
+/**
+ * Non-atomic implementation of Compare-And-Swap function. It compares value stored in pointer with some other value and
+ * overwrites it with a new value.
+ *
+ * @tparam T Any type which supports equality operator or has it overridden.
+ * @param old Pointer to the old value.
+ * @param compare Value, with which the old value will be compared.
+ * @param value The value to be written in the old memory address.
+ * @return The old value.
+ */
+template <typename T>
+inline __device__ __host__ T Cas(T *old, T compare, T value) {
+    T old_value = *old;
+    *old = (old_value == compare) * value + (old_value != compare) * old_value;
+
+    return old_value;
 }
 
 }  // namespace mathutils

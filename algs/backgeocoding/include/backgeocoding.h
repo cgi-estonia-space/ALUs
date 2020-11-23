@@ -127,6 +127,7 @@ class Backgeocoding {
     const float *GetQResult() { return this->q_result_.data(); }
 
     AzimuthAndRangeBounds ComputeExtendedAmount(int x_0, int y_0, int w, int h);
+    int ComputeBurstOffset();
 };
 
 }  // namespace backgeocoding

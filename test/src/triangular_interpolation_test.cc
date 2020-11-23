@@ -23,7 +23,7 @@
 
 #include "backgeocoding_constants.h"
 #include "delaunay_triangulator.h"
-#include "triangular_interpolation.cuh"
+#include "triangular_interpolation_computation.h"
 
 using namespace alus::tests;
 
