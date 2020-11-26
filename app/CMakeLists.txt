@@ -10,11 +10,6 @@ list(APPEND APP_INCLUDE_DIRS
 
 add_executable(alus ${APP_SOURCES})
 
-set_target_properties(alus
-        PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY ${ALUS_BINARY_OUTPUT_DIR}
-        )
-
 target_include_directories(alus PUBLIC ${APP_INCLUDE_DIRS})
 target_link_libraries(alus
         PUBLIC
@@ -23,6 +18,15 @@ target_link_libraries(alus
         app-util-static
         )
 
+set_target_properties(alus
+        PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${ALUS_BINARY_OUTPUT_DIR}
+        )
+
+add_custom_command(TARGET alus
+        POST_BUILD
+        COMMAND cp ${CMAKE_CURRENT_LIST_DIR}/facility/*.sh ${ALUS_BINARY_OUTPUT_DIR}/.)
+    
 list(APPEND APP_UTIL_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/algorithm_parameters.cc)
 add_library(app-util-static STATIC ${APP_UTIL_SOURCES})
