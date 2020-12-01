@@ -8,6 +8,7 @@
 
 #include "alg_bond.h"
 #include "algorithm_parameters.h"
+#include "dem_assistant.h"
 
 namespace po = boost::program_options;
 
@@ -21,6 +22,7 @@ int main(int argc, char* argv[]) {
     size_t tile_height{};
     std::string alg_params{};
     std::string params_file_path{};
+    std::vector<std::string> dem_files_param{};
 
     po::options_description options("Alus options");
     options.add_options()("help,h", "Print help")(
@@ -41,6 +43,9 @@ int main(int argc, char* argv[]) {
          "here will overrule ones in the configuration file supplied as '--parameters_file' option.")
         ("parameters_file", po::value<std::string>(&params_file_path)->default_value(""), "Algorithm specific "
              "configurations file path. File contents shall follow same syntax as '--parameters' option.")(
+        "dem", po::value<std::vector<std::string>>(&dem_files_param), "Dem files with full path. Can be specified"
+                "multiple times for multiple DEM files or a space separated files in a single argument. Only SRTM3 is"
+                "supported.")(
         "list_algs,l", "Print available algorithms");
 
     void* alg_lib{nullptr};
@@ -50,7 +55,7 @@ int main(int argc, char* argv[]) {
         po::store(po::parse_command_line(argc, argv, options), vm);
         po::notify(vm);
 
-        if (vm.count("help") || argc == 1) {
+        if (vm.count("help") || argc == 1 || vm.count("alg_name") == 0) {
             std::cout << options << std::endl;
             return 0;
         }
@@ -85,6 +90,14 @@ int main(int argc, char* argv[]) {
                 std::cout << alg->GetArgumentsHelp();
             }
             else {
+
+                std::shared_ptr<alus::app::DemAssistant> dem_assistant{};
+                if (!dem_files_param.empty()) {
+                    std::cout << "Processing DEM files and moving to GPU." << std::endl;
+                    dem_assistant =
+                        alus::app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(std::move(dem_files_param));
+                }
+
                 alg->SetInputs(input_file, aux_location);
                 alg->SetTileSize(tile_width, tile_height);
                 alg->SetOutputFilename(output_path);
@@ -106,6 +119,10 @@ int main(int argc, char* argv[]) {
                 std::cout << warnings << std::endl;
                 if (merged_parameters.count(alg_to_run)) {
                     alg->SetParameters(merged_parameters.at(alg_to_run));
+                }
+
+                if (dem_assistant != nullptr) {
+                    alg->SetSrtm3Buffers(dem_assistant->GetSrtm3ValuesOnGpu());
                 }
 
                 alg->Execute();

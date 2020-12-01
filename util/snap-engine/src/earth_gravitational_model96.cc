@@ -13,62 +13,59 @@
  */
 #include "earth_gravitational_model96.h"
 
-namespace alus {
-namespace snapengine {
+#include <sstream>
 
-EarthGravitationalModel96::EarthGravitationalModel96(std::string grid_file){
-    this->grid_file_ = grid_file;
-    this->ReadGridFile();
+#include "allocators.h"
+#include "cuda_util.hpp"
+#include "earth_gravitational_model96_computation.h"
+#include "ww15mgh_b_grd.h"
 
-}
+namespace alus::snapengine {
 
-EarthGravitationalModel96::EarthGravitationalModel96(){ this->ReadGridFile();
-}
+EarthGravitationalModel96::EarthGravitationalModel96() { this->FetchGridValues(); }
 
-EarthGravitationalModel96::~EarthGravitationalModel96(){
-    if(this->egm_ != nullptr){
+EarthGravitationalModel96::~EarthGravitationalModel96() {
+    if (this->egm_ != nullptr) {
         delete[] this->egm_;
     }
     this->DeviceFree();
 }
 
+void EarthGravitationalModel96::FetchGridValues() {
+    std::stringstream grid_reader(WW15MGH_B_GRID);
+    this->egm_ = Allocate2DArray<float>(earthgravitationalmodel96computation::NUM_LATS,
+                                        earthgravitationalmodel96computation::NUM_LONS);
 
-void EarthGravitationalModel96::ReadGridFile(){
-    std::ifstream grid_reader(this->grid_file_);
-    if(!grid_reader.is_open()){
-        throw std::ios::failure("Grid file not open.");
-    }
-    this->egm_ = Allocate2DArray<float>(earthgravitationalmodel96::NUM_LATS, earthgravitationalmodel96::NUM_LONS);
+    int num_char_in_header = earthgravitationalmodel96computation::NUM_CHAR_PER_NORMAL_LINE +
+                             earthgravitationalmodel96computation::NUM_CHAR_PER_EMPTY_LINE;
 
-    int numCharInHeader = earthgravitationalmodel96::NUM_CHAR_PER_NORMAL_LINE + earthgravitationalmodel96::NUM_CHAR_PER_EMPTY_LINE;
+    grid_reader.seekg(num_char_in_header, grid_reader.beg);
 
-    grid_reader.seekg(numCharInHeader, grid_reader.beg);
-
-    for(int rowIdx=0; rowIdx<earthgravitationalmodel96::NUM_LATS; rowIdx++){
-        for(int colIdx=0; colIdx<earthgravitationalmodel96::NUM_LONS; colIdx++){
-            grid_reader >> this->egm_[rowIdx][colIdx];
+    for (int row_idx = 0; row_idx < earthgravitationalmodel96computation::NUM_LATS; row_idx++) {
+        for (int col_idx = 0; col_idx < earthgravitationalmodel96computation::NUM_LONS; col_idx++) {
+            grid_reader >> this->egm_[row_idx][col_idx];
         }
     }
-
-    grid_reader.close();
 }
 
-void EarthGravitationalModel96::HostToDevice(){
-    CHECK_CUDA_ERR(cudaMalloc((void**)&device_egm_, earthgravitationalmodel96::NUM_LATS*earthgravitationalmodel96::NUM_LONS*sizeof(float)));
+void EarthGravitationalModel96::HostToDevice() {
+    CHECK_CUDA_ERR(cudaMalloc((void**)&device_egm_, earthgravitationalmodel96computation::NUM_LATS *
+                                                        earthgravitationalmodel96computation::NUM_LONS *
+                                                        sizeof(float)));
 
-    CHECK_CUDA_ERR(cudaMemcpy(this->device_egm_, this->egm_[0], earthgravitationalmodel96::NUM_LATS*earthgravitationalmodel96::NUM_LONS*sizeof(float),cudaMemcpyHostToDevice));
+    CHECK_CUDA_ERR(cudaMemcpy(
+        this->device_egm_, this->egm_[0],
+        earthgravitationalmodel96computation::NUM_LATS * earthgravitationalmodel96computation::NUM_LONS * sizeof(float),
+        cudaMemcpyHostToDevice));
 }
 
-void EarthGravitationalModel96::DeviceToHost(){
-    CHECK_CUDA_ERR(cudaErrorNotYetImplemented);
-}
+void EarthGravitationalModel96::DeviceToHost() { CHECK_CUDA_ERR(cudaErrorNotYetImplemented); }
 
-void EarthGravitationalModel96::DeviceFree(){
-    if(this->device_egm_ != nullptr){
+void EarthGravitationalModel96::DeviceFree() {
+    if (this->device_egm_ != nullptr) {
         cudaFree(this->device_egm_);
         this->device_egm_ = nullptr;
     }
 }
 
-}//namespace
-}//namespace
+}  // namespace alus::snapengine

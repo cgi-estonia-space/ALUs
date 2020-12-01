@@ -41,6 +41,10 @@ class TerrainCorrectionExecuter : public AlgBond {
         (void) param_values;
     }
 
+    void SetSrtm3Buffers(const PointerHolder* buffers) override {
+        srtm3_buffers_ = buffers;
+    };
+
     void SetTileSize(size_t width, size_t height) override {
         tile_width_ = width;
         tile_height_ = height;
@@ -73,6 +77,7 @@ class TerrainCorrectionExecuter : public AlgBond {
     size_t tile_width_{};
     size_t tile_height_{};
     uint32_t avg_scene_height_{0};
+    const PointerHolder* srtm3_buffers_{};
 };
 }  // namespace alus::terraincorrection
 

@@ -16,6 +16,7 @@ target_link_libraries(alus
         dl
         Boost::program_options
         app-util-static
+        snap-engine-static
         )
 
 set_target_properties(alus
@@ -28,11 +29,17 @@ add_custom_command(TARGET alus
         COMMAND cp ${CMAKE_CURRENT_LIST_DIR}/facility/*.sh ${ALUS_BINARY_OUTPUT_DIR}/.)
     
 list(APPEND APP_UTIL_SOURCES
-        ${CMAKE_CURRENT_LIST_DIR}/src/algorithm_parameters.cc)
+        ${CMAKE_CURRENT_LIST_DIR}/src/algorithm_parameters.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/dem_assistant.cc
+        )
 add_library(app-util-static STATIC ${APP_UTIL_SOURCES})
 target_include_directories(app-util-static
         PUBLIC
         ${APP_INCLUDE_DIRS}
+        )
+target_link_libraries(app-util-static
+        PUBLIC
+        snap-engine-static
         )
 set_target_properties(app-util-static
         PROPERTIES

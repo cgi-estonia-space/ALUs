@@ -25,8 +25,19 @@ class DatasetError : public std::runtime_error {
 
 class Dataset {
    public:
+
+    /**
+     * This enum enables to force georeferencing source for GDAL driver as specified here:
+     * https://gdal.org/drivers/raster/gtiff.html#georeferencing
+     */
+    enum class GeoTransformSourcePriority {
+        PAM_INTERNAL_TABFILE_WORLDFILE_NONE, // This is a default for GDAL driver, essentially no need to specify this.
+        WORLDFILE_PAM_INTERNAL_TABFILE_NONE
+    };
+
     Dataset() = default;
     explicit Dataset(std::string_view filename);
+    explicit Dataset(std::string_view filename, const GeoTransformSourcePriority& georef_source);
     void LoadRasterBand(int band_nr);
     void LoadRasterBandFloat(int band_nr);
     Dataset(GDALDataset& dataset);
@@ -55,6 +66,14 @@ class Dataset {
 
     std::tuple<double /*lon*/, double /*lat*/> GetPixelCoordinatesFromIndex(int x, int y) const;
     std::tuple<int /*x*/, int /*y*/> GetPixelIndexFromCoordinates(double lon, double lat) const;
+
+    // These are the TOP LEFT / UPPER LEFT coordinates of the image.
+    static constexpr int TRANSFORM_LON_ORIGIN_INDEX{0};    // Or X origin
+    static constexpr int TRANSFORM_PIXEL_X_SIZE_INDEX{1};  // Or pixel width
+    static constexpr int TRANSFORM_ROTATION_1{2};
+    static constexpr int TRANSFORM_LAT_ORIGIN_INDEX{3};    // Or Y origin
+    static constexpr int TRANSFORM_ROTATION_2{4};
+    static constexpr int TRANSFORM_PIXEL_Y_SIZE_INDEX{5};  // Or pixel height
 
     double const* GetTransform() const { return transform_.data(); }
 
@@ -112,12 +131,6 @@ class Dataset {
     int y_size_{};
     std::vector<double> data_buffer_{};
     std::vector<float> float_data_buffer_{};
-
-    // These are the TOP LEFT / UPPER LEFT coordinates of the image.
-    static constexpr int TRANSFORM_LON_ORIGIN_INDEX{0};    // Or X origin
-    static constexpr int TRANSFORM_LAT_ORIGIN_INDEX{3};    // Or Y origin
-    static constexpr int TRANSFORM_PIXEL_X_SIZE_INDEX{1};  // Or pixel width
-    static constexpr int TRANSFORM_PIXEL_Y_SIZE_INDEX{5};  // Or pixel height
 };
 
 }  // namespace alus

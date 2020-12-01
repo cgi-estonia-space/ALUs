@@ -56,7 +56,7 @@ class Backgeocoding {
     double dem_sampling_lat_ = 0.0;
     double dem_sampling_lon_ = 0.0;
     std::unique_ptr<snapengine::EarthGravitationalModel96> egm96_;
-    std::unique_ptr<snapengine::SRTM3ElevationModel> srtm3Dem_;
+    std::unique_ptr<snapengine::Srtm3ElevationModel> srtm3Dem_;
 
     void AllocateGPUData();
     void CopySlaveTiles(double *slave_tile_i, double *slave_tile_q);

@@ -6,7 +6,7 @@
 #include <thrust/sequence.h>
 
 #include "allocators.h"
-#include "earth_gravitational_model96.h"
+#include "earth_gravitational_model96_computation.h"
 #include "extended_amount.h"
 #include "general_constants.h"
 #include "pointer_holders.h"
@@ -80,10 +80,10 @@ __global__ void ComputeExtendedAmountKernel(ExtendedAmountKernelArgs args) {
     // TODO: we may have to rewire this in the future, but no idea to where atm.
     //       (see algs/backgeocoding/src/backgeocoding.cc)
     if (altitude == snapengine::srtm3elevationmodel::NO_DATA_VALUE) {
-        altitude = snapengine::earthgravitationalmodel96::GetEGM96(latitude,
+        altitude = snapengine::earthgravitationalmodel96computation::GetEGM96(latitude,
                                                                    longitude,
-                                                                   snapengine::earthgravitationalmodel96::MAX_LATS,
-                                                                   snapengine::earthgravitationalmodel96::MAX_LONS,
+                                                                   snapengine::earthgravitationalmodel96computation::MAX_LATS,
+                                                                   snapengine::earthgravitationalmodel96computation::MAX_LONS,
                                                                    args.egm);
     }
     s1tbx::PositionData position_data{};

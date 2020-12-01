@@ -105,21 +105,17 @@ TEST(SRTM3, altitudeCalc) {
     dim3 block_size(512);
     dim3 grid_size(alus::cuda::GetGridDim(block_size.x, tester.size_));
 
-    alus::snapengine::EarthGravitationalModel96 egm96("./goods/ww15mgh_b.grd");
-    egm96.HostToDevice();
+    alus::snapengine::EarthGravitationalModel96 egm_96{};
+    egm_96.HostToDevice();
 
-    alus::Point srtm_41_01 = {41, 1};
-    alus::Point srtm_42_01 = {42, 1};
-    std::vector<alus::Point> files;
-    files.push_back(srtm_41_01);
-    files.push_back(srtm_42_01);
-    alus::snapengine::SRTM3ElevationModel srtm3_dem(files, "./goods/");
-    srtm3_dem.ReadSrtmTiles(&egm96);
-    srtm3_dem.HostToDevice();
+    std::vector<std::string> files{"./goods/srtm_41_01.tif", "./goods/srtm_42_01.tif"};
+    alus::snapengine::Srtm3ElevationModel srtm_3_dem(files);
+    srtm_3_dem.ReadSrtmTiles(&egm_96);
+    srtm_3_dem.HostToDevice();
 
     SRTM3TestData calc_data;
     calc_data.size = tester.size_;
-    calc_data.tiles.array = srtm3_dem.device_srtm3_tiles_;
+    calc_data.tiles.array = srtm_3_dem.GetSrtmBuffersInfo();
 
     CHECK_CUDA_ERR(LaunchSRTM3AltitudeTester(
         grid_size, block_size, tester.device_lats_, tester.device_lons_, tester.device_alts_, calc_data));

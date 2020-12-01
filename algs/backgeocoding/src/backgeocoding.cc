@@ -24,6 +24,7 @@
 #include "cuda_util.hpp"
 #include "delaunay_triangulator.h"
 #include "deramp_demod.h"
+#include "earth_gravitational_model96_computation.h"
 #include "extended_amount.h"
 #include "general_constants.h"
 #include "interpolation_constants.h"
@@ -180,16 +181,13 @@ void Backgeocoding::PrepareToCompute() {
 }
 
 void Backgeocoding::PrepareSrtm3Data() {
-    this->egm96_ = std::make_unique<snapengine::EarthGravitationalModel96>(this->grid_file_);
+    this->egm96_ = std::make_unique<snapengine::EarthGravitationalModel96>();
     this->egm96_->HostToDevice();
 
-    // placeholders
-    Point srtm_41_01 = {41, 1};
-    Point srtm_42_01 = {42, 1};
-    std::vector<Point> files;
-    files.push_back(srtm_41_01);
-    files.push_back(srtm_42_01);
-    this->srtm3Dem_ = std::make_unique<snapengine::SRTM3ElevationModel>(files, this->srtms_directory_);
+    std::vector<std::string> files{this->srtms_directory_ + "/" + "srtm_41_01.tif",
+                                   this->srtms_directory_ + "/" + "srtm_42_01.tif"};
+
+    this->srtm3Dem_ = std::make_unique<snapengine::Srtm3ElevationModel>(files);
     this->srtm3Dem_->ReadSrtmTiles(this->egm96_.get());
     this->srtm3Dem_->HostToDevice();
 }
@@ -299,10 +297,10 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index,
 
     calc_data.num_lines = calc_data.lat_min_idx - calc_data.lat_max_idx;
     calc_data.num_pixels = calc_data.lon_max_idx - calc_data.lon_min_idx;
-    calc_data.tiles.array = this->srtm3Dem_->device_srtm3_tiles_;
-    calc_data.egm = this->egm96_->device_egm_;
-    calc_data.max_lats = alus::snapengine::earthgravitationalmodel96::MAX_LATS;
-    calc_data.max_lons = alus::snapengine::earthgravitationalmodel96::MAX_LONS;
+    calc_data.tiles.array = this->srtm3Dem_->GetSrtmBuffersInfo();
+    calc_data.egm = const_cast<float*>(this->egm96_->GetDeviceValues());
+    calc_data.max_lats = alus::snapengine::earthgravitationalmodel96computation::MAX_LATS;
+    calc_data.max_lons = alus::snapengine::earthgravitationalmodel96computation::MAX_LONS;
     // TODO: we may have to rewire this in the future, but no idea to where atm.
     calc_data.dem_no_data_value = alus::snapengine::srtm3elevationmodel::NO_DATA_VALUE;
     calc_data.mask_out_area_without_elevation = 1;  // TODO: placeholder should be coming in with user arguments
@@ -584,7 +582,7 @@ void Backgeocoding::SetOrbitVectorsFiles(std::string master_orbit_state_vectors_
 AzimuthAndRangeBounds Backgeocoding::ComputeExtendedAmount(int x_0, int y_0, int w, int h) {
     AzimuthAndRangeBounds extended_amount{};
     PointerArray tiles{};
-    tiles.array = this->srtm3Dem_->device_srtm3_tiles_;
+    tiles.array = this->srtm3Dem_->GetSrtmBuffersInfo();
 
     CHECK_CUDA_ERR(LaunchComputeExtendedAmount(
         {x_0, y_0, w, h},
@@ -596,7 +594,7 @@ AzimuthAndRangeBounds Backgeocoding::ComputeExtendedAmount(int x_0, int y_0, int
         this->master_utils_->device_sentinel_1_utils_,
         this->master_utils_->subswath_.at(0).device_subswath_info_,
         tiles,
-        this->egm96_->device_egm_));
+        const_cast<float*>(this->egm96_->GetDeviceValues())));
     return extended_amount;
 }
 
@@ -675,7 +673,7 @@ int Backgeocoding::ComputeBurstOffset() {
     PointerArray srtm3_tiles{};
 
     BurstOffsetKernelArgs args{};
-    srtm3_tiles.array = this->srtm3Dem_->device_srtm3_tiles_;
+    srtm3_tiles.array = this->srtm3Dem_->GetSrtmBuffersInfo();
     PrepareBurstOffsetKernelArguments(args, srtm3_tiles, this->master_utils_.get(), this->slave_utils_.get());
 
     int burst_offset;

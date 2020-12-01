@@ -13,6 +13,8 @@
  */
 #pragma once
 
+#include <cstdint>
+
 namespace alus {
 namespace snapengine{
 namespace srtm3elevationmodel{
@@ -22,7 +24,7 @@ constexpr int NUM_X_TILES {72};
 constexpr int NUM_Y_TILES {24};
 constexpr int DEGREE_RES {5};
 constexpr int NUM_PIXELS_PER_TILE {6000};
-constexpr double NO_DATA_VALUE {-32768};
+constexpr int16_t NO_DATA_VALUE {-32768};
 constexpr int RASTER_WIDTH {NUM_X_TILES * NUM_PIXELS_PER_TILE};
 constexpr int RASTER_HEIGHT {NUM_Y_TILES * NUM_PIXELS_PER_TILE};
 
