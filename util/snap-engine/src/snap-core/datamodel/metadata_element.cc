@@ -1,85 +1,127 @@
 #include "metadata_element.h"
 
+#include <stdexcept>
+
 #include "guardian.h"
+#include "product_node_group.h"
 
 namespace alus {
 namespace snapengine {
 
-MetadataElement::MetadataElement(std::string_view name, std::string_view description, IMetaDataReader *meta_data_reader)
+MetadataElement::MetadataElement(std::string_view name, std::string_view description, IMetaDataReader* meta_data_reader)
     : ProductNode(name, description) {
     this->meta_data_reader_ = meta_data_reader;
     // reader provides everything needed to construct the element (attributes, elements etc..)
     //    todo:make sure it runs once
 
-    this->elements_ = this->meta_data_reader_->GetElement(name).elements_;
-    this->attributes_ = this->meta_data_reader_->GetElement(name).attributes_;
+    this->elements_ = this->meta_data_reader_->Read(name)->elements_;
+    this->attributes_ = this->meta_data_reader_->Read(name)->attributes_;
 }
-MetadataElement::MetadataElement(std::string_view name,
-                                 std::vector<std::shared_ptr<MetadataElement>> elements,
-                                 std::vector<std::shared_ptr<MetadataAttribute>> attributes)
-    : ProductNode(name) {
-    this->elements_ = elements;
-    this->attributes_ = attributes;
-}
-void MetadataElement::AddElement(const std::shared_ptr<MetadataElement> &me) { this->elements_.emplace_back(me); }
-void MetadataElement::AddAttribute(const std::shared_ptr<MetadataAttribute> &ma) {
-    if (ma == nullptr) {
+
+/**
+ * Adds the given element to this element.
+ *
+ * @param element the element to added, ignored if <code>null</code>
+ */
+void MetadataElement::AddElement(std::shared_ptr<MetadataElement> element) {
+    if (element == nullptr) {
         return;
     }
-    this->attributes_.emplace_back(ma);
+    if (elements_ == nullptr) {
+        elements_ = std::make_shared<ProductNodeGroup<std::shared_ptr<MetadataElement>>>(
+            SharedFromBase<MetadataElement>(), "elements", true);
+    }
+    elements_->Add(element);
 }
-int MetadataElement::GetNumElements() const { return elements_.size(); }
 
-int MetadataElement::GetNumAttributes() const { return attributes_.size(); }
-
-bool MetadataElement::RemoveAttribute(std::shared_ptr<MetadataAttribute> &ma) {
-    auto it =
-        std::remove_if(attributes_.begin(), attributes_.end(), [ma](const std::shared_ptr<MetadataAttribute> obj) {
-            // todo:might need element wise equality check or name equality check
-            return (*obj).Equals(*ma);
-        });
-    bool any_change = it != attributes_.end();
-    attributes_.erase(it, attributes_.end());
-    return any_change;
+/**
+ * Adds an attribute to this node.
+ *
+ * @param attribute the attribute to be added, <code>null</code> is ignored
+ */
+void MetadataElement::AddAttribute(std::shared_ptr<MetadataAttribute> attribute) {
+    if (attribute == nullptr) {
+        return;
+    }
+    if (attributes_ == nullptr) {
+        attributes_ = std::make_shared<ProductNodeGroup<std::shared_ptr<MetadataAttribute>>>(
+            SharedFromBase<MetadataAttribute>(), "attributes", true);
+    }
+    attributes_->Add(attribute);
 }
+
+/**
+ * @return the number of elements contained in this element.
+ */
+int MetadataElement::GetNumElements() const {
+    if (elements_ == nullptr) {
+        return 0;
+    }
+    return elements_->GetNodeCount();
+}
+
+/**
+ * Returns the number of attributes attached to this node.
+ *
+ * @return the number of attributes
+ */
+int MetadataElement::GetNumAttributes() const {
+    if (attributes_ == nullptr) {
+        return 0;
+    }
+    return attributes_->GetNodeCount();
+}
+
+bool MetadataElement::RemoveAttribute(std::shared_ptr<MetadataAttribute> attribute) {
+    return attribute != nullptr && attributes_ != nullptr && attributes_->Remove(attribute);
+}
+
+/**
+ * Returns the names of all attributes of this node.
+ *
+ * @return the attribute name array, never <code>null</code>
+ */
 std::vector<std::string> MetadataElement::GetAttributeNames() const {
-    std::vector<std::string> out(attributes_.size());
-    std::transform(
-        attributes_.begin(), attributes_.end(), out.begin(), [](const std::shared_ptr<MetadataAttribute> &obj) {
-            return obj->GetName();
-        });
-    return out;
-}
-bool MetadataElement::ContainsAttribute(std::string_view name) const {
-    // check if contains attribute with name...
-    return (find_if(attributes_.begin(), attributes_.end(), [&name](const std::shared_ptr<MetadataAttribute> &obj) {
-                return obj->GetName() == name;
-            }) != attributes_.end());
-}
-auto MetadataElement::ContainsElement(std::string_view name) const {
-    Guardian::AssertNotNullOrEmpty("name", name);
-    return (find_if(elements_.begin(), elements_.end(), [&name](const std::shared_ptr<MetadataElement> &obj) {
-                return obj->GetName() == name;
-            }) != elements_.end());
+    if (attributes_ == nullptr) {
+        return std::vector<std::string>();
+    }
+    return attributes_->GetNodeNames();
 }
 
-// todo:test
-int MetadataElement::GetElementIndex(const std::shared_ptr<MetadataElement> &element) const {
-    auto it = std::find(elements_.begin(), elements_.end(), element);
-    if (it != elements_.end()) {
-        return distance(elements_.begin(), it);
-    } else {
-        return -1;
-    }
+bool MetadataElement::ContainsAttribute(std::string_view name) const {
+    return attributes_ != nullptr && attributes_->Contains(name);
 }
-int MetadataElement::GetAttributeIndex(const std::shared_ptr<MetadataAttribute> &attribute) const {
-    auto it = std::find(attributes_.begin(), attributes_.end(), attribute);
-    if (it != attributes_.end()) {
-        return distance(attributes_.begin(), it);
-    } else {
-        return -1;
-    }
+
+/**
+ * Tests if a element with the given name is contained in this element.
+ *
+ * @param name the name, must not be <code>null</code>
+ *
+ * @return <code>true</code> if a element with the given name is contained in this element, <code>false</code>
+ *         otherwise
+ */
+bool MetadataElement::ContainsElement(std::string_view name) const {
+    Guardian::AssertNotNullOrEmpty("name", name);
+    return elements_ != nullptr && elements_->Contains(name);
 }
+
+/**
+ * Gets the index of the given element.
+ *
+ * @param element The element .
+ *
+ * @return The element's index, or -1.
+ *
+ * @since BEAM 4.7
+ */
+int MetadataElement::GetElementIndex(const std::shared_ptr<MetadataElement>& element) const {
+    return elements_->IndexOf(element);
+}
+
+int MetadataElement::GetAttributeIndex(const std::shared_ptr<MetadataAttribute>& attribute) const {
+    return attributes_->IndexOf(attribute);
+}
+
 int MetadataElement::GetAttributeInt(std::string_view name, int default_value) const {
     auto attribute = GetAttribute(name);
     if (!attribute) {
@@ -103,14 +145,10 @@ int MetadataElement::GetAttributeInt(std::string_view name) const {
 }
 
 std::shared_ptr<MetadataAttribute> MetadataElement::GetAttribute(std::string_view name) const {
-    auto it = find_if(attributes_.begin(), attributes_.end(), [name](const std::shared_ptr<MetadataAttribute> &obj) {
-        return obj->GetName() == name;
-    });
-    if (it != attributes_.end()) {
-        return *it;
-    } else {
-        return std::shared_ptr<MetadataAttribute>(nullptr);
+    if (attributes_ == nullptr) {
+        return nullptr;
     }
+    return attributes_->Get(name);
 }
 
 double MetadataElement::GetAttributeDouble(std::string_view name, double default_value) const {
@@ -135,26 +173,25 @@ double MetadataElement::GetAttributeDouble(std::string_view name) const {
     return attribute->GetData()->GetElemDouble();
 }
 
-const std::shared_ptr<Utc> MetadataElement::GetAttributeUtc(std::string_view name,
-                                                            std::shared_ptr<Utc> default_value) const {
+std::shared_ptr<Utc> MetadataElement::GetAttributeUtc(std::string_view name, std::shared_ptr<Utc> default_value) const {
     try {
         std::shared_ptr<MetadataAttribute> attribute = GetAttribute(name);
         if (attribute) {
             return Utc::Parse(attribute->GetData()->GetElemString());
         }
-    } catch (std::exception &e) {
+    } catch (const std::exception& e) {
         std::cerr << e.what();
         // continue
     }
     return default_value;
 }
-const std::shared_ptr<Utc> MetadataElement::GetAttributeUtc(std::string_view name) const {
+std::shared_ptr<Utc> MetadataElement::GetAttributeUtc(std::string_view name) const {
     try {
         auto attribute = GetAttribute(name);
         if (attribute) {
             return Utc::Parse(attribute->GetData()->GetElemString());
         }
-    } catch (std::runtime_error &e) {
+    } catch (const std::runtime_error& e) {
         throw std::invalid_argument("Unable to parse metadata attribute " + std::string{name});
     }
     throw std::invalid_argument(GetAttributeNotFoundMessage(name));
@@ -185,9 +222,9 @@ void MetadataElement::SetAttributeDouble(std::string_view name, double value) {
     attribute->GetData()->SetElemDouble(value);
 }
 
-void MetadataElement::SetAttributeUTC(std::string_view name, const Utc &value) {
+void MetadataElement::SetAttributeUtc(std::string_view name, const std::shared_ptr<Utc>& value) {
     auto attribute = GetAndMaybeCreateAttribute(name, ProductData::TYPE_UTC, 1);
-    attribute->GetData()->SetElems(value.GetArray());
+    attribute->GetData()->SetElems(value->GetArray());
 }
 
 void MetadataElement::SetAttributeString(std::string_view name, std::string_view value) {
@@ -195,8 +232,7 @@ void MetadataElement::SetAttributeString(std::string_view name, std::string_view
     attribute->GetData()->SetElems(value);
 }
 
-std::shared_ptr<MetadataAttribute> MetadataElement::GetAndMaybeCreateAttribute(std::string_view name,
-                                                                               int type,
+std::shared_ptr<MetadataAttribute> MetadataElement::GetAndMaybeCreateAttribute(std::string_view name, int type,
                                                                                int num_elems) {
     std::shared_ptr<MetadataAttribute> attribute = GetAttribute(name);
     if (!attribute) {
@@ -205,15 +241,16 @@ std::shared_ptr<MetadataAttribute> MetadataElement::GetAndMaybeCreateAttribute(s
     }
     return attribute;
 }
+
 std::shared_ptr<MetadataElement> MetadataElement::CreateDeepClone() {
     auto clone = std::make_shared<MetadataElement>(GetName());
     clone->SetDescription(GetDescription());
     auto attributes = GetAttributes();
-    for (const auto &attribute : attributes) {
+    for (const auto& attribute : attributes) {
         clone->AddAttribute(attribute->CreateDeepClone());
     }
     auto elements = GetElements();
-    for (const auto &element : elements) {
+    for (const auto& element : elements) {
         clone->AddElement(element->CreateDeepClone());
     }
     return clone;
@@ -223,21 +260,53 @@ std::string MetadataElement::GetAttributeNotFoundMessage(std::string_view name) 
     return "Metadata attribute '" + std::string{name} + "' not found";
 }
 
-// todo:provide implementation
-std::shared_ptr<MetadataElement> MetadataElement::GetParentElement(const ProductNode &node){
-    (void)node;
-    return std::shared_ptr<MetadataElement>();
+std::shared_ptr<MetadataElement> MetadataElement::GetParentElement([[maybe_unused]]const ProductNode& node) {
+    // todo:provide implementation and remove "maybe_unused"
+    throw std::runtime_error("called not yet implemented method MetadataElement::GetParentElement(const ProductNode& node)");
 }
+
 std::shared_ptr<MetadataElement> MetadataElement::GetElement(std::string_view name) {
     Guardian::AssertNotNullOrEmpty("name", name);
-    auto it = find_if(elements_.begin(), elements_.end(), [name](const std::shared_ptr<MetadataElement> &obj) {
-        return obj->GetName() == name;
-    });
-    if (it != elements_.end()) {
-        return *it;
-    } else {
-        return std::shared_ptr<MetadataElement>(nullptr);
+    if (elements_ == nullptr) {
+        return nullptr;
     }
+    return elements_->Get(name);
+}
+
+std::vector<std::shared_ptr<MetadataElement>> MetadataElement::GetElements() {
+    if (elements_ == nullptr) {
+        return std::vector<std::shared_ptr<MetadataElement>>();
+    }
+    return elements_->ToArray(std::vector<std::shared_ptr<MetadataElement>>(elements_->GetNodeCount()));
+}
+
+std::vector<std::shared_ptr<MetadataAttribute>> MetadataElement::GetAttributes() {
+    if (attributes_ == nullptr) {
+        return std::vector<std::shared_ptr<MetadataAttribute>>();
+    }
+    return attributes_->ToArray(std::vector<std::shared_ptr<MetadataAttribute>>(attributes_->GetNodeCount()));
+}
+
+void MetadataElement::AddElementAt(const std::shared_ptr<MetadataElement>& element, int index) {
+    if (element == nullptr) {
+        return;
+    }
+    if (elements_ == nullptr) {
+        elements_ = std::make_shared<ProductNodeGroup<std::shared_ptr<MetadataElement>>>(
+            SharedFromBase<MetadataElement>(), "elements", true);
+    }
+    elements_->Add(index, element);
+}
+
+bool MetadataElement::RemoveElement(const std::shared_ptr<MetadataElement>& element) {
+    return element != nullptr && elements_ != nullptr && elements_->Remove(element);
+}
+
+std::shared_ptr<MetadataAttribute> MetadataElement::GetAttributeAt(int index) const {
+    if (attributes_ == nullptr) {
+        throw std::runtime_error("index out of bounds exception");
+    }
+    return attributes_->Get(index);
 }
 
 }  // namespace snapengine

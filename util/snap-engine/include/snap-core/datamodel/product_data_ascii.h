@@ -29,6 +29,14 @@ namespace snapengine {
  * <p> Internally, data is stored in an array of the type {@code byte[]}.
  */
 class ASCII : public Byte {
+   protected:
+    /**
+     * Retuns a "deep" copy of this product data.
+     *
+     * @return a copy of this product data
+     */
+    [[nodiscard]] std::shared_ptr<ProductData> CreateDeepClone() const override;
+
    public:
     /**
      * Constructs a new {@code ASCII} value.
@@ -70,6 +78,11 @@ class ASCII : public Byte {
      *                                  does the array length is less than one.
      */
     void SetElems(std::any data) override;
+
+    /**
+     * Returns this value's data type String.
+     */
+    std::string GetTypeString() override { return ProductData::GetTypeString(TYPE_ASCII); }
 };
 
 }  // namespace snapengine

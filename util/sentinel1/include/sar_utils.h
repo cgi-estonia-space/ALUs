@@ -17,6 +17,8 @@
  */
 #pragma once
 
+#include <memory>
+
 #include "metadata_element.h"
 
 namespace alus {
@@ -34,7 +36,7 @@ class SarUtils {
      * @throws Exception The exceptions.
      */
    public:
-    static double GetRadarFrequency(snapengine::MetadataElement& abs_root);
+    static double GetRadarFrequency(std::shared_ptr<snapengine::MetadataElement> abs_root);
 };
 
 }  // namespace s1tbx

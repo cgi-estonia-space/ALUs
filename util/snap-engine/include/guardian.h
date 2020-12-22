@@ -21,15 +21,21 @@
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+#include "band.h"
+#include "product.h"
 #include "product_data.h"
 
 namespace alus {
 namespace snapengine {
 class Guardian {
-   public:
+public:
     static void AssertNotNullOrEmpty(std::string_view expr_text, std::string_view text);
-    static void AssertNotNull(std::string_view expr_text, boost::posix_time::time_input_facet* expr_value);
-    static void AssertNotNull(std::string_view expr_text, std::shared_ptr<ProductData> &expr_value);
+    template <typename T>
+    static void AssertNotNull(std::string_view expr_text, T expr_value) {
+        if (expr_value == nullptr) {
+            throw std::invalid_argument(std::string(expr_text) + " argument is nullptr");
+        }
+    }
 };
 
 }  // namespace snapengine

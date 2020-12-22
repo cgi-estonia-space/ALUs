@@ -21,7 +21,7 @@ class Orbit {
     void ComputeCoefficients();
 
    public:
-    Orbit(snapengine::MetadataElement &nest_metadata_element, int degree);
+    Orbit(std::shared_ptr<snapengine::MetadataElement> nest_metadata_element, int degree);
     Point RowsColumns2Xyz(int rows, int columns, double az_time, double rg_time, Point &ellipsoid_position);
     Point Xyz2T(Point point_on_ellips, double azimuth_time);
     [[nodiscard]] Point GetXyz(double az_time);

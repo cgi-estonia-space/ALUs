@@ -1,4 +1,4 @@
-#include "geopoint.h"
+#include "jlinda-core/geopoint.h"
 
 #include <cmath>
 #include <limits>
@@ -66,18 +66,19 @@ bool GeoPoint::IsLatValid(double lat) { return lat >= -90.0 && lat <= 90.0; }
 
 bool GeoPoint::IsLonValid(double lon) { return !std::isnan(lon) && !std::isinf(lon); }
 
-int GeoPoint::FloorInt(const double value) { return (int)floor(value); }
+int GeoPoint::FloorInt(const double value) { return static_cast<int>(floor(value)); }
 
-GeoPoint::GeoPoint() {}
+GeoPoint::GeoPoint() = default;
 
 GeoPoint::GeoPoint(const GeoPoint& geo_point) : GeoPoint(geo_point.lat_, geo_point.lon_) {}
 
-GeoPoint::GeoPoint(double lat, double lon) : lat_{lat}, lon_{lon} {}void GeoPoint::SetLocation(double lat, double lon) {
+GeoPoint::GeoPoint(double lat, double lon) : lat_{lat}, lon_{lon} {}
+void GeoPoint::SetLocation(double lat, double lon) {
     lat_ = lat;
     lon_ = lon;
 }
 
-const bool GeoPoint::IsValid() const { return IsLatValid(lat_) && IsLonValid(lon_); }
+bool GeoPoint::IsValid() const { return IsLatValid(lat_) && IsLonValid(lon_); }
 
 void GeoPoint::SetInvalid() {
     lat_ = std::numeric_limits<double>::quiet_NaN();
@@ -107,17 +108,15 @@ std::string GeoPoint::GetLonString() const { return GetLonString(lon_); }
 std::string GeoPoint::GetLatString(double lat) {
     if (IsLatValid(lat)) {
         return GetDegreeString(lat, false);
-    } else {
-        return "Inv N";
     }
+    return "Inv N";
 }
 
 std::string GeoPoint::GetLonString(double lon) {
     if (IsLonValid(lon)) {
         return GetDegreeString(lon, true);
-    } else {
-        return "Inv E";
     }
+    return "Inv E";
 }
 
 }  // namespace jlinda

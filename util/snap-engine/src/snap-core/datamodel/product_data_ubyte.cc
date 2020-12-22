@@ -20,7 +20,7 @@ UByte::UByte(std::vector<uint8_t> array, bool is_unsigned)
 
 UByte::UByte(int num_elems, int type) : ProductData(type) { array_ = std::vector<uint8_t>(num_elems); }
 
-UByte::UByte(std::vector<uint8_t> array) : UByte(std::move(array), false) {}
+UByte::UByte(std::vector<uint8_t> array) : UByte(std::move(array), true) {}
 
 UByte::UByte(std::vector<uint8_t> array, int type) : ProductData(type) { array_ = std::move(array); }
 

@@ -31,7 +31,7 @@ else (CUDA_FOUND)
     message(FATAL_ERROR "No CUDA toolchain found. Exiting.")
 endif ()
 
-find_package(Boost 1.65.1 REQUIRED COMPONENTS program_options date_time filesystem iostreams)
+find_package(Boost 1.74.0 REQUIRED COMPONENTS program_options date_time filesystem iostreams)
 
 find_package(GDAL REQUIRED)
 
@@ -61,6 +61,7 @@ add_subdirectory(algs/inverter_parallel)
 add_subdirectory(algs/cuda_algorithm)
 add_subdirectory(algs/range_doppler_terrain_correction)
 add_subdirectory(algs/backgeocoding)
+add_subdirectory(algs/apply-orbit-file-op)
 
 # Test helpers
 add_subdirectory(test/range_doppler_geocoding)

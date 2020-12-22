@@ -1,6 +1,6 @@
 #pragma once
 
-namespace alus::kcoh {
+namespace alus::jlinda {
 constexpr double C{299792458.0};
 // private final static double ell_a = Constants.WGS84_A;
 // wgs84

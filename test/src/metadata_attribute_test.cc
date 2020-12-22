@@ -59,103 +59,103 @@ TEST_F(ProductDataMetadataAttributeTest, testSetData) {
 // SET DESCRIPTION
 TEST_F(ProductDataMetadataAttributeTest, testSetDescription) {
     // INT
-    attribute_int_->SetDescription(nullptr);
-    ASSERT_EQ(nullptr, attribute_int_->GetDescription());
+    attribute_int_->SetDescription(std::nullopt);
+    ASSERT_EQ(std::nullopt, attribute_int_->GetDescription());
 
     // null --> new value: is modified ?
-    attribute_int_->SetDescription("The sensor type");
+    attribute_int_->SetDescription(std::make_optional("The sensor type"));
     ASSERT_EQ("The sensor type", attribute_int_->GetDescription());
 
     // old value == new value?
-    attribute_int_->SetDescription("The sensor type");
+    attribute_int_->SetDescription(std::make_optional("The sensor type"));
     ASSERT_EQ("The sensor type", attribute_int_->GetDescription());
 
     // old value != new value?
-    attribute_int_->SetDescription("Upper left point");
+    attribute_int_->SetDescription(std::make_optional("Upper left point"));
     ASSERT_EQ("Upper left point", attribute_int_->GetDescription());
 
     // FLOAT
-    attribute_float_->SetDescription(nullptr);
-    ASSERT_EQ(nullptr, attribute_float_->GetDescription());
+    attribute_float_->SetDescription(std::nullopt);
+    ASSERT_EQ(std::nullopt, attribute_float_->GetDescription());
 
     // null --> new value: is modified ?
-    attribute_float_->SetDescription("The sensor type");
+    attribute_float_->SetDescription(std::make_optional("The sensor type"));
     ASSERT_EQ("The sensor type", attribute_float_->GetDescription());
 
     // old value == new value?
-    attribute_float_->SetDescription("The sensor type");
+    attribute_float_->SetDescription(std::make_optional("The sensor type"));
     ASSERT_EQ("The sensor type", attribute_float_->GetDescription());
 
     // old value != new value?
-    attribute_float_->SetDescription("Upper left point");
+    attribute_float_->SetDescription(std::make_optional("Upper left point"));
     ASSERT_EQ("Upper left point", attribute_float_->GetDescription());
 
     // STRING
-    attribute_string_->SetDescription(nullptr);
-    ASSERT_EQ(nullptr, attribute_string_->GetDescription());
+    attribute_string_->SetDescription(std::nullopt);
+    ASSERT_EQ(std::nullopt, attribute_string_->GetDescription());
 
     // null --> new value: is modified ?
-    attribute_string_->SetDescription("The sensor type");
+    attribute_string_->SetDescription(std::make_optional("The sensor type"));
     ASSERT_EQ("The sensor type", attribute_string_->GetDescription());
 
     // old value == new value?
-    attribute_string_->SetDescription("The sensor type");
+    attribute_string_->SetDescription(std::make_optional("The sensor type"));
     ASSERT_EQ("The sensor type", attribute_string_->GetDescription());
 
     // old value != new value?
-    attribute_string_->SetDescription("Upper left point");
+    attribute_string_->SetDescription(std::make_optional("Upper left point"));
     ASSERT_EQ("Upper left point", attribute_string_->GetDescription());
 }
 
 TEST_F(ProductDataMetadataAttributeTest, testSetUnit) {
     // INT
     // old value --> null ?
-    attribute_int_->SetUnit(nullptr);
+    attribute_int_->SetUnit(std::nullopt);
 
-    ASSERT_EQ("", attribute_int_->GetUnit());
+    ASSERT_EQ(std::nullopt, attribute_int_->GetUnit());
 
     // nullptr --> new value: is modified ?
-    attribute_int_->SetUnit("mg/m^3");
+    attribute_int_->SetUnit(std::make_optional("mg/m^3"));
     ASSERT_EQ("mg/m^3", attribute_int_->GetUnit());
 
     // old value == new value?
-    attribute_int_->SetUnit("mg/m^3");
+    attribute_int_->SetUnit(std::make_optional("mg/m^3"));
     ASSERT_EQ("mg/m^3", attribute_int_->GetUnit());
 
     // old value != new value?
-    attribute_int_->SetUnit("g/cm^3");
+    attribute_int_->SetUnit(std::make_optional("g/cm^3"));
     ASSERT_EQ("g/cm^3", attribute_int_->GetUnit());
     // FLOAT
     // old value --> null ?
-    attribute_float_->SetUnit(nullptr);
-    ASSERT_EQ("", attribute_float_->GetUnit());
+    attribute_float_->SetUnit(std::nullopt);
+    ASSERT_EQ(std::nullopt, attribute_float_->GetUnit());
 
     // nullptr --> new value: is modified ?
-    attribute_float_->SetUnit("mg/m^3");
+    attribute_float_->SetUnit(std::make_optional("mg/m^3"));
     ASSERT_EQ("mg/m^3", attribute_float_->GetUnit());
 
     // old value == new value?
-    attribute_float_->SetUnit("mg/m^3");
+    attribute_float_->SetUnit(std::make_optional("mg/m^3"));
     ASSERT_EQ("mg/m^3", attribute_float_->GetUnit());
 
     // old value != new value?
-    attribute_float_->SetUnit("g/cm^3");
+    attribute_float_->SetUnit(std::make_optional("g/cm^3"));
     ASSERT_EQ("g/cm^3", attribute_float_->GetUnit());
     // STRING
     // old value --> null ?
-    attribute_string_->SetUnit(nullptr);
-    ASSERT_EQ("", attribute_string_->GetUnit());
+    attribute_string_->SetUnit(std::nullopt);
+    ASSERT_EQ(std::nullopt, attribute_string_->GetUnit());
 
     // nullptr --> new value: is modified ?
-    attribute_string_->SetUnit("mg/m^3");
+    attribute_string_->SetUnit(std::make_optional("mg/m^3"));
     ASSERT_EQ("mg/m^3", attribute_string_->GetUnit());
 
     // old value == new value?
-    attribute_string_->SetUnit("mg/m^3");
+    attribute_string_->SetUnit(std::make_optional("mg/m^3"));
     ASSERT_EQ("mg/m^3", attribute_string_->GetUnit());
 
     // old value != new value?
-    attribute_string_->SetUnit("g/cm^3");
+    attribute_string_->SetUnit(std::make_optional("g/cm^3"));
     ASSERT_EQ("g/cm^3", attribute_string_->GetUnit());
 }
 TEST(MetadataAttribute, testASCIIAttribute) {

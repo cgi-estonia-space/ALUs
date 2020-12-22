@@ -16,8 +16,8 @@ class Ellipsoid {
    private:
     static double e2_;   // squared first  eccentricity (derived)
     static double e2b_;  // squared second eccentricity (derived)
-    static double ComputeEllipsoidNormal(const double phi);
-    double ComputeCurvatureRadiusInMeridianPlane(const double phi);
+    static double ComputeEllipsoidNormal(double phi);
+    double ComputeCurvatureRadiusInMeridianPlane(double phi);
     // first ecc.
     static void SetEcc1stSqr();
     // second ecc.
@@ -30,7 +30,7 @@ class Ellipsoid {
 
     Ellipsoid();
 
-    Ellipsoid(const double semi_major, const double semi_minor);
+    Ellipsoid(double semi_major, double semi_minor);
 
     Ellipsoid(const Ellipsoid& ell);
 
@@ -60,17 +60,17 @@ class Ellipsoid {
      * output:
      * - cn XYZ
      */
-    static s1tbx::Point Ell2Xyz(const double phi, const double lambda, const double height);
+    static s1tbx::Point Ell2Xyz(double phi, double lambda, double height);
 
-    static s1tbx::Point Ell2Xyz(const std::vector<double> phi_lambda_height);
+    static s1tbx::Point Ell2Xyz(std::vector<double> phi_lambda_height);
 
-    static s1tbx::Point Ell2Xyz(const GeoPoint& geo_point, const double height);
+    static s1tbx::Point Ell2Xyz(const GeoPoint& geo_point, double height);
 
     static s1tbx::Point Ell2Xyz(const GeoPoint& geo_point);
 
     static void Ell2Xyz(const GeoPoint& geo_point, std::vector<double>& xyz);
 
-    static void Ell2Xyz(const GeoPoint& geo_point, const double height, std::vector<double>& xyz);
+    static void Ell2Xyz(const GeoPoint& geo_point, double height, std::vector<double>& xyz);
 };
 
 }  // namespace jlinda

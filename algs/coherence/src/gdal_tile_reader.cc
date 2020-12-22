@@ -7,7 +7,7 @@ GdalTileReader::GdalTileReader(const std::string_view file_name,
                                std::vector<int> band_map,
                                int &band_count,
                                bool has_transform)
-    : IDataTileReader(file_name, band_map, band_count, has_transform) {
+    : IDataTileReader(file_name, band_map, band_count) {
     GDALAllRegister();
     this->dataset_ = (GDALDataset *)GDALOpen(file_name.data(), GA_ReadOnly);
     CHECK_GDAL_PTR(this->dataset_);

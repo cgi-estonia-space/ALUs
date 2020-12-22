@@ -1,10 +1,10 @@
-#include "ellipsoid.h"
+#include "jlinda-core/ellipsoid.h"
 
 #include <cmath>
+#include <iostream>
+#include <stdexcept>
 
-#include "tensorflow/core/platform/default/logging.h"
-
-#include "constants.h"
+#include "jlinda-core/constants.h"
 
 namespace alus {
 namespace jlinda {
@@ -12,8 +12,8 @@ namespace jlinda {
 double Ellipsoid::e2_ = 0.00669438003551279091;
 double Ellipsoid::e2b_ = 0.00673949678826153145;
 
-double Ellipsoid::a_ = kcoh::WGS84_A;
-double Ellipsoid::b_ = kcoh::WGS84_A;
+double Ellipsoid::a_ = WGS84_A;
+double Ellipsoid::b_ = WGS84_A;
 std::string Ellipsoid::name_ = "WGS84";
 
 double Ellipsoid::ComputeEllipsoidNormal(const double phi) { return a_ / sqrt(1.0 - e2_ * pow(sin(phi), 2)); }
@@ -24,8 +24,8 @@ void Ellipsoid::SetEcc1stSqr() { e2_ = 1.0 - pow(b_ / a_, 2); }
 void Ellipsoid::SetEcc2ndSqr() { e2b_ = pow(a_ / b_, 2) - 1.0; }
 
 Ellipsoid::Ellipsoid() {
-    Ellipsoid::a_ = kcoh::WGS84_A;
-    Ellipsoid::b_ = kcoh::WGS84_B;
+    Ellipsoid::a_ = WGS84_A;
+    Ellipsoid::b_ = WGS84_B;
     Ellipsoid::e2_ = 0.00669438003551279091;
     Ellipsoid::e2b_ = 0.00673949678826153145;
     Ellipsoid::name_ = "WGS84";
@@ -47,20 +47,20 @@ Ellipsoid::Ellipsoid(const Ellipsoid& ell) {
 }
 
 void Ellipsoid::ShowData() {
-    LOG(INFO) << "ELLIPSOID: \tEllipsoid used (orbit, output): " + name_ + ".";
-    LOG(INFO) << "ELLIPSOID: a   = " + std::to_string(a_);
-    LOG(INFO) << "ELLIPSOID: b   = " + std::to_string(b_);
-    LOG(INFO) << "ELLIPSOID: e2  = " + std::to_string(e2_);
-    LOG(INFO) << "ELLIPSOID: e2' = " + std::to_string(e2b_);
+    std::cerr << "ELLIPSOID: \tEllipsoid used (orbit, output): " << name_ << "." << std::endl;
+    std::cerr << "ELLIPSOID: a   = " << std::to_string(a_) << std::endl;
+    std::cerr << "ELLIPSOID: b   = " << std::to_string(b_) << std::endl;
+    std::cerr << "ELLIPSOID: e2  = " << std::to_string(e2_) << std::endl;
+    std::cerr << "ELLIPSOID: e2' = " << std::to_string(e2b_) << std::endl;
 }
 
 std::vector<double> Ellipsoid::Xyz2Ell(const s1tbx::Point& xyz) {
     const double r = sqrt(xyz.GetX() * xyz.GetX() + xyz.GetY() * xyz.GetY());
     const double nu = atan2((xyz.GetZ() * a_), (r * b_));
-    const double sinNu = sin(nu);
-    const double cosNu = cos(nu);
-    const double sin3 = sinNu * sinNu * sinNu;
-    const double cos3 = cosNu * cosNu * cosNu;
+    const double sin_n_u = sin(nu);
+    const double cos_n_u = cos(nu);
+    const double sin3 = sin_n_u * sin_n_u * sin_n_u;
+    const double cos3 = cos_n_u * cos_n_u * cos_n_u;
     const double phi = atan2((xyz.GetZ() + e2b_ * b_ * sin3), (r - e2_ * a_ * cos3));
     const double lambda = atan2(xyz.GetY(), xyz.GetX());
     const double N = ComputeEllipsoidNormal(phi);
@@ -68,45 +68,45 @@ std::vector<double> Ellipsoid::Xyz2Ell(const s1tbx::Point& xyz) {
     return std::vector<double>{phi, lambda, height};
 }
 s1tbx::Point Ellipsoid::Ell2Xyz(const double phi, const double lambda, const double height) {
-    if (phi > kcoh::SNAP_PI || phi < -kcoh::SNAP_PI || lambda > kcoh::SNAP_PI || lambda < -kcoh::SNAP_PI) {
+    if (phi > SNAP_PI || phi < -SNAP_PI || lambda > SNAP_PI || lambda < -SNAP_PI) {
         throw std::invalid_argument("Ellipsoid.ell2xyz : input values for phi/lambda have to be in radians!");
     }
-    const double N = ComputeEllipsoidNormal(phi);
-    const double Nph = N + height;
-    const double A = Nph * cos(phi);
-    return s1tbx::Point(A * cos(lambda), A * sin(lambda), (Nph - e2_ * N) * sin(phi));
+    const double n = ComputeEllipsoidNormal(phi);
+    const double nph = n + height;
+    const double a = nph * cos(phi);
+    return s1tbx::Point(a * cos(lambda), a * sin(lambda), (nph - e2_ * n) * sin(phi));
 }
 s1tbx::Point Ellipsoid::Ell2Xyz(std::vector<double> phi_lambda_height) {
     const double phi = phi_lambda_height.at(0);
     const double lambda = phi_lambda_height.at(1);
     const double height = phi_lambda_height.at(2);
 
-    if (phi > kcoh::SNAP_PI || phi < -kcoh::SNAP_PI || lambda > kcoh::SNAP_PI || lambda < -kcoh::SNAP_PI) {
+    if (phi > SNAP_PI || phi < -SNAP_PI || lambda > SNAP_PI || lambda < -SNAP_PI) {
         throw std::invalid_argument("Ellipsoid.ell2xyz(): phi/lambda values has to be in radians!");
     }
 
-    const double N = ComputeEllipsoidNormal(phi);
-    const double Nph = N + height;
-    const double A = Nph * cos(phi);
-    return s1tbx::Point(A * cos(lambda), A * sin(lambda), (Nph - e2_ * N) * sin(phi));
+    const double n = ComputeEllipsoidNormal(phi);
+    const double nph = n + height;
+    const double a = nph * cos(phi);
+    return s1tbx::Point(a * cos(lambda), a * sin(lambda), (nph - e2_ * n) * sin(phi));
 }
 
 s1tbx::Point Ellipsoid::Ell2Xyz(const GeoPoint& geo_point, const double height) {
-    return Ell2Xyz(geo_point.lat_ * kcoh::DTOR, geo_point.lon_ * kcoh::DTOR, height);
+    return Ell2Xyz(geo_point.lat_ * DTOR, geo_point.lon_ * DTOR, height);
 }
 s1tbx::Point Ellipsoid::Ell2Xyz(const GeoPoint& geo_point) {
-    return Ell2Xyz(geo_point.lat_ * kcoh::DTOR, geo_point.lon_ * kcoh::DTOR, 0.0);
+    return Ell2Xyz(geo_point.lat_ * DTOR, geo_point.lon_ * DTOR, 0.0);
 }
 
 void Ellipsoid::Ell2Xyz(const GeoPoint& geo_point, std::vector<double>& xyz) {
-    s1tbx::Point tempPoint = Ell2Xyz(geo_point.lat_ * kcoh::DTOR, geo_point.lon_ * kcoh::DTOR, 0.0);
-    xyz.at(0) = tempPoint.GetX();
-    xyz.at(1) = tempPoint.GetY();
-    xyz.at(2) = tempPoint.GetZ();
+    s1tbx::Point temp_point = Ell2Xyz(geo_point.lat_ * DTOR, geo_point.lon_ * DTOR, 0.0);
+    xyz.at(0) = temp_point.GetX();
+    xyz.at(1) = temp_point.GetY();
+    xyz.at(2) = temp_point.GetZ();
 }
 
 void Ellipsoid::Ell2Xyz(const GeoPoint& geo_point, const double height, std::vector<double>& xyz) {
-    s1tbx::Point temp_point = Ell2Xyz(geo_point.lat_ * kcoh::DTOR, geo_point.lon_ * kcoh::DTOR, height);
+    s1tbx::Point temp_point = Ell2Xyz(geo_point.lat_ * DTOR, geo_point.lon_ * DTOR, height);
     xyz.at(0) = temp_point.GetX();
     xyz.at(1) = temp_point.GetY();
     xyz.at(2) = temp_point.GetZ();

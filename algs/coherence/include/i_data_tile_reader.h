@@ -14,7 +14,7 @@ class IDataTileReader : public IDataTileReadWriteBase {
    public:
     IDataTileReader() = delete;
     // todo:check if this works like expected
-    IDataTileReader(std::string_view file_name, std::vector<int> band_map, int &band_count, bool has_transform)
+    IDataTileReader(std::string_view file_name, std::vector<int> band_map, int &band_count)
         : IDataTileReadWriteBase(file_name, band_map, band_count) {}
     virtual void ReadTile(const Tile &tile) = 0;
     [[nodiscard]] virtual float *GetData() const = 0;

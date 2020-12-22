@@ -466,7 +466,7 @@ TEST_F(TerrainCorrectionTest, CreateTargetProduct) {
 
     alus::snapengine::geocoding::TiePointGeocoding source_geocoding(lat_grid, lon_grid);
     alus::snapengine::geocoding::Geocoding* target_geocoding = nullptr;
-    alus::snapengine::Product target = TerrainCorrection::CreateTargetProduct(&source_geocoding,
+    alus::snapengine::old::Product target = TerrainCorrection::CreateTargetProduct(&source_geocoding,
                                                                               target_geocoding,
                                                                               coh_ds_.value().GetXSize(),
                                                                               coh_ds_.value().GetYSize(),

@@ -1,9 +1,9 @@
 #include "coherence_calc.h"
 
-#include <cmath>
 #include <algorithm>
+#include <cmath>
 
-#include "constants.h"
+#include "jlinda-core/constants.h"
 
 namespace alus {
 
@@ -169,9 +169,9 @@ std::vector<double> Coh::GenerateY(std::tuple<std::vector<int>, std::vector<int>
                                    MetaData &meta_master,
                                    MetaData &meta_slave) {
     double master_min_pi_4_div_lam =
-        (-4.0l * kcoh::SNAP_PI * kcoh::C) / meta_master.GetRadarWaveLength();
+        (-4.0l * jlinda::SNAP_PI * jlinda::C) / meta_master.GetRadarWaveLength();
     double slave_min_pi_4_div_lam =
-        (-4.0l * kcoh::SNAP_PI * kcoh::C) / meta_slave.GetRadarWaveLength();
+        (-4.0l * jlinda::SNAP_PI * jlinda::C) / meta_slave.GetRadarWaveLength();
 
     std::vector<int> lines = std::get<0>(lines_pixels);
     std::vector<int> pixels = std::get<1>(lines_pixels);

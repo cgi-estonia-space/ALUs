@@ -13,6 +13,8 @@ res2=$?
 res3=$?
 ./integration-test-tc $result_output
 res4=$?
+./integration-test-apply-orbit-file-op $result_output
+res5=$?
 
-exit_value=$(($res1 | $res2 | $res3 | $res4))
+exit_value=$(($res1 | $res2 | $res3 | $res4 | $res5))
 exit $exit_value

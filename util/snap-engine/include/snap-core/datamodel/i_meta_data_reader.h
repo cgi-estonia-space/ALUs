@@ -1,47 +1,31 @@
 #pragma once
 
+#include <memory>
+#include <string>
 #include <string_view>
-#include <vector>
-
-#include "metadata_attribute.h"
-#include "metadata_element.h"
-#include "product_data.h"
 
 namespace alus {
 namespace snapengine {
-class MetadataAttribute;
 class MetadataElement;
+class Product;
 class IMetaDataReader {
-   protected:
-//    const std::string_view file_name_;
-    std::string_view file_name_;
+protected:
+    std::shared_ptr<Product> product_;
+    std::string file_name_;
 
-   public:
+public:
+    IMetaDataReader() = default;
+    explicit IMetaDataReader(const std::shared_ptr<Product>& product) : product_(product){};
     explicit IMetaDataReader(const std::string_view file_name) : file_name_(file_name){};
-    //operate without implementation specific type
-//    /*[[nodiscard]]*/ virtual MetadataElement GetElement(std::string_view name) const = 0;
-    [[nodiscard]] virtual MetadataElement GetElement(std::string_view name) = 0;
-//    [[nodiscard]] virtual std::vector<MetadataElement> GetElements() const = 0;
-//    [[nodiscard]] virtual std::vector<MetadataAttribute> GetAttributes() const = 0;
-//    [[nodiscard]] virtual MetadataElement GetParentElement() const = 0;
-//    [[nodiscard]] virtual int GetNumElements() const = 0;
-//    [[nodiscard]] virtual int GetNumAttributes() const = 0;
-//    [[nodiscard]] virtual MetadataAttribute GetAttributeAt() const = 0;
-//    [[nodiscard]] virtual std::string_view GetElementNames() const = 0;
-//    [[nodiscard]] virtual std::string_view GetAttributeNames() const = 0;
-//    [[nodiscard]] virtual bool ContainsElement(std::string_view name) const = 0;
-//    [[nodiscard]] virtual bool ContainsAttribute(std::string_view name) const = 0;
-//    [[nodiscard]] virtual int GetElementIndex(const MetadataElement &element) const = 0;
-//    [[nodiscard]] virtual int GetAttributeIndex(const MetadataAttribute &attribute) const = 0;
-//    [[nodiscard]] virtual MetadataAttribute GetAttribute(std::string_view attribute_name) const = 0;
-//    [[nodiscard]] virtual int GetAttributeInt(std::string_view name, int default_value) const = 0;
-//    [[nodiscard]] virtual int GetAttributeInt(std::string_view name) const = 0;
-//    [[nodiscard]] virtual double GetAttributeDouble(std::string_view name, double default_value) const = 0;
-//    [[nodiscard]] virtual double GetAttributeDouble(std::string_view name) const = 0;
-//    [[nodiscard]] virtual snapengine::Utc GetAttributeUtc(std::string_view name, double default_value) const = 0;
-//    [[nodiscard]] virtual snapengine::Utc GetAttributeUtc(std::string_view name) const = 0;
-//    [[nodiscard]] virtual std::string_view GetAttributeString(std::string_view name, double default_value) const = 0;
-//    [[nodiscard]] virtual std::string_view GetAttributeString(std::string_view name) const = 0;
+    /**
+     * Read from file using implementation
+     *
+     * @param name of root element to be read
+     * @return
+     */
+    [[nodiscard]] virtual std::shared_ptr<MetadataElement> Read(std::string_view name) = 0;
+    // in case of default constructor user needs to provide source product
+    virtual void SetProduct(const std::shared_ptr<Product>& product) = 0;
 
     virtual ~IMetaDataReader() = default;
 };

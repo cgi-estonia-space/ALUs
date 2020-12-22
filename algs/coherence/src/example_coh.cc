@@ -35,12 +35,11 @@ int main() {
 
     alus::snapengine::PugixmlMetaDataReader xml_reader{
         "S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_split_Orb_Stack.dim"};
-    auto master_root = xml_reader.GetElement(alus::snapengine::MetaDataNodeNames::ABSTRACT_METADATA_ROOT);
-    auto slave_root =
-        xml_reader.GetElement(alus::snapengine::MetaDataNodeNames::SLAVE_METADATA_ROOT).GetElements().at(0);
+    auto master_root = xml_reader.Read(alus::snapengine::MetaDataNodeNames::ABSTRACT_METADATA_ROOT);
+    auto slave_root = xml_reader.Read(alus::snapengine::MetaDataNodeNames::SLAVE_METADATA_ROOT)->GetElements().at(0);
 
     alus::MetaData meta_master{&ia_data_reader, master_root, alus::ORBIT_DEGREE};
-    alus::MetaData meta_slave{&ia_data_reader, *slave_root, alus::ORBIT_DEGREE};
+    alus::MetaData meta_slave{&ia_data_reader, slave_root, alus::ORBIT_DEGREE};
 
     const char *FILE_NAME_IN = "4_bands.tif";  // this has minimal needed input bands (master/slave real and imaginary)
     const char *FILE_NAME_OUT = "4_bands_coh.tif";

@@ -43,12 +43,12 @@ class CoherenceExecuter final : public AlgBond {
         ia_data_reader.ReadTile(incidence_angle_data_set);
         const auto metadata_file = aux_location_.substr(0, aux_location_.length() - 5); // Strip ".data"
         alus::snapengine::PugixmlMetaDataReader xml_reader{metadata_file + ".dim"};
-        auto master_root = xml_reader.GetElement(alus::snapengine::MetaDataNodeNames::ABSTRACT_METADATA_ROOT);
+        auto master_root = xml_reader.Read(alus::snapengine::MetaDataNodeNames::ABSTRACT_METADATA_ROOT);
         auto slave_root =
-            xml_reader.GetElement(alus::snapengine::MetaDataNodeNames::SLAVE_METADATA_ROOT).GetElements().at(0);
+            xml_reader.Read(alus::snapengine::MetaDataNodeNames::SLAVE_METADATA_ROOT)->GetElements().at(0);
 
         alus::MetaData meta_master{&ia_data_reader, master_root, orbit_degree_};
-        alus::MetaData meta_slave{&ia_data_reader, *slave_root, orbit_degree_};
+        alus::MetaData meta_slave{&ia_data_reader, slave_root, orbit_degree_};
 
         // todo:check if bandmap works correctly (e.g if input has 8 bands and we use 1,2,5,6)
         // todo:need some better thought through logic to map inputs from gdal

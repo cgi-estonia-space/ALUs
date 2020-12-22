@@ -21,7 +21,9 @@
 #include "product_node.h"
 
 #include <any>
+#include <optional>
 #include <stdexcept>
+#include <string>
 
 #include "product_data.h"
 
@@ -39,9 +41,8 @@ class DataNode : public ProductNode {
      */
     int data_type_;
     long num_elems_;
-    std::shared_ptr<ProductData> data_;
     bool read_only_;
-    std::string unit_;
+    std::optional<std::string> unit_;
     bool synthetic_;
 
     //   protected:
@@ -54,6 +55,9 @@ class DataNode : public ProductNode {
             throw std::runtime_error("number of elements must be at last 1");
         }
     }
+
+   protected:
+    std::shared_ptr<ProductData> data_;
 
    public:
     // these are really only needed for broadcasting which we don't use atm, but might...
@@ -125,6 +129,8 @@ class DataNode : public ProductNode {
      * @see ProductData#getElems()
      */
     [[nodiscard]] std::any GetDataElems() const { return GetData() == nullptr ? nullptr : GetData()->GetElems(); }
+
+    void SetReadOnly(bool read_only);
     //    /**
     //     * Sets the data elements of this data node.
     //     * @see ProductData#setElems(Object)
@@ -149,6 +155,41 @@ class DataNode : public ProductNode {
     ////            setModified(true);
     //        }
     //    }
+
+    /**
+     * Tests whether the data type of this node is a floating point type.
+     *
+     * @return true, if so
+     */
+    virtual bool IsFloatingPointType() { return ProductData::IsFloatingPointType(data_type_); }
+
+    //////////////////////////////////////////////////////////////////////////
+
+    // Implementation helpers
+
+    /**
+     * Checks if the data that should be used to access the data is compatible with the data this node can hold.
+     *
+     * @param data the data to be checked for compatibility
+     * @throws IllegalArgumentException if data is invalid.
+     */
+    void CheckDataCompatibility(const std::shared_ptr<ProductData>& data);
+
+    /**
+     * Sets the data of this data node.
+     */
+    virtual void SetData(const std::shared_ptr<ProductData>& data);
+
+    /**
+     * Releases all of the resources used by this object instance and all of its owned children. Its primary use is to
+     * allow the garbage collector to perform a vanilla job.
+     * <p>This method should be called only if it is for sure that this object instance will never be used again. The
+     * results of referencing an instance of this class after a call to <code>dispose()</code> are undefined.
+     * <p>Overrides of this method should always call <code>super.dispose();</code> after disposing this instance.
+     */
+    void Dispose() override;
+
+    void SetUnit(std::optional<std::string> unit);
 };
 }  // namespace snapengine
 }  // namespace alus

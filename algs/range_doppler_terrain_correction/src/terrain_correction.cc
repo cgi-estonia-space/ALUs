@@ -1,10 +1,10 @@
 #include "terrain_correction.h"
 
-#include <algorithm>
-#include <cassert>
-
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
+
+#include <algorithm>
+#include <cassert>
 #include <chrono>
 #include <cmath>
 #include <utility>
@@ -14,13 +14,13 @@
 #include "cuda_util.hpp"
 #include "dem.hpp"
 #include "gdal_util.hpp"
-#include "product.h"
+#include "product_old.h"
 #include "raster_properties.hpp"
 #include "sar_utils.h"
 #include "shapes_util.cuh"
 #include "tc_tile.h"
-#include "tie_point_geocoding.cuh"
 #include "terrain_correction.cuh"
+#include "tie_point_geocoding.cuh"
 
 #define UNUSED(x) (void)(x)  // TODO: delete me
 #define DEBUG printf("Reached here => %s:%d\n", __FILE__, __LINE__)
@@ -70,7 +70,7 @@ void TerrainCorrection::ExecuteTerrainCorrection(const std::string& output_file_
 
     alus::snapengine::geocoding::TiePointGeocoding source_geocoding(lat_grid, lon_grid);
     alus::snapengine::geocoding::Geocoding* target_geocoding = nullptr;
-    alus::snapengine::Product target_product = CreateTargetProduct(
+    alus::snapengine::old::Product target_product = CreateTargetProduct(
         &source_geocoding, target_geocoding, coh_ds_x_size, coh_ds_y_size, metadata_.azimuth_spacing, output_file_name);
     auto const target_x_size{target_product.dataset_.GetXSize()};
     auto const target_y_size{target_product.dataset_.GetYSize()};
@@ -376,7 +376,7 @@ std::vector<alus::TcTile> TerrainCorrection::CalculateTiles(snapengine::resampli
     return output_tiles;
 }
 
-alus::snapengine::Product TerrainCorrection::CreateTargetProduct(
+alus::snapengine::old::Product TerrainCorrection::CreateTargetProduct(
     const alus::snapengine::geocoding::Geocoding* source_geocoding,
     snapengine::geocoding::Geocoding*& target_geocoding,
     int source_width,
@@ -441,7 +441,7 @@ alus::snapengine::Product TerrainCorrection::CreateTargetProduct(
 
     target_geocoding = new alus::snapengine::geocoding::CrsGeocoding(
         {output_geo_transform[0], output_geo_transform[3], output_geo_transform[1], output_geo_transform[5]});
-    alus::snapengine::Product target_product{
+    alus::snapengine::old::Product target_product{
         target_geocoding, *output_dataset, "TIFF"};  // TODO: add destructor product class
 
     return target_product;

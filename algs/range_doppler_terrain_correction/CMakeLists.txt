@@ -1,10 +1,12 @@
 
-list(APPEND TERRAIN_CORRECTION_SOURCES
-        ${CMAKE_CURRENT_LIST_DIR}/src/execute.cc
+list(APPEND TERRAIN_CORRECTION_SOURCES_CU
         ${CMAKE_CURRENT_LIST_DIR}/src/get_position.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/local_dem.cu
-        ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction.cu
+        )
+list(APPEND TERRAIN_CORRECTION_SOURCES
+        ${CMAKE_CURRENT_LIST_DIR}/src/execute.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction_metadata.cc
         )
 
@@ -22,6 +24,15 @@ list(APPEND TERRAIN_CORRECTION_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/../../external/pugixml/include
         )
 
+add_library(terrain-correction-obj-cu
+        OBJECT
+        ${TERRAIN_CORRECTION_SOURCES_CU}
+        )
+target_include_directories(terrain-correction-obj-cu
+        PRIVATE
+        ${TERRAIN_CORRECTION_INCLUDE_DIRS}
+        )
+
 add_library(terrain-correction-obj
         OBJECT
         ${TERRAIN_CORRECTION_SOURCES}
@@ -34,6 +45,7 @@ target_include_directories(terrain-correction-obj
 add_library(terrain-correction-static
         STATIC
         $<TARGET_OBJECTS:terrain-correction-obj>
+        $<TARGET_OBJECTS:terrain-correction-obj-cu>
         )
 target_include_directories(terrain-correction-static
         PUBLIC
@@ -48,6 +60,7 @@ target_link_libraries(terrain-correction-static
         gdal-util-static
         snap-engine-static
         sentinel1-util-static
+        pugixml-static
         )
 
 add_library(terrain-correction-shared
@@ -69,5 +82,6 @@ target_link_libraries(terrain-correction-shared
         gdal-util-static
         snap-engine-static
         sentinel1-util-static
+        pugixml-static
         )
 

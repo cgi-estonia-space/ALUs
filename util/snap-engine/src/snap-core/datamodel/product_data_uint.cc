@@ -18,7 +18,7 @@ UInt::UInt(std::vector<uint32_t> array, bool is_unsigned)
     array_ = std::move(array);
 }
 
-UInt::UInt(std::vector<uint32_t> array) : UInt(std::move(array), false) {}
+UInt::UInt(std::vector<uint32_t> array) : UInt(std::move(array), true) {}
 
 int UInt::GetNumElems() const { return array_.size(); }
 

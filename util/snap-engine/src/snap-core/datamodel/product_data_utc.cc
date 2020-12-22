@@ -24,7 +24,7 @@ Utc::Utc(int days, int seconds, int microseconds) : UInt(3) {
 Utc::Utc(double mjd) : UInt(3) {
     double micro_seconds = std::fmod((mjd * SECONDS_PER_DAY * MICROS_PER_SECOND), MICROS_PER_SECOND);
     double seconds = std::fmod((mjd * SECONDS_PER_DAY), SECONDS_PER_DAY);
-    const double days = (int)mjd;
+    const double days = static_cast<int>(mjd);
 
     if (micro_seconds < 0) {  // handle date prior to year 2000
         micro_seconds += MICROS_PER_SECOND;
@@ -50,7 +50,7 @@ std::shared_ptr<Utc> Utc::Create(boost::posix_time::ptime date_time, long micros
     long days = diff / millis_per_day;
     long seconds = (diff - days * millis_per_day) / millis_per_second;
 
-    return std::make_shared<Utc>((int)days, (int)seconds, (int)micros);
+    return std::make_shared<Utc>(static_cast<int>(days), static_cast<int>(seconds), static_cast<int>(micros));
 }
 // boost::posix_time::ptime Utc::CreateCalendar() {
 //    // todo: might need to add some custom locale (check java impl)
@@ -65,20 +65,20 @@ boost::gregorian::date Utc::CreateCalendar() {
     return boost::gregorian::date{2000, 1, 1};
 }
 
-boost::posix_time::ptime Utc::GetAsCalendar() {
+boost::posix_time::ptime Utc::GetAsCalendar() const {
     auto start_date_time = boost::posix_time::ptime(CreateCalendar());
-    auto seconds = boost::posix_time::seconds((int)GetSecondsFraction());
-    auto millis = boost::posix_time::milliseconds((int)std::round(GetMicroSecondsFraction() / 1000.0));
+    auto seconds = boost::posix_time::seconds(GetSecondsFraction());
+    auto millis = boost::posix_time::milliseconds(static_cast<int>(std::round(GetMicroSecondsFraction() / 1000.0)));
     auto days = boost::gregorian::days(GetDaysFraction());
 
     //    todo: return format! boost::gregorian::date{2000, 1, 1}
     return start_date_time + days + seconds + millis;
 }
 
-std::string Utc::Format() {
+std::string Utc::Format() const {
     auto start_date_time = boost::posix_time::ptime(CreateCalendar());
     auto days = boost::gregorian::days(GetDaysFraction());
-    auto seconds = boost::posix_time::seconds((int)GetSecondsFraction());
+    auto seconds = boost::posix_time::seconds(GetSecondsFraction());
     // ptime to stringstream to string.
     std::stringstream stream;
     stream.imbue(std::locale(std::locale::classic(), CreateDateFormatOut(DATE_FORMAT_PATTERN)));
@@ -139,6 +139,11 @@ std::shared_ptr<Utc> Utc::Parse(const std::string_view text, boost::posix_time::
     return Create(date, micros);
 }
 std::string Utc::GetElemString() { return Format(); }
+std::shared_ptr<ProductData> Utc::CreateDeepClone() const {
+    std::shared_ptr<Utc> data = std::make_shared<Utc>(array_.size());
+    std::copy(array_.begin(), array_.end(), data->array_.begin());
+    return data;
+}
 
 }  // namespace snapengine
 }  // namespace alus
