@@ -13,13 +13,7 @@
  */
 #pragma once
 
-#include <string>
-#include <fstream>
-
 #include "CudaFriendlyObject.h"
-#include "allocators.h"
-#include "cuda_util.hpp"
-
 
 /** EXPLANATION FROM ESA SNAP
  * "WW15MGH.GRD"
@@ -46,44 +40,28 @@
  * -90.00 N  +------------------+
  * 0.00 E           360.00 E
  */
-namespace alus {
-namespace snapengine {
-namespace earthgravitationalmodel96{
-
-constexpr int NUM_LATS = 721; // 180*4 + 1  (cover 90 degree to -90 degree)
-constexpr int NUM_LONS = 1441; // 360*4 + 1 (cover 0 degree to 360 degree)
-constexpr int NUM_CHAR_PER_NORMAL_LINE = 74;
-constexpr int NUM_CHAR_PER_SHORT_LINE = 11;
-constexpr int NUM_CHAR_PER_EMPTY_LINE = 1;
-constexpr int BLOCK_HEIGHT = 20;
-constexpr int NUM_OF_BLOCKS_PER_LAT = 9;
-
-constexpr int MAX_LATS = NUM_LATS - 1;
-constexpr int MAX_LONS = NUM_LONS - 1;
-
-} //namespace earthgravitationalmodel96
-
+namespace alus::snapengine {
 /**
  * This class refers to EarthGravitationalModel96 class from snap-engine module.
  */
-class EarthGravitationalModel96: public cuda::CudaFriendlyObject {
+class EarthGravitationalModel96 : public cuda::CudaFriendlyObject {
 private:
-    std::string grid_file_ = "../test/goods/ww15mgh_b.grd";
+    void FetchGridValues();
 
-    void ReadGridFile();
+    float** egm_{nullptr};
+    float* device_egm_{nullptr};
 public:
-    float **egm_{nullptr};
-    float *device_egm_{nullptr};
 
-    EarthGravitationalModel96(std::string grid_file);
     EarthGravitationalModel96();
+
+    float** GetHostValues() const { return egm_; }
+    const float* GetDeviceValues() const { return device_egm_; }
+
+    void HostToDevice() override;
+    void DeviceToHost() override;
+    void DeviceFree() override;
+
     ~EarthGravitationalModel96();
-
-    void HostToDevice() override ;
-    void DeviceToHost() override ;
-    void DeviceFree() override ;
-
 };
 
-}//namespace
-}//namespace
+}  // namespace alus::snapengine

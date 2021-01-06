@@ -522,13 +522,13 @@ TEST_F(TerrainCorrectionTest, CreateTargetProduct) {
 //    alus::Point srtm_41_01 = {41, 1};
 //    std::vector<alus::Point> dem_files{srtm_41_01};
 //    std::string dem_dir_path{"./goods/"};
-//    alus::snapengine::SRTM3ElevationModel srtm3_dem(dem_files, dem_dir_path);
+//    alus::snapengine::Srtm3ElevationModel srtm3_dem(dem_files, dem_dir_path);
 //    alus::snapengine::EarthGravitationalModel96 egm_96(dem_dir_path + "/ww15mgh_b.grd");  // TODO: should come from parameters
 //    egm_96.HostToDevice();
 //
 //    srtm3_dem.ReadSrtmTiles(&egm_96);
 //    srtm3_dem.HostToDevice();
-//    alus::PointerArray dem_tiles{srtm3_dem.device_srtm3_tiles_};
+//    alus::PointerArray dem_tiles{srtm3_dem.device_formated_srtm_buffers_info_};
 //
 //    SRTM3DemCuda(dem_tiles, d_elevations, tile.tc_tile_coordinates, target_geocoding.geo_transform_parameters_);
 //    CHECK_CUDA_ERR(cudaMemcpy(tile.elevation_tile_data_buffer.array,

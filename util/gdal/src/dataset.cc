@@ -1,8 +1,15 @@
 #include "dataset.h"
 
-#include <iostream>
-
 #include <gdal.h>
+
+namespace {
+const std::map<alus::Dataset::GeoTransformSourcePriority, std::string> GEOREF_CONFIG_STRING_TABLE{
+    {alus::Dataset::GeoTransformSourcePriority::PAM_INTERNAL_TABFILE_WORLDFILE_NONE,
+     "PAM,INTERNAL,TABFILE,WORLDFILE,NONE"},
+    {alus::Dataset::GeoTransformSourcePriority::WORLDFILE_PAM_INTERNAL_TABFILE_NONE,
+     "WORLDFILE,PAM,INTERNAL,TABFILE,NONE"}
+    };
+}
 
 namespace alus {
 
@@ -10,6 +17,20 @@ namespace alus {
 // https://gdal.org/api/cpl.html#_CPPv418CPLSetErrorHandler15CPLErrorHandler
 
 Dataset::Dataset(std::string_view filename) { LoadDataset(filename); }
+
+Dataset::Dataset(std::string_view filename, const GeoTransformSourcePriority& georef_source) {
+    CPLSetThreadLocalConfigOption("GDAL_GEOREF_SOURCES", GEOREF_CONFIG_STRING_TABLE.at(georef_source).c_str());
+    try {
+        LoadDataset(filename);
+    } catch (...) {
+        // Set back the defaults, since could not figure out how to apply "GEOREF_SOURCES" option to GDALOpen() call.
+        CPLSetThreadLocalConfigOption(
+            "GDAL_GEOREF_SOURCES",
+            GEOREF_CONFIG_STRING_TABLE.at(GeoTransformSourcePriority::PAM_INTERNAL_TABFILE_WORLDFILE_NONE).c_str());
+        throw;
+    }
+
+}
 
 void Dataset::LoadDataset(std::string_view filename) {
     // TODO: move this to a place where it is unifiedly called once when system

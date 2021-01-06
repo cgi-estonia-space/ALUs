@@ -63,17 +63,13 @@ TEST(SRTM3, tileFormating) {
     SRTM3TileTester tester("./goods/tileFormatTestData.txt");
     tester.ReadTestData();
 
-    alus::snapengine::EarthGravitationalModel96 egm96("./goods/ww15mgh_b.grd");
-    egm96.HostToDevice();
+    alus::snapengine::EarthGravitationalModel96 egm_96{};
+    egm_96.HostToDevice();
 
-    alus::Point srtm_41_01 = {41, 1};
-    alus::Point srtm_42_01 = {42, 1};
-    std::vector<alus::Point> files;
-    files.push_back(srtm_41_01);
-    files.push_back(srtm_42_01);
-    alus::snapengine::SRTM3ElevationModel srtm3_dem(files, "./goods/");
-    srtm3_dem.ReadSrtmTiles(&egm96);
-    srtm3_dem.HostToDevice();
+    std::vector<std::string> files{"./goods/srtm_41_01.tif", "./goods/srtm_42_01.tif"};
+    alus::snapengine::Srtm3ElevationModel srtm_3_dem(files);
+    srtm_3_dem.ReadSrtmTiles(&egm_96);
+    srtm_3_dem.HostToDevice();
 
     std::vector<float> end_tile;
     std::vector<float> end_results;
@@ -82,7 +78,7 @@ TEST(SRTM3, tileFormating) {
     tiles.resize(2);
     const int chosen_tile = 0;
     CHECK_CUDA_ERR(cudaMemcpy(
-        tiles.data(), srtm3_dem.device_srtm3_tiles_, 2 * sizeof(alus::PointerHolder), cudaMemcpyDeviceToHost));
+        tiles.data(), srtm_3_dem.GetSrtmBuffersInfo(), 2 * sizeof(alus::PointerHolder), cudaMemcpyDeviceToHost));
     int tile_x_size = tiles.at(chosen_tile).x;
     int tile_y_size = tiles.at(chosen_tile).y;
     int tile_size = tile_x_size * tile_y_size;

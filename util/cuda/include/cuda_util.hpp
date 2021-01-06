@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <stdexcept>
 #include <string>
 
@@ -38,6 +39,14 @@ inline void checkCudaError(cudaError_t const cudaErr, const char* file, int cons
     }
 }
 
+inline void ReportIfCudaError(const cudaError_t cuda_err, const char* file, const int line) {
+    if (cuda_err != cudaSuccess) {
+        std::cerr << "CUDA error (" << cuda_err << ")-'" << cudaGetErrorString(cuda_err) << "' at " << file << ":"
+                  << line << std::endl;
+    }
+}
+
 }  // namespace alus
 
 #define CHECK_CUDA_ERR(x) alus::checkCudaError(x, __FILE__, __LINE__)
+#define REPORT_WHEN_CUDA_ERR(x) alus::ReportIfCudaError(x, __FILE__, __LINE__)

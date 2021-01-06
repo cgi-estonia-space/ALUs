@@ -17,7 +17,7 @@
 
 namespace alus {
 namespace snapengine {
-namespace earthgravitationalmodel96 {
+namespace earthgravitationalmodel96computation {
 
 /**
     What you see here are the extracts from EarthGravitationalModel96 class in snap

@@ -5,6 +5,7 @@
 
 #include "algorithm_parameters.h"
 #include "raster_properties.hpp"
+#include "pointer_holders.h"
 
 namespace alus {
 /**
@@ -19,6 +20,7 @@ class AlgBond {
 
     virtual void SetInputs(const std::string& input_dataset, const std::string& metadata_path) = 0;
     virtual void SetParameters(const app::AlgorithmParameters::Table& param_values) = 0;
+    virtual void SetSrtm3Buffers(const PointerHolder* buffers) {(void) buffers;};
     virtual void SetTileSize(size_t width, size_t height) = 0;
     virtual void SetOutputFilename(const std::string& output_name) = 0;
     virtual int Execute() = 0;

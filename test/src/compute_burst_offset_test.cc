@@ -1,6 +1,10 @@
 #include "gmock/gmock.h"
 
+#include <fstream>
+
 #include "../goods/compute_burst_offset_data.h"
+#include "allocators.h"
+#include "cuda_util.hpp"
 #include "backgeocoding_constants.h"
 #include "burst_offset.h"
 #include "earth_gravitational_model96.h"
@@ -16,7 +20,7 @@ class ComputeBurstOffsetTest : public ::testing::Test {
 
    private:
     std::unique_ptr<snapengine::EarthGravitationalModel96> egm_96_;
-    std::unique_ptr<snapengine::SRTM3ElevationModel> srtm_3_dem_;
+    std::unique_ptr<snapengine::Srtm3ElevationModel> srtm_3_dem_;
     s1tbx::DeviceSentinel1Utils *master_utils_{};
     s1tbx::DeviceSentinel1Utils *slave_utils_{};
     s1tbx::DeviceSubswathInfo *master_info_{};
@@ -31,16 +35,11 @@ class ComputeBurstOffsetTest : public ::testing::Test {
     snapengine::OrbitStateVectorComputation *d_slave_orbit_state_vector_{nullptr};
 
     void PrepareSrtm3Data() {
-        egm_96_ = std::make_unique<snapengine::EarthGravitationalModel96>("./goods/ww15mgh_b.grd");
+        egm_96_ = std::make_unique<snapengine::EarthGravitationalModel96>();
         egm_96_->HostToDevice();
 
-        // placeholders
-        Point srtm_41_01 = {41, 1};
-        Point srtm_42_01 = {42, 1};
-        std::vector<Point> files;
-        files.push_back(srtm_41_01);
-        files.push_back(srtm_42_01);
-        srtm_3_dem_ = std::make_unique<snapengine::SRTM3ElevationModel>(files, "./goods/");
+        std::vector<std::string> files{"./goods/srtm_41_01.tif", "./goods/srtm_42_01.tif"};
+        srtm_3_dem_ = std::make_unique<snapengine::Srtm3ElevationModel>(files);
         srtm_3_dem_->ReadSrtmTiles(egm_96_.get());
         srtm_3_dem_->HostToDevice();
     }
@@ -204,7 +203,7 @@ class ComputeBurstOffsetTest : public ::testing::Test {
     }
 
     void PrepareBurstOffsetKernelArgs() {
-        args_.srtm3_tiles.array = srtm_3_dem_->device_srtm3_tiles_;
+        args_.srtm3_tiles.array = srtm_3_dem_->GetSrtmBuffersInfo();
         args_.master_subswath_info = master_info_;
         args_.master_sentinel_utils = master_utils_;
         args_.slave_subswath_info = slave_info_;

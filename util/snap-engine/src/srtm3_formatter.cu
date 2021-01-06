@@ -11,14 +11,14 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
-#include "srtm3_formatter.cuh"
+#include "srtm3_format_computation.h"
 
 #include "earth_gravitational_model96.cuh"
 
 namespace alus {
 namespace snapengine{
 
-__global__ void FormatSRTM3dem(float *target, float *source, DemFormatterData data){
+__global__ void FormatSRTM3dem(float *target, float *source, Srtm3FormatComputation data){
     const int idx = threadIdx.x + (blockDim.x*blockIdx.x);
     const int idy = threadIdx.y + (blockDim.y*blockIdx.y);
     double geo_pos_lon, geo_pos_lat;
@@ -33,7 +33,7 @@ __global__ void FormatSRTM3dem(float *target, float *source, DemFormatterData da
             geo_pos_lon = data.m00*(idx + 0.5) + data.m01*(idy + 0.5) + data.m02;
             geo_pos_lat = data.m10*(idx + 0.5) + data.m11*(idy + 0.5) + data.m12;
             target[idx + data.x_size *idy] =
-                source_value + snapengine::earthgravitationalmodel96::GetEGM96(
+                source_value + snapengine::earthgravitationalmodel96computation::GetEGM96(
                                    geo_pos_lat,
                                    geo_pos_lon,
                                    data.max_lats,
@@ -47,7 +47,7 @@ __global__ void FormatSRTM3dem(float *target, float *source, DemFormatterData da
 }
 
 
-cudaError_t LaunchDemFormatter(dim3 grid_size, dim3 block_size, float *target, float *source, DemFormatterData data){
+cudaError_t LaunchDemFormatter(dim3 grid_size, dim3 block_size, float *target, float *source, Srtm3FormatComputation data){
     FormatSRTM3dem<<<grid_size, block_size>>>(target, source, data);
     return cudaGetLastError();
 }

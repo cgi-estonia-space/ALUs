@@ -64,7 +64,7 @@ __global__ void SlavePixPos(SlavePixPosData calc_data) {
 
     alt = snapengine::srtm3elevationmodel::GetElevation(geo_pos_lat, geo_pos_lon, &calc_data.tiles);
     if (alt == calc_data.dem_no_data_value && !calc_data.mask_out_area_without_elevation) {
-        alt = snapengine::earthgravitationalmodel96::GetEGM96(
+        alt = snapengine::earthgravitationalmodel96computation::GetEGM96(
             geo_pos_lat, geo_pos_lon, calc_data.max_lats, calc_data.max_lons, calc_data.egm);
     }
 

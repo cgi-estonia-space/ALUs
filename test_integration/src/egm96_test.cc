@@ -21,6 +21,7 @@
 #include "comparators.h"
 #include "cuda_util.hpp"
 #include "earth_gravitational_model96.h"
+#include "earth_gravitational_model96_computation.h"
 #include "egm96_test.cuh"
 
 using namespace alus::tests;
@@ -79,28 +80,29 @@ class EGMTester : public alus::cuda::CudaFriendlyObject {
 };
 
 TEST(EGM96, correctness) {
-    alus::snapengine::EarthGravitationalModel96 egm96("./goods/ww15mgh_b.grd");
+    alus::snapengine::EarthGravitationalModel96 egm96{};
     EGMTester tester("./goods/egm96TestData.txt");
 
-    EXPECT_FLOAT_EQ(13.606, egm96.egm_[0][0]);
-    EXPECT_FLOAT_EQ(13.606, egm96.egm_[0][1440]);
+    const auto host_values = egm96.GetHostValues();
+    EXPECT_FLOAT_EQ(13.606, host_values[0][0]);
+    EXPECT_FLOAT_EQ(13.606, host_values[0][1440]);
 
-    EXPECT_FLOAT_EQ(-29.534, egm96.egm_[720][0]);
-    EXPECT_FLOAT_EQ(-29.534, egm96.egm_[720][1440]);
+    EXPECT_FLOAT_EQ(-29.534, host_values[720][0]);
+    EXPECT_FLOAT_EQ(-29.534, host_values[720][1440]);
 
-    dim3 blockSize(512);
-    dim3 gridSize(alus::cuda::GetGridDim(blockSize.x, tester.size));
+    dim3 block_size(512);
+    dim3 grid_size(alus::cuda::GetGridDim(block_size.x, tester.size));
 
     tester.HostToDevice();
     egm96.HostToDevice();
     EGM96data data;
-    data.max_lats = alus::snapengine::earthgravitationalmodel96::MAX_LATS;
-    data.max_lons = alus::snapengine::earthgravitationalmodel96::MAX_LONS;
+    data.max_lats = alus::snapengine::earthgravitationalmodel96computation::MAX_LATS;
+    data.max_lons = alus::snapengine::earthgravitationalmodel96computation::MAX_LONS;
     data.size = tester.size;
-    data.egm = egm96.device_egm_;
+    data.egm = const_cast<float*>(egm96.GetDeviceValues());
 
     CHECK_CUDA_ERR(
-        LaunchEGM96(gridSize, blockSize, tester.device_lats_, tester.device_lons_, tester.device_results_, data));
+        LaunchEGM96(grid_size, block_size, tester.device_lats_, tester.device_lons_, tester.device_results_, data));
 
     tester.DeviceToHost();
     // test data file is not as accurate as I would wish
