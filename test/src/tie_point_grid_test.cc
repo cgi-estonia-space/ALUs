@@ -1,8 +1,22 @@
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #include "gmock/gmock.h"
 #include "tests_common.hpp"
 
 #include "CudaFriendlyObject.h"
 #include "cuda_util.hpp"
+#include "kernel_array.h"
 #include "tie_point_grid.h"
 #include "tie_point_grid_test.cuh"
 
@@ -34,16 +48,16 @@ class TiePointGridTester : public cuda::CudaFriendlyObject {
 
     const double EXPECTED_RESULT_ = 58.21324222804141;
     double end_result_;
-    double *device_result_ {};
-    float *device_tie_points_ {};
+    double *device_result_{};
+    float *device_tie_points_{};
 
     ~TiePointGridTester() { this->DeviceFree(); }
 
     void HostToDevice() {
         CHECK_CUDA_ERR(cudaMalloc(&device_tie_points_, sizeof(float) * tie_points_.size));
         CHECK_CUDA_ERR(cudaMalloc(&device_result_, sizeof(double)));
-        CHECK_CUDA_ERR(
-            cudaMemcpy(device_tie_points_, tie_points_.array, sizeof(float) * tie_points_.size, cudaMemcpyHostToDevice));
+        CHECK_CUDA_ERR(cudaMemcpy(
+            device_tie_points_, tie_points_.array, sizeof(float) * tie_points_.size, cudaMemcpyHostToDevice));
     }
 
     void DeviceToHost() {
@@ -60,13 +74,12 @@ TEST(getPixelDouble, tie_point_grid) {
     TiePointGridTester tester;
 
     tester.HostToDevice();
-    CHECK_CUDA_ERR(LaunchGetPixelDouble(
-        1,
-        1,
-        0.5,
-        0.5,
-        tester.device_result_,
-        tiepointgrid::TiePointGrid{0, 0, 1163, 300, 21, 6, tester.device_tie_points_}));
+    CHECK_CUDA_ERR(LaunchGetPixelDouble(1,
+                                        1,
+                                        0.5,
+                                        0.5,
+                                        tester.device_result_,
+                                        tiepointgrid::TiePointGrid{0, 0, 1163, 300, 21, 6, tester.device_tie_points_}));
 
     tester.DeviceToHost();
     EXPECT_DOUBLE_EQ(tester.end_result_, tester.EXPECTED_RESULT_);

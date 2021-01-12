@@ -1,7 +1,7 @@
 #pragma once
 
 #include "dataset.h"
-#include "geocoding.cuh"
+#include "geocoding.h"
 
 namespace alus {
 namespace snapengine {

@@ -1,10 +1,27 @@
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #pragma once
 
+#include <cstddef>
+#include <string_view>
 #include <vector>
 
 #include "computation_metadata.h"
 #include "dataset.h"
 #include "dem.hpp"
+#include "executable.h"
+#include "get_position.h"
 #include "product_old.h"
 #include "resampling.h"
 #include "tc_tile.h"
@@ -14,37 +31,33 @@
 namespace alus::terraincorrection {
 
 class TerrainCorrection {
-   public:
-    TerrainCorrection(alus::Dataset coh_ds, /*alus::Dataset metadata,*/ alus::Dataset dem);
+public:
+    TerrainCorrection(Dataset coh_ds, /*alus::Dataset metadata,*/ Dataset dem);
 
-    explicit TerrainCorrection(alus::Dataset coh_ds,
-                               RangeDopplerTerrainMetadata metadata,
-                               const Metadata::TiePoints& lat_tie_points,
-                               const Metadata::TiePoints& lon_tie_points);
+    explicit TerrainCorrection(Dataset coh_ds, RangeDopplerTerrainMetadata metadata,
+                               const Metadata::TiePoints& lat_tie_points, const Metadata::TiePoints& lon_tie_points);
 
-    static alus::snapengine::old::Product CreateTargetProduct(
-        const alus::snapengine::geocoding::Geocoding* geocoding,
-        snapengine::geocoding::Geocoding*& target_geocoding,
-        int source_width,
-        int source_height,
-        double azimuth_spacing,
-        const std::string& output_filename);  // TODO: move to private after testing
+    static snapengine::old::Product CreateTargetProduct(
+        const snapengine::geocoding::Geocoding* geocoding, snapengine::geocoding::Geocoding*& target_geocoding,
+        int source_width, int source_height, double azimuth_spacing,
+        const std::string_view output_filename);  // TODO: move to private after testing
 
     //    std::vector<double> GetElevations() { return coh_ds_elevations_; }
 
-    void ExecuteTerrainCorrection(const std::string& output_file_name, size_t tile_width, size_t tile_height);
+    void ExecuteTerrainCorrection(const std::string_view output_file_name, size_t tile_width, size_t tile_height);
 
     ~TerrainCorrection();
 
-   private:
-
+private:
     Dataset coh_ds_;
     RangeDopplerTerrainMetadata metadata_;
-    //Dem dem_ds_;
-//    std::vector<double> coh_ds_elevations_{};
+    // Dem dem_ds_;
+    //    std::vector<double> coh_ds_elevations_{};
     const Metadata::TiePoints& lat_tie_points_;
     const Metadata::TiePoints& lon_tie_points_;
+    snapengine::geocoding::Geocoding* target_geocoding_{};
 
+    // TODO: update doxygen comment
     /**
      * Computes target image boundary by creating a rectangle around the source image. The source image should be
      * TiePoint Geocoded. Boundary is in degree coordinates.
@@ -56,9 +69,8 @@ class TerrainCorrection {
      * @return Vector containing four target image boundaries: minimum latitude, maximum latitude, minimum longitude,
      * maximum longitude.
      */
-    static std::vector<double> ComputeImageBoundary(const alus::snapengine::geocoding::Geocoding *geocoding,
-                                             int source_width,
-                                             int source_height);
+    static std::vector<double> ComputeImageBoundary(const snapengine::geocoding::Geocoding* geocoding, int source_width,
+                                                    int source_height);
 
     /**
      * Method for splitting the input image into several tiles.
@@ -66,12 +78,30 @@ class TerrainCorrection {
      * @param base_image The input image represented as a simple large tile.
      * @param dest_bounds Destination image bounds.
      */
-    std::vector<alus::TcTile> CalculateTiles(alus::snapengine::resampling::Tile &base_image,
-                                              alus::Rectangle dest_bounds, int tile_width, int tile_height);
+    std::vector<TcTile> CalculateTiles(snapengine::resampling::Tile& base_image, Rectangle dest_bounds, int tile_width,
+                                       int tile_height);
 
     ComputationMetadata CreateComputationMetadata();
 
     std::vector<void*> cuda_arrays_to_clean_{};
     void FreeCudaArrays();
+
+    class TileProcessor : public multithreading::Executable {
+    public:
+        void Execute() override;
+        TileProcessor(TcTile& tile, TerrainCorrection* terrain_correction, GetPositionMetadata& h_get_position_metadata,
+                      GetPositionMetadata& d_get_position_metadata, GeoTransformParameters target_geo_transform,
+                      int diff_lat, const ComputationMetadata& comp_metadata, snapengine::old::Product& target_product);
+
+    private:
+        TcTile& tile_;
+        TerrainCorrection* terrain_correction_;
+        GetPositionMetadata& host_get_position_metadata_;
+        GetPositionMetadata& d_get_position_metadata_;
+        GeoTransformParameters target_geo_transform_;
+        int diff_lat_{};
+        const ComputationMetadata& comp_metadata_;
+        snapengine::old::Product& target_product_;
+    };
 };
-}  // namespace alus
+}  // namespace alus::terraincorrection

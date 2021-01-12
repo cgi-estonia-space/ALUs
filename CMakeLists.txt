@@ -15,6 +15,9 @@ set(CMAKE_CXX_FLAGS "-Wall -Werror -Wextra -pedantic")
 set(CMAKE_CUDA_STANDARD 14)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
 # Dependencies which should be installed on a host system and not included separately by this project.
 find_package(CUDA REQUIRED)
 if (CUDA_FOUND)
@@ -35,7 +38,7 @@ find_package(Boost 1.74.0 REQUIRED COMPONENTS program_options date_time filesyst
 
 find_package(GDAL REQUIRED)
 
-find_package (Eigen3 REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 set(ALUS_BINARY_OUTPUT_DIR ${PROJECT_BINARY_DIR}/alus_package)
 set(ALUS_UNIT_TEST_BINARY_OUTPUT_DIR ${PROJECT_BINARY_DIR}/unit-test)
@@ -53,6 +56,7 @@ add_subdirectory(util/exotic_operations)
 add_subdirectory(util/common)
 add_subdirectory(util/cuda)
 add_subdirectory(util/snap-engine)
+add_subdirectory(util/multi_threading)
 
 # Algorithms
 add_subdirectory(algs/coherence)
@@ -85,9 +89,9 @@ FetchContent_Declare(
 
 FetchContent_GetProperties(googletest)
 
-if(ENABLE_UNIT_TESTS OR ENABLE_INTEGRATION_TESTS)
+if (ENABLE_UNIT_TESTS OR ENABLE_INTEGRATION_TESTS)
 
-    if(NOT googletest_POPULATED)
+    if (NOT googletest_POPULATED)
         FetchContent_Populate(googletest)
 
         # Prevent GoogleTest from overriding our compiler/linker options
@@ -103,16 +107,16 @@ if(ENABLE_UNIT_TESTS OR ENABLE_INTEGRATION_TESTS)
         )
 
         # Silence std::tr1 warning on MSVC
-        if(MSVC)
-            foreach(_tgt gtest gtest_main gmock gmock_main)
+        if (MSVC)
+            foreach (_tgt gtest gtest_main gmock gmock_main)
                 target_compile_definitions(${_tgt}
                         PRIVATE
                         "_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING"
                         )
-            endforeach()
-        endif()
-    endif()
-endif()
+            endforeach ()
+        endif ()
+    endif ()
+endif ()
 
 if (ENABLE_UNIT_TESTS)
     add_subdirectory(test)
@@ -120,4 +124,4 @@ endif ()
 
 if (ENABLE_INTEGRATION_TESTS)
     add_subdirectory(test_integration)
-endif()
+endif ()

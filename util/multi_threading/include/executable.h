@@ -13,31 +13,11 @@
  */
 #pragma once
 
-#include <cstddef>
-
-#include "kernel_array.h"
-
 namespace alus {
-
-struct TcTileCoordinates {
-    double source_x_0;
-    double source_y_0;
-    size_t source_width;
-    size_t source_height;
-    double dem_x_0;
-    double dem_y_0;
-    size_t dem_width;
-    size_t dem_height;
-    double target_x_0;
-    double target_y_0;
-    size_t target_width;
-    size_t target_height;
+namespace multithreading {
+class Executable {
+   public:
+    virtual void Execute() = 0;
 };
-
-struct TcTile {
-    TcTileCoordinates tc_tile_coordinates;
-    cuda::KernelArray<double> target_tile_data_buffer;
-    //alus::cuda::KernelArray<double> dem_tile_data_buffer;
-    //alus::cuda::KernelArray<double> elevation_tile_data_buffer;
-};
+}
 }
