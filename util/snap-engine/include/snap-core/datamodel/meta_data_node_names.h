@@ -214,6 +214,36 @@ public:
     static constexpr std::string_view RANGE_BANDWIDTH = "range_bandwidth";
     static constexpr std::string_view AZIMUTH_BANDWIDTH = "azimuth_bandwidth";
 
+    // Calibration operator specific metadata
+    static constexpr std::string_view CALIBRATION_ROOT = "calibration";
+    static constexpr std::string_view CALIBRATION = "calibration";
+    static constexpr std::string_view ADS_HEADER = "adsHeader";
+    static constexpr std::string_view POLARISATION = "polarisation";
+    static constexpr std::string_view MISSION_ID = "missionId";
+    static constexpr std::string_view product_type = "productType";
+    static constexpr std::string_view MODE = "mode";
+    static constexpr std::string_view START_TIME = "startTime";
+    static constexpr std::string_view STOP_TIME = "stopTime";
+    static constexpr std::string_view ABSOLUTE_ORBIT_NUMBER = "absoluteOrbitNumber";
+    static constexpr std::string_view MISSION_DATA_TAKE_ID = "missionDataTakeId";
+    static constexpr std::string_view IMAGE_NUMBER = "imageNumber";
+    static constexpr std::string_view product = "product";
+    static constexpr std::string_view IMAGE_ANNOTATION = "imageAnnotation";
+    static constexpr std::string_view IMAGE_INFORMATION = "imageInformation";
+    static constexpr std::string_view NUMBER_OF_LINES = "numberOfLines";
+
+    // Calibration vector metadata
+    static constexpr std::string_view AZIMUTH_TIME = "azimuthTime";
+    static constexpr std::string_view LINE = "line";
+    static constexpr std::string_view PIXEL = "pixel";
+    static constexpr std::string_view COUNT = "count";
+    static constexpr std::string_view SIGMA_NOUGHT = "sigmaNought";
+    static constexpr std::string_view BETA_NOUGHT = "betaNought";
+    static constexpr std::string_view GAMMA = "gamma";
+    static constexpr std::string_view DN = "dn";
+    static constexpr std::string_view CALIBRATION_VECTOR = "calibrationVector";
+    static constexpr std::string_view CALIBRATION_VECTOR_LIST = "calibrationVectorList";
+
     static constexpr std::string_view COMPACT_MODE = "compact_mode";
 
     static bool GetAttributeBoolean(std::shared_ptr<MetadataElement> element, std::string_view view);

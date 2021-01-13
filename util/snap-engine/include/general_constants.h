@@ -58,6 +58,8 @@ constexpr double NO_DATA_VALUE{-99999.0};
 constexpr double sTOns{oneBillion};    // s to ns
 constexpr double nsTOs{oneBillionth};  // ns to s
 
+constexpr int INVALID_INDEX{-1};
+
 }  // namespace constants
 }  // namespace snapEngine
 }  // namespace alus
