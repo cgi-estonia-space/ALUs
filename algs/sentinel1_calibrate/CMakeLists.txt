@@ -1,5 +1,9 @@
 list(APPEND SENTINEL_1_CALIBRATE_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/sentinel1_calibrate.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/sentinel1_calibrate_kernel.cu
+        ${CMAKE_CURRENT_LIST_DIR}/src/sentinel1_calibrate_executor.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/sentinel1_calibrate_kernel_utils.cu
+        ${CMAKE_CURRENT_LIST_DIR}/src/sentinel1_calibrate_safe_helper.cc
         )
 
 list(APPEND SENTINEL_1_CALIBRATE_INCLUDE_DIRS
@@ -11,12 +15,15 @@ list(APPEND SENTINEL_1_CALIBRATE_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/../../util/exotic_operations/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/common/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/cuda/include
+        ${CMAKE_CURRENT_LIST_DIR}/../algorithm_bond/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../app/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/gdal/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../external/pugixml/include
         )
 
 add_library(sentinel1-calibrate-obj
         OBJECT
-        ${SENTINEL_1_CALIBRATE_SOURCES}
-        )
+        ${SENTINEL_1_CALIBRATE_SOURCES})
 
 target_include_directories(sentinel1-calibrate-obj
         PRIVATE
@@ -40,8 +47,12 @@ set_target_properties(sentinel1-calibrate-static
 
 target_link_libraries(sentinel1-calibrate-static
         PUBLIC
+        Boost::filesystem
+        Boost::iostreams
         sentinel1-util-static
         snap-engine-static
+        gdal-util-static
+        cuda_util-static
         )
 
 add_library(sentinel1-calibrate-shared
@@ -61,6 +72,10 @@ set_target_properties(sentinel1-calibrate-shared
 
 target_link_libraries(sentinel1-calibrate-shared
         PUBLIC
+        Boost::filesystem
+        Boost::iostreams
         sentinel1-util-static
         snap-engine-static
+        gdal-util-static
+        cuda_util-static
         )

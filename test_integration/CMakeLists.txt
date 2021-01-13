@@ -259,3 +259,33 @@ add_custom_command(TARGET integration-sentinel1_product_reader
         COMMAND cp -al ${CMAKE_CURRENT_LIST_DIR}/goods/sentinel1_product_reader ${CMAKE_BINARY_DIR}/test_integration/goods/sentinel1_product_reader
         COMMAND cd ${CMAKE_BINARY_DIR}/test_integration/goods/sentinel1_product_reader && unzip -qn ${CMAKE_BINARY_DIR}/test_integration/goods/sentinel1_product_reader/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563.zip
         )
+
+#--------------------------sentinel1 calibrate integration test-----------------------
+list(APPEND TEST_SOURCES_SENTINEL1_CALIBRATE
+        src/sentinel1_calibrate_test.cc
+        )
+add_executable(integration-test-sentinel1-calibrate ${TEST_SOURCES_SENTINEL1_CALIBRATE})
+
+target_include_directories(integration-test-sentinel1-calibrate PUBLIC ${TEST_INCLUDE})
+
+target_link_libraries(integration-test-sentinel1-calibrate
+        PRIVATE
+        crypto
+        Boost::filesystem
+        Boost::iostreams
+        gmock_main
+        sentinel1-calibrate-static
+        cuda_util-static
+        gdal-util-static
+        )
+
+add_custom_command(TARGET integration-test-sentinel1-calibrate
+        POST_BUILD
+        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/test_integration/goods/sentinel1_calibrate
+
+        COMMAND cp -arn ${CMAKE_CURRENT_LIST_DIR}/goods/sentinel1_product_reader/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563.zip
+        ${CMAKE_BINARY_DIR}/test_integration/goods/sentinel1_calibrate/.
+
+        COMMAND cd ${CMAKE_BINARY_DIR}/test_integration/goods/sentinel1_calibrate &&
+        unzip -oq S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563.zip
+        )

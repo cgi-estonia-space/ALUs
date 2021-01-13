@@ -52,10 +52,9 @@ template <typename BufferType>
 class Dataset: public AlusFileReader<BufferType> {
    public:
 
-
-
     Dataset() = default;
     explicit Dataset(std::string_view filename);
+    explicit Dataset(std::string_view filename, GDALAccess access);
     explicit Dataset(GDALDataset* input_dataset);
     explicit Dataset(std::string_view filename, const GeoTransformSourcePriority& georef_source);
     void LoadRasterBand(int band_nr) override ;
@@ -125,11 +124,13 @@ class Dataset: public AlusFileReader<BufferType> {
     size_t GetBufferElemCount() override { return data_buffer_.size();};
     BufferType* GetDeviceDataBuffer() override ;
     void ReadRectangle(Rectangle rectangle, int band_nr, BufferType*data_buffer) override ;
+    [[nodiscard]] std::string_view GetFilePath();
 
     ~Dataset();
 
    private:
     void LoadDataset(std::string_view filename);
+    void LoadDataset(std::string_view filename, GDALAccess access);
 
     GDALDataset* dataset_{};
     GDALDataType gdal_data_type_;
@@ -143,6 +144,7 @@ class Dataset: public AlusFileReader<BufferType> {
     int x_size_{};
     int y_size_{};
     std::vector<BufferType> data_buffer_{};
+    std::string file_path_{};
 
 };
 

@@ -19,6 +19,8 @@ res5=$?
 res6=$?
 ./integration-test-topsar-deburst-op "$result_output"
 res7=$?
+./integration-test-sentinel1-calibrate "$result_output"
+res8=$?
 
-exit_value=$((res1 | res2 | res3 | res4 | res5 | res6 | res7))
+exit_value=$((res1 | res2 | res3 | res4 | res5 | res6 | res7 | res8))
 exit $exit_value

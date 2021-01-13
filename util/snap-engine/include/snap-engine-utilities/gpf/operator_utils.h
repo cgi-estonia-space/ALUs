@@ -18,8 +18,13 @@
  */
 #pragma once
 
+#include <memory>
 #include <string>
 #include <string_view>
+#include <vector>
+
+#include "snap-core/datamodel/band.h"
+#include "snap-core/datamodel/product.h"
 
 #include "snap-core/datamodel/product.h"
 #include "snap-core/datamodel/tie_point_grid.h"
@@ -50,6 +55,8 @@ public:
     static std::shared_ptr<TiePointGrid> GetIncidenceAngle(const std::shared_ptr<snapengine::Product>& source_product) {
         return source_product->GetTiePointGrid(TPG_INCIDENT_ANGLE);
     }
+    static std::vector<std::shared_ptr<Band>> GetSourceBands(std::shared_ptr<Product> source_product, std::vector<std::string> source_band_names, bool include_virtual_bands);
+    static std::string GetSuffixFromBandName(std::string_view band_name);
 };
 
 }  // namespace snapengine

@@ -81,12 +81,12 @@ inline __device__ __host__ PositionVelocity GetPositionVelocity(double time,
 
 /**
  *  Important note, timeMap in the original code is just a cache to make things faster. We can't afford this on the gpu.
- * @param time          Somesort of time. No idea which one
- * @param orbit         An array of OrbitStateVectors
- * @param numOrbitVec   Length of OrbitStateVectors Array
+ * @param time          Line acquisition time.
+ * @param orbit         An array of OrbitStateVectors.
+ * @param numOrbitVec   Length of OrbitStateVectors Array.
  * @param dt            OrbitStateVectors.dt variable.
- * @param position      position of something, perhaps the satelite? Will be filled
- * @param velocity      velocity of something, üerhaps the satelite? Makes up the lagrange Interpolating Polynomial with position. Will be filled.
+ * @param position      position of satellite. Will be filled.
+ * @param velocity      velocity of satellite. Makes up the lagrange Interpolating Polynomial with position. Will be filled.
  */
 inline __device__ __host__ void GetPositionVelocity(double time,
                                                     snapengine::OrbitStateVectorComputation *orbit,

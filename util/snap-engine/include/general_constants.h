@@ -17,6 +17,8 @@
  */
 #pragma once
 
+#include <cstddef>
+
 #include "geo_utils.h"
 
 namespace alus {
@@ -59,6 +61,8 @@ constexpr double sTOns{oneBillion};    // s to ns
 constexpr double nsTOs{oneBillionth};  // ns to s
 
 constexpr int INVALID_INDEX{-1};
+
+constexpr float THERMAL_NOISE_TRG_FLOOR_VALUE{0.01234567890000F};
 
 }  // namespace constants
 }  // namespace snapEngine

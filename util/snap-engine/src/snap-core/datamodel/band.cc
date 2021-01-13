@@ -81,6 +81,7 @@ void Band::SetSolarFlux(float solar_flux) {
 void Band::ReadRasterData([[maybe_unused]] int offset_x, [[maybe_unused]] int offset_y, [[maybe_unused]] int width,
                           [[maybe_unused]] int height, [[maybe_unused]] std::shared_ptr<ProductData> raster_data,
                           [[maybe_unused]] std::shared_ptr<ceres::IProgressMonitor> pm) {
+    throw std::runtime_error("Not implemented yet!");
     //    Guardian::AssertNotNull("rasterData", raster_data);
     //    if (IsProductReaderDirectlyUsable()) {
     //        // Don't go the long way round the source image.

@@ -126,9 +126,13 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
     CHECK_CUDA_ERR(cudaMemset(kernel_sensor_velocities.array, 0, pos_vector_array_bytes_size));
 
     const auto computation_metadata = CreateComputationMetadata();
-    CalculateVelocitiesAndPositions(coh_ds_y_size, metadata_.first_line_time->GetMjd(), line_time_interval_in_days,
+    const auto start{std::chrono::steady_clock::now()};
+    CalculateVelocitiesAndPositions(static_cast<int>(coh_ds_y_size), metadata_.first_line_time->GetMjd(), line_time_interval_in_days,
                                     computation_metadata.orbit_state_vectors, kernel_sensor_velocities,
                                     kernel_sensor_positions);
+    const auto end{std::chrono::steady_clock::now()};
+    const auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    std::cout << "Orbit state vectors computation took: " << duration << std::endl;
 
     GetPositionMetadata d_get_position_metadata{};
     FillGetPositionMetadata(d_get_position_metadata, kernel_sensor_positions, kernel_sensor_velocities,
@@ -261,8 +265,8 @@ snapengine::old::Product TerrainCorrection::CreateTargetProduct(
                                       std::abs(image_boundary[3] - image_boundary[2]),
                                       std::abs(image_boundary[1] - image_boundary[0])};
 
-    OGRErr error = target_crs.Validate();
-    if (target_crs.Validate() != OGRERR_NONE) {
+
+    if (OGRErr error = target_crs.Validate() != OGRERR_NONE) {
         printf("ERROR: %d\n", error);  // TODO: implement some real error (SNAPGPU-163)
     }
 
@@ -409,7 +413,7 @@ void TerrainCorrection::TileProcessor::Execute() {
     args.resampling_raster.source_tile_i = &source_tile;
 
     {
-        std::unique_lock<std::mutex> lock(gdal_read_mutex_);
+        std::unique_lock lock(gdal_read_mutex_);
         CHECK_GDAL_ERROR(terrain_correction_->coh_ds_.GetGdalDataset()
                              ->GetRasterBand(terrain_correction_->selected_band_id_)
                              ->RasterIO(GF_Read, source_rectangle.x, source_rectangle.y, source_rectangle.width,
@@ -423,7 +427,7 @@ void TerrainCorrection::TileProcessor::Execute() {
     CHECK_CUDA_ERR(LaunchTerrainCorrectionKernel(tile_, args));
 
     {
-        std::unique_lock<std::mutex> lock(gdal_write_mutex_);
+        std::unique_lock lock(gdal_write_mutex_);
         CHECK_GDAL_ERROR(target_product_.dataset_.GetGdalDataset()
                              ->GetRasterBand(terrain_correction_->selected_band_id_)
                              ->RasterIO(GF_Write, tile_coordinates.target_x_0, tile_coordinates.target_y_0,

@@ -1,7 +1,24 @@
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
+
+#include <string>
+
 
 #include <boost/algorithm/string.hpp>
 
+#include "metadata_attribute.h"
 #include "parse_exception.h"
 #include "snap-core/datamodel/metadata_attribute.h"
 #include "snap-core/util/string_utils.h"
@@ -461,6 +478,22 @@ std::shared_ptr<MetadataElement> AbstractMetadata::AddBandAbstractedMetadata(
     AddAbstractedAttribute(band_root, CALIBRATION_FACTOR, ProductData::TYPE_FLOAT64, "", "Calibration constant");
 
     return band_root;
+}
+std::vector<std::shared_ptr<MetadataElement>> AbstractMetadata::GetBandAbsMetadataList(
+    const std::shared_ptr<MetadataElement> abs_root) {
+    auto starts_with = [](std::string_view string, std::string_view key) {
+      return string.rfind(key, 0) == 0;
+    };
+
+    std::vector<std::shared_ptr<MetadataElement>> band_metadata_list;
+    const auto children = abs_root->GetElements();
+    for (const auto& child : children) {
+        if (starts_with(child->GetName(), BAND_PREFIX)) {
+            band_metadata_list.push_back(child);
+        }
+    }
+
+    return band_metadata_list;
 }
 
 std::shared_ptr<MetadataElement> AbstractMetadata::GetBandAbsMetadata(
