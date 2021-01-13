@@ -125,8 +125,8 @@ public:
         bool output_beta_band, bool output_gamma_band, bool output_dn_band);
 
     static void UpdateBandNames(std::shared_ptr<snapengine::MetadataElement>& set,
-                                const std::set<std::string_view> selected_pol_list,
-                                const std::vector<std::string> band_names);
+                                const std::set<std::string, std::less<>>& selected_pol_list,
+                                const std::vector<std::string>& band_names);
 
     /**
      * Get source product subSwath names.

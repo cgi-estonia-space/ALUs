@@ -4,10 +4,10 @@ set -e
 
 function print_help {
     echo "Usage:"
-    echo "$0 <build ID> <test data folder> <dem files location>"
+    echo "$0 <build ID> <coherence test data folder> <dem files location> <calibration test data folder>"
 }
 
-if [[ "$#" != 3 ]]; then
+if [[ "$#" != 4 ]]; then
     echo "Wrong count of input arguments"
     print_help
     exit 1
@@ -19,11 +19,13 @@ tar -xzvf ${build_id}.tar.gz
 
 # Run scripts of different cases
 mv run_beirut_disaster_test.sh ${build_id}
+mv run_virumaa_calibration_test.sh ${build_id}
 
 cd ${build_id}
 
 # Run cases
 ./run_beirut_disaster_test.sh $2 $3
+./run_virumaa_calibration_test.sh $4
 
 cd ..
 

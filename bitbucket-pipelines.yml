@@ -109,6 +109,7 @@ pipelines:
                 - build-nightly/*.tar.gz
                 - build-automation/execute_nightly.sh
                 - build-automation/run_beirut_disaster_test.sh
+                - build-automation/run_virumaa_calibration_test.sh
                 - build-automation/compare_alus_output.py
       - step:
           name: 'End to end tests and publish'
@@ -131,11 +132,11 @@ pipelines:
             - echo $ip_address
             - cd $BITBUCKET_CLONE_DIR
             - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "mkdir /tmp/nightly_builds"
-            - scp -oStrictHostKeyChecking=no build-automation/execute_nightly.sh build-automation/run_beirut_disaster_test.sh build-automation/compare_alus_output.py ubuntu@$ip_address:/tmp/nightly_builds
+            - scp -oStrictHostKeyChecking=no build-automation/execute_nightly.sh build-automation/run_beirut_disaster_test.sh build-automation/compare_alus_output.py build-automation/run_virumaa_calibration_test.sh ubuntu@$ip_address:/tmp/nightly_builds
             - cd build-nightly
             - build_filename=$(basename *.tar.gz)
             - build_id="${build_filename%%.*}"
             - scp -r -oStrictHostKeyChecking=no *.tar.gz ubuntu@$ip_address:/tmp/nightly_builds
-            - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "cd /tmp/nightly_builds; ./execute_nightly.sh ${build_id} /home/ubuntu/nightly_datasets/beirut_dimap/ /home/ubuntu/nightly_aux/SRTM3/"
+            - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "cd /tmp/nightly_builds; ./execute_nightly.sh ${build_id} /home/ubuntu/nightly_datasets/beirut_dimap/ /home/ubuntu/nightly_aux/SRTM3/ /home/ubuntu/nightly_datasets/virumaa/"
           after-script:
             - aws ec2 stop-instances --instance-ids $P3_2xLARGE_INSTANCE_ID --profile sid_man

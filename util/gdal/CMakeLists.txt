@@ -36,4 +36,5 @@ target_link_libraries(gdal-util-static
         PUBLIC
         gdal
         cuda_util-static
+        Boost::filesystem
         )

@@ -59,7 +59,7 @@ namespace alus::sentinel1calibrate {
 Sentinel1Calibrator::Sentinel1Calibrator(std::shared_ptr<snapengine::Product> source_product,
                                          std::shared_ptr<Dataset<float>> source_dataset,
                                          std::vector<std::string> selected_sub_swaths,
-                                         std::set<std::string_view> selected_polarisations,
+                                         std::set<std::string, std::less<>> selected_polarisations,
                                          SelectedCalibrationBands selected_calibration_bands,
                                          std::string_view output_path, bool output_image_in_complex, int tile_width,
                                          int tile_height)
@@ -754,7 +754,7 @@ Sentinel1Calibrator::~Sentinel1Calibrator() {
 
 std::vector<CalibrationInfo> GetCalibrationInfoList(
     const std::shared_ptr<snapengine::MetadataElement>& original_product_metadata,
-    std::set<std::string_view> selected_polarisations, SelectedCalibrationBands selected_calibration_bands) {
+    std::set<std::string, std::less<>> selected_polarisations, SelectedCalibrationBands selected_calibration_bands) {
     std::vector<CalibrationInfo> calibration_info_list;
 
     const auto calibration_root_element =
