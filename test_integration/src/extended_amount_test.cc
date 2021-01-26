@@ -2,7 +2,7 @@
 
 #include "../goods/compute_extended_amount_test_data.h"
 #include "backgeocoding.h"
-#include "extended_amount.h"
+#include "extended_amount_computation.h"
 
 #include "backgeocoding_utils.cuh"
 
@@ -35,6 +35,19 @@ TEST(ExtendedAmountTest, ComputeExtendedAmount) {
     EXPECT_THAT(result.range_min, testing::DoubleNear(expected_output.range_min, 1e-9));
     EXPECT_THAT(result.azimuth_min, testing::DoubleEq(expected_output.azimuth_min));
     EXPECT_THAT(result.azimuth_max, testing::DoubleEq(expected_output.azimuth_max));
+
+
+    alus::Rectangle const input_irregular{10, 19486, 50, 50};
+    alus::backgeocoding::AzimuthAndRangeBounds const expected_irregular_output{
+        -0.006566788426425774, 0.003858104329992784, 0.0, 17.145334103861202};
+
+    alus::backgeocoding::AzimuthAndRangeBounds irregular_result =
+        backgeocoding.ComputeExtendedAmount(input_irregular.x, input_irregular.y, input_irregular.width, input_irregular.height);
+
+    EXPECT_THAT(irregular_result.range_max, testing::DoubleNear(expected_irregular_output.range_max, 1e-9));
+    EXPECT_THAT(irregular_result.range_min, testing::DoubleNear(expected_irregular_output.range_min, 1e-9));
+    EXPECT_THAT(irregular_result.azimuth_min, testing::DoubleEq(expected_irregular_output.azimuth_min));
+    EXPECT_THAT(irregular_result.azimuth_max, testing::DoubleEq(expected_irregular_output.azimuth_max));
 }
 
 TEST(ExtendedAmountTest, GetBurstIndexTest) {

@@ -16,7 +16,7 @@
 #include "CudaFriendlyObject.h"
 #include "cuda_util.hpp"
 #include "dataset.h"
-#include "gdal_util.hpp"
+#include "gdal_util.h"
 #include "resampling.h"
 #include "tests_common.hpp"
 
@@ -35,7 +35,7 @@ class RangeDopplerGeocodingTest : public ::testing::Test {
     double *d_index_j_;
     double *d_index_ki_;
     double *d_index_kj_;
-    Dataset dataset_{
+    Dataset<double> dataset_{
         "./goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb.tif"};
     std::vector<double> tile_data_;
     double *d_tile_data_;

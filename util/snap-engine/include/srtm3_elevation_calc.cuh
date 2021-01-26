@@ -62,7 +62,7 @@ inline __device__ int GetSamples(
                     samples[i * width + j] = srtm_42_01_tile[pixel_x + xSize * pixel_y];
                     break;
                 default:
-                    printf("Slave pix pos where it should not be. %d \n", tile_x_index);
+                    printf("Slave pix pos where it should not be. %d %d \n", tile_x_index, tile_y_index);
                     samples[i * width + j] = CUDART_NAN;
             }
 

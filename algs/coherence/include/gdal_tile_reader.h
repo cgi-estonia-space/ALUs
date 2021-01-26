@@ -5,7 +5,7 @@
 
 #include <gdal_priv.h>
 
-#include "gdal_util.hpp"
+#include "gdal_util.h"
 #include "i_data_tile_read_write_base.h"
 #include "i_data_tile_reader.h"
 #include "tile.h"

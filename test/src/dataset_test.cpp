@@ -1,9 +1,9 @@
 #include "dataset.h"
-#include "target_dataset.hpp"
+#include "target_dataset.h"
 
 #include "gmock/gmock.h"
 
-#include "gdal_util.hpp"
+#include "gdal_util.h"
 #include "tests_common.hpp"
 
 using namespace alus::tests;
@@ -22,20 +22,20 @@ class DatasetTest : public ::testing::Test {
 
 TEST_F(DatasetTest, onInvalidFilenameThrows) {
     std::string_view filename = "non_existent_unittest_file";
-    ASSERT_THROW(auto a = alus::Dataset(filename), alus::DatasetError);
+    ASSERT_THROW(auto a = alus::Dataset<double>(filename), alus::DatasetError);
 }
 
 TEST_F(DatasetTest, loadsValidTifFile) {
-    auto ds = alus::Dataset(TIF_PATH_1);
+    auto ds = alus::Dataset<double>(TIF_PATH_1);
     ds.LoadRasterBand(1);
     ASSERT_EQ(100, ds.GetXSize());
     ASSERT_EQ(100, ds.GetYSize());
-    ASSERT_EQ(ds.GetXSize() * ds.GetYSize(), ds.GetDataBuffer().size())
+    ASSERT_EQ(ds.GetXSize() * ds.GetYSize(), ds.GetHostDataBuffer().size())
         << "Loaded band 1 buffer does not contain exact data from dataset.";
 }
 
 TEST_F(DatasetTest, returnsCorrectCoordinatesForEdgeIndexes) {
-    auto ds = alus::Dataset(TIF_PATH_1);
+    auto ds = alus::Dataset<double>(TIF_PATH_1);
     ds.LoadRasterBand(1);
     auto const zero = ds.GetPixelCoordinatesFromIndex(0, 0);
     auto const zeroOne = ds.GetPixelCoordinatesFromIndex(0, 99);
@@ -50,7 +50,7 @@ TEST_F(DatasetTest, returnsCorrectCoordinatesForEdgeIndexes) {
 }
 
 TEST_F(DatasetTest, returnsCorrectIndexesForCoordinates) {
-    auto ds = alus::Dataset(TIF_PATH_1);
+    auto ds = alus::Dataset<double>(TIF_PATH_1);
     ds.LoadRasterBand(1);
 
     auto const zero = ds.GetPixelIndexFromCoordinates(22.236277, 58.373121);
@@ -71,34 +71,49 @@ TEST_F(DatasetTest, returnsCorrectIndexesForCoordinates) {
 }
 
 TEST_F(DatasetTest, createsTargetDataset) {
-    auto ds = alus::Dataset(TIF_PATH_1);
+    auto ds = alus::Dataset<double>(TIF_PATH_1);
     ds.LoadRasterBand(1);
     std::vector<double> from(ds.GetRasterSizeY() * ds.GetRasterSizeX());
     {
-        auto tgt = alus::TargetDataset(ds, "/tmp/test.tif");
+        alus::TargetDatasetParams params;
+        params.filename = "/tmp/test.tif";
+        params.band_count = 1;
+        params.driver = ds.GetGdalDataset()->GetDriver();
+        params.dimension = ds.GetRasterDimensions();
+        params.transform = ds.GetTransform();
+        params.projectionRef = ds.GetGdalDataset()->GetProjectionRef();
+        auto tgt = alus::TargetDataset<double>(params);
         ASSERT_EQ(tgt.getSize(), from.size());
         std::fill(from.begin(), from.end(), 15.6734);
-        tgt.write(from);
+        tgt.WriteRectangle(from.data(), {0,0,ds.GetRasterSizeX(),ds.GetRasterSizeY()}, 1);
     }
 
-    auto checkDs = alus::Dataset("/tmp/test.tif");
+    auto checkDs = alus::Dataset<double>("/tmp/test.tif");
     checkDs.LoadRasterBand(1);
-    auto const& checkData = checkDs.GetDataBuffer();
+    auto const& checkData = checkDs.GetHostDataBuffer();
     ASSERT_EQ(checkData.size(), from.size());
     ASSERT_TRUE(std::equal(checkData.begin(), checkData.end(), from.begin()));
 }
 
 TEST_F(DatasetTest, throwsWhenWritingInvalidSizes) {
-    auto ds = alus::Dataset(TIF_PATH_1);
+    auto ds = alus::Dataset<double>(TIF_PATH_1);
     ds.LoadRasterBand(1);
-    auto tgt = alus::TargetDataset(ds, "/tmp/test.tif");
-    auto const dims = tgt.getDimensions();
+
+    alus::TargetDatasetParams params;
+    params.filename = "/tmp/test.tif";
+    params.band_count = 1;
+    params.driver = ds.GetGdalDataset()->GetDriver();
+    params.dimension = ds.GetRasterDimensions();
+    params.transform = ds.GetTransform();
+    params.projectionRef = ds.GetGdalDataset()->GetProjectionRef();
+    auto tgt = alus::TargetDataset<double>(params);
+    auto dims = tgt.getDimensions();
+    dims = dims + 1;
 
     std::vector<double> dummySizeSmall(5);
-    ASSERT_THROW(tgt.write(dummySizeSmall), std::invalid_argument);
+    ASSERT_THROW(tgt.WriteRectangle(dummySizeSmall.data(), {0,0,0,0}, 1), std::invalid_argument);
     std::vector<double> dummyFullSize(tgt.getSize());
-    ASSERT_THROW(tgt.write(dummyFullSize, {1, 1}), alus::GdalErrorException);
-    ASSERT_THROW(tgt.write(dummyFullSize, {0, 0}, dims + 1), std::invalid_argument);
+    ASSERT_THROW(tgt.WriteRectangle(dummyFullSize.data(), {1, 1, 0, 0}, 1), std::invalid_argument);
 }
 
 TEST_F(DatasetTest, writesToTargetDatasetWithOffsets) {
@@ -107,8 +122,15 @@ TEST_F(DatasetTest, writesToTargetDatasetWithOffsets) {
     std::vector<double> fill2;
     alus::RasterDimension fillDim{10, 1};
     {
-        auto ds = alus::Dataset(TIF_PATH_1);
-        auto tgt = alus::TargetDataset(ds, "/tmp/test.tif");
+        auto ds = alus::Dataset<double>(TIF_PATH_1);
+        alus::TargetDatasetParams params;
+        params.filename = "/tmp/test.tif";
+        params.band_count = 1;
+        params.driver = ds.GetGdalDataset()->GetDriver();
+        params.dimension = ds.GetRasterDimensions();
+        params.transform = ds.GetTransform();
+        params.projectionRef = ds.GetGdalDataset()->GetProjectionRef();
+        auto tgt = alus::TargetDataset<double>(params);
 
         fill1.resize(fillDim.getSize());
         fill2.resize(fillDim.getSize());
@@ -116,14 +138,14 @@ TEST_F(DatasetTest, writesToTargetDatasetWithOffsets) {
         std::fill(fill2.begin(), fill2.end(), 1.075);
 
         dim = tgt.getDimensions();
-        tgt.write(fill1, {0, 0}, fillDim);
-        tgt.write(fill2, {0, 50}, fillDim);
+        tgt.WriteRectangle(fill1.data(), {0, 0, fillDim.columnsX, fillDim.rowsY}, 1);
+        tgt.WriteRectangle(fill2.data(), {0, 50, fillDim.columnsX, fillDim.rowsY}, 1);
     }
 
-    auto check = alus::Dataset("/tmp/test.tif");
+    auto check = alus::Dataset<double>("/tmp/test.tif");
     check.LoadRasterBand(1);
     ASSERT_EQ(check.GetRasterDimensions(), dim);
-    auto checkData = check.GetDataBuffer();
+    auto checkData = check.GetHostDataBuffer();
     ASSERT_EQ(checkData.size(), dim.getSize());
     EXPECT_TRUE(std::equal(checkData.begin(), checkData.begin() + fillDim.getSize(), fill1.begin()));
     EXPECT_TRUE(

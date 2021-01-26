@@ -10,7 +10,7 @@ namespace old {
 class Product {
    public:
     alus::snapengine::geocoding::Geocoding *geocoding_;
-    alus::Dataset dataset_;
+    alus::Dataset<double> dataset_;
     const char* FILE_FORMAT_;
    private:
 };

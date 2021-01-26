@@ -11,7 +11,7 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
-#include "burst_offset.h"
+#include "burst_offset_computation.h"
 
 #include "backgeocoding_constants.h"
 #include "position_data.h"
@@ -93,7 +93,7 @@ __global__ void ComputeBurstOffsetKernel(BurstOffsetKernelArgs args) {
 }
 
 cudaError LaunchBurstOffsetKernel(BurstOffsetKernelArgs& args, int* burst_offset) {
-    dim3 block_dim(20, 20);
+    dim3 block_dim(24, 24);
     dim3 grid_dim(cuda::GetGridDim(block_dim.x, args.width), cuda::GetGridDim(block_dim.y, args.height));
     ComputeBurstOffsetKernel<<<grid_dim, block_dim>>>(args);
     cudaDeviceSynchronize();

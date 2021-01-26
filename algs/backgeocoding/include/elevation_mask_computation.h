@@ -13,15 +13,24 @@
  */
 #pragma once
 
-#include "shapes.h"
+#include "pointer_holders.h"
 
 namespace alus {
 namespace backgeocoding {
 
-class BackgeocodingIO {
-   public:
-    virtual void ReadTile(Rectangle area, double *tile_i, double *tile_q) = 0;
+struct ElevationMaskData {
+
+    size_t size; //all 4 of the following arrays have the same size, which is in here.
+    double *device_x_points;
+    double *device_y_points;
+    double *device_lat_array;
+    double *device_lon_array;
+
+    PointerArray tiles;
+
 };
+
+cudaError_t LaunchElevationMask(ElevationMaskData data);
 
 }  // namespace backgeocoding
 }  // namespace alus

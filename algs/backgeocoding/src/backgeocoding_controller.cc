@@ -13,62 +13,160 @@
  */
 #include "backgeocoding_controller.h"
 
+#include <chrono>
+
 namespace alus {
-namespace backgeocoding{
+namespace backgeocoding {
 
-BackgeocodingController::BackgeocodingController(){
-    std::cout << "Controller started." << '\n';
+BackgeocodingController::BackgeocodingController(std::shared_ptr<AlusFileReader<double>> master_input_dataset,
+                                                 std::shared_ptr<AlusFileReader<double>> slave_input_dataset,
+                                                 std::shared_ptr<AlusFileWriter<float>> output_dataset){
+    master_input_dataset_ = master_input_dataset;
+    slave_input_dataset_ = slave_input_dataset;
+    output_dataset_ = output_dataset;
 }
 
-BackgeocodingController::~BackgeocodingController(){
-    if(this->backgeocoding_ != nullptr){
-        delete backgeocoding_;
-    }
+BackgeocodingController::~BackgeocodingController() {}
+
+void BackgeocodingController::PrepareToCompute() {
+
+    backgeocoding_ = std::make_unique<Backgeocoding>();
+    backgeocoding_->FeedPlaceHolders();
+    backgeocoding_->PrepareToCompute();
+
+    num_of_bursts_ = backgeocoding_->GetNrOfBursts();
+    lines_per_burst_ = backgeocoding_->GetLinesPerBurst();
+    samples_per_burst_ = backgeocoding_->GetSamplesPerBurst();
 }
 
-void BackgeocodingController::ComputeImage(){
-    std::cout << "compute image started" << '\n';
-    this->backgeocoding_ = new Backgeocoding;
-    this->backgeocoding_->FeedPlaceHolders();
-    this->backgeocoding_->PrepareToCompute();
+void BackgeocodingController::RegisterThreadEnd() {
+    register_mutex_.lock();
 
-    //TODO:placeholder
-    int slave_burst_offset = 0;
-    std::vector<double> extended_amount;
-    extended_amount.push_back(-0.01773467106249882);
-    extended_amount.push_back(0.0);
-    extended_amount.push_back(-3.770974349203243);
-    extended_amount.push_back(3.8862058607542167);
-    Rectangle target_area = {4000, 17000, 100, 100,};
-    Rectangle target_tile = {4000, 17000, 0, 100};
+    finished_count_++;
 
-    this->backgeocoding_->ComputeTile(this, 11, 11 + slave_burst_offset, target_area, target_tile, extended_amount); //TODO:placeholders
-
-    std::cout << "compute image ended" << '\n';
+    if (finished_count_ == worker_count_) {
+        this->end_block_.notify_all();
+    } else {
+        this->thread_sync_.notify_one();
+    }
+    register_mutex_.unlock();
 }
 
-//TODO: obviously a placeholder, but to test out a pattern.
-void BackgeocodingController::ReadTile(Rectangle area, double *tile_i, double *tile_q) {
-    std::ifstream slave_i_stream("../test/goods/backgeocoding/slaveTileI.txt");
-    std::ifstream slave_q_stream("../test/goods/backgeocoding/slaveTileQ.txt");
-    if(!slave_i_stream.is_open()){
-        throw std::ios::failure("Error opening slaveTileI.txt");
-    }
-    if(!slave_q_stream.is_open()){
-        throw std::ios::failure("Error opening slaveTileQ.txt");
-    }
+void BackgeocodingController::ReadMaster(Rectangle master_area, double *i_tile, double *q_tile) {
+    master_read_mutex_.lock();
 
-    size_t size = area.width * area.height;
+    // TODO: Could we read slave and master at the same time if we branch into 2 other threads during this thread.
+    // TODO: find out if the band ordering is random or not. Then replace those numbers.
+    master_input_dataset_->ReadRectangle(master_area, 1, i_tile);
+    master_input_dataset_->ReadRectangle(master_area, 2, q_tile);
 
-
-    for(size_t i=0; i< size; i++){
-        slave_i_stream >> tile_i[i];
-        slave_q_stream >> tile_q[i];
-    }
-
-    slave_i_stream.close();
-    slave_q_stream.close();
+    master_read_mutex_.unlock();
 }
 
-}//namespace
-}//namespace
+PositionComputeResults BackgeocodingController::PositionCompute(int m_burst_index,
+                                                                int s_burst_index,
+                                                                Rectangle target_area,
+                                                                double *device_x_points,
+                                                                double *device_y_points) {
+    PositionComputeResults result;
+    position_compute_mutex_.lock();
+
+    result.slave_area = backgeocoding_->PositionCompute(m_burst_index, s_burst_index, target_area, device_x_points, device_y_points);
+    result.demod_size = result.slave_area.width * result.slave_area.height;
+
+    position_compute_mutex_.unlock();
+
+    return result;
+}
+
+void BackgeocodingController::ReadSlave(Rectangle slave_area, double *i_tile, double *q_tile) {
+    slave_read_mutex_.lock();
+
+    // TODO: find out if the band ordering is random or not. Then replace those numbers.
+    slave_input_dataset_->ReadRectangle(slave_area, 1, i_tile);
+    slave_input_dataset_->ReadRectangle(slave_area, 2, q_tile);
+
+    slave_read_mutex_.unlock();
+}
+
+void BackgeocodingController::CoreCompute(CoreComputeParams params) {
+    core_compute_mutex_.lock();
+
+    backgeocoding_->CoreCompute(params);
+
+    core_compute_mutex_.unlock();
+}
+
+void BackgeocodingController::WriteOutputs(Rectangle output_area, float *i_results, float *q_results) {
+    output_write_mutex_.lock();
+
+    output_dataset_->WriteRectangle(i_results, output_area, 1);
+    output_dataset_->WriteRectangle(q_results, output_area, 2);
+
+    output_write_mutex_.unlock();
+}
+
+void BackgeocodingController::StartWork() {
+    WorkerParams params;
+    worker_count_ = 1;
+    finished_count_ = 0;
+    active_worker_count_ = 5;
+    int slave_burst_offset = backgeocoding_->GetBurstOffset();
+    int first_line_idx, last_line_idx, recommended_width, actual_width;
+
+    // TODO: remove this after metadata has been added and tested.
+    /*int x = 4700;
+    int y = 21430;
+    int width = 100;
+    int height = 100;*/
+    recommended_width = recommended_tile_area_ / lines_per_burst_;
+    worker_count_ = num_of_bursts_ * (lines_per_burst_ * samples_per_burst_ / recommended_tile_area_ + 1);
+    workers_.reserve(worker_count_);
+    worker_count_ = 0;
+    worker_counter_ = 0;
+    params.index = 0;
+
+    for (int burst_index = 0; burst_index < num_of_bursts_; burst_index++) {
+        first_line_idx = burst_index * lines_per_burst_;
+        last_line_idx = first_line_idx + lines_per_burst_ - 1;
+
+        std::cout << burst_index << ") First and last line: " << first_line_idx << " " << last_line_idx << " " << samples_per_burst_ << std::endl;
+        std::cout << recommended_width << std::endl;
+        for(int sample_index = 0; sample_index < samples_per_burst_; sample_index += recommended_width){
+            actual_width = (sample_index + recommended_width < samples_per_burst_) ? recommended_width : samples_per_burst_ - sample_index;
+            params.index++;
+            params.master_input_area = {sample_index, first_line_idx, actual_width, lines_per_burst_};
+            params.slave_burst_index = burst_index + slave_burst_offset;
+            params.master_burst_index = burst_index;
+            worker_count_++;
+            workers_.emplace_back(params, this);
+        }
+    }
+/*
+    // TODO: remove this after metadata has been added and tested.
+    workers_.reserve(worker_count_);
+    params.index = 1;
+    params.master_input_area = {x, y, width, height};
+    params.slave_burst_index = 14 + slave_burst_offset;
+    params.master_burst_index = 14;
+    workers_.emplace_back(params, this);
+*/
+    //waiting for all threads to actually start
+    while (worker_counter_ < worker_count_) {}
+    for (size_t i = 0; i < active_worker_count_ && i < worker_count_; i++) {
+        thread_sync_.notify_one();
+    }
+
+    std::mutex final_mutex;
+    std::unique_lock<std::mutex> final_lock(final_mutex);
+    end_block_.wait(final_lock);
+    std::cout << "Final block reached." << std::endl;
+
+    //make sure the last thread actually got out of its lock.
+    register_mutex_.lock();
+    std::cout << "Final thread release confirmed." << std::endl;
+    register_mutex_.unlock();
+}
+
+}  // namespace backgeocoding
+}  // namespace alus

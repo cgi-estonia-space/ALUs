@@ -18,10 +18,8 @@
 #include "backgeocoding_constants.h"
 #include "backgeocoding_utils.cuh"
 #include "earth_gravitational_model96.cuh"
-#include "general_constants.h"
 #include "geo_utils.cuh"
 #include "position_data.h"
-#include "sar_geocoding.cuh"
 #include "srtm3_elevation_calc.cuh"
 
 #include "cuda_util.hpp"
@@ -105,11 +103,29 @@ __global__ void SlavePixPos(SlavePixPosData calc_data) {
     }
 }
 
+__global__ void FillXAndY(double *device_x_points, double *device_y_points, size_t points_size, double placeholder_value){
+    const size_t idx =  threadIdx.x + (blockDim.x * blockIdx.x);
+
+    if(idx >= points_size){
+        return;
+    }
+    device_x_points[idx] = placeholder_value;
+    device_y_points[idx] = placeholder_value;
+}
+
 cudaError_t LaunchSlavePixPos(SlavePixPosData calc_data) {
-    dim3 block_size(20, 20);
+    dim3 block_size(24, 24);
     dim3 grid_size(cuda::GetGridDim(20, calc_data.num_lines), cuda::GetGridDim(20, calc_data.num_pixels));
 
     SlavePixPos<<<grid_size, block_size>>>(calc_data);
+    return cudaGetLastError();
+}
+
+cudaError_t LaunchFillXAndY(double *device_x_points, double *device_y_points, size_t points_size, double placeholder_value){
+    dim3 block_size(1024);
+    dim3 grid_size(cuda::GetGridDim(block_size.x, points_size));
+
+    FillXAndY<<<grid_size, block_size>>>(device_x_points, device_y_points, points_size, placeholder_value);
     return cudaGetLastError();
 }
 

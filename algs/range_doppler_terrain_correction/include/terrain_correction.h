@@ -32,9 +32,9 @@ namespace alus::terraincorrection {
 
 class TerrainCorrection {
 public:
-    TerrainCorrection(Dataset coh_ds, /*alus::Dataset metadata,*/ Dataset dem);
+    TerrainCorrection(Dataset<double> coh_ds, /*alus::Dataset metadata,*/ Dataset<double> dem);
 
-    explicit TerrainCorrection(Dataset coh_ds, RangeDopplerTerrainMetadata metadata,
+    explicit TerrainCorrection(Dataset<double> coh_ds, RangeDopplerTerrainMetadata metadata,
                                const Metadata::TiePoints& lat_tie_points, const Metadata::TiePoints& lon_tie_points);
 
     static snapengine::old::Product CreateTargetProduct(
@@ -48,8 +48,9 @@ public:
 
     ~TerrainCorrection();
 
+
 private:
-    Dataset coh_ds_;
+    Dataset<double> coh_ds_;
     RangeDopplerTerrainMetadata metadata_;
     // Dem dem_ds_;
     //    std::vector<double> coh_ds_elevations_{};

@@ -13,28 +13,24 @@
  */
 #pragma once
 
-namespace alus{
+#include <vector>
 
+#include "shapes.h"
+
+namespace alus {
 
 /**
-    The whole point of this is to store a matrix or a cube of data on the gpu.
-    The problem is that in some cases, we can have several of these data piles and they can have
-    different sizes and meanings. This is also a reason why there is an ID field here, as it may
-    be necessary to tell different data piles apart, that are entered in a random order.
-
-    Use the x, y and z to describe the dimensions of your matrix that will be under the pointer variable.
-*/
-struct PointerHolder{
-    int id;
-    void *pointer;
-    int x;
-    int y;
-    int z;
+ * First of all we load onto a buffer, which can be cpu or gpu buffer. After that we ask data.
+ */
+template <typename BufferType>
+class AlusFileReader {
+   public:
+    virtual void ReadRectangle(Rectangle rectangle, int band_nr, BufferType *data_buffer) = 0;
+    virtual void LoadRasterBand(int band_nr) = 0;
+    virtual std::vector<BufferType> const& GetHostDataBuffer() const = 0;
+    virtual BufferType *GetDeviceDataBuffer() = 0;
+    virtual long unsigned int GetBufferByteSize() = 0;
+    virtual size_t GetBufferElemCount() = 0;
 };
 
-struct PointerArray{
-    PointerHolder *array;
-    size_t size;
-};
-
-}//namespace
+}

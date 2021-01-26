@@ -66,6 +66,7 @@ struct SlavePixPosData {
 };
 
 cudaError_t LaunchSlavePixPos(SlavePixPosData calc_data);
+cudaError_t LaunchFillXAndY(double *device_x_points, double *device_y_points, size_t points_size, double placeholder_value);
 
 }  // namespace backgeocoding
 }  // namespace alus

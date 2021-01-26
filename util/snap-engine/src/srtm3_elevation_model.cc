@@ -16,11 +16,14 @@
 #include "cuda_util.hpp"
 #include "earth_gravitational_model96_computation.h"
 #include "srtm3_elevation_model_constants.h"
+#include "geo_utils.h"
 
 namespace alus {
 namespace snapengine {
 
-Srtm3ElevationModel::Srtm3ElevationModel(std::vector<std::string> file_names) : file_names_(std::move(file_names)) {}
+Srtm3ElevationModel::Srtm3ElevationModel(std::vector<std::string> file_names) : file_names_(std::move(file_names)) {
+    device_srtm3_tiles_count_ = 0;
+}
 
 Srtm3ElevationModel::~Srtm3ElevationModel() { this->DeviceFree(); }
 
@@ -29,19 +32,19 @@ void Srtm3ElevationModel::ReadSrtmTiles(EarthGravitationalModel96* egm_96) {
     for (auto&& dem_file : file_names_) {
         // TODO: Priority needed for keeping results as close as possible to SNAP.
         auto& ds =
-            srtms_.emplace_back(dem_file, Dataset::GeoTransformSourcePriority::WORLDFILE_PAM_INTERNAL_TABFILE_NONE);
-        ds.LoadRasterBandFloat(1);
+            srtms_.emplace_back(dem_file, GeoTransformSourcePriority::WORLDFILE_PAM_INTERNAL_TABFILE_NONE);
+        ds.LoadRasterBand(1);
         const auto* geo_transform = ds.GetTransform();
 
         Srtm3FormatComputation srtm_data{};
-        srtm_data.m00 = static_cast<float>(geo_transform[Dataset::TRANSFORM_PIXEL_X_SIZE_INDEX]);
-        srtm_data.m10 = static_cast<float>(geo_transform[Dataset::TRANSFORM_ROTATION_1]);
-        srtm_data.m01 = static_cast<float>(geo_transform[Dataset::TRANSFORM_ROTATION_2]);
-        srtm_data.m11 = static_cast<float>(geo_transform[Dataset::TRANSFORM_PIXEL_Y_SIZE_INDEX]);
+        srtm_data.m00 = static_cast<float>(geo_transform[transform::TRANSFORM_PIXEL_X_SIZE_INDEX]);
+        srtm_data.m10 = static_cast<float>(geo_transform[transform::TRANSFORM_ROTATION_1]);
+        srtm_data.m01 = static_cast<float>(geo_transform[transform::TRANSFORM_ROTATION_2]);
+        srtm_data.m11 = static_cast<float>(geo_transform[transform::TRANSFORM_PIXEL_Y_SIZE_INDEX]);
         // TODO: Rounding in order to keep end results as close as possible to SNAP.
-        srtm_data.m02 = std::round(static_cast<float>(geo_transform[Dataset::TRANSFORM_LON_ORIGIN_INDEX]));
+        srtm_data.m02 = std::round(static_cast<float>(geo_transform[transform::TRANSFORM_LON_ORIGIN_INDEX]));
         // TODO: Rounding in order to keep end results as close as possible to SNAP.
-        srtm_data.m12 = std::round(static_cast<float>(geo_transform[Dataset::TRANSFORM_LAT_ORIGIN_INDEX]));
+        srtm_data.m12 = std::round(static_cast<float>(geo_transform[transform::TRANSFORM_LAT_ORIGIN_INDEX]));
 
         srtm_data.no_data_value = srtm3elevationmodel::NO_DATA_VALUE;
         srtm_data.max_lats = alus::snapengine::earthgravitationalmodel96computation::MAX_LATS;
@@ -102,7 +105,7 @@ void Srtm3ElevationModel::HostToDevice() {
         CHECK_CUDA_ERR(cudaMalloc((void**)&this->device_formated_srtm_buffers_.at(i), dem_size_bytes));
         float* temp_buffer;
         CHECK_CUDA_ERR(cudaMalloc((void**)&temp_buffer, dem_size_bytes));
-        CHECK_CUDA_ERR(cudaMemcpy(temp_buffer, this->srtms_.at(i).GetFloatDataBuffer().data(), dem_size_bytes,
+        CHECK_CUDA_ERR(cudaMemcpy(temp_buffer, this->srtms_.at(i).GetHostDataBuffer().data(), dem_size_bytes,
                                   cudaMemcpyHostToDevice));
         this->srtm_format_info_.at(i).x_size = x_size;
         this->srtm_format_info_.at(i).y_size = y_size;
@@ -119,6 +122,7 @@ void Srtm3ElevationModel::HostToDevice() {
     CHECK_CUDA_ERR(cudaMalloc((void**)&this->device_formated_srtm_buffers_info_, nr_of_tiles * sizeof(PointerHolder)));
     CHECK_CUDA_ERR(cudaMemcpy(this->device_formated_srtm_buffers_info_, temp_tiles.data(),
                               nr_of_tiles * sizeof(PointerHolder), cudaMemcpyHostToDevice));
+    device_srtm3_tiles_count_ = nr_of_tiles;
 }
 
 void Srtm3ElevationModel::DeviceToHost() { CHECK_CUDA_ERR(cudaErrorNotYetImplemented); }

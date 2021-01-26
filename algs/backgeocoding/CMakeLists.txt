@@ -2,11 +2,13 @@
 list(APPEND BACKGEOCODING_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/backgeocoding.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/backgeocoding_controller.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/backgeocoding_worker.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/bilinear.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/deramp_demod.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/slave_pixpos.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/extended_amount.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/burst_offset.cu
+        ${CMAKE_CURRENT_LIST_DIR}/src/elevation_mask.cu
         )
 
 list(APPEND BACKGEOCODING_INCLUDE_DIRS

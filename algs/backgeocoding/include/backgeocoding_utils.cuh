@@ -13,7 +13,7 @@
  */
 #pragma once
 
-#include "burst_indices.h"
+#include "burst_indices_computation.h"
 #include "general_constants.h"
 #include "position_data.h"
 
