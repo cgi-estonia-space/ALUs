@@ -9,6 +9,6 @@ do
     ./$exe $test_results
     last_result=$?
     result=$(($result | $last_result))
-done < <(find . -executable -type f)
+done < <(find . -maxdepth 1 -executable -type f)
 
 exit $result

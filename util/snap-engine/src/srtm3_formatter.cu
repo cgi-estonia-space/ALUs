@@ -25,9 +25,8 @@ __global__ void FormatSRTM3dem(float *target, float *source, Srtm3FormatComputat
     float source_value;
 
 
-    //possible bug:it is possible that this is a snap bug, as snap reads line 2501 when index is 2500.
-    if(idx < data.x_size && idy < (data.y_size -1)){
-        source_value = source[idx + data.x_size *(idy+1)];
+    if(idx < data.x_size && idy < data.y_size){
+        source_value = source[idx + data.x_size * idy];
         if(source_value != data.no_data_value){
             //everything that TileGeoReferencing.getGeoPos does.
             geo_pos_lon = data.m00*(idx + 0.5) + data.m01*(idy + 0.5) + data.m02;

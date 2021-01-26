@@ -87,7 +87,7 @@ TEST_F(TerrainCorrectionIntegrationTest, Saaremaa1) {
               << std::endl;
 
     ASSERT_THAT(boost::filesystem::exists(output_path), IsTrue());
-    const std::string expected_md5{"aa72aab946bb25eb35eee58085254cff"};
+    const std::string expected_md5{"67458d461c814e4b00f894956c08285a"};
     ASSERT_THAT(Md5FromFile(output_path), Eq(expected_md5));
 }
 }  // namespace

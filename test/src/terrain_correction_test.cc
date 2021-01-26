@@ -496,7 +496,7 @@ TEST_F(TerrainCorrectionTest, CreateTargetProduct) {
     remove(TC_OUTPUT.c_str());
 }
 
-TEST_F(TerrainCorrectionTest, GetNonBorderSourceRectangle) {
+TEST_F(TerrainCorrectionTest, DISABLED_GetNonBorderSourceRectangle) {
     assert(SOURCE_RECTANGLES.size() == EXPECTED_RECTANGLES.size());
 
     std::vector<Rectangle> calculated_rectangles;

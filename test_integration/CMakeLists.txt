@@ -68,6 +68,8 @@ add_custom_command(TARGET integration-test-snap-engine
         COMMAND mkdir -p ${CMAKE_BINARY_DIR}/test_integration/goods
         # Since grid file is already symlink from unit test goods, option '-r' is needed
         COMMAND ln -rfns ${CMAKE_CURRENT_LIST_DIR}/goods/ww15mgh_b.grd ${CMAKE_BINARY_DIR}/test_integration/goods/.
+        COMMAND ln -rfns ${CMAKE_CURRENT_LIST_DIR}/goods/master_metadata.dim ${CMAKE_BINARY_DIR}/test_integration/goods/.
+        COMMAND ln -rfns ${CMAKE_CURRENT_LIST_DIR}/goods/slave_metadata.dim ${CMAKE_BINARY_DIR}/test_integration/goods/.
         COMMAND ln -fns ${CMAKE_CURRENT_LIST_DIR}/goods/egm96TestData.txt ${CMAKE_BINARY_DIR}/test_integration/goods/.
         COMMAND ln -fns ${CMAKE_CURRENT_LIST_DIR}/goods/tileFormatTestData.txt ${CMAKE_BINARY_DIR}/test_integration/goods/.
         COMMAND ln -fns ${CMAKE_CURRENT_LIST_DIR}/goods/altitudeTestData.txt ${CMAKE_BINARY_DIR}/test_integration/goods/.

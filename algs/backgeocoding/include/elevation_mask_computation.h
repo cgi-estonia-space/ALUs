@@ -19,15 +19,14 @@ namespace alus {
 namespace backgeocoding {
 
 struct ElevationMaskData {
-
-    size_t size; //all 4 of the following arrays have the same size, which is in here.
-    double *device_x_points;
-    double *device_y_points;
-    double *device_lat_array;
-    double *device_lon_array;
+    size_t size;  // all 4 of the following arrays have the same size, which is in here.
+    int* not_null_counter;
+    double* device_x_points;
+    double* device_y_points;
+    double* device_lat_array;
+    double* device_lon_array;
 
     PointerArray tiles;
-
 };
 
 cudaError_t LaunchElevationMask(ElevationMaskData data);

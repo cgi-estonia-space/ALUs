@@ -17,6 +17,8 @@
 #include <cmath>
 #include <iostream>
 #include <string>
+#include <memory>
+#include <string_view>
 
 #include <boost/numeric/conversion/cast.hpp>
 
@@ -55,26 +57,14 @@ void Backgeocoding::FeedPlaceHolders() {
     this->dem_sampling_lon_ = 8.333333333333334E-4;
 }
 
-void Backgeocoding::PrepareToCompute() {
-    this->slave_utils_ = std::make_unique<s1tbx::Sentinel1Utils>(2);
-    this->slave_utils_->SetPlaceHolderFiles(this->slave_orbit_state_vectors_file_,
-                                            this->dc_estimate_list_file_,
-                                            this->azimuth_list_file_,
-                                            this->slave_burst_line_time_file_,
-                                            this->slave_geo_location_file_);
-    this->slave_utils_->ReadPlaceHolderFiles();
+void Backgeocoding::PrepareToCompute(std::string_view master_metadata_file, std::string_view slave_metadata_file) {
+    this->slave_utils_ = std::make_unique<s1tbx::Sentinel1Utils>(slave_metadata_file);
     this->slave_utils_->ComputeDopplerRate();
     this->slave_utils_->ComputeReferenceTime();
     this->slave_utils_->subswath_[0].HostToDevice();
     this->slave_utils_->HostToDevice();
 
-    this->master_utils_ = std::make_unique<s1tbx::Sentinel1Utils>(1);
-    this->master_utils_->SetPlaceHolderFiles(this->master_orbit_state_vectors_file_,
-                                             this->dc_estimate_list_file_,
-                                             this->azimuth_list_file_,
-                                             this->master_burst_line_time_file_,
-                                             this->master_geo_location_file_);
-    this->master_utils_->ReadPlaceHolderFiles();
+    this->master_utils_ = std::make_unique<s1tbx::Sentinel1Utils>(master_metadata_file);
     this->master_utils_->ComputeDopplerRate();
     this->master_utils_->ComputeReferenceTime();
     this->master_utils_->subswath_[0].HostToDevice();
@@ -401,7 +391,19 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index,
         mask_data.tiles.array = this->srtm3_dem_->GetSrtmBuffersInfo();
         mask_data.tiles.size = this->srtm3_dem_->GetDeviceSrtm3TilesCount();
 
+        int not_invalid_counter = 0;
+
+        cudaMalloc((void **)&mask_data.not_null_counter, sizeof(int));
+        cudaMemcpy(mask_data.not_null_counter, &not_invalid_counter, sizeof(int), cudaMemcpyHostToDevice);
+
         CHECK_CUDA_ERR(LaunchElevationMask(mask_data));
+
+        cudaMemcpy(&not_invalid_counter, mask_data.not_null_counter, sizeof(int), cudaMemcpyDeviceToHost);
+        cudaFree(mask_data.not_null_counter);
+
+        if(!not_invalid_counter){
+            result = false;
+        }
 
         CHECK_CUDA_ERR(cudaFree(device_zdata));
         CHECK_CUDA_ERR(cudaFree(device_triangles));
@@ -474,26 +476,6 @@ std::vector<double> Backgeocoding::ComputeImageGeoBoundary(
 void Backgeocoding::SetSRTMDirectory(std::string directory) { this->srtms_directory_ = directory; }
 
 void Backgeocoding::SetEGMGridFile(std::string grid_file) { this->grid_file_ = grid_file; }
-
-void Backgeocoding::SetSentinel1Placeholders(std::string dc_estimate_list_file,
-                                             std::string azimuth_list_file,
-                                             std::string master_burst_line_time_file,
-                                             std::string slave_burst_line_time_file,
-                                             std::string master_geo_location_file,
-                                             std::string slave_geo_location_file) {
-    this->dc_estimate_list_file_ = dc_estimate_list_file;
-    this->azimuth_list_file_ = azimuth_list_file;
-    this->master_burst_line_time_file_ = master_burst_line_time_file;
-    this->slave_burst_line_time_file_ = slave_burst_line_time_file;
-    this->master_geo_location_file_ = master_geo_location_file;
-    this->slave_geo_location_file_ = slave_geo_location_file;
-}
-
-void Backgeocoding::SetOrbitVectorsFiles(std::string master_orbit_state_vectors_file,
-                                         std::string slave_orbit_state_vectors_file) {
-    this->master_orbit_state_vectors_file_ = master_orbit_state_vectors_file;
-    this->slave_orbit_state_vectors_file_ = slave_orbit_state_vectors_file;
-}
 
 AzimuthAndRangeBounds Backgeocoding::ComputeExtendedAmount(int x_0, int y_0, int w, int h) {
     AzimuthAndRangeBounds extended_amount{};

@@ -41,10 +41,9 @@ void Srtm3ElevationModel::ReadSrtmTiles(EarthGravitationalModel96* egm_96) {
         srtm_data.m10 = static_cast<float>(geo_transform[transform::TRANSFORM_ROTATION_1]);
         srtm_data.m01 = static_cast<float>(geo_transform[transform::TRANSFORM_ROTATION_2]);
         srtm_data.m11 = static_cast<float>(geo_transform[transform::TRANSFORM_PIXEL_Y_SIZE_INDEX]);
-        // TODO: Rounding in order to keep end results as close as possible to SNAP.
-        srtm_data.m02 = std::round(static_cast<float>(geo_transform[transform::TRANSFORM_LON_ORIGIN_INDEX]));
-        // TODO: Rounding in order to keep end results as close as possible to SNAP.
-        srtm_data.m12 = std::round(static_cast<float>(geo_transform[transform::TRANSFORM_LAT_ORIGIN_INDEX]));
+        srtm_data.m02 = static_cast<float>(geo_transform[transform::TRANSFORM_LON_ORIGIN_INDEX]);
+        srtm_data.m12 = static_cast<float>(geo_transform[transform::TRANSFORM_LAT_ORIGIN_INDEX]);
+
         srtm_data.no_data_value = srtm3elevationmodel::NO_DATA_VALUE;
         srtm_data.max_lats = alus::snapengine::earthgravitationalmodel96computation::MAX_LATS;
         srtm_data.max_lons = alus::snapengine::earthgravitationalmodel96computation::MAX_LONS;
@@ -91,7 +90,6 @@ void Srtm3ElevationModel::HostToDevice() {
         temp_tiles.at(i).id =
             (((srtm3elevationmodel::MAX_LON_COVERAGE + lon) / srtm3elevationmodel::DEGREE_RES) + 1) * 100 +
             (((srtm3elevationmodel::MAX_LAT_COVERAGE - lat) / srtm3elevationmodel::DEGREE_RES) + 1);
-        std::cout << "SRTM3 Tile with ID " << temp_tiles.at(i).id << " loaded to GPU." << std::endl;
         temp_tiles.at(i).x = x_size;
         temp_tiles.at(i).y = y_size;
         temp_tiles.at(i).z = 1;

@@ -1,1 +1,1 @@
-../../../test/goods/backgeocoding/slaveTileI.txt
+../../../test/goods/backgeocoding/slaveTileICoast.txt
