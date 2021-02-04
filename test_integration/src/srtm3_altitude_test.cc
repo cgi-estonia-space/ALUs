@@ -53,6 +53,7 @@ class Srtm3AltitudeTester : public alus::cuda::CudaFriendlyObject {
         if (!test_data_stream.is_open()) {
             throw std::ios::failure("srtm3 Altitude test data file not open.");
         }
+
         test_data_stream >> this->size_;
         this->lats_.resize(this->size_);
         this->lons_.resize(this->size_);
@@ -116,6 +117,7 @@ TEST(SRTM3, altitudeCalc) {
     SRTM3TestData calc_data;
     calc_data.size = tester.size_;
     calc_data.tiles.array = srtm_3_dem.GetSrtmBuffersInfo();
+    calc_data.tiles.size = srtm_3_dem.GetDeviceSrtm3TilesCount();
 
     CHECK_CUDA_ERR(LaunchSRTM3AltitudeTester(
         grid_size, block_size, tester.device_lats_, tester.device_lons_, tester.device_alts_, calc_data));

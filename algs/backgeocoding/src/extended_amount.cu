@@ -142,6 +142,7 @@ void PrepareArguments(ExtendedAmountKernelArgs* args,
                       Rectangle& bounds,
                       float* egm) {
     args->tiles.array = tiles.array;
+    args->tiles.size = tiles.size;
 
     CHECK_CUDA_ERR(
         cudaMalloc(&args->orbit_state_vectors, sizeof(snapengine::OrbitStateVectorComputation) * nr_of_vectors));

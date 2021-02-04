@@ -48,7 +48,6 @@ private:
 public:
     Srtm3ElevationModel(std::vector<std::string> file_names);
 
-    std::vector<Srtm3FormatComputation> SrtmPlaceholderData(EarthGravitationalModel96* egm_96);
     void ReadSrtmTiles(EarthGravitationalModel96* egm_96);
     PointerHolder* GetSrtmBuffersInfo() const { return device_formated_srtm_buffers_info_; }
     size_t GetDeviceSrtm3TilesCount(){ return device_srtm3_tiles_count_; }

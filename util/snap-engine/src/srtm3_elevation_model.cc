@@ -13,10 +13,11 @@
  */
 #include "srtm3_elevation_model.h"
 
+#include <cmath>
+
 #include "cuda_util.hpp"
 #include "earth_gravitational_model96_computation.h"
 #include "srtm3_elevation_model_constants.h"
-#include "geo_utils.h"
 
 namespace alus {
 namespace snapengine {
@@ -31,8 +32,7 @@ Srtm3ElevationModel::~Srtm3ElevationModel() { this->DeviceFree(); }
 void Srtm3ElevationModel::ReadSrtmTiles(EarthGravitationalModel96* egm_96) {
     for (auto&& dem_file : file_names_) {
         // TODO: Priority needed for keeping results as close as possible to SNAP.
-        auto& ds =
-            srtms_.emplace_back(dem_file, GeoTransformSourcePriority::WORLDFILE_PAM_INTERNAL_TABFILE_NONE);
+        auto& ds = srtms_.emplace_back(dem_file, GeoTransformSourcePriority::WORLDFILE_PAM_INTERNAL_TABFILE_NONE);
         ds.LoadRasterBand(1);
         const auto* geo_transform = ds.GetTransform();
 
@@ -45,7 +45,6 @@ void Srtm3ElevationModel::ReadSrtmTiles(EarthGravitationalModel96* egm_96) {
         srtm_data.m02 = std::round(static_cast<float>(geo_transform[transform::TRANSFORM_LON_ORIGIN_INDEX]));
         // TODO: Rounding in order to keep end results as close as possible to SNAP.
         srtm_data.m12 = std::round(static_cast<float>(geo_transform[transform::TRANSFORM_LAT_ORIGIN_INDEX]));
-
         srtm_data.no_data_value = srtm3elevationmodel::NO_DATA_VALUE;
         srtm_data.max_lats = alus::snapengine::earthgravitationalmodel96computation::MAX_LATS;
         srtm_data.max_lons = alus::snapengine::earthgravitationalmodel96computation::MAX_LONS;
@@ -55,47 +54,11 @@ void Srtm3ElevationModel::ReadSrtmTiles(EarthGravitationalModel96* egm_96) {
     }
 }
 
-// keep it for accuracy tests. Not sure if first 4 values(by column) are calcuated or read.
-// not sure if the last 2 values get their decimals ripped of or not.
-// once backgeocoding is completed and SRTM3 tile processing is automated and without placeholders, remove this.
-std::vector<Srtm3FormatComputation> Srtm3ElevationModel::SrtmPlaceholderData(EarthGravitationalModel96* egm_96) {
-    std::vector<Srtm3FormatComputation> result;
-
-    Srtm3FormatComputation srtm41_01Data;
-    srtm41_01Data.m00 = snapengine::srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE;
-    srtm41_01Data.m01 = 0;
-    srtm41_01Data.m02 = 20;
-    srtm41_01Data.m10 = 0;
-    srtm41_01Data.m11 = -snapengine::srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE;
-    srtm41_01Data.m12 = 60;
-    srtm41_01Data.no_data_value = -32768.0;
-    srtm41_01Data.max_lats = alus::snapengine::earthgravitationalmodel96computation::MAX_LATS;
-    srtm41_01Data.max_lons = alus::snapengine::earthgravitationalmodel96computation::MAX_LONS;
-    srtm41_01Data.egm = const_cast<float*>(egm_96->GetDeviceValues());
-
-    Srtm3FormatComputation srtm42_01Data;
-    srtm42_01Data.m00 = snapengine::srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE;
-    srtm42_01Data.m01 = 0;
-    srtm42_01Data.m02 = 25;
-    srtm42_01Data.m10 = 0;
-    srtm42_01Data.m11 = -snapengine::srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE;
-    srtm42_01Data.m12 = 60;
-    srtm42_01Data.no_data_value = -32768.0;
-    srtm42_01Data.max_lats = alus::snapengine::earthgravitationalmodel96computation::MAX_LATS;
-    srtm42_01Data.max_lons = alus::snapengine::earthgravitationalmodel96computation::MAX_LONS;
-    srtm42_01Data.egm = const_cast<float*>(egm_96->GetDeviceValues());
-
-    result.push_back(srtm41_01Data);
-    result.push_back(srtm42_01Data);
-    return result;
-}
-
 void Srtm3ElevationModel::HostToDevice() {
     std::vector<PointerHolder> temp_tiles;
     const auto nr_of_tiles = srtms_.size();
     temp_tiles.resize(nr_of_tiles);
     device_formated_srtm_buffers_.resize(nr_of_tiles);
-    srtm_format_info_.resize(nr_of_tiles);
     constexpr dim3 block_size(20, 20);
 
     for (size_t i = 0; i < nr_of_tiles; i++) {
@@ -114,6 +77,21 @@ void Srtm3ElevationModel::HostToDevice() {
         CHECK_CUDA_ERR(LaunchDemFormatter(grid_size, block_size, this->device_formated_srtm_buffers_.at(i), temp_buffer,
                                           this->srtm_format_info_.at(i)));
         temp_tiles.at(i).pointer = this->device_formated_srtm_buffers_.at(i);
+        // When converting to integer C++ rules cast down positive float numbers and towards zero for negative float
+        // numbers. Since ESRI Worldfile is read first for coordinates, values are slightly below whole, for
+        // example 34.999567 a whole number 35 is desired for index calculations. Without std::round() first the result
+        // would be 34.
+        const auto lon = static_cast<int>(std::round(srtm_format_info_.at(i).m02));
+        const auto lat = static_cast<int>(std::round(srtm_format_info_.at(i).m12));
+        // ID field in PointerHolder is used for identifying SRTM3 tile indexes. File data in srtm_42_01.tif results
+        // in ID with 4201. Yes, it is hacky. SRTM3 files cover earth at full longitude (from -180 to 180) and partially
+        // latitude wise (from -60 to 60). Index 0 for longitude starts at -180 degrees (incrementing towards 180).
+        // Index 0 for latitude starts at 60 degrees (incrementing towards -60).
+        // Therefore SRTM3 file covering longitude 180 and latitude -60 index is 7224.
+        temp_tiles.at(i).id =
+            (((srtm3elevationmodel::MAX_LON_COVERAGE + lon) / srtm3elevationmodel::DEGREE_RES) + 1) * 100 +
+            (((srtm3elevationmodel::MAX_LAT_COVERAGE - lat) / srtm3elevationmodel::DEGREE_RES) + 1);
+        std::cout << "SRTM3 Tile with ID " << temp_tiles.at(i).id << " loaded to GPU." << std::endl;
         temp_tiles.at(i).x = x_size;
         temp_tiles.at(i).y = y_size;
         temp_tiles.at(i).z = 1;
