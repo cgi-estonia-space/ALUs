@@ -13,12 +13,15 @@
  */
 #pragma once
 
+#include <cstddef>
+#include <string>
 #include <string_view>
 #include <vector>
 
-#include "cuda_util.cuh"
+#include "cuda_util.hpp"
 #include "metadata_enums.h"
 #include "orbit_state_vector.h"
+#include "spectral_band_info.h"
 
 namespace alus {
 namespace terraincorrection {
@@ -41,8 +44,8 @@ struct RangeDopplerTerrainMetadata {
     double incidence_far;
     int slice_num;
     int data_take_id;
-    alus::snapengine::Utc first_line_time;
-    alus::snapengine::Utc last_line_time;
+    snapengine::Utc first_line_time;
+    snapengine::Utc last_line_time;
     double first_near_lat;
     double first_near_long;
     double first_far_lat;
@@ -109,18 +112,18 @@ struct RangeDopplerTerrainMetadata {
     double slr_time_to_last_valid_pixel;
     double first_valid_line_time;
     double last_valid_line_time;
-    std::vector<alus::snapengine::OrbitStateVector> orbit_state_vectors;
-    std::vector<alus::snapengine::OrbitStateVector> orbit_state_vectors2;
+    std::vector<snapengine::OrbitStateVector> orbit_state_vectors;
+    std::vector<snapengine::OrbitStateVector> orbit_state_vectors2;
     bool skip_bistatic_correction;
     double wavelength{0.0};
     bool is_polsar{false};
     bool near_range_on_left{true};
-    double near_edge_slant_range{0.0}; // in m
+    double near_edge_slant_range{0.0};  // in m
+    std::vector<snapengine::SpectralBandInfo> band_info;
 };
 
 class Metadata final {
-   public:
-
+public:
     struct TiePoints {
         size_t grid_width;
         size_t grid_height;
@@ -128,19 +131,16 @@ class Metadata final {
     };
 
     Metadata() = delete;
-    Metadata(std::string_view dim_metadata_file, std::string_view lat_tie_points_file, std::string_view
-                                                                                           lon_tie_points_file);
+    Metadata(std::string_view dim_metadata_file, std::string_view lat_tie_points_file,
+             std::string_view lon_tie_points_file);
 
     [[nodiscard]] const TiePoints& GetLatTiePoints() const { return lat_tie_points_; }
     [[nodiscard]] const TiePoints& GetLonTiePoints() const { return lon_tie_points_; }
-
     [[nodiscard]] RangeDopplerTerrainMetadata GetMetadata() const { return metadata_fields_; }
-    //getComputingMetadata(); for CUDA struct
 
     ~Metadata() = default;
 
-   private:
-
+private:
     static void FetchTiePoints(std::string_view tie_points_file, TiePoints& tie_points);
     void FillDimMetadata(std::string_view dim_metadata_file);
 

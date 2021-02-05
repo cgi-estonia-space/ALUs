@@ -15,6 +15,7 @@
 
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
+#include <thrust/host_vector.h>
 
 #include <algorithm>
 #include <cassert>
@@ -34,6 +35,7 @@
 #include "raster_properties.hpp"
 #include "sar_utils.h"
 #include "shapes_util.h"
+#include "srtm3_elevation_model_constants.h"
 #include "tc_tile.h"
 #include "terrain_correction_constants.h"
 #include "terrain_correction_kernel.h"
@@ -78,19 +80,18 @@ void FillHostGetPositionMetadata(GetPositionMetadata& h_get_position_metadata,
     h_get_position_metadata.sensor_velocity.array = h_velocities.data();
 }
 
-TerrainCorrection::TerrainCorrection(Dataset<double> coh_ds,
-                                     RangeDopplerTerrainMetadata metadata,
+TerrainCorrection::TerrainCorrection(Dataset<double> coh_ds, RangeDopplerTerrainMetadata metadata,
                                      const Metadata::TiePoints& lat_tie_points,
-                                     const Metadata::TiePoints& lon_tie_points)
+                                     const Metadata::TiePoints& lon_tie_points, const PointerHolder* srtm_3_tiles)
     : coh_ds_{std::move(coh_ds)},
       metadata_{std::move(metadata)},
       lat_tie_points_{lat_tie_points},
-      lon_tie_points_{lon_tie_points} {}
+      lon_tie_points_{lon_tie_points},
+      d_srtm_3_tiles_(srtm_3_tiles) {}
 
-void TerrainCorrection::ExecuteTerrainCorrection(const std::string_view output_file_name, size_t tile_width,
+void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_name, size_t tile_width,
                                                  size_t tile_height) {
     coh_ds_.LoadRasterBand(1);
-    auto const coh_ds_x_size{static_cast<size_t>(coh_ds_.GetXSize())};
     auto const coh_ds_y_size{static_cast<size_t>(coh_ds_.GetYSize())};
 
     assert(lat_tie_points_.values.size() == lat_tie_points_.grid_width * lat_tie_points_.grid_height);
@@ -113,8 +114,8 @@ void TerrainCorrection::ExecuteTerrainCorrection(const std::string_view output_f
 
     snapengine::geocoding::TiePointGeocoding source_geocoding(lat_grid, lon_grid);
     snapengine::geocoding::Geocoding* target_geocoding = nullptr;
-    snapengine::old::Product target_product = CreateTargetProduct(
-        &source_geocoding, target_geocoding, coh_ds_x_size, coh_ds_y_size, metadata_.azimuth_spacing, output_file_name);
+    snapengine::old::Product target_product =
+        CreateTargetProduct(&source_geocoding, target_geocoding, output_file_name);
     auto const target_x_size{target_product.dataset_.GetXSize()};
     auto const target_y_size{target_product.dataset_.GetYSize()};
 
@@ -227,9 +228,11 @@ std::vector<double> TerrainCorrection::ComputeImageBoundary(const snapengine::ge
     return image_boundary;
 }
 
-std::vector<alus::TcTile> TerrainCorrection::CalculateTiles(snapengine::resampling::Tile& base_image,
-                                                            Rectangle dest_bounds, int tile_width, int tile_height) {
-    std::vector<alus::TcTile> output_tiles;
+// TODO: this is a very good place for optimisation in case of small tiles (420x416 tiles causes 238 iterations)
+// (SNAPGPU-163)
+std::vector<TcTile> TerrainCorrection::CalculateTiles(snapengine::resampling::Tile& base_image, Rectangle dest_bounds,
+                                                      int tile_width, int tile_height) {
+    std::vector<TcTile> output_tiles;
     int x_count = base_image.width / tile_width + 1;
     int y_count = base_image.height / tile_height + 1;
 
@@ -244,10 +247,9 @@ std::vector<alus::TcTile> TerrainCorrection::CalculateTiles(snapengine::resampli
             if (intersection.width == 0 || intersection.height == 0) {
                 continue;
             }
-            TcTile tile{
-                {0, 0, 0, 0, 0, 0, 0, 0, static_cast<double>(intersection.x), static_cast<double>(intersection.y),
-                 static_cast<size_t>(intersection.width), static_cast<size_t>(intersection.height)},
-                {}};
+            TcTile tile{{0, 0, 0, 0, static_cast<double>(intersection.x), static_cast<double>(intersection.y),
+                         static_cast<size_t>(intersection.width), static_cast<size_t>(intersection.height)},
+                        {}};
             output_tiles.push_back(tile);
         }
     }
@@ -257,17 +259,17 @@ std::vector<alus::TcTile> TerrainCorrection::CalculateTiles(snapengine::resampli
 
 snapengine::old::Product TerrainCorrection::CreateTargetProduct(
     const snapengine::geocoding::Geocoding* source_geocoding, snapengine::geocoding::Geocoding*& target_geocoding,
-    int source_width, int source_height, double azimuth_spacing, const std::string_view output_filename) {
+    const std::string_view output_filename) {
     const char* const output_format = "GTiff";
 
-    double pixel_spacing_in_meter = std::trunc(azimuth_spacing * 100 + 0.5) / 100.0;
+    double pixel_spacing_in_meter = std::trunc(metadata_.azimuth_spacing * 100 + 0.5) / 100.0;
     double pixel_spacing_in_degree = pixel_spacing_in_meter / SEMI_MAJOR_AXIS * RTOD;
 
     OGRSpatialReference target_crs;
     // EPSG:4326 is a WGS84 code
     target_crs.importFromEPSG(4326);
 
-    std::vector<double> image_boundary = ComputeImageBoundary(source_geocoding, source_width, source_height);
+    std::vector<double> image_boundary = ComputeImageBoundary(source_geocoding, coh_ds_.GetXSize(), coh_ds_.GetYSize());
 
     double pixel_size_x = pixel_spacing_in_degree;
     double pixel_size_y = pixel_spacing_in_degree;
@@ -308,12 +310,17 @@ snapengine::old::Product TerrainCorrection::CreateTargetProduct(
     char* projection_wkt;
     target_crs.exportToWkt(&projection_wkt);
     output_dataset->SetProjection(projection_wkt);
+    auto band_info = metadata_.band_info.at(0);
+    output_dataset->GetRasterBand(1)->SetNoDataValue(
+        band_info.no_data_value_used && band_info.no_data_value.has_value()
+            ? band_info.no_data_value.value()
+            : coh_ds_.GetGdalDataset()->GetRasterBand(1)->GetNoDataValue());
     CPLFree(projection_wkt);
 
     target_geocoding = new snapengine::geocoding::CrsGeocoding(
         {output_geo_transform[0], output_geo_transform[3], output_geo_transform[1], output_geo_transform[5]});
     snapengine::old::Product target_product{target_geocoding, *output_dataset,
-                                            "TIFF"};  // TODO: add destructor to product class (SNAPGPU-163)
+                                            "TIFF"};  // TODO: replace with Product class (SNAPGPU-163)
 
     return target_product;
 }
@@ -377,31 +384,33 @@ void TerrainCorrection::TileProcessor::Execute() {
                                                  tile_.tc_tile_coordinates.target_height);
     tile_.target_tile_data_buffer = {target_tile_data.data(), target_tile_data.size()};
 
-    alus::snapengine::resampling::ResamplingRaster resampling_raster{0, 0, INVALID_SUB_SWATH_INDEX, {}, nullptr, false};
+    snapengine::resampling::ResamplingRaster resampling_raster{0, 0, INVALID_SUB_SWATH_INDEX, {}, nullptr, false};
     Rectangle source_rectangle{};
-    resampling_raster.source_rectangle_calculated =
-        GetSourceRectangle(tile_, target_geo_transform_,
-                           -32768.0,  // TODO: this should come from DEM (SNAPGPU-191)
-                           terrain_correction_->metadata_.avg_scene_height, terrain_correction_->coh_ds_.GetXSize(),
-                           terrain_correction_->coh_ds_.GetYSize(), host_get_position_metadata_, source_rectangle);
+    resampling_raster.source_rectangle_calculated = GetSourceRectangle(
+        tile_, target_geo_transform_,
+        -32768.0,  // TODO: this should come from DEM (SNAPGPU-191)
+        terrain_correction_->coh_ds_.GetXSize(), terrain_correction_->coh_ds_.GetYSize(), d_get_position_metadata_,
+        source_rectangle, terrain_correction_->d_srtm_3_tiles_, terrain_correction_->metadata_.avg_scene_height, false);
 
     auto& tile_coordinates = tile_.tc_tile_coordinates;
     SetTileSourceCoordinates(tile_coordinates, source_rectangle);
     std::vector<double> source_tile_data(tile_coordinates.source_width * tile_coordinates.source_height);
 
     snapengine::resampling::Tile source_tile{0, 0, 0, 0, false, false, nullptr};
-    TerrainCorrectionKernelArgs args{static_cast<unsigned int>(terrain_correction_->coh_ds_.GetXSize()),
-                                     static_cast<unsigned int>(terrain_correction_->coh_ds_.GetYSize()),
-                                     -32768.0,  // TODO: value should originate from DEM dataset (SNAPGPU-191)
-                                     target_product_.dataset_.GetNoDataValue(1),
-                                     terrain_correction_->metadata_.avg_scene_height,
-                                     target_geo_transform_,
-                                     true,  // TODO: should come from arguments (SNAPGPU-193)
-                                     diff_lat_,
-                                     comp_metadata_,
-                                     {},
-                                     resampling_raster,
-                                     {}};
+    TerrainCorrectionKernelArgs args{
+        static_cast<unsigned int>(terrain_correction_->coh_ds_.GetXSize()),
+        static_cast<unsigned int>(terrain_correction_->coh_ds_.GetYSize()),
+        snapengine::srtm3elevationmodel::NO_DATA_VALUE,  // TODO: value should originate from DEM dataset (SNAPGPU-193)
+        target_product_.dataset_.GetNoDataValue(1),
+        terrain_correction_->metadata_.avg_scene_height,
+        target_geo_transform_,
+        false,  // TODO: should come from arguments (SNAPGPU-193)
+        diff_lat_,
+        comp_metadata_,
+        {},
+        resampling_raster,
+        {},
+        terrain_correction_->d_srtm_3_tiles_};
     if (resampling_raster.source_rectangle_calculated) {
         CHECK_GDAL_ERROR(terrain_correction_->coh_ds_.GetGdalDataset()->GetRasterBand(1)->RasterIO(
             GF_Read, tile_coordinates.source_x_0, tile_coordinates.source_y_0, tile_coordinates.source_width,
@@ -427,11 +436,11 @@ void TerrainCorrection::TileProcessor::Execute() {
         tile_coordinates.target_height, GDT_Float64, 0, 0));
 }
 TerrainCorrection::TileProcessor::TileProcessor(TcTile& tile, TerrainCorrection* terrain_correction,
-                                                alus::terraincorrection::GetPositionMetadata& h_get_position_metadata,
-                                                alus::terraincorrection::GetPositionMetadata& d_get_position_metadata,
-                                                alus::GeoTransformParameters target_geo_transform, int diff_lat,
-                                                const alus::terraincorrection::ComputationMetadata& comp_metadata,
-                                                alus::snapengine::old::Product& target_product)
+                                                GetPositionMetadata& h_get_position_metadata,
+                                                GetPositionMetadata& d_get_position_metadata,
+                                                GeoTransformParameters target_geo_transform, int diff_lat,
+                                                const ComputationMetadata& comp_metadata,
+                                                snapengine::old::Product& target_product)
     : tile_(tile),
       terrain_correction_(terrain_correction),
       host_get_position_metadata_(h_get_position_metadata),

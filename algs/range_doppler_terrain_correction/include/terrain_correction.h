@@ -22,6 +22,7 @@
 #include "dem.hpp"
 #include "executable.h"
 #include "get_position.h"
+#include "pointer_holders.h"
 #include "product_old.h"
 #include "resampling.h"
 #include "tc_tile.h"
@@ -32,33 +33,27 @@ namespace alus::terraincorrection {
 
 class TerrainCorrection {
 public:
-    TerrainCorrection(Dataset<double> coh_ds, /*alus::Dataset metadata,*/ Dataset<double> dem);
-
     explicit TerrainCorrection(Dataset<double> coh_ds, RangeDopplerTerrainMetadata metadata,
-                               const Metadata::TiePoints& lat_tie_points, const Metadata::TiePoints& lon_tie_points);
+                               const Metadata::TiePoints& lat_tie_points, const Metadata::TiePoints& lon_tie_points,
+                               const PointerHolder* srtm_3_tiles);
 
-    static snapengine::old::Product CreateTargetProduct(
+    snapengine::old::Product CreateTargetProduct(
         const snapengine::geocoding::Geocoding* geocoding, snapengine::geocoding::Geocoding*& target_geocoding,
-        int source_width, int source_height, double azimuth_spacing,
-        const std::string_view output_filename);  // TODO: move to private after testing
+        std::string_view output_filename);
 
-    //    std::vector<double> GetElevations() { return coh_ds_elevations_; }
-
-    void ExecuteTerrainCorrection(const std::string_view output_file_name, size_t tile_width, size_t tile_height);
+    void ExecuteTerrainCorrection(std::string_view output_file_name, size_t tile_width, size_t tile_height);
 
     ~TerrainCorrection();
-
 
 private:
     Dataset<double> coh_ds_;
     RangeDopplerTerrainMetadata metadata_;
-    // Dem dem_ds_;
-    //    std::vector<double> coh_ds_elevations_{};
     const Metadata::TiePoints& lat_tie_points_;
     const Metadata::TiePoints& lon_tie_points_;
     snapengine::geocoding::Geocoding* target_geocoding_{};
+    const PointerHolder* d_srtm_3_tiles_;
+    std::vector<void*> cuda_arrays_to_clean_{};
 
-    // TODO: update doxygen comment
     /**
      * Computes target image boundary by creating a rectangle around the source image. The source image should be
      * TiePoint Geocoded. Boundary is in degree coordinates.
@@ -67,8 +62,8 @@ private:
      * @param src_lon_tie_point_grid Grid of longitude tie points.
      * @param source_width Source image width.
      * @param source_height Source image height.
-     * @return Vector containing four target image boundaries: minimum latitude, maximum latitude, minimum longitude,
-     * maximum longitude.
+     * @return Vector containing four target image boundaries: minimum latitude, maximum latitude, minimum
+     * longitude, maximum longitude.
      */
     static std::vector<double> ComputeImageBoundary(const snapengine::geocoding::Geocoding* geocoding, int source_width,
                                                     int source_height);
@@ -84,7 +79,6 @@ private:
 
     ComputationMetadata CreateComputationMetadata();
 
-    std::vector<void*> cuda_arrays_to_clean_{};
     void FreeCudaArrays();
 
     class TileProcessor : public multithreading::Executable {
@@ -92,7 +86,8 @@ private:
         void Execute() override;
         TileProcessor(TcTile& tile, TerrainCorrection* terrain_correction, GetPositionMetadata& h_get_position_metadata,
                       GetPositionMetadata& d_get_position_metadata, GeoTransformParameters target_geo_transform,
-                      int diff_lat, const ComputationMetadata& comp_metadata, snapengine::old::Product& target_product);
+                      int diff_lat, const terraincorrection::ComputationMetadata& comp_metadata,
+                      snapengine::old::Product& target_product);
 
     private:
         TcTile& tile_;
