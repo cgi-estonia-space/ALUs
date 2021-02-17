@@ -35,11 +35,11 @@ class TerrainCorrection {
 public:
     explicit TerrainCorrection(Dataset<double> coh_ds, RangeDopplerTerrainMetadata metadata,
                                const Metadata::TiePoints& lat_tie_points, const Metadata::TiePoints& lon_tie_points,
-                               const PointerHolder* srtm_3_tiles);
+                               const PointerHolder* srtm_3_tiles, size_t srtm_3_tiles_length_, int selected_band_id = 1);
 
-    snapengine::old::Product CreateTargetProduct(
-        const snapengine::geocoding::Geocoding* geocoding, snapengine::geocoding::Geocoding*& target_geocoding,
-        std::string_view output_filename);
+    snapengine::old::Product CreateTargetProduct(const snapengine::geocoding::Geocoding* geocoding,
+                                                 snapengine::geocoding::Geocoding*& target_geocoding,
+                                                 std::string_view output_filename);
 
     void ExecuteTerrainCorrection(std::string_view output_file_name, size_t tile_width, size_t tile_height);
 
@@ -52,7 +52,9 @@ private:
     const Metadata::TiePoints& lon_tie_points_;
     snapengine::geocoding::Geocoding* target_geocoding_{};
     const PointerHolder* d_srtm_3_tiles_;
+    const size_t d_srtm_3_tiles_length_;
     std::vector<void*> cuda_arrays_to_clean_{};
+    const int selected_band_id_;
 
     /**
      * Computes target image boundary by creating a rectangle around the source image. The source image should be

@@ -17,7 +17,7 @@ namespace alus {
 namespace terraincorrection {
 constexpr double SEMI_MAJOR_AXIS{6378137.0};
 constexpr double RTOD{57.29577951308232};
-constexpr int INVALID_SUB_SWATH_INDEX{-1};
 constexpr int BILINEAR_INTERPOLATION_MARGIN{1};
+constexpr int INVALID_SUB_SWATH_INDEX {-1};
 }  // namespace terraincorrection
 }  // namespace alus

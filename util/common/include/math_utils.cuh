@@ -41,13 +41,13 @@ inline __device__ __host__ int FloorAndCrop(const double x, const int min, const
  *
  * @return the interpolated value
  */
-inline __device__ __host__ double Interpolate2D(
-    double i_weight, double j_weight, double anchor_1, double anchor_2, double anchor_3, double anchor_4) {
+inline __device__ __host__ double Interpolate2D(double i_weight, double j_weight, double anchor_1, double anchor_2,
+                                                double anchor_3, double anchor_4) {
     return anchor_1 + i_weight * (anchor_2 - anchor_1) + j_weight * (anchor_3 - anchor_1) +
            i_weight * j_weight * (anchor_4 + anchor_1 - anchor_3 - anchor_2);
 }
 
-inline __device__ __host__ bool Xor(const bool &a, const bool &b) { return !a != !b; }
+inline __device__ __host__ bool Xor(const bool& a, const bool& b) { return !a != !b; }
 
 /**
  * Non-atomic implementation of Compare-And-Swap function. It compares value stored in pointer with some other value and
@@ -60,11 +60,24 @@ inline __device__ __host__ bool Xor(const bool &a, const bool &b) { return !a !=
  * @return The old value.
  */
 template <typename T>
-inline __device__ __host__ T Cas(T *old, T compare, T value) {
+inline __device__ __host__ T Cas(T* old, T compare, T value) {
     T old_value = *old;
     *old = (old_value == compare) * value + (old_value != compare) * old_value;
 
     return old_value;
+}
+
+/** Utility function that can be used to replace if..else clause by using arithmetics and bool conversion to int
+ *
+ * @tparam T Any numerical value
+ * @param predicate Predicate based on which the returned value will be chosen.
+ * @param true_case Value that should be returned when the predicate is evaluated to true.
+ * @param false_case Value that should be returned when the predicate is evaluated to false.
+ * @return true_case or false_case based on the predicate.
+ */
+template <typename T>
+inline __device__ __host__ T ChooseOne(bool predicate, const T& true_case, const T& false_case) {
+    return predicate * true_case + (1 - predicate) * false_case;
 }
 
 }  // namespace mathutils

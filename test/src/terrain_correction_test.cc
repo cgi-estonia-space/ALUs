@@ -11,15 +11,16 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
-#include "terrain_correction.h"
+#include <gmock/gmock.h>
 
+#include <cstddef>
 #include <memory>
 #include <optional>
 #include <string>
 #include <vector>
 
-#include "gmock/gmock.h"
-
+#include "../goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_orbit.hpp"
+#include "../goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_rectangles.h"
 #include "crs_geocoding.h"
 #include "cuda_util.hpp"
 #include "gdal_util.h"
@@ -34,9 +35,6 @@
 #include "terrain_correction_metadata.h"
 #include "tests_common.hpp"
 #include "tie_point_geocoding.h"
-
-#include "../goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_orbit.hpp"
-#include "../goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_rectangles.h"
 
 namespace alus::tests {
 // Forward declare function from terrain_correction_test_kernels.cu.
@@ -84,6 +82,7 @@ public:
     std::optional<RangeDopplerTerrainMetadata> tc_metadata_;
     std::unique_ptr<snapengine::Srtm3ElevationModel> srtm_3_model_;
     std::unique_ptr<snapengine::EarthGravitationalModel96> egm_96_;
+    const size_t srtm_3_tiles_length_{2};
 
 protected:
 private:
@@ -482,8 +481,9 @@ TEST_F(TerrainCorrectionTest, CreateTargetProduct) {
     alus::snapengine::geocoding::Geocoding* target_geocoding = nullptr;
     auto coh_dataset = alus::Dataset<double>(COH_1_TIF);
     coh_dataset.LoadRasterBand(1);
-    terraincorrection::TerrainCorrection terrain_correction(std::move(coh_dataset), metadata_.value().GetMetadata(), metadata_.value().GetLatTiePoints(),
-                                                           metadata_.value().GetLonTiePoints(), srtm_3_model_->GetSrtmBuffersInfo());
+    terraincorrection::TerrainCorrection terrain_correction(
+        std::move(coh_dataset), metadata_.value().GetMetadata(), metadata_.value().GetLatTiePoints(),
+        metadata_.value().GetLonTiePoints(), srtm_3_model_->GetSrtmBuffersInfo(), srtm_3_tiles_length_);
     auto target = terrain_correction.CreateTargetProduct(&source_geocoding, target_geocoding, TC_OUTPUT);
     double target_geo_transform[6];
     target.dataset_.GetGdalDataset()->GetGeoTransform(target_geo_transform);
@@ -496,7 +496,7 @@ TEST_F(TerrainCorrectionTest, CreateTargetProduct) {
     remove(TC_OUTPUT.c_str());
 }
 
-TEST_F(TerrainCorrectionTest, GetSourceRectangle) {
+TEST_F(TerrainCorrectionTest, GetNonBorderSourceRectangle) {
     assert(SOURCE_RECTANGLES.size() == EXPECTED_RECTANGLES.size());
 
     std::vector<Rectangle> calculated_rectangles;
@@ -507,7 +507,7 @@ TEST_F(TerrainCorrectionTest, GetSourceRectangle) {
 
     std::vector<snapengine::OrbitStateVectorComputation> computation_orbit;
     ComputationMetadata computation_metadata =
-        CreateComputationMetadata(this->metadata_.value().GetMetadata(), computation_orbit);
+        CreateComputationMetadata(metadata_.value().GetMetadata(), computation_orbit);
 
     GetPositionMetadata get_position_metadata{};
     FillGetPositionMetadata(get_position_metadata, computation_metadata, coh_ds_->GetYSize());
@@ -519,11 +519,22 @@ TEST_F(TerrainCorrectionTest, GetSourceRectangle) {
         tile.tc_tile_coordinates.target_width = source_tile.width;
         tile.tc_tile_coordinates.target_height = source_tile.height;
         Rectangle calculated_rectangle{};
-
-        bool valid = GetSourceRectangle(tile, target_geo_transform, srtm3elevationmodel::NO_DATA_VALUE,
-                                        coh_ds_->GetXSize(), coh_ds_->GetYSize(), get_position_metadata,
-                                        calculated_rectangle, srtm_3_model_->GetSrtmBuffersInfo(),
-                                        this->metadata_->GetMetadata().avg_scene_height, false);
+        const PointerArray srtm_3_tiles{srtm_3_model_->GetSrtmBuffersInfo(), srtm_3_model_->GetDeviceSrtm3TilesCount()};
+        TerrainCorrectionKernelArgs args{static_cast<unsigned int>(coh_ds_->GetXSize()),
+                                         static_cast<unsigned int>(coh_ds_->GetYSize()),
+                                         srtm3elevationmodel::NO_DATA_VALUE,
+                                         0,
+                                         metadata_->GetMetadata().avg_scene_height,
+                                         target_geo_transform,
+                                         false,
+                                         0,
+                                         {},
+                                         get_position_metadata,
+                                         {},
+                                         {},
+                                         srtm_3_tiles,
+                                         {}};
+        bool valid = GetNonBorderSourceRectangle(tile, args, calculated_rectangle);
         calculated_rectangles.push_back(
             {calculated_rectangle.x, calculated_rectangle.y, calculated_rectangle.width, calculated_rectangle.height});
         EXPECT_THAT(valid, ::testing::IsTrue());
@@ -549,7 +560,7 @@ TEST_F(TerrainCorrectionTest, GetInvalidSourceRectangle) {
 
     std::vector<snapengine::OrbitStateVectorComputation> computation_orbit;
     ComputationMetadata computation_metadata =
-        CreateComputationMetadata(this->metadata_.value().GetMetadata(), computation_orbit);
+        CreateComputationMetadata(metadata_.value().GetMetadata(), computation_orbit);
 
     GetPositionMetadata get_position_metadata{};
     FillGetPositionMetadata(get_position_metadata, computation_metadata, coh_ds_->GetYSize());
@@ -561,10 +572,22 @@ TEST_F(TerrainCorrectionTest, GetInvalidSourceRectangle) {
         tile.tc_tile_coordinates.target_width = source_tile.width;
         tile.tc_tile_coordinates.target_height = source_tile.height;
         Rectangle calculated_rectangle{};
-        bool valid = GetSourceRectangle(tile, target_geo_transform, srtm3elevationmodel::NO_DATA_VALUE,
-                                        coh_ds_->GetXSize(), coh_ds_->GetYSize(), get_position_metadata,
-                                        calculated_rectangle, srtm_3_model_->GetSrtmBuffersInfo(),
-                                        this->metadata_->GetMetadata().avg_scene_height, false);
+        const PointerArray srtm_3_tiles{srtm_3_model_->GetSrtmBuffersInfo(), srtm_3_model_->GetDeviceSrtm3TilesCount()};
+        TerrainCorrectionKernelArgs args{static_cast<unsigned int>(coh_ds_->GetXSize()),
+                                         static_cast<unsigned int>(coh_ds_->GetYSize()),
+                                         srtm3elevationmodel::NO_DATA_VALUE,
+                                         0,
+                                         metadata_->GetMetadata().avg_scene_height,
+                                         target_geo_transform,
+                                         false,
+                                         0,
+                                         {},
+                                         get_position_metadata,
+                                         {},
+                                         {},
+                                         srtm_3_tiles,
+                                         {}};
+        bool valid = GetNonBorderSourceRectangle(tile, args, calculated_rectangle);
         EXPECT_THAT(valid, ::testing::IsFalse());
     }
 
@@ -580,9 +603,24 @@ TEST_F(TerrainCorrectionTest, GetSourceRectangleWithAverageHeight) {
 
     std::vector<snapengine::OrbitStateVectorComputation> computation_orbit;
     ComputationMetadata computation_metadata =
-        CreateComputationMetadata(this->metadata_.value().GetMetadata(), computation_orbit);
+        CreateComputationMetadata(metadata_.value().GetMetadata(), computation_orbit);
     GetPositionMetadata get_position_metadata{};
     FillGetPositionMetadata(get_position_metadata, computation_metadata, coh_ds_->GetYSize());
+    PointerArray srtm_3_tiles{};
+    TerrainCorrectionKernelArgs args{static_cast<unsigned int>(coh_ds_->GetXSize()),
+                                     static_cast<unsigned int>(coh_ds_->GetYSize()),
+                                     srtm3elevationmodel::NO_DATA_VALUE,
+                                     0,
+                                     metadata_->GetMetadata().avg_scene_height,
+                                     target_geo_transform,
+                                     true,
+                                     0,
+                                     {},
+                                     get_position_metadata,
+                                     {},
+                                     {},
+                                     srtm_3_tiles,
+                                     {}};
     std::for_each(SOURCE_RECTANGLES_FOR_AVERAGE_HEIGHT.begin(), SOURCE_RECTANGLES_FOR_AVERAGE_HEIGHT.end(),
                   [&](auto source_tile) {
                       TcTile tile{};
@@ -591,10 +629,7 @@ TEST_F(TerrainCorrectionTest, GetSourceRectangleWithAverageHeight) {
                       tile.tc_tile_coordinates.target_width = source_tile.width;
                       tile.tc_tile_coordinates.target_height = source_tile.height;
                       Rectangle calculated_rectangle{};
-                      bool valid = GetSourceRectangle(tile, target_geo_transform, srtm3elevationmodel::NO_DATA_VALUE,
-                                                      coh_ds_->GetXSize(), coh_ds_->GetYSize(), get_position_metadata,
-                                                      calculated_rectangle, srtm_3_model_->GetSrtmBuffersInfo(),
-                                                      this->metadata_->GetMetadata().avg_scene_height, true);
+                      bool valid = GetNonBorderSourceRectangle(tile, args, calculated_rectangle);
                       calculated_rectangles.push_back({calculated_rectangle.x, calculated_rectangle.y,
                                                        calculated_rectangle.width, calculated_rectangle.height});
                       EXPECT_THAT(valid, ::testing::IsTrue());
@@ -620,11 +655,25 @@ TEST_F(TerrainCorrectionTest, GetSourceRectangleWithAverageHeightInvalid) {
 
     std::vector<snapengine::OrbitStateVectorComputation> computation_orbit;
     ComputationMetadata computation_metadata =
-        CreateComputationMetadata(this->metadata_.value().GetMetadata(), computation_orbit);
+        CreateComputationMetadata(metadata_.value().GetMetadata(), computation_orbit);
     GetPositionMetadata get_position_metadata{};
     FillGetPositionMetadata(get_position_metadata, computation_metadata, coh_ds_->GetYSize());
 
     PointerArray srtm_3_tiles{};
+    TerrainCorrectionKernelArgs args{static_cast<unsigned int>(coh_ds_->GetXSize()),
+                                     static_cast<unsigned int>(coh_ds_->GetYSize()),
+                                     srtm3elevationmodel::NO_DATA_VALUE,
+                                     0,
+                                     metadata_->GetMetadata().avg_scene_height,
+                                     target_geo_transform,
+                                     true,
+                                     0,
+                                     {},
+                                     get_position_metadata,
+                                     {},
+                                     {},
+                                     srtm_3_tiles,
+                                     {}};
     std::for_each(INVALID_SOURCE_RECTANGLES_AVERAGE_HEIGHT.begin(), INVALID_SOURCE_RECTANGLES_AVERAGE_HEIGHT.end(),
                   [&](auto source_tile) {
                       TcTile tile{};
@@ -633,10 +682,7 @@ TEST_F(TerrainCorrectionTest, GetSourceRectangleWithAverageHeightInvalid) {
                       tile.tc_tile_coordinates.target_width = source_tile.width;
                       tile.tc_tile_coordinates.target_height = source_tile.height;
                       Rectangle calculated_rectangle{};
-                      bool valid = GetSourceRectangle(tile, target_geo_transform, srtm3elevationmodel::NO_DATA_VALUE,
-                                                      coh_ds_->GetXSize(), coh_ds_->GetYSize(), get_position_metadata,
-                                                      calculated_rectangle, srtm_3_tiles.array,
-                                                      this->metadata_->GetMetadata().avg_scene_height, true);
+                      bool valid = GetNonBorderSourceRectangle(tile, args, calculated_rectangle);
                       EXPECT_THAT(valid, ::testing::IsFalse());
                   });
     FreeMetadata(get_position_metadata, computation_metadata);

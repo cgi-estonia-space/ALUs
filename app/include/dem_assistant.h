@@ -13,6 +13,7 @@
  */
 #pragma once
 
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <vector>
@@ -39,6 +40,7 @@ public:
         std::vector<std::string> cmd_line_arguments);
 
     PointerHolder* GetSrtm3ValuesOnGpu() const { return model_.GetSrtmBuffersInfo(); }
+    size_t GetSrtm3TilesCount() {return model_.GetDeviceSrtm3TilesCount();}
     const float* GetEgm96ValuesOnGpu() const { return egm96_.GetDeviceValues(); }
 
     ~DemAssistant() = default;
