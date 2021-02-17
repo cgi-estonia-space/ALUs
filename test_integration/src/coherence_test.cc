@@ -41,8 +41,6 @@ class CoherenceIntegrationTest : public ::testing::Test {
     std::string expected_md5_{"377f197761b36be10c8551c01ac38c62"};
 
     void SetUp() override { boost::filesystem::remove(file_name_out_); }
-
-    void TearDown() override { boost::filesystem::remove(file_name_out_); }
 };
 
 TEST_F(CoherenceIntegrationTest, single_burst_data_2018) {
