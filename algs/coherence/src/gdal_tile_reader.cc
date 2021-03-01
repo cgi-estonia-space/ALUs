@@ -5,6 +5,8 @@
 #include "gdal_util.h"
 #include "i_data_tile_read_write_base.h"
 
+#include <iostream>
+
 namespace alus {
 
 GdalTileReader::GdalTileReader(const std::string_view file_name, std::vector<int> band_map, int band_count,
@@ -19,7 +21,13 @@ GdalTileReader::GdalTileReader(const std::string_view file_name, std::vector<int
     data_projection_ = dataset_->GetProjectionRef();
     if (has_transform) {
         affine_geo_transform_.resize(6);
-        CHECK_GDAL_ERROR(dataset_->GetGeoTransform(affine_geo_transform_.data()));
+        const auto result = dataset_->GetGeoTransform(affine_geo_transform_.data());
+        // Fetching transform has been requested, but dataset's transform is invalid.
+        if (result != CE_None) {
+            // TODO: Use logging system to log this message.
+            std::cout << "Geo transform parameters are missing in input dataset - " << file_name << std::endl;
+            this->affine_geo_transform_.clear();
+        }
     }
 }
 

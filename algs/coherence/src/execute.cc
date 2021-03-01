@@ -21,6 +21,7 @@ constexpr std::string_view PARAMETER_ID_SUBTRACT_FLAT_EARTH_PHASE{"subtract_flat
 constexpr std::string_view PARAMETER_ID_RG_WINDOW{"rg_window"};
 constexpr std::string_view PARAMETER_ID_AZ_WINDOW{"az_window"};
 constexpr std::string_view PARAMETER_ID_ORBIT_DEGREE{"orbit_degree"};
+constexpr std::string_view PARAMETER_FETCH_TRANSFORM{"fetch_geo_transform"};
 }  // namespace
 
 namespace alus {
@@ -56,7 +57,7 @@ public:
         int band_count_in = 4;
         int band_count_out = 1;
 
-        alus::GdalTileReader coh_data_reader{input_name_, band_map, band_count_in, true};
+        alus::GdalTileReader coh_data_reader{input_name_, band_map, band_count_in, fetch_transform_};
         alus::GdalTileWriter coh_data_writer{output_name_,
                                              band_map_out,
                                              band_count_out,
@@ -122,6 +123,12 @@ public:
         if (param_values.count(std::string(PARAMETER_ID_SRP_NUMBER_POINTS))) {
             srp_number_points_ = std::stoul(param_values.at(std::string(PARAMETER_ID_SRP_NUMBER_POINTS)));
         }
+        if (param_values.count(std::string(PARAMETER_FETCH_TRANSFORM))) {
+            const auto& value = param_values.at(std::string(PARAMETER_FETCH_TRANSFORM));
+            if (boost::iequals(value, fetch_transform_ ? "false" : "true")) {
+                fetch_transform_ = !fetch_transform_;
+            }
+        }
     }
 
     void SetTileSize(size_t width, size_t height) override {
@@ -144,8 +151,9 @@ public:
                     << ")" << std::endl
                     << PARAMETER_ID_AZ_WINDOW
                     << " - azimuth window size in pixels (default:" << coherence_window_azimuth_ << ")" << std::endl
-                    << PARAMETER_ID_ORBIT_DEGREE << " - unsigned integer (default:" << orbit_degree_ << ")"
-                    << std::endl;
+                    << PARAMETER_ID_ORBIT_DEGREE << " - unsigned integer (default:" << orbit_degree_ << ")" << std::endl
+                    << PARAMETER_FETCH_TRANSFORM << " - true/false (default:" << (fetch_transform_ ? "true" : "false")
+                    << ")" << std::endl;
 
         return help_stream.str();
     }
@@ -161,7 +169,8 @@ private:
                   << std::endl
                   << PARAMETER_ID_RG_WINDOW << " " << coherence_window_range_ << std::endl
                   << PARAMETER_ID_AZ_WINDOW << " " << coherence_window_azimuth_ << std::endl
-                  << PARAMETER_ID_ORBIT_DEGREE << " " << orbit_degree_ << std::endl;
+                  << PARAMETER_ID_ORBIT_DEGREE << " " << orbit_degree_ << std::endl
+                  << PARAMETER_FETCH_TRANSFORM << " " << (fetch_transform_ ? "true" : "false") << std::endl;
     }
 
     std::string input_name_{};
@@ -176,6 +185,8 @@ private:
     int coherence_window_azimuth_{3};
     // orbit interpolation degree
     int orbit_degree_{3};
+    bool fetch_transform_{true};
+
 };
 }  // namespace alus
 

@@ -119,6 +119,8 @@ int main(int argc, char* argv[]) {
                 std::cout << warnings << std::endl;
                 if (merged_parameters.count(alg_to_run)) {
                     alg->SetParameters(merged_parameters.at(alg_to_run));
+                } else if (!merged_parameters.empty()) { // Parameters without algorithm specification
+                    alg->SetParameters(merged_parameters.at(""));
                 }
 
                 if (dem_assistant != nullptr) {
