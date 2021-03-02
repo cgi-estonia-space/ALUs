@@ -74,6 +74,7 @@ add_subdirectory(algs/cuda_algorithm)
 add_subdirectory(algs/range_doppler_terrain_correction)
 add_subdirectory(algs/backgeocoding)
 add_subdirectory(algs/apply-orbit-file-op)
+add_subdirectory(algs/sentinel1_calibrate)
 
 # Test helpers
 add_subdirectory(test/range_doppler_geocoding)

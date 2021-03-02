@@ -11,12 +11,21 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
+#include <cstddef>
 #include <fstream>
+#include <memory>
 #include <optional>
+#include <stdexcept>
+#include <string_view>
+
+#include "../goods/sentinel1_calibrate_data.h"
 
 #include "allocators.h"
 #include "comparators.h"
 #include "gmock/gmock.h"
+#include "meta_data_node_names.h"
+#include "metadata_element.h"
+#include "product_data_utc.h"
 #include "sentinel1_utils.h"
 #include "tests_common.hpp"
 
@@ -25,11 +34,11 @@ using namespace alus::tests;
 namespace {
 
 class Sentinel1UtilsTester {
-   public:
-    double **doppler_rate_2_{nullptr};
-    double **doppler_centroid_2_{nullptr};
-    double **reference_time_2_{nullptr};
-    double **range_depend_doppler_rate_2_{nullptr};
+public:
+    double** doppler_rate_2_{nullptr};
+    double** doppler_centroid_2_{nullptr};
+    double** reference_time_2_{nullptr};
+    double** range_depend_doppler_rate_2_{nullptr};
 
     void Read4Arrays() {
         std::ifstream doppler_rate_reader("./goods/backgeocoding/slaveDopplerRate.txt");
@@ -100,8 +109,7 @@ class Sentinel1UtilsTester {
 TEST(sentinel1, utils) {
     alus::s1tbx::Sentinel1Utils utils;
     utils.SetPlaceHolderFiles("./goods/backgeocoding/slaveOrbitStateVectors.txt",
-                              "./goods/backgeocoding/dcEstimateList.txt",
-                              "./goods/backgeocoding/azimuthList.txt",
+                              "./goods/backgeocoding/dcEstimateList.txt", "./goods/backgeocoding/azimuthList.txt",
                               "./goods/backgeocoding/slaveBurstLineTimes.txt",
                               "./goods/backgeocoding/slaveGeoLocation.txt");
     utils.ReadPlaceHolderFiles();
@@ -124,30 +132,184 @@ TEST(sentinel1, utils) {
     ASSERT_TRUE(utils.subswath_[0].doppler_rate_ != nullptr);
     ASSERT_TRUE(tester.doppler_rate_2_ != nullptr);
 
-    size_t doppler_count = alus::EqualsArrays2Dd(utils.subswath_[0].doppler_rate_,
-                                                 tester.doppler_rate_2_,
-                                                 utils.subswath_[0].num_of_bursts_,
-                                                 utils.subswath_[0].samples_per_burst_);
+    size_t doppler_count =
+        alus::EqualsArrays2Dd(utils.subswath_[0].doppler_rate_, tester.doppler_rate_2_,
+                              utils.subswath_[0].num_of_bursts_, utils.subswath_[0].samples_per_burst_);
     EXPECT_EQ(doppler_count, 0) << "Doppler Rates do not match. Mismatches: " << doppler_count << '\n';
 
-    size_t reference_count = alus::EqualsArrays2Dd(utils.subswath_[0].reference_time_,
-                                                   tester.reference_time_2_,
-                                                   utils.subswath_[0].num_of_bursts_,
-                                                   utils.subswath_[0].samples_per_burst_);
+    size_t reference_count =
+        alus::EqualsArrays2Dd(utils.subswath_[0].reference_time_, tester.reference_time_2_,
+                              utils.subswath_[0].num_of_bursts_, utils.subswath_[0].samples_per_burst_);
     EXPECT_EQ(reference_count, 0) << "Reference Times do not match. Mismatches: " << reference_count << '\n';
 
-    size_t range_doppler_count = alus::EqualsArrays2Dd(utils.subswath_[0].range_depend_doppler_rate_,
-                                                       tester.range_depend_doppler_rate_2_,
-                                                       utils.subswath_[0].num_of_bursts_,
-                                                       utils.subswath_[0].samples_per_burst_);
+    size_t range_doppler_count =
+        alus::EqualsArrays2Dd(utils.subswath_[0].range_depend_doppler_rate_, tester.range_depend_doppler_rate_2_,
+                              utils.subswath_[0].num_of_bursts_, utils.subswath_[0].samples_per_burst_);
     EXPECT_EQ(range_doppler_count, 0) << "Range Dependent Doppler Rates do not match. Mismatches: "
                                       << range_doppler_count << '\n';
 
-    size_t centroids_count = alus::EqualsArrays2Dd(utils.subswath_[0].doppler_centroid_,
-                                                   tester.doppler_centroid_2_,
-                                                   utils.subswath_[0].num_of_bursts_,
-                                                   utils.subswath_[0].samples_per_burst_);
+    size_t centroids_count =
+        alus::EqualsArrays2Dd(utils.subswath_[0].doppler_centroid_, tester.doppler_centroid_2_,
+                              utils.subswath_[0].num_of_bursts_, utils.subswath_[0].samples_per_burst_);
     EXPECT_EQ(centroids_count, 0) << "Doppler Centroids do not match. Mismatches: " << centroids_count << '\n';
+}
+
+TEST(Sentinel1Utils, GetTime) {
+    const std::string_view input_time_string{"2019-07-09T16:03:53.589741"};
+    const std::string_view metadata_element_name{"metadata"};
+    const std::string_view test_attribute{"attribute"};
+    const double expected_mjd{7129.669370251632};
+    const alus::snapengine::Utc expected_utc{7129, 57833, 589741};
+
+    const auto metadata_element = std::make_shared<alus::snapengine::MetadataElement>(metadata_element_name);
+    metadata_element->SetAttributeString(test_attribute, input_time_string);
+
+    const auto calculated_utc = alus::s1tbx::Sentinel1Utils::GetTime(metadata_element, test_attribute);
+    ASSERT_THAT(calculated_utc->GetMjd(), ::testing::DoubleEq(expected_mjd));
+    ASSERT_THAT(calculated_utc->GetDaysFraction(), ::testing::Eq(expected_utc.GetDaysFraction()));
+    ASSERT_THAT(calculated_utc->GetSecondsFraction(), ::testing::Eq(expected_utc.GetSecondsFraction()));
+    ASSERT_THAT(calculated_utc->GetMicroSecondsFraction(), ::testing::Eq(expected_utc.GetMicroSecondsFraction()));
+}
+
+void PrepareFirstCalibrationVector(
+    std::shared_ptr<alus::snapengine::MetadataElement> first_calibration_vector_element) {
+    first_calibration_vector_element->SetAttributeString(
+        alus::snapengine::MetaDataNodeNames::AZIMUTH_TIME,
+        alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_AZIMUTH_TIME);
+    first_calibration_vector_element->SetAttributeInt(
+        alus::snapengine::MetaDataNodeNames::LINE, alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_LINE);
+
+    const auto pixel_element =
+        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::MetaDataNodeNames::PIXEL);
+    first_calibration_vector_element->AddElement(pixel_element);
+    pixel_element->SetAttributeString(alus::snapengine::MetaDataNodeNames::PIXEL,
+                                      alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_PIXEL_STRING);
+    pixel_element->SetAttributeInt(alus::snapengine::MetaDataNodeNames::COUNT,
+                                   alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_PIXEL_COUNT);
+
+    const auto sigma_element =
+        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::MetaDataNodeNames::SIGMA_NOUGHT);
+    first_calibration_vector_element->AddElement(sigma_element);
+    sigma_element->SetAttributeString(alus::snapengine::MetaDataNodeNames::SIGMA_NOUGHT,
+                                      alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_SIGMA_STRING);
+    sigma_element->SetAttributeInt(alus::snapengine::MetaDataNodeNames::COUNT,
+                                   alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_SIGMA_COUNT);
+
+    const auto beta_element =
+        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::MetaDataNodeNames::BETA_NOUGHT);
+    first_calibration_vector_element->AddElement(beta_element);
+    beta_element->SetAttributeString(alus::snapengine::MetaDataNodeNames::BETA_NOUGHT,
+                                     alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_BETA_STRING);
+    beta_element->SetAttributeInt(alus::snapengine::MetaDataNodeNames::COUNT,
+                                  alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_BETA_COUNT);
+
+    const auto gamma_element =
+        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::MetaDataNodeNames::GAMMA);
+    first_calibration_vector_element->AddElement(gamma_element);
+    gamma_element->SetAttributeString(alus::snapengine::MetaDataNodeNames::GAMMA,
+                                      alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_GAMMA_STRING);
+    gamma_element->SetAttributeInt(alus::snapengine::MetaDataNodeNames::COUNT,
+                                   alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_GAMMA_COUNT);
+
+    const auto dn_element =
+        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::MetaDataNodeNames::DN);
+    first_calibration_vector_element->AddElement(dn_element);
+    dn_element->SetAttributeString(alus::snapengine::MetaDataNodeNames::DN,
+                                   alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_DN_STRING);
+    dn_element->SetAttributeInt(alus::snapengine::MetaDataNodeNames::COUNT,
+                                alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_DN_COUNT);
+}
+
+void PrepareSecondCalibrationVector(
+    std::shared_ptr<alus::snapengine::MetadataElement> second_calibration_vector_element) {
+    second_calibration_vector_element->SetAttributeString(
+        alus::snapengine::MetaDataNodeNames::AZIMUTH_TIME,
+        alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_AZIMUTH_TIME);
+    second_calibration_vector_element->SetAttributeInt(
+        alus::snapengine::MetaDataNodeNames::LINE, alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_LINE);
+
+    const auto pixel_element =
+        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::MetaDataNodeNames::PIXEL);
+    second_calibration_vector_element->AddElement(pixel_element);
+    pixel_element->SetAttributeString(alus::snapengine::MetaDataNodeNames::PIXEL,
+                                      alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_PIXEL_STRING);
+    pixel_element->SetAttributeInt(alus::snapengine::MetaDataNodeNames::COUNT,
+                                   alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_PIXEL_COUNT);
+
+    const auto sigma_element =
+        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::MetaDataNodeNames::SIGMA_NOUGHT);
+    second_calibration_vector_element->AddElement(sigma_element);
+    sigma_element->SetAttributeString(alus::snapengine::MetaDataNodeNames::SIGMA_NOUGHT,
+                                      alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_SIGMA_STRING);
+    sigma_element->SetAttributeInt(alus::snapengine::MetaDataNodeNames::COUNT,
+                                   alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_SIGMA_COUNT);
+
+    const auto beta_element =
+        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::MetaDataNodeNames::BETA_NOUGHT);
+    second_calibration_vector_element->AddElement(beta_element);
+    beta_element->SetAttributeString(alus::snapengine::MetaDataNodeNames::BETA_NOUGHT,
+                                     alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_BETA_STRING);
+    beta_element->SetAttributeInt(alus::snapengine::MetaDataNodeNames::COUNT,
+                                  alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_BETA_COUNT);
+
+    const auto gamma_element =
+        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::MetaDataNodeNames::GAMMA);
+    second_calibration_vector_element->AddElement(gamma_element);
+    gamma_element->SetAttributeString(alus::snapengine::MetaDataNodeNames::GAMMA,
+                                      alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_GAMMA_STRING);
+    gamma_element->SetAttributeInt(alus::snapengine::MetaDataNodeNames::COUNT,
+                                   alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_GAMMA_COUNT);
+
+    const auto dn_element =
+        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::MetaDataNodeNames::DN);
+    second_calibration_vector_element->AddElement(dn_element);
+    dn_element->SetAttributeString(alus::snapengine::MetaDataNodeNames::DN,
+                                   alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_DN_STRING);
+    dn_element->SetAttributeInt(alus::snapengine::MetaDataNodeNames::COUNT,
+                                alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_DN_COUNT);
+}
+
+void PrepareCalibrationVectors(std::shared_ptr<alus::snapengine::MetadataElement> calibration_vector_list_element) {
+    // Prepare first calibration vector
+    const auto first_calibration_vector_element =
+        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::MetaDataNodeNames::CALIBRATION_VECTOR);
+    calibration_vector_list_element->AddElement(first_calibration_vector_element);
+    PrepareFirstCalibrationVector(first_calibration_vector_element);
+
+    // Prepate second calibration vector
+    const auto second_calibration_vector_element =
+        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::MetaDataNodeNames::CALIBRATION_VECTOR);
+    calibration_vector_list_element->AddElement(second_calibration_vector_element);
+    PrepareSecondCalibrationVector(second_calibration_vector_element);
+}
+
+void CompareCalibrationVectors(const alus::s1tbx::CalibrationVector& actual,
+                               const alus::s1tbx::CalibrationVector& expected) {
+    ASSERT_THAT(actual.time_mjd, ::testing::DoubleEq(expected.time_mjd));
+    ASSERT_THAT(actual.line, ::testing::Eq(expected.line));
+    ASSERT_THAT(actual.pixels, ::testing::ContainerEq(expected.pixels));
+    ASSERT_THAT(actual.sigma_nought, ::testing::ContainerEq(expected.sigma_nought));
+    ASSERT_THAT(actual.beta_nought, ::testing::ContainerEq(expected.beta_nought));
+    ASSERT_THAT(actual.gamma, ::testing::ContainerEq(expected.gamma));
+    ASSERT_THAT(actual.dn, ::testing::ContainerEq(expected.dn));
+    ASSERT_THAT(actual.array_size, ::testing::Eq(expected.array_size));
+}
+
+TEST(Sentinel1Utils, GetCalibrationVectors) {
+    const auto calibration_vector_list_element =
+        std::make_shared<alus::snapengine::MetadataElement>("calibration_vector_list");
+    PrepareCalibrationVectors(calibration_vector_list_element);
+    const std::vector<alus::s1tbx::CalibrationVector> expected_calibration_vectors{
+        alus::goods::calibrationdata::FIRST_CALIBRATION_INFO.calibration_vectors.at(1),
+        alus::goods::calibrationdata::SECOND_CALIBRATION_INFO.calibration_vectors.at(0)};
+
+    const auto calculated_vectors =
+        alus::s1tbx::Sentinel1Utils::GetCalibrationVectors(calibration_vector_list_element, true, true, true, true);
+
+    ASSERT_THAT(calculated_vectors, ::testing::SizeIs(expected_calibration_vectors.size()));
+    for (size_t i = 0; i < calculated_vectors.size(); i++) {
+        CompareCalibrationVectors(calculated_vectors.at(i), expected_calibration_vectors.at(i));
+    }
 }
 
 }  // namespace
