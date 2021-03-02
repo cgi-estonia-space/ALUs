@@ -53,9 +53,13 @@ TEST(ExtendedAmountTest, ComputeExtendedAmount) {
 TEST(ExtendedAmountTest, GetBurstIndexTest) {
     int const NUMBER_OF_BURSTS{19};
     int const LINES_PER_BURST{1503};
-    for (auto && pair : alus::goods::GET_BURST_INDEX_VALUES) {
-        auto result = alus::backgeocoding::GetBurstIndex(pair.first, NUMBER_OF_BURSTS, LINES_PER_BURST);
-        EXPECT_THAT(result, testing::Eq(pair.second));
-    }
+    (void)NUMBER_OF_BURSTS;
+    (void)LINES_PER_BURST;
+    
+    std::for_each(
+        alus::goods::GET_BURST_INDEX_VALUES.begin(), alus::goods::GET_BURST_INDEX_VALUES.end(), [](auto pair) {
+            auto result = alus::backgeocoding::GetBurstIndex(pair.first, NUMBER_OF_BURSTS, LINES_PER_BURST);
+            EXPECT_THAT(result, testing::Eq(pair.second));
+        });
 }
 }  // namespace

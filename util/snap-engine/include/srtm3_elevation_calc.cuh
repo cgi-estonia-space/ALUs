@@ -24,50 +24,44 @@ namespace alus {
 namespace snapengine {
 namespace srtm3elevationmodel {
 
-inline __device__ int GetSamples(
-    PointerArray *tiles, int *x, int *y, double *samples, int width, int height, double no_value, int use_no_data) {
-    // in this case, it will always be used.
-    no_value = no_value;
+inline __device__ int GetSamples(PointerArray* tiles, int* x, int* y, double* samples, int width, int height,
+                                 double /*no_value*/, int /*use_no_data*/) {
     int allValid = 1;
-    int i = 0, j = 0;
-    int tile_y_index, tile_x_index, pixel_y, pixel_x;
-    int xI, yI;
-    float *srtm_41_01_tile = (float *)tiles->array[0].pointer;
     int xSize = tiles->array[0].x;
-    float *srtm_42_01_tile = (float *)tiles->array[1].pointer;
 
-    for (yI = 0; yI < height; yI++) {
-        tile_y_index = (int)(y[yI] * NUM_PIXELS_PER_TILEinv);
-        pixel_y = y[yI] - tile_y_index * NUM_PIXELS_PER_TILE;
+    int i = 0;
+    for (int yI = 0; yI < height; yI++) {
+        const int tile_y_index = (int)(y[yI] * NUM_PIXELS_PER_TILEinv);
+        const int pixel_y = y[yI] - tile_y_index * NUM_PIXELS_PER_TILE;
 
-        j = 0;
-        for (xI = 0; xI < width; xI++) {
-            tile_x_index = (int)(x[xI] * NUM_PIXELS_PER_TILEinv);
+        int j = 0;
+        for (int xI = 0; xI < width; xI++) {
+            const int tile_x_index = (int)(x[xI] * NUM_PIXELS_PER_TILEinv);
 
+            const int samples_index = i * width + j;
             // make sure that the tile we want is actually listed
             if (tile_x_index > NUM_X_TILES || tile_x_index < 0 || tile_y_index > NUM_Y_TILES || tile_y_index < 0) {
-                samples[i * width + j] = CUDART_NAN;
+                samples[samples_index] = CUDART_NAN;
                 allValid = 0;
                 ++j;
                 continue;
             }
-            pixel_x = x[xI] - tile_x_index * NUM_PIXELS_PER_TILE;
-
-            // TODO: placeholder. Change once you know how dynamic tiling will work.
-            switch (tile_x_index) {
-                case 40:
-                    samples[i * width + j] = srtm_41_01_tile[pixel_x + xSize * pixel_y];
+            const int pixel_x = x[xI] - tile_x_index * NUM_PIXELS_PER_TILE;
+            const int srtm_source_index = pixel_x + xSize * pixel_y;
+            // ID field in PointerHolder is used for identifying SRTM3 tile indexes. File data in srtm_42_01.tif results
+            // in ID with 4201. Yes, it is hacky.
+            const int srtm_id = (tile_x_index + 1) * 100 + (tile_y_index + 1);
+            for (int srtm_tiles_i = 0; srtm_tiles_i < (int)tiles->size; srtm_tiles_i++) {
+                if (tiles->array[srtm_tiles_i].id == srtm_id) {
+                    const float* array = (float*)tiles->array[srtm_tiles_i].pointer;
+                    const float value = array[srtm_source_index];
+                    samples[samples_index] = value;
                     break;
-                case 41:
-                    samples[i * width + j] = srtm_42_01_tile[pixel_x + xSize * pixel_y];
-                    break;
-                default:
-                    printf("Slave pix pos where it should not be. %d %d \n", tile_x_index, tile_y_index);
-                    samples[i * width + j] = CUDART_NAN;
+                }
             }
 
-            if (samples[i * width + j] == NO_DATA_VALUE) {
-                samples[i * width + j] = CUDART_NAN;
+            if (samples[samples_index] == NO_DATA_VALUE) {
+                samples[samples_index] = CUDART_NAN;
                 allValid = 0;
             }
             ++j;
@@ -77,7 +71,7 @@ inline __device__ int GetSamples(
     return allValid;
 }
 
-inline __device__ double GetElevation(double geo_pos_lat, double geo_pos_lon, PointerArray *p_array) {
+inline __device__ double GetElevation(double geo_pos_lat, double geo_pos_lon, PointerArray* p_array) {
     double index_i[2];
     double index_j[2];
     double index_ki[1];

@@ -204,6 +204,7 @@ class ComputeBurstOffsetTest : public ::testing::Test {
 
     void PrepareBurstOffsetKernelArgs() {
         args_.srtm3_tiles.array = srtm_3_dem_->GetSrtmBuffersInfo();
+        args_.srtm3_tiles.size = srtm_3_dem_->GetDeviceSrtm3TilesCount();
         args_.master_subswath_info = master_info_;
         args_.master_sentinel_utils = master_utils_;
         args_.slave_subswath_info = slave_info_;

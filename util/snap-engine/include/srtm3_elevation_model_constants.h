@@ -23,6 +23,8 @@ namespace srtm3elevationmodel{
 constexpr int NUM_X_TILES {72};
 constexpr int NUM_Y_TILES {24};
 constexpr int DEGREE_RES {5};
+constexpr int MAX_LAT_COVERAGE{60};
+constexpr int MAX_LON_COVERAGE{180};
 constexpr int NUM_PIXELS_PER_TILE {6000};
 constexpr int16_t NO_DATA_VALUE {-32768};
 constexpr int RASTER_WIDTH {NUM_X_TILES * NUM_PIXELS_PER_TILE};

@@ -245,6 +245,7 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index,
     calc_data.num_lines = calc_data.lat_min_idx - calc_data.lat_max_idx;
     calc_data.num_pixels = calc_data.lon_max_idx - calc_data.lon_min_idx;
     calc_data.tiles.array = this->srtm3_dem_->GetSrtmBuffersInfo();
+    calc_data.tiles.size = this->srtm3_dem_->GetDeviceSrtm3TilesCount();
     calc_data.egm = const_cast<float*>(this->egm96_->GetDeviceValues());
     calc_data.max_lats = alus::snapengine::earthgravitationalmodel96computation::MAX_LATS;
     calc_data.max_lons = alus::snapengine::earthgravitationalmodel96computation::MAX_LONS;
@@ -398,6 +399,7 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index,
 
         mask_data.size = array_size;
         mask_data.tiles.array = this->srtm3_dem_->GetSrtmBuffersInfo();
+        mask_data.tiles.size = this->srtm3_dem_->GetDeviceSrtm3TilesCount();
 
         CHECK_CUDA_ERR(LaunchElevationMask(mask_data));
 
@@ -540,6 +542,7 @@ void PrepareBurstOffsetKernelArguments(BurstOffsetKernelArgs &args,
                               cudaMemcpyHostToDevice));
 
     args.srtm3_tiles.array = srtm3_tiles.array;
+    args.srtm3_tiles.size = srtm3_tiles.size;
 
     args.master_sentinel_utils = master_utils->device_sentinel_1_utils_;
     args.master_subswath_info = master_utils->subswath_.at(0).device_subswath_info_;
@@ -590,6 +593,7 @@ int Backgeocoding::ComputeBurstOffset() {
     BurstOffsetKernelArgs args{};
     srtm3_tiles.array = this->srtm3_dem_->GetSrtmBuffersInfo();
     srtm3_tiles.size = this->srtm3_dem_->GetDeviceSrtm3TilesCount();
+
     PrepareBurstOffsetKernelArguments(args, srtm3_tiles, this->master_utils_.get(), this->slave_utils_.get());
 
     int burst_offset;
