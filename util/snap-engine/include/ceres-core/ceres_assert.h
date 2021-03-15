@@ -33,6 +33,18 @@ public:
         }
         return expression;
     }
+
+    /**
+     * Asserts that the given object is not <code>null</code>. If this
+     * is not the case, some kind of unchecked exception is thrown.
+     *
+     * @param object the value to test
+     * @throws NullPointerException if the object is <code>null</code>
+     */
+    template <typename T>
+    static void NotNull(T object) {
+        NotNull(object, "Assert.notNull(null) called");  //$NON-NLS-1$
+    }
 };
 }  // namespace snapengine
 }  // namespace alus

@@ -1,7 +1,7 @@
 /**
- * This file is a filtered duplicate of a SNAP's org.esa.snap.engine_utilities.datamodel.AbstractMetadata.java ported
- * for native code. Copied from a snap-engine's(https://github.com/senbox-org/snap-engine) repository originally stated
- * to be implemented by "Copyright (C) 2016 by Array Systems Computing Inc. http://www.array.ca"
+ * This file is a filtered duplicate of a SNAP's org.esa.snap.engine_utilities.datamodel.metadata.AbstractMetadata.java
+ * ported for native code. Copied from a snap-engine's(https://github.com/senbox-org/snap-engine) repository originally
+ * stated to be implemented by "Copyright (C) 2016 by Array Systems Computing Inc. http://www.array.ca"
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -17,6 +17,7 @@
  */
 #pragma once
 
+#include <algorithm>
 #include <iostream>
 #include <memory>
 #include <optional>
@@ -31,17 +32,17 @@
 
 namespace alus::snapengine {
 
-class MetaDataNodeNames {
+class AbstractMetadata {
 private:
     static constexpr std::string_view METADATA_VERSION = "6.0";
 
     // todo:MigrateToCurrentVersion is half backed already inside snap, we need to decide what to do with that (future)
-    static void MigrateToCurrentVersion(std::shared_ptr<MetadataElement> abstracted_metadata);
+    static void MigrateToCurrentVersion(const std::shared_ptr<MetadataElement>& abstracted_metadata);
 
-    static void PatchMissingMetadata(std::shared_ptr<MetadataElement> abstracted_metadata);
+    static void PatchMissingMetadata(const std::shared_ptr<MetadataElement>& abstracted_metadata);
 
-    static void DefaultToProduct(std::shared_ptr<MetadataElement> abstracted_metadata,
-                                 std::shared_ptr<Product> product);
+    static void DefaultToProduct(const std::shared_ptr<MetadataElement>& abstracted_metadata,
+                                 const std::shared_ptr<Product>& product);
 
 public:
     /**
@@ -246,9 +247,9 @@ public:
 
     static constexpr std::string_view COMPACT_MODE = "compact_mode";
 
-    static bool GetAttributeBoolean(std::shared_ptr<MetadataElement> element, std::string_view view);
+    static bool GetAttributeBoolean(const std::shared_ptr<MetadataElement>& element, std::string_view view);
 
-    static double GetAttributeDouble(std::shared_ptr<MetadataElement> element, std::string_view view);
+    static double GetAttributeDouble(const std::shared_ptr<MetadataElement>& element, std::string_view view);
 
     static std::shared_ptr<Utc> ParseUtc(std::string_view time_str);
 
@@ -258,7 +259,7 @@ public:
      * @param absRoot Abstracted metadata root.
      * @return orbitStateVectors Array of orbit state vectors.
      */
-    static std::vector<OrbitStateVector> GetOrbitStateVectors(std::shared_ptr<MetadataElement> abs_root);
+    static std::vector<OrbitStateVector> GetOrbitStateVectors(const std::shared_ptr<MetadataElement>& abs_root);
 
     /**
      * Get abstracted metadata.
@@ -266,7 +267,7 @@ public:
      * @param sourceProduct the product
      * @return MetadataElement or null if no root found
      */
-    static std::shared_ptr<MetadataElement> GetAbstractedMetadata(std::shared_ptr<Product> source_product);
+    static std::shared_ptr<MetadataElement> GetAbstractedMetadata(const std::shared_ptr<Product>& source_product);
 
     /**
      * Adds an attribute into dest
@@ -278,7 +279,7 @@ public:
      * @param desc     The description
      * @return the newly created attribute
      */
-    static std::shared_ptr<MetadataAttribute> AddAbstractedAttribute(std::shared_ptr<MetadataElement> dest,
+    static std::shared_ptr<MetadataAttribute> AddAbstractedAttribute(const std::shared_ptr<MetadataElement>& dest,
                                                                      std::string_view tag, int data_type,
                                                                      std::string_view unit, std::string_view desc);
     /**
@@ -288,7 +289,7 @@ public:
      * @param tag   the name of the attribute
      * @param value the string value
      */
-    static void SetAttribute(std::shared_ptr<MetadataElement> dest, std::string_view tag, int value);
+    static void SetAttribute(const std::shared_ptr<MetadataElement>& dest, std::string_view tag, int value);
 
     /**
      * Sets an attribute as a string
@@ -297,7 +298,7 @@ public:
      * @param tag   the name of the attribute
      * @param value the string value
      */
-    static void SetAttribute(std::shared_ptr<MetadataElement> dest, std::string_view tag,
+    static void SetAttribute(const std::shared_ptr<MetadataElement>& dest, std::string_view tag,
                              std::optional<std::string> value);
     /**
      * Sets an attribute as a UTC
@@ -306,7 +307,16 @@ public:
      * @param tag   the name of the attribute
      * @param value the UTC value
      */
-    static void SetAttribute(std::shared_ptr<MetadataElement> dest, std::string_view tag, std::shared_ptr<Utc> value);
+    static void SetAttribute(const std::shared_ptr<MetadataElement>& dest, std::string_view tag, const std::shared_ptr<Utc>& value);
+
+    /**
+     * Sets an attribute as a double
+     *
+     * @param dest  the destination element
+     * @param tag   the name of the attribute
+     * @param value the string value
+     */
+    static void SetAttribute(const std::shared_ptr<MetadataElement>& dest, std::string_view tag, const double value);
 
     /**
      * Abstract common metadata from products to be used uniformly by all operators
@@ -314,7 +324,7 @@ public:
      * @param root the product metadata root
      * @return abstracted metadata root
      */
-    static std::shared_ptr<MetadataElement> AddAbstractedMetadataHeader(std::shared_ptr<MetadataElement> root);
+    static std::shared_ptr<MetadataElement> AddAbstractedMetadataHeader(const std::shared_ptr<MetadataElement>& root);
 
     /**
      * Set orbit state vectors.
@@ -323,8 +333,41 @@ public:
      * @param orbitStateVectors The orbit state vectors.
      * @throws Exception if orbit state vector length is not correct
      */
-    static void SetOrbitStateVectors(std::shared_ptr<MetadataElement> abs_root,
-                                     std::vector<OrbitStateVector> orbit_state_vectors);
+    static void SetOrbitStateVectors(const std::shared_ptr<MetadataElement>& abs_root,
+                                     const std::vector<OrbitStateVector>& orbit_state_vectors);
+
+    /**
+     * Returns the orignal product metadata or the root if not found
+     *
+     * @param product input product
+     * @return original metadata
+     */
+    static std::shared_ptr<MetadataElement> GetOriginalProductMetadata(std::shared_ptr<Product> product);
+
+    /**
+     * Creates and returns the orignal product metadata
+     *
+     * @param root input product metadata root
+     * @return original metadata
+     */
+    static std::shared_ptr<MetadataElement> AddOriginalProductMetadata(const std::shared_ptr<MetadataElement>& root);
+
+    static std::shared_ptr<Utc> ParseUtc(std::string_view time_str, std::string_view date_format_pattern);
+
+    static void AddBandToBandMap(const std::shared_ptr<MetadataElement>& bandAbsRoot, std::string_view name);
+
+    static bool IsNoData(const std::shared_ptr<MetadataElement>& elem, std::string_view tag);
+
+    /**
+     * Abstract common metadata from products to be used uniformly by all operators
+     * name should be in the form swath_pol_date
+     *
+     * @param absRoot the abstracted metadata root
+     * @param name    the name of the element
+     * @return abstracted metadata root
+     */
+    static std::shared_ptr<MetadataElement> AddBandAbstractedMetadata(const std::shared_ptr<snapengine::MetadataElement>& abs_root, std::string_view name);
+
 };
 
 }  // namespace alus::snapengine

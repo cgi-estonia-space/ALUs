@@ -22,9 +22,9 @@
 
 #include <boost/algorithm/string.hpp>
 
+#include "abstract_metadata.h"
 #include "calibration_info.h"
 #include "general_constants.h"
-#include "meta_data_node_names.h"
 #include "metadata_element.h"
 #include "sentinel1_utils.h"
 
@@ -35,33 +35,33 @@ std::vector<CalibrationInfo> GetCalibrationInfoList(
     std::vector<CalibrationInfo> calibration_info_list;
 
     const auto calibration_root_element =
-        GetElement(original_product_metadata, snapengine::MetaDataNodeNames::CALIBRATION_ROOT);
+        GetElement(original_product_metadata, snapengine::AbstractMetadata::CALIBRATION_ROOT);
 
     for (auto&& calibration_data_set_item : calibration_root_element->GetElements()) {
         const auto calibration_element =
-            GetElement(calibration_data_set_item, snapengine::MetaDataNodeNames::CALIBRATION);
+            GetElement(calibration_data_set_item, snapengine::AbstractMetadata::CALIBRATION);
 
-        const auto ads_header_element = GetElement(calibration_element, snapengine::MetaDataNodeNames::ADS_HEADER);
+        const auto ads_header_element = GetElement(calibration_element, snapengine::AbstractMetadata::ADS_HEADER);
 
-        const auto polarisation = ads_header_element->GetAttributeString(snapengine::MetaDataNodeNames::POLARISATION);
+        const auto polarisation = ads_header_element->GetAttributeString(snapengine::AbstractMetadata::POLARISATION);
         if (selected_polarisations.find(polarisation) == selected_polarisations.end()) {
             continue;
         }
 
-        const auto sub_swath = ads_header_element->GetAttributeString(snapengine::MetaDataNodeNames::swath);
+        const auto sub_swath = ads_header_element->GetAttributeString(snapengine::AbstractMetadata::swath);
         const auto first_line_time =
-            s1tbx::Sentinel1Utils::GetTime(ads_header_element, snapengine::MetaDataNodeNames::START_TIME)->GetMjd();
+            s1tbx::Sentinel1Utils::GetTime(ads_header_element, snapengine::AbstractMetadata::START_TIME)->GetMjd();
         const auto last_line_time =
-            s1tbx::Sentinel1Utils::GetTime(ads_header_element, snapengine::MetaDataNodeNames::STOP_TIME)->GetMjd();
+            s1tbx::Sentinel1Utils::GetTime(ads_header_element, snapengine::AbstractMetadata::STOP_TIME)->GetMjd();
 
         const auto num_of_lines = GetNumOfLines(original_product_metadata, polarisation, sub_swath);
 
         const auto line_time_interval = (last_line_time - first_line_time) / (num_of_lines - 1);
 
         const auto calibration_vector_list_element =
-            GetElement(calibration_element, snapengine::MetaDataNodeNames::CALIBRATION_VECTOR_LIST);
+            GetElement(calibration_element, snapengine::AbstractMetadata::CALIBRATION_VECTOR_LIST);
 
-        const auto count = calibration_vector_list_element->GetAttributeInt(snapengine::MetaDataNodeNames::COUNT);
+        const auto count = calibration_vector_list_element->GetAttributeInt(snapengine::AbstractMetadata::COUNT);
 
         auto calibration_vectors = s1tbx::Sentinel1Utils::GetCalibrationVectors(
             calibration_vector_list_element, selected_calibration_bands.get_sigma_lut,
@@ -79,26 +79,26 @@ std::vector<CalibrationInfo> GetCalibrationInfoList(
 
     return calibration_info_list;
 }
-int GetNumOfLines(const std::shared_ptr<snapengine::MetadataElement>& original_product_root, std::string_view polarisation,
-                  std::string_view swath) {
-    const auto annotation_element = GetElement(original_product_root, snapengine::MetaDataNodeNames::ANNOTATION);
+int GetNumOfLines(const std::shared_ptr<snapengine::MetadataElement>& original_product_root,
+                  std::string_view polarisation, std::string_view swath) {
+    const auto annotation_element = GetElement(original_product_root, snapengine::AbstractMetadata::ANNOTATION);
     for (auto&& annotation_data_set_item : annotation_element->GetElements()) {
         const auto element_name = annotation_data_set_item->GetName();
         if (boost::icontains(element_name, swath) && boost::icontains(element_name, polarisation)) {
-            const auto product_element = GetElement(annotation_data_set_item, snapengine::MetaDataNodeNames::product);
+            const auto product_element = GetElement(annotation_data_set_item, snapengine::AbstractMetadata::product);
             const auto image_annotation_element =
-                GetElement(product_element, snapengine::MetaDataNodeNames::IMAGE_ANNOTATION);
+                GetElement(product_element, snapengine::AbstractMetadata::IMAGE_ANNOTATION);
             const auto image_information_element =
-                GetElement(image_annotation_element, snapengine::MetaDataNodeNames::IMAGE_INFORMATION);
-            return image_information_element->GetAttributeInt(snapengine::MetaDataNodeNames::NUMBER_OF_LINES);
+                GetElement(image_annotation_element, snapengine::AbstractMetadata::IMAGE_INFORMATION);
+            return image_information_element->GetAttributeInt(snapengine::AbstractMetadata::NUMBER_OF_LINES);
         }
     }
 
     return snapengine::constants::INVALID_INDEX;
 }
 
-std::shared_ptr<snapengine::MetadataElement> GetElement(const std::shared_ptr<snapengine::MetadataElement>& parent_element,
-                                                        std::string_view element_name) {
+std::shared_ptr<snapengine::MetadataElement> GetElement(
+    const std::shared_ptr<snapengine::MetadataElement>& parent_element, std::string_view element_name) {
     auto check_that_metadata_exists = [](std::shared_ptr<snapengine::MetadataElement>& element,
                                          std::string_view parent_element, std::string_view element_name) {
         if (!element) {

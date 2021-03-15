@@ -1,4 +1,8 @@
+#include <cstddef>
+#include <memory>
 #include <sstream>
+#include <string>
+#include <vector>
 
 #include <boost/filesystem.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
@@ -8,9 +12,10 @@
 #include "gmock/gmock.h"
 
 #include "apply_orbit_file_op.h"
-#include "meta_data_node_names.h"
-#include "pugixml_meta_data_reader.h"
-#include "pugixml_meta_data_writer.h"
+#include "custom/dimension.h"
+#include "snap-core/datamodel/pugixml_meta_data_reader.h"
+#include "snap-core/datamodel/pugixml_meta_data_writer.h"
+#include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
 
 namespace {
 
@@ -21,7 +26,7 @@ std::string Md5FromFile(const std::string& path) {
     MD5((unsigned char*)src.data(), src.size(), result);
     std::ostringstream sout;
     sout << std::hex << std::setfill('0');
-    for (auto c : result) sout << std::setw(2) << (int)c;
+    for (auto c : result) sout << std::setw(2) << static_cast<int>(c);
     return sout.str();
 }
 
@@ -49,7 +54,7 @@ protected:
     };
 
     boost::filesystem::path output_vector_data_directory_{file_directory_out_.generic_path().string() +
-                                                         boost::filesystem::path::preferred_separator + "vector_data"};
+                                                          boost::filesystem::path::preferred_separator + "vector_data"};
     std::vector<std::string> expected_output_vector_data_md5sums_{
         "c21783ffb783a5fd51923988475fcc86",  // ground_control_points.csv
         "3dc66adbc064f14ce0b60df4836a2afe"   // pins.csv
@@ -58,7 +63,7 @@ protected:
     std::string expected_md5_tiff_{
         "d472b06289859f9d142f057a0c4e1afe"};  // S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_split_Orb.tif
     std::string expected_md5_xml_{
-        "e38d275f0c5bef0f1fc85fa8809baa68"};  // S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_split_Orb.xml
+        "0eac9e50c070c21d293d749cd5d5e84c"};  // S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_split_Orb.xml
 
     boost::filesystem::path file_location_in_{
         "./goods/apply_orbit_file_op/custom-format/"
@@ -77,13 +82,13 @@ TEST_F(ApplyOrbitFileOpIntegrationTest, single_burst_data_2018) {
         ASSERT_TRUE(boost::filesystem::exists(file_location_in_));
         ASSERT_FALSE(boost::filesystem::exists(file_location_out_));
 
-        auto product_type = "SLC";
-        alus::snapengine::Dimension product_size{21400, 1503};
+        const std::string product_type{"SLC"};
+        alus::snapengine::custom::Dimension product_size{21400, 1503};
         // todo: move to some utility like in snap..
         std::size_t file_extension_pos = file_location_in_.filename().string().find(".tif");
         auto file_name_in = file_location_in_.filename().string().substr(0, file_extension_pos);
-        auto source_product = std::make_shared<alus::snapengine::Product>(file_name_in, product_type,
-                                                                          product_size.width, product_size.height);
+        auto source_product = alus::snapengine::Product::CreateProduct(file_name_in, product_type.c_str(),
+                                                                       product_size.width, product_size.height);
         source_product->SetFileLocation(file_location_in_);
         source_product->SetMetadataReader(std::make_shared<alus::snapengine::PugixmlMetaDataReader>());
         auto operation = alus::s1tbx::ApplyOrbitFileOp(source_product);

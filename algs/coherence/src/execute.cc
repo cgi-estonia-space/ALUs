@@ -3,29 +3,29 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include "algorithm_parameters.h"
 #include "alg_bond.h"
+#include "algorithm_parameters.h"
 #include "coh_tiles_generator.h"
 #include "coherence_calc.h"
 #include "gdal_tile_reader.h"
 #include "gdal_tile_writer.h"
 #include "meta_data.h"
-#include "meta_data_node_names.h"
 #include "pugixml_meta_data_reader.h"
+#include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
 #include "tf_algorithm_runner.h"
 
 namespace {
-    constexpr std::string_view PARAMETER_ID_SRP_NUMBER_POINTS{"srp_number_points"};
-    constexpr std::string_view PARAMETER_ID_SRP_POLYNOMIAL_DEGREE{"srp_polynomial_degree"};
-    constexpr std::string_view PARAMETER_ID_SUBTRACT_FLAT_EARTH_PHASE{"subtract_flat_earth_phase"};
-    constexpr std::string_view PARAMETER_ID_RG_WINDOW{"rg_window"};
-    constexpr std::string_view PARAMETER_ID_AZ_WINDOW{"az_window"};
-    constexpr std::string_view PARAMETER_ID_ORBIT_DEGREE{"orbit_degree"};
-}
+constexpr std::string_view PARAMETER_ID_SRP_NUMBER_POINTS{"srp_number_points"};
+constexpr std::string_view PARAMETER_ID_SRP_POLYNOMIAL_DEGREE{"srp_polynomial_degree"};
+constexpr std::string_view PARAMETER_ID_SUBTRACT_FLAT_EARTH_PHASE{"subtract_flat_earth_phase"};
+constexpr std::string_view PARAMETER_ID_RG_WINDOW{"rg_window"};
+constexpr std::string_view PARAMETER_ID_AZ_WINDOW{"az_window"};
+constexpr std::string_view PARAMETER_ID_ORBIT_DEGREE{"orbit_degree"};
+}  // namespace
 
 namespace alus {
 class CoherenceExecuter final : public AlgBond {
-   public:
+public:
     CoherenceExecuter() { std::cout << __FUNCTION__ << std::endl; };
 
     int Execute() override {
@@ -36,16 +36,14 @@ class CoherenceExecuter final : public AlgBond {
         int band_count_ia = 1;
         alus::GdalTileReader ia_data_reader{FILE_NAME_IA, band_map_ia, band_count_ia, false};
         // small dataset as single tile
-        alus::Tile incidence_angle_data_set{ia_data_reader.GetBandXSize() - 1,
-                                            ia_data_reader.GetBandYSize() - 1,
-                                            ia_data_reader.GetBandXMin(),
-                                            ia_data_reader.GetBandYMin()};
+        alus::Tile incidence_angle_data_set{ia_data_reader.GetBandXSize() - 1, ia_data_reader.GetBandYSize() - 1,
+                                            ia_data_reader.GetBandXMin(), ia_data_reader.GetBandYMin()};
         ia_data_reader.ReadTile(incidence_angle_data_set);
-        const auto metadata_file = aux_location_.substr(0, aux_location_.length() - 5); // Strip ".data"
+        const auto metadata_file = aux_location_.substr(0, aux_location_.length() - 5);  // Strip ".data"
         alus::snapengine::PugixmlMetaDataReader xml_reader{metadata_file + ".dim"};
-        auto master_root = xml_reader.Read(alus::snapengine::MetaDataNodeNames::ABSTRACT_METADATA_ROOT);
+        auto master_root = xml_reader.Read(alus::snapengine::AbstractMetadata::ABSTRACT_METADATA_ROOT);
         auto slave_root =
-            xml_reader.Read(alus::snapengine::MetaDataNodeNames::SLAVE_METADATA_ROOT)->GetElements().at(0);
+            xml_reader.Read(alus::snapengine::AbstractMetadata::SLAVE_METADATA_ROOT)->GetElements().at(0);
 
         alus::MetaData meta_master{&ia_data_reader, master_root, orbit_degree_};
         alus::MetaData meta_slave{&ia_data_reader, slave_root, orbit_degree_};
@@ -68,12 +66,9 @@ class CoherenceExecuter final : public AlgBond {
                                              coh_data_reader.GetBandYMin(),
                                              coh_data_reader.GetGeoTransform(),
                                              coh_data_reader.GetDataProjection()};
-        alus::CohTilesGenerator tiles_generator{coh_data_reader.GetBandXSize(),
-                                                coh_data_reader.GetBandYSize(),
-                                                tile_width_,
-                                                tile_height_,
-                                                coherence_window_range_,
-                                                coherence_window_azimuth_};
+        alus::CohTilesGenerator tiles_generator{
+            coh_data_reader.GetBandXSize(), coh_data_reader.GetBandYSize(), tile_width_, tile_height_,
+            coherence_window_range_,        coherence_window_azimuth_};
         alus::Coh coherence{srp_number_points_,
                             srp_polynomial_degree_,
                             subtract_flat_earth_phase_,
@@ -92,8 +87,8 @@ class CoherenceExecuter final : public AlgBond {
         tensorflow::ClientSession session(root, options);
 
         // run the algorithm
-        alus::TFAlgorithmRunner tf_algo_runner{
-            &coh_data_reader, &coh_data_writer, &tiles_generator, &coherence, &session, &root};
+        alus::TFAlgorithmRunner tf_algo_runner{&coh_data_reader, &coh_data_writer, &tiles_generator,
+                                               &coherence,       &session,         &root};
         tf_algo_runner.Run();
 
         return 0;
@@ -144,30 +139,29 @@ class CoherenceExecuter final : public AlgBond {
                     << PARAMETER_ID_SRP_POLYNOMIAL_DEGREE << " - unsigned integer (default:" << srp_polynomial_degree_
                     << ")" << std::endl
                     << PARAMETER_ID_SUBTRACT_FLAT_EARTH_PHASE
-                    << " - true/false (default:"
-                    << (subtract_flat_earth_phase_ ? "true" : "false") << ")" << std::endl
+                    << " - true/false (default:" << (subtract_flat_earth_phase_ ? "true" : "false") << ")" << std::endl
                     << PARAMETER_ID_RG_WINDOW << " - range window size in pixels (default:" << coherence_window_range_
-                    << ")"
-                    << std::endl
-                    << PARAMETER_ID_AZ_WINDOW << " - azimuth window size in pixels (default:" << coherence_window_azimuth_ << ")"
-                    << std::endl
-                    << PARAMETER_ID_ORBIT_DEGREE << " - unsigned integer (default:" << orbit_degree_ << ")" << std::endl;
+                    << ")" << std::endl
+                    << PARAMETER_ID_AZ_WINDOW
+                    << " - azimuth window size in pixels (default:" << coherence_window_azimuth_ << ")" << std::endl
+                    << PARAMETER_ID_ORBIT_DEGREE << " - unsigned integer (default:" << orbit_degree_ << ")"
+                    << std::endl;
 
         return help_stream.str();
     }
 
     ~CoherenceExecuter() override { std::cout << __FUNCTION__ << std::endl; };
 
-   private:
-
+private:
     void PrintProcessingParameters() const override {
         std::cout << "Coherence processing parameters:" << std::endl
-            << PARAMETER_ID_SRP_NUMBER_POINTS << " " << srp_number_points_ << std::endl
-            << PARAMETER_ID_SRP_POLYNOMIAL_DEGREE << " " << srp_polynomial_degree_ << std::endl
-            << PARAMETER_ID_SUBTRACT_FLAT_EARTH_PHASE << " " << (subtract_flat_earth_phase_ ? "true" : "false") << std::endl
-            << PARAMETER_ID_RG_WINDOW << " " << coherence_window_range_ << std::endl
-            << PARAMETER_ID_AZ_WINDOW << " " << coherence_window_azimuth_ << std::endl
-            << PARAMETER_ID_ORBIT_DEGREE << " " << orbit_degree_ << std::endl;
+                  << PARAMETER_ID_SRP_NUMBER_POINTS << " " << srp_number_points_ << std::endl
+                  << PARAMETER_ID_SRP_POLYNOMIAL_DEGREE << " " << srp_polynomial_degree_ << std::endl
+                  << PARAMETER_ID_SUBTRACT_FLAT_EARTH_PHASE << " " << (subtract_flat_earth_phase_ ? "true" : "false")
+                  << std::endl
+                  << PARAMETER_ID_RG_WINDOW << " " << coherence_window_range_ << std::endl
+                  << PARAMETER_ID_AZ_WINDOW << " " << coherence_window_azimuth_ << std::endl
+                  << PARAMETER_ID_ORBIT_DEGREE << " " << orbit_degree_ << std::endl;
     }
 
     std::string input_name_{};
@@ -182,7 +176,6 @@ class CoherenceExecuter final : public AlgBond {
     int coherence_window_azimuth_{3};
     // orbit interpolation degree
     int orbit_degree_{3};
-
 };
 }  // namespace alus
 

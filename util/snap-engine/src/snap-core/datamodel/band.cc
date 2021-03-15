@@ -1,6 +1,12 @@
 #include "band.h"
 
+#include <guardian.h>
 #include <stdexcept>
+
+#include "ceres-core/i_progress_monitor.h"
+#include "snap-core/datamodel/flag_coding.h"
+#include "snap-core/datamodel/index_coding.h"
+#include "snap-core/datamodel/sample_coding.h"
 
 namespace alus {
 namespace snapengine {
@@ -54,5 +60,32 @@ void Band::SetSolarFlux(float solar_flux) {
         SetModified(true);
     }
 }
+void Band::ReadRasterData([[maybe_unused]] int offset_x, [[maybe_unused]] int offset_y, [[maybe_unused]] int width,
+                          [[maybe_unused]] int height, [[maybe_unused]] std::shared_ptr<ProductData> raster_data,
+                          [[maybe_unused]] std::shared_ptr<ceres::IProgressMonitor> pm) {
+    //    Guardian::AssertNotNull("rasterData", raster_data);
+    //    if (IsProductReaderDirectlyUsable()) {
+    //        // Don't go the long way round the source image.
+    //        GetProductReader()->ReadBandRasterData(this, offset_x, offset_y, width, height, raster_rata, pm);
+    //    } else {
+    //        //        try {
+    //        //            pm.beginTask("Reading raster data...", 100);
+    //        std::shared_ptr<RenderedImage> source_image = GetSourceImage();
+    //        int x = source_image->GetMinX() + offset_x;
+    //        int y = source_image->GetMinY() + offset_y;
+    //        std::shared_ptr<Raster> data = source_image->GetData(std::make_shared<Rectangle>(x, y, width, height));
+    //        //            pm.worked(90);
+    //        data->GetDataElements(x, y, width, height, raster_data->GetElems());
+    //        //            pm.worked(10);
+    //        //        } finally {
+    //        //            pm.done();
+    //        //        }
+    //    }
+}
+void Band::ReadRasterDataFully([[maybe_unused]] std::shared_ptr<ceres::IProgressMonitor> pm) {}
+void Band::WriteRasterData([[maybe_unused]] int offset_x, [[maybe_unused]] int offset_y, [[maybe_unused]] int width,
+                           [[maybe_unused]] int height, [[maybe_unused]] std::shared_ptr<ProductData> raster_data,
+                           [[maybe_unused]] std::shared_ptr<ceres::IProgressMonitor> pm) {}
+void Band::WriteRasterDataFully([[maybe_unused]] std::shared_ptr<ceres::IProgressMonitor> pm) {}
 }  // namespace snapengine
 }  // namespace alus

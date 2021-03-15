@@ -20,10 +20,10 @@
 
 #include "../goods/sentinel1_calibrate_data.h"
 
+#include "abstract_metadata.h"
 #include "allocators.h"
 #include "comparators.h"
 #include "gmock/gmock.h"
-#include "meta_data_node_names.h"
 #include "metadata_element.h"
 #include "product_data_utc.h"
 #include "sentinel1_utils.h"
@@ -174,111 +174,111 @@ TEST(Sentinel1Utils, GetTime) {
 void PrepareFirstCalibrationVector(
     std::shared_ptr<alus::snapengine::MetadataElement> first_calibration_vector_element) {
     first_calibration_vector_element->SetAttributeString(
-        alus::snapengine::MetaDataNodeNames::AZIMUTH_TIME,
+        alus::snapengine::AbstractMetadata::AZIMUTH_TIME,
         alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_AZIMUTH_TIME);
     first_calibration_vector_element->SetAttributeInt(
-        alus::snapengine::MetaDataNodeNames::LINE, alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_LINE);
+        alus::snapengine::AbstractMetadata::LINE, alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_LINE);
 
     const auto pixel_element =
-        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::MetaDataNodeNames::PIXEL);
+        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::AbstractMetadata::PIXEL);
     first_calibration_vector_element->AddElement(pixel_element);
-    pixel_element->SetAttributeString(alus::snapengine::MetaDataNodeNames::PIXEL,
+    pixel_element->SetAttributeString(alus::snapengine::AbstractMetadata::PIXEL,
                                       alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_PIXEL_STRING);
-    pixel_element->SetAttributeInt(alus::snapengine::MetaDataNodeNames::COUNT,
+    pixel_element->SetAttributeInt(alus::snapengine::AbstractMetadata::COUNT,
                                    alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_PIXEL_COUNT);
 
     const auto sigma_element =
-        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::MetaDataNodeNames::SIGMA_NOUGHT);
+        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::AbstractMetadata::SIGMA_NOUGHT);
     first_calibration_vector_element->AddElement(sigma_element);
-    sigma_element->SetAttributeString(alus::snapengine::MetaDataNodeNames::SIGMA_NOUGHT,
+    sigma_element->SetAttributeString(alus::snapengine::AbstractMetadata::SIGMA_NOUGHT,
                                       alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_SIGMA_STRING);
-    sigma_element->SetAttributeInt(alus::snapengine::MetaDataNodeNames::COUNT,
+    sigma_element->SetAttributeInt(alus::snapengine::AbstractMetadata::COUNT,
                                    alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_SIGMA_COUNT);
 
     const auto beta_element =
-        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::MetaDataNodeNames::BETA_NOUGHT);
+        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::AbstractMetadata::BETA_NOUGHT);
     first_calibration_vector_element->AddElement(beta_element);
-    beta_element->SetAttributeString(alus::snapengine::MetaDataNodeNames::BETA_NOUGHT,
+    beta_element->SetAttributeString(alus::snapengine::AbstractMetadata::BETA_NOUGHT,
                                      alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_BETA_STRING);
-    beta_element->SetAttributeInt(alus::snapengine::MetaDataNodeNames::COUNT,
+    beta_element->SetAttributeInt(alus::snapengine::AbstractMetadata::COUNT,
                                   alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_BETA_COUNT);
 
     const auto gamma_element =
-        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::MetaDataNodeNames::GAMMA);
+        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::AbstractMetadata::GAMMA);
     first_calibration_vector_element->AddElement(gamma_element);
-    gamma_element->SetAttributeString(alus::snapengine::MetaDataNodeNames::GAMMA,
+    gamma_element->SetAttributeString(alus::snapengine::AbstractMetadata::GAMMA,
                                       alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_GAMMA_STRING);
-    gamma_element->SetAttributeInt(alus::snapengine::MetaDataNodeNames::COUNT,
+    gamma_element->SetAttributeInt(alus::snapengine::AbstractMetadata::COUNT,
                                    alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_GAMMA_COUNT);
 
     const auto dn_element =
-        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::MetaDataNodeNames::DN);
+        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::AbstractMetadata::DN);
     first_calibration_vector_element->AddElement(dn_element);
-    dn_element->SetAttributeString(alus::snapengine::MetaDataNodeNames::DN,
+    dn_element->SetAttributeString(alus::snapengine::AbstractMetadata::DN,
                                    alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_DN_STRING);
-    dn_element->SetAttributeInt(alus::snapengine::MetaDataNodeNames::COUNT,
+    dn_element->SetAttributeInt(alus::snapengine::AbstractMetadata::COUNT,
                                 alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_DN_COUNT);
 }
 
 void PrepareSecondCalibrationVector(
     std::shared_ptr<alus::snapengine::MetadataElement> second_calibration_vector_element) {
     second_calibration_vector_element->SetAttributeString(
-        alus::snapengine::MetaDataNodeNames::AZIMUTH_TIME,
+        alus::snapengine::AbstractMetadata::AZIMUTH_TIME,
         alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_AZIMUTH_TIME);
     second_calibration_vector_element->SetAttributeInt(
-        alus::snapengine::MetaDataNodeNames::LINE, alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_LINE);
+        alus::snapengine::AbstractMetadata::LINE, alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_LINE);
 
     const auto pixel_element =
-        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::MetaDataNodeNames::PIXEL);
+        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::AbstractMetadata::PIXEL);
     second_calibration_vector_element->AddElement(pixel_element);
-    pixel_element->SetAttributeString(alus::snapengine::MetaDataNodeNames::PIXEL,
+    pixel_element->SetAttributeString(alus::snapengine::AbstractMetadata::PIXEL,
                                       alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_PIXEL_STRING);
-    pixel_element->SetAttributeInt(alus::snapengine::MetaDataNodeNames::COUNT,
+    pixel_element->SetAttributeInt(alus::snapengine::AbstractMetadata::COUNT,
                                    alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_PIXEL_COUNT);
 
     const auto sigma_element =
-        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::MetaDataNodeNames::SIGMA_NOUGHT);
+        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::AbstractMetadata::SIGMA_NOUGHT);
     second_calibration_vector_element->AddElement(sigma_element);
-    sigma_element->SetAttributeString(alus::snapengine::MetaDataNodeNames::SIGMA_NOUGHT,
+    sigma_element->SetAttributeString(alus::snapengine::AbstractMetadata::SIGMA_NOUGHT,
                                       alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_SIGMA_STRING);
-    sigma_element->SetAttributeInt(alus::snapengine::MetaDataNodeNames::COUNT,
+    sigma_element->SetAttributeInt(alus::snapengine::AbstractMetadata::COUNT,
                                    alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_SIGMA_COUNT);
 
     const auto beta_element =
-        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::MetaDataNodeNames::BETA_NOUGHT);
+        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::AbstractMetadata::BETA_NOUGHT);
     second_calibration_vector_element->AddElement(beta_element);
-    beta_element->SetAttributeString(alus::snapengine::MetaDataNodeNames::BETA_NOUGHT,
+    beta_element->SetAttributeString(alus::snapengine::AbstractMetadata::BETA_NOUGHT,
                                      alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_BETA_STRING);
-    beta_element->SetAttributeInt(alus::snapengine::MetaDataNodeNames::COUNT,
+    beta_element->SetAttributeInt(alus::snapengine::AbstractMetadata::COUNT,
                                   alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_BETA_COUNT);
 
     const auto gamma_element =
-        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::MetaDataNodeNames::GAMMA);
+        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::AbstractMetadata::GAMMA);
     second_calibration_vector_element->AddElement(gamma_element);
-    gamma_element->SetAttributeString(alus::snapengine::MetaDataNodeNames::GAMMA,
+    gamma_element->SetAttributeString(alus::snapengine::AbstractMetadata::GAMMA,
                                       alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_GAMMA_STRING);
-    gamma_element->SetAttributeInt(alus::snapengine::MetaDataNodeNames::COUNT,
+    gamma_element->SetAttributeInt(alus::snapengine::AbstractMetadata::COUNT,
                                    alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_GAMMA_COUNT);
 
     const auto dn_element =
-        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::MetaDataNodeNames::DN);
+        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::AbstractMetadata::DN);
     second_calibration_vector_element->AddElement(dn_element);
-    dn_element->SetAttributeString(alus::snapengine::MetaDataNodeNames::DN,
+    dn_element->SetAttributeString(alus::snapengine::AbstractMetadata::DN,
                                    alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_DN_STRING);
-    dn_element->SetAttributeInt(alus::snapengine::MetaDataNodeNames::COUNT,
+    dn_element->SetAttributeInt(alus::snapengine::AbstractMetadata::COUNT,
                                 alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_DN_COUNT);
 }
 
 void PrepareCalibrationVectors(std::shared_ptr<alus::snapengine::MetadataElement> calibration_vector_list_element) {
     // Prepare first calibration vector
     const auto first_calibration_vector_element =
-        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::MetaDataNodeNames::CALIBRATION_VECTOR);
+        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::AbstractMetadata::CALIBRATION_VECTOR);
     calibration_vector_list_element->AddElement(first_calibration_vector_element);
     PrepareFirstCalibrationVector(first_calibration_vector_element);
 
     // Prepate second calibration vector
     const auto second_calibration_vector_element =
-        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::MetaDataNodeNames::CALIBRATION_VECTOR);
+        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::AbstractMetadata::CALIBRATION_VECTOR);
     calibration_vector_list_element->AddElement(second_calibration_vector_element);
     PrepareSecondCalibrationVector(second_calibration_vector_element);
 }

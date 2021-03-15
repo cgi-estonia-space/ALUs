@@ -18,6 +18,7 @@
  */
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -32,6 +33,7 @@ namespace snapengine {
 
 template <typename T>
 class ProductNodeGroup;
+class ProductSubsetDef;
 class IMetaDataReader;
 class MetadataAttribute;
 
@@ -75,6 +77,17 @@ public:
      *         this element.
      */
     [[nodiscard]] std::shared_ptr<MetadataElement> GetElement(std::string_view name);
+
+    /**
+     * Returns the element at the given index.
+     *
+     * @param index the element index
+     *
+     * @return the element at the given index
+     *
+     * @throws IndexOutOfBoundsException if the index is out of bounds
+     */
+    std::shared_ptr<MetadataElement> GetElementAt(int index);
 
     [[nodiscard]] std::vector<std::shared_ptr<MetadataAttribute>> GetAttributes();
 
@@ -288,6 +301,15 @@ public:
      */
     void SetAttributeString(std::string_view name, std::string_view value);
 
+    /**
+     * Gets an estimated, raw storage size in bytes of this product node.
+     *
+     * @param subsetDef if not <code>null</code> the subset may limit the size returned
+     *
+     * @return the size in bytes.
+     */
+    uint64_t GetRawStorageSize(const std::shared_ptr<ProductSubsetDef>& subset_def) override;
+
     std::shared_ptr<MetadataElement> CreateDeepClone();
 
     /**
@@ -315,6 +337,15 @@ public:
      * @return <code>true</code> if it was removed
      */
     bool RemoveAttribute(std::shared_ptr<MetadataAttribute> attribute);
+
+    /**
+     * Releases all of the resources used by this object instance and all of its owned children. Its primary use is to
+     * allow the garbage collector to perform a vanilla job.
+     * <p>This method should be called only if it is for sure that this object instance will never be used again. The
+     * results of referencing an instance of this class after a call to <code>dispose()</code> are undefined.
+     * <p>Overrides of this method should always call <code>super.dispose();</code> after disposing this instance.
+     */
+    void Dispose() override;
 };
 }  // namespace snapengine
 }  // namespace alus

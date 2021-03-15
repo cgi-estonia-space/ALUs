@@ -15,6 +15,7 @@ is_error_then_quit
 cd build
 is_error_then_quit
 make -j8
+is_error_then_quit
 cd unit-test
 is_error_then_quit
 cp ../../build-automation/execute_execs.sh .

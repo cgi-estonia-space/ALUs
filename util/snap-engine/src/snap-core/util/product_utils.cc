@@ -1,14 +1,17 @@
 #include "product_utils.h"
 
+#include <limits>
 #include <type_traits>
 
 #include "band.h"
 #include "ceres_assert.h"
 #include "guardian.h"
 #include "index_coding.h"
+#include "metadata_attribute.h"
 #include "metadata_element.h"
 #include "product.h"
 #include "product_node_group.h"
+#include "flag_coding.h"
 
 namespace alus {
 namespace snapengine {
@@ -26,7 +29,7 @@ void ProductUtils::CopyProductNodes(const std::shared_ptr<Product>& source_produ
     //    ProductUtils::CopyQuicklookBandName(source_product, target_product);
     target_product->SetStartTime(source_product->GetStartTime());
     target_product->SetEndTime(source_product->GetEndTime());
-    target_product->SetDescription(source_product->GetDescription());
+    //    target_product->SetDescription(source_product->GetDescription());
     // todo: add autogrouping if need arises
     //    target_product->SetAutoGrouping(source_product->GetAutoGrouping());
 }
@@ -354,6 +357,68 @@ std::shared_ptr<IndexCoding> ProductUtils::CopyIndexCoding(const std::shared_ptr
 //        }
 //    }
 //}
+
+/**
+ * Normalizes the given geographical polygon so that maximum longitude differences between two points are 180
+ * degrees. The method operates only on the longitude values of the given polygon.
+ *
+ * @param polygon a geographical, closed polygon
+ * @return 0 if normalizing has not been applied , -1 if negative normalizing has been applied, 1 if positive
+ * normalizing has been applied, 2 if positive and negative normalising has been applied
+ * @see #denormalizeGeoPolygon(GeoPos[])
+ */
+int ProductUtils::NormalizeGeoPolygon(std::vector<GeoPos> polygon) {
+    std::vector<double> original_lon(polygon.size());
+    for (size_t i = 0; i < original_lon.size(); i++) {
+        original_lon.at(i) = polygon.at(i).lon_;
+    }
+
+    double lon_diff;
+    double increment = 0.f;
+    double min_lon = std::numeric_limits<double>::max();
+    double max_lon = -std::numeric_limits<double>::max();
+    for (size_t i = 1; i < polygon.size(); i++) {
+        GeoPos geo_pos = polygon.at(i);
+        lon_diff = original_lon.at(i) - original_lon.at(i - 1);
+        if (lon_diff > 180.0F) {
+            increment -= 360.0;
+        } else if (lon_diff < -180.0) {
+            increment += 360.0;
+        }
+
+        geo_pos.lon_ += increment;
+        if (geo_pos.lon_ < min_lon) {
+            min_lon = geo_pos.lon_;
+        }
+        if (geo_pos.lon_ > max_lon) {
+            max_lon = geo_pos.lon_;
+        }
+    }
+
+    int normalized = 0;
+    bool neg_normalized = false;
+    bool pos_normalized = false;
+
+    if (min_lon < -180.0) {
+        pos_normalized = true;
+    }
+    if (max_lon > 180.0) {
+        neg_normalized = true;
+    }
+
+    if (neg_normalized && !pos_normalized) {
+        normalized = 1;
+    } else if (!neg_normalized && pos_normalized) {
+        normalized = -1;
+        for (GeoPos a_polygon : polygon) {
+            a_polygon.lon_ += 360.0;
+        }
+    } else if (neg_normalized && pos_normalized) {
+        normalized = 2;
+    }
+
+    return normalized;
+}
 
 }  // namespace snapengine
 }  // namespace alus

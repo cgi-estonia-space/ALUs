@@ -1,9 +1,15 @@
 #pragma once
 
 #include <cmath>
+#include <memory>
+#include <vector>
 
 namespace alus {
 namespace snapengine {
+namespace custom {
+struct Rectangle;
+struct Dimension;
+}  // namespace custom
 
 class MathUtils {
 public:
@@ -138,9 +144,43 @@ public:
      * @param max the maximum crop limit
      */
     static double Crop(double val, double min, double max) { return val < min ? min : val > max ? max : val; }
-};
 
-double MathUtils::LOG10 = log(10.0);
+    /**
+     * Computes an integer dimension for a given integer area that best fits the
+     * rectangle given by floating point width and height.
+     *
+     * @param n the integer area
+     * @param a the rectangle's width
+     * @param b the rectangle's height
+     *
+     * @return an integer dimension, never null
+     */
+    static std::shared_ptr<custom::Dimension> FitDimension(int n, double a, double b);
+
+    /**
+     * Subdivides a rectangle into tiles. The coordinates of each returned tile rectangle are guaranteed
+     * to be within the given rectangle.
+     *
+     * @param width       the rectangle's width
+     * @param height      the rectangle's height
+     * @param numTilesX   the number of tiles in X direction
+     * @param numTilesY   the number of tiles in Y direction
+     * @param extraBorder an extra border size to extend each tile
+     *
+     * @return the tile coordinates as rectangles
+     */
+    static std::vector<std::shared_ptr<custom::Rectangle>> SubdivideRectangle(int width, int height, int num_tiles_x,
+                                                                              int num_tiles_y, int extra_border);
+
+    /**
+     * Compares two double values for equality within the given epsilon.
+     *
+     * @param x1  the first value
+     * @param x2  the second value
+     * @param eps the maximum allowed difference
+     */
+    static bool EqualValues(double x1, double x2, double eps);
+};
 
 }  // namespace snapengine
 }  // namespace alus

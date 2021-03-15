@@ -1,4 +1,8 @@
 
+list(APPEND TEST_INCLUDE_DIRS
+        ${CMAKE_CURRENT_LIST_DIR}/include
+        )
+
 list(APPEND TEST_SOURCES
         src/dataset_test.cpp
         src/terrain_correction_test.cc
@@ -13,6 +17,9 @@ list(APPEND TEST_SOURCES
         src/tie_point_grid_test.cc
         src/range_doppler_geocoding_test.cc
         src/zero_doppler_time_test.cc
+        src/product_test.cc
+        src/dummy_product_reader_plug_in.cc
+        src/dummy_product_reader.cc
         src/productdata_utc_test.cc
         src/productdata_int_test.cc
         src/productdata_uint_test.cc
@@ -34,6 +41,12 @@ list(APPEND TEST_SOURCES
         )
 
 add_executable(unit_test ${TEST_SOURCES})
+
+target_include_directories(unit_test
+        PRIVATE
+        ${TEST_INCLUDE_DIRS}
+        )
+
 target_link_libraries(unit_test
         PRIVATE
         gmock_main
@@ -51,6 +64,7 @@ target_link_libraries(unit_test
         multi_threading-static
         sentinel1-calibrate-static
         )
+
 set_target_properties(unit_test
         PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}

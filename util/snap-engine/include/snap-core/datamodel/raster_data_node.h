@@ -23,16 +23,21 @@
 #include <string_view>
 #include <vector>
 
-#include "data_node.h"
 //#include "mask.h"
-#include "product_data.h"
-#include "scaling.h"
+#include "ceres-core/i_progress_monitor.h"
+#include "ceres-core/null_progress_monitor.h"
+#include "snap-core/datamodel/data_node.h"
+#include "snap-core/datamodel/i_geo_coding.h"
+#include "snap-core/datamodel/product.h"
+#include "snap-core/datamodel/product_data.h"
+#include "snap-core/datamodel/scaling.h"
 
 namespace alus {
 namespace snapengine {
 
 template <typename T>
 class ProductNodeGroup;
+// todo: currently placeholder (not sure if we will implemnt)
 /**
  * The <code>RasterDataNode</code> class ist the abstract base class for all objects in the product package that contain
  * rasterized data. i.e. <code>Band</code> and <code>TiePointGrid</code>. It unifies the access to raster data in the
@@ -49,7 +54,7 @@ class ProductNodeGroup;
  * @see #GetScalingFactor()
  * @see #GetScalingOffset()
  */
-class RasterDataNode : public DataNode, public virtual Scaling {
+class RasterDataNode : public DataNode, public Scaling {
 private:
     /**
      * Number of bytes used for internal read buffer.
@@ -64,8 +69,8 @@ private:
     std::shared_ptr<ProductData> no_data_;
     double geophysical_no_data_value_;  // invariant, depending on _noData
     std::string valid_pixel_expression_;
+    std::shared_ptr<IGeoCoding> geo_coding_;
     // todo::add support when needed
-    //    GeoCoding geo_coding_;
     //    TimeCoding time_coding_;
     //    AffineTransform image_to_model_transform_;
     //    MathTransform2D model_to_scene_transform_;
@@ -87,6 +92,9 @@ private:
     void SetGeophysicalNoDataValue() { geophysical_no_data_value_ = Scale(GetNoDataValue()); }
 
 protected:
+    // todo: remove if tests are still ok
+    //    // looks like c++ needs this for init
+    //    RasterDataNode() = default;
     /**
      * Constructs an object of type <code>RasterDataNode</code>.
      *
@@ -145,6 +153,11 @@ public:
     }
 
     /**
+     * @return The native size of the raster in pixels.
+     */
+    std::shared_ptr<custom::Dimension> GetRasterSize();
+
+    /**
      * Returns <code>true</code> if the pixel data contained in this band is "naturally" a floating point number type.
      *
      * @return true, if so
@@ -169,6 +182,24 @@ public:
      * @see #isScalingApplied()
      */
     double GetScalingFactor() const { return scaling_factor_; }
+
+    /**
+     * Returns the geo-coding of this {@link RasterDataNode}.
+     *
+     * @return the geo-coding, or {@code null} if not available.
+     */
+    std::shared_ptr<IGeoCoding> GetGeoCoding();
+
+    /**
+     * Sets the geo-coding for this {@link RasterDataNode}.
+     * Also sets the geo-coding of the parent {@link Product} if it has no geo-coding yet.
+     * <p>On property change, the method calls {@link #fireProductNodeChanged(String)} with the property
+     * name {@link #PROPERTY_NAME_GEO_CODING}.
+     *
+     * @param geoCoding the new geo-coding
+     * @see Product#setSceneGeoCoding(GeoCoding)
+     */
+    void SetGeoCoding(const std::shared_ptr<IGeoCoding>& geo_coding);
 
     /**
      * Sets the scaling factor which is applied to raw {@link ProductData}.
@@ -412,7 +443,32 @@ public:
      *                                  which this product raster belongs to, has no associated product reader
      */
     virtual void ReadRasterData(int offset_x, int offset_y, int width, int height,
-                                std::shared_ptr<ProductData> raster_data /*,ProgressMonitor pm*/) = 0;
+                                std::shared_ptr<ProductData> raster_data,
+                                std::shared_ptr<ceres::IProgressMonitor> pm) = 0;
+
+    /**
+     * Reads raster data from the node's associated data source into the given data
+     * buffer.
+     *
+     * @param offsetX    the X-offset in the raster co-ordinates where reading starts
+     * @param offsetY    the Y-offset in the raster co-ordinates where reading starts
+     * @param width      the width of the raster data buffer
+     * @param height     the height of the raster data buffer
+     * @param rasterData a raster data buffer receiving the pixels to be read
+     * @throws java.io.IOException      if an I/O error occurs
+     * @throws IllegalArgumentException if the raster is null
+     * @throws IllegalStateException    if this product raster was not added to a product so far, or if the product to
+     *                                  which this product raster belongs to, has no associated product reader
+     * @see ProductReader#readBandRasterData(Band, int, int, int, int, ProductData, com.bc.ceres.core.ProgressMonitor)
+     */
+    void ReadRasterData(int offset_x, int offset_y, int width, int height, std::shared_ptr<ProductData> raster_data);
+
+    /**
+     * @throws java.io.IOException if an I/O error occurs
+     * @see #readRasterDataFully(ProgressMonitor)
+     * @see #unloadRasterData()
+     */
+    void ReadRasterDataFully();
 
     /**
      * Reads the complete underlying raster data.
@@ -427,7 +483,7 @@ public:
      * @see #loadRasterData
      * @see #readRasterData(int, int, int, int, ProductData, com.bc.ceres.core.ProgressMonitor)
      */
-    virtual void ReadRasterDataFully(/*ProgressMonitor pm*/) = 0;
+    virtual void ReadRasterDataFully(std::shared_ptr<ceres::IProgressMonitor> pm) = 0;
 
     /**
      * Writes data from this product raster into the specified region of the user-supplied raster.
@@ -447,7 +503,8 @@ public:
      * @see ProductReader#readBandRasterData(Band, int, int, int, int, ProductData, com.bc.ceres.core.ProgressMonitor)
      */
     virtual void WriteRasterData(int offset_x, int offset_y, int width, int height,
-                                 std::shared_ptr<ProductData> raster_data /*,ProgressMonitor pm*/) = 0;
+                                 std::shared_ptr<ProductData> raster_data,
+                                 std::shared_ptr<ceres::IProgressMonitor> pm) = 0;
 
     /**
      * Writes the complete underlying raster data.
@@ -455,14 +512,14 @@ public:
      * @param pm a monitor to inform the user about progress
      * @throws java.io.IOException if an I/O error occurs
      */
-    virtual void WriteRasterDataFully(/*ProgressMonitor pm*/) = 0;
+    virtual void WriteRasterDataFully(std::shared_ptr<ceres::IProgressMonitor> pm) = 0;
 
-    //    /**
-    //     * @see #readPixels(int, int, int, int, int[], ProgressMonitor)
-    //     */
-    //    std::vector<int> ReadPixels(int x, int y, int w, int h, std::vector<int> pixels) {
-    //        return ReadPixels(x, y, w, h, pixels /*, ProgressMonitor.NULL*/);
-    //    }
+    /**
+     * @see #readPixels(int, int, int, int, int[], ProgressMonitor)
+     */
+    std::vector<int> ReadPixels(int x, int y, int w, int h, std::vector<int> pixels) {
+        return ReadPixels(x, y, w, h, pixels, std::make_shared<ceres::NullProgressMonitor>());
+    }
 
     /**
      * Retrieves the band data at the given offset (x, y), width and height as int data. If the data is already in
@@ -481,15 +538,15 @@ public:
      * @throws IllegalStateException if this object has no attached {@link Product#setProductReader(ProductReader)
      * product reader}
      */
-    virtual std::vector<int> ReadPixels(int x, int y, int w, int h,
-                                        std::vector<int> pixels /*, ProgressMonitor pm*/) = 0;
+    virtual std::vector<int> ReadPixels(int x, int y, int w, int h, std::vector<int> pixels,
+                                        std::shared_ptr<ceres::IProgressMonitor> pm) = 0;
 
-    //    /**
-    //     * @see #readPixels(int, int, int, int, float[], ProgressMonitor)
-    //     */
-    //    std::vector<float> ReadPixels(int x, int y, int w, int h, std::vector<float> pixels) {
-    //        return ReadPixels(x, y, w, h, pixels /*, ProgressMonitor.NULL*/);
-    //    }
+    /**
+     * @see #readPixels(int, int, int, int, float[], ProgressMonitor)
+     */
+    std::vector<float> ReadPixels(int x, int y, int w, int h, std::vector<float> pixels) {
+        return ReadPixels(x, y, w, h, pixels, std::make_shared<ceres::NullProgressMonitor>());
+    }
 
     /**
      * Retrieves the band data at the given offset (x, y), width and height as int data. If the data is already in
@@ -507,15 +564,15 @@ public:
      * @throws IllegalStateException if this object has no attached {@link Product#setProductReader(ProductReader)
      * product reader}
      */
-    virtual std::vector<float> ReadPixels(int x, int y, int w, int h,
-                                          std::vector<float> pixels /*, ProgressMonitor pm*/) = 0;
+    virtual std::vector<float> ReadPixels(int x, int y, int w, int h, std::vector<float> pixels,
+                                          std::shared_ptr<ceres::IProgressMonitor> pm) = 0;
 
-    //    /**
-    //     * @see #readPixels(int, int, int, int, double[], ProgressMonitor)
-    //     */
-    //    std::vector<double> ReadPixels(int x, int y, int w, int h, std::vector<double> pixels) {
-    //        return ReadPixels(x, y, w, h, pixels /*, ProgressMonitor.NULL*/);
-    //    }
+    /**
+     * @see #readPixels(int, int, int, int, double[], ProgressMonitor)
+     */
+    std::vector<double> ReadPixels(int x, int y, int w, int h, std::vector<double> pixels) {
+        return ReadPixels(x, y, w, h, pixels, std::make_shared<ceres::NullProgressMonitor>());
+    }
 
     /**
      * Retrieves the band data at the given offset (x, y), width and height as int data. If the data is already in
@@ -533,8 +590,8 @@ public:
      * @throws IllegalStateException if this object has no attached {@link Product#setProductReader(ProductReader)
      * product reader}
      */
-    virtual std::vector<double> ReadPixels(int x, int y, int w, int h,
-                                           std::vector<double> pixels /*, ProgressMonitor pm*/) = 0;
+    virtual std::vector<double> ReadPixels(int x, int y, int w, int h, std::vector<double> pixels,
+                                           std::shared_ptr<ceres::IProgressMonitor> pm) = 0;
 
     //    /**
     //     * @see #writePixels(int, int, int, int, int[], ProgressMonitor)
@@ -557,7 +614,8 @@ public:
      * product writer}
      * @throws IOException           if an I/O error occurs
      */
-    virtual void WritePixels(int x, int y, int w, int h, std::vector<int> pixels /*, ProgressMonitor pm*/) = 0;
+    virtual void WritePixels(int x, int y, int w, int h, std::vector<int> pixels,
+                             std::shared_ptr<ceres::IProgressMonitor> pm) = 0;
 
     //    /**
     //     * @see #writePixels(int, int, int, int, float[], ProgressMonitor)
@@ -580,7 +638,8 @@ public:
      * product writer}
      * @throws IOException           if an I/O error occurs
      */
-    virtual void WritePixels(int x, int y, int w, int h, std::vector<float> pixels /*, ProgressMonitor pm*/) = 0;
+    virtual void WritePixels(int x, int y, int w, int h, std::vector<float> pixels,
+                             std::shared_ptr<ceres::IProgressMonitor> pm) = 0;
 
     //    /**
     //     * @see #writePixels(int, int, int, int, double[], ProgressMonitor)
@@ -603,7 +662,8 @@ public:
      * product writer}
      * @throws IOException           if an I/O error occurs
      */
-    virtual void WritePixels(int x, int y, int w, int h, std::vector<double> pixels /*, ProgressMonitor pm*/) = 0;
+    virtual void WritePixels(int x, int y, int w, int h, std::vector<double> pixels,
+                             std::shared_ptr<ceres::IProgressMonitor> pm) = 0;
 
     /**
      * Returns true if the raster data of this <code>RasterDataNode</code> is loaded or elsewhere available, otherwise
@@ -679,6 +739,22 @@ public:
      * @see #isScalingApplied()
      */
     void SetLog10Scaled(bool log10_scaled);
+
+    /**
+     * Tests whether scaling of raw raster data values is applied before they are returned as geophysically meaningful
+     * pixel values. <p>The methods which return geophysical pixel values are all {@link #getPixels(int, int, int, int,
+     * int[])},
+     * {@link #setPixels(int, int, int, int, int[])}, {@link #readPixels(int, int, int, int, int[])} and
+     * {@link #writePixels(int, int, int, int, int[])} methods as well as the <code>getPixel&lt;Type&gt;</code> and
+     * <code>setPixel&lt;Type&gt;</code> methods such as  {@link #getPixelFloat(int, int)} * and
+     * {@link #setPixelFloat(int, int, float)}.
+     *
+     * @return <code>true</code> if a conversion is applyied to raw data samples before the are retuned.
+     * @see #getScalingOffset
+     * @see #getScalingFactor
+     * @see #isLog10Scaled
+     */
+    bool IsScalingApplied() const { return scaling_applied_; }
 
     /**
      * Sets whether or not the no-data value is used.
@@ -768,6 +844,71 @@ public:
      */
 
     double ScaleInverse(double v) override;
+
+    /**
+     * Retrieves the range of pixels specified by the coordinates as integer array.
+     * <p>
+     * Note that this method can only be used if this object's internal raster data buffer has been
+     * {@link #setRasterData(ProductData) set} or {@link #loadRasterData() loaded}.
+     * You can use the {@link #readPixels(int, int, int, int, double[], ProgressMonitor)} method
+     * to read or compute pixel values without a raster data buffer.
+     * <p>
+     * If the {@code pixels} array is <code>null</code> a new one will be created and returned.
+     *
+     * @param x      x offset into the band
+     * @param y      y offset into the band
+     * @param w      width of the pixel array to be read
+     * @param h      height of the pixel array to be read.
+     * @param pixels integer array to be filled with data
+     * @param pm     a progress monitor
+     * @throws IllegalStateException if this object has no internal data buffer
+     */
+    virtual std::vector<int> GetPixels(int x, int y, int w, int h, std::vector<int> pixels,
+                                       std::shared_ptr<ceres::IProgressMonitor> pm) = 0;
+
+    /**
+     * Retrieves the range of pixels specified by the coordinates as float array.
+     * <p>
+     * Note that this method can only be used if this object's internal raster data buffer has been
+     * {@link #setRasterData(ProductData) set} or {@link #loadRasterData() loaded}.
+     * You can use the {@link #readPixels(int, int, int, int, double[], ProgressMonitor)} method
+     * to read or compute pixel values without a raster data buffer.
+     * <p>
+     * If the {@code pixels} array is <code>null</code> a new one will be created and returned.
+     *
+     * @param x      x offset into the band
+     * @param y      y offset into the band
+     * @param w      width of the pixel array to be read
+     * @param h      height of the pixel array to be read.
+     * @param pixels float array to be filled with data
+     * @param pm     a progress monitor
+     * @throws IllegalStateException if this object has no internal data buffer
+     */
+    virtual std::vector<float> GetPixels(int x, int y, int w, int h, std::vector<float> pixels,
+                                         std::shared_ptr<ceres::IProgressMonitor> pm) = 0;
+
+    /**
+     * Retrieves the range of pixels specified by the coordinates as double array.
+     * <p>
+     * Note that this method can only be used if this object's internal raster data buffer has been
+     * {@link #setRasterData(ProductData) set} or {@link #loadRasterData() loaded}.
+     * You can use the {@link #readPixels(int, int, int, int, double[], ProgressMonitor)} method
+     * to read or compute pixel values without a raster data buffer.
+     * <p>
+     * If the {@code pixels} array is <code>null</code> a new one will be created and returned.
+     *
+     * @param x      x offset into the band
+     * @param y      y offset into the band
+     * @param w      width of the pixel array to be read
+     * @param h      height of the pixel array to be read.
+     * @param pixels double array to be filled with data
+     * @param pm     a monitor to inform the user about progress
+     * @throws IllegalStateException if this object has no internal data buffer
+     */
+    virtual std::vector<double> GetPixels(int x, int y, int w, int h, std::vector<double> pixels,
+                                          std::shared_ptr<ceres::IProgressMonitor> pm) = 0;
+
+    virtual void SetModified(bool modified) override;
 };
 }  // namespace snapengine
 }  // namespace alus

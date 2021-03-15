@@ -18,7 +18,6 @@
  */
 #pragma once
 
-#include <algorithm>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -26,7 +25,8 @@
 #include <boost/algorithm/string.hpp>
 
 #include "guardian.h"
-#include "product_node.h"
+#include "snap-core/datamodel/product_node.h"
+#include "snap-core/datamodel/product_node_list.h"
 
 namespace alus {
 namespace snapengine {
@@ -37,14 +37,15 @@ namespace snapengine {
  * java version @author Norman Fomferra
  */
 template <typename T>
-class ProductNodeList : public ProductNode {
+class ProductNodeList /*: public ProductNode*/ {
 private:
     // todo: make these thread safe
     std::vector<T> nodes_;
     std::vector<T> removed_nodes_;
 
+    void DisposeRemovedList();
+
 public:
-    //    ProductNodeList();
     /**
      * @return the size of this list.
      */
@@ -208,122 +209,24 @@ public:
         //        nodes_.insert(std::end(nodes_), std::begin(array), std::end(array));
         return nodes_;
     }
+
+    /**
+     * Returns the list of named nodes as an array. If this list is empty a zero-length array is returned.
+     *
+     * @return a string array containing all node names, never <code>null</code>
+     */
+    std::vector<T> ToArray() {
+        // todo: should set size?
+        return nodes_;  //.ToArray(std::make_shared<ProductNode>());
+    }
+
+    /**
+     * Releases all of the resources used by this object instance and all of its owned children. Its primary use is to
+     * allow the garbage collector to perform a vanilla job.
+     * <p>This method should be called only if it is for sure that this object instance will never be used again. The
+     * results of referencing an instance of this class after a call to <code>dispose()</code> are undefined.
+     */
+    void Dispose();
 };
-
-////////////////////////////////////////////////////////////////////////
-/////TEMPLATED IMPLEMENTATION NEEDS TO BE IN THE SAME FILE
-////////////////////////////////////////////////////////////////////////
-
-template <typename T>
-std::vector<std::string> ProductNodeList<T>::GetNames() {
-    // map to names
-    std::vector<std::string> names(nodes_.size());
-    std::transform(nodes_.begin(), nodes_.end(), names.begin(), [](const T& s) { return s->GetName(); });
-    return names;
-}
-
-template <typename T>
-std::vector<std::string> ProductNodeList<T>::GetDisplayNames() {
-    // map to names
-    std::vector<std::string> display_names(nodes_.size());
-    std::transform(nodes_.begin(), nodes_.end(), display_names.begin(), [](const T& s) { return s.GetDisplayName(); });
-    return display_names;
-}
-
-template <typename T>
-T ProductNodeList<T>::Get(std::string_view name) {
-    int index = IndexOf(name);
-    return index >= 0 ? nodes_.at(index) : nullptr;
-}
-
-template <typename T>
-int ProductNodeList<T>::IndexOf(std::string_view name) {
-//    Guardian::AssertNotNull("name", name);
-    int n = Size();
-    for (int i = 0; i < n; i++) {
-        if (boost::iequals(GetAt(i)->GetName(), name)) {
-            return i;
-        }
-    }
-    return -1;
-}
-
-template <typename T>
-T ProductNodeList<T>::GetByDisplayName(std::string_view display_name) {
-//    Guardian::AssertNotNull("display_name", display_name);
-    for (T node : nodes_) {
-        if (node.GetDisplayName() == display_name) {
-            return node;
-        }
-    }
-    return nullptr;
-}
-
-template <typename T>
-void ProductNodeList<T>::Add(int index, T node) {
-    if (node != nullptr) {
-        auto it = nodes_.begin();
-        nodes_.insert(it + index, node);
-    }
-}
-
-template <typename T>
-bool ProductNodeList<T>::Remove(T node) {
-    //       todo:deal with thread safty!
-    if (node != nullptr) {
-        auto position = std::find(nodes_.begin(), nodes_.end(), node);
-        if (position != nodes_.end()) {
-            removed_nodes_.push_back(node);
-            nodes_.erase(position);
-            return true;
-        }
-    }
-    return false;
-}
-
-template <typename T>
-void ProductNodeList<T>::RemoveAll() {
-    //        todo:thread safty not supported
-    removed_nodes_.insert(removed_nodes_.end(), nodes_.begin(), nodes_.end());
-    nodes_.clear();
-}
-
-template <typename T>
-bool ProductNodeList<T>::Add(T node) {
-    auto start_size = nodes_.size();
-    if (node != nullptr) {
-        nodes_.push_back(node);
-        return start_size == nodes_.size();
-    } else {
-        return false;
-    }
-}
-
-template <typename T>
-bool ProductNodeList<T>::Contains(T node) {
-    return node != nullptr && (std::find(nodes_.begin(), nodes_.end(), node) != nodes_.end());
-}
-
-template <typename T>
-bool ProductNodeList<T>::Contains(std::string_view name) {
-    return IndexOf(name) >= 0;
-}
-
-template <typename T>
-int ProductNodeList<T>::IndexOf(T node) {
-//    Guardian::AssertNotNull("node", node);
-    auto it = std::find(nodes_.begin(), nodes_.end(), node);
-    if (it != nodes_.end()) {
-        return distance(nodes_.begin(), it);
-    } else {
-        return -1;
-    }
-}
-// template <typename T>
-// ProductNodeList<T>::ProductNodeList() {
-//    nodes_ = std::vector<T>();
-//    removed_nodes_ = std::vector<T>();
-//}
-
 }  // namespace snapengine
 }  // namespace alus

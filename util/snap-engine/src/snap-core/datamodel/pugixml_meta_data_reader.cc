@@ -6,7 +6,6 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <vector>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>

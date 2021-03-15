@@ -52,26 +52,9 @@ void DataNode::SetDataElems(const std::any& elems) {
         data_ = CreateCompatibleProductData((int32_t)num_elems_);
     }
 
-    //    todo::better use ProductData* here? check if any has same types and then anycast and equality check?
-    //    ProductData* old_data = data_->G;
-    // todo: make sure its not just same reference when comparing
     std::any old_data = data_->GetElems();
-    // todo::need a good equality check for std::any solution
-    //    if (!ObjectUtils::EqualObjects(old_data, elems)) {
-    //    old_data==elems
-    //    if (!ObjectUtils::EqualObjects(old_data, elems)) {
+//    todo: snap java version checks for changes, if we need this must be added here
     data_->SetElems(elems);
-    //    }
-
-    //!!!!!!!!!!!THIS IS EXAMPLE HOW TO SOLVE IT!!!!!!!!!!!!
-    //    bool UByte::EqualElems(const ProductData *other) const {
-    //        if(other == this){
-    //            return true;
-    //        }else if (other->GetElems().type() == typeid(std::vector<uint8_t>)) {
-    //            return (array_ == std::any_cast<std::vector<uint8_t>>(other->GetElems()));
-    //        }
-    //        return false;
-    //    }
 }
 void DataNode::SetReadOnly(bool read_only) {
     bool old_value = read_only_;
@@ -128,6 +111,15 @@ void DataNode::Dispose() {
         data_ = nullptr;
     }
     ProductNode::Dispose();
+}
+
+uint64_t DataNode::GetRawStorageSize(const std::shared_ptr<ProductSubsetDef>& subset_def) {
+    uint64_t size = 0;
+    if (IsPartOfSubset(subset_def)) {
+        size += 256;  // add estimated overhead of 256 bytes
+        size += ProductData::GetElemSize(GetDataType()) * GetNumDataElems();
+    }
+    return size;
 }
 
 }  // namespace alus::snapengine

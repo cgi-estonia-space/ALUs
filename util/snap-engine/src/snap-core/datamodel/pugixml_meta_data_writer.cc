@@ -3,6 +3,7 @@
 #include <string>
 
 #include "dimap_product_constants.h"
+#include "metadata_attribute.h"
 #include "metadata_element.h"
 #include "product.h"
 

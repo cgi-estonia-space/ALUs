@@ -15,8 +15,8 @@
 #include "gdal_tile_reader.h"
 #include "gdal_tile_writer.h"
 #include "meta_data.h"
-#include "meta_data_node_names.h"
 #include "pugixml_meta_data_reader.h"
+#include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
 #include "tf_algorithm_runner.h"
 
 namespace {
@@ -32,10 +32,10 @@ std::string Md5FromFile(const std::string& path) {
 }
 
 class CoherenceIntegrationTest : public ::testing::Test {
-   public:
+public:
     CoherenceIntegrationTest() = default;
 
-   protected:
+protected:
     boost::filesystem::path file_name_in_{"./goods/coherence/4_bands.tif"};
     boost::filesystem::path file_name_out_{"/tmp/4_bands_coh.tif"};
     std::string expected_md5_{"377f197761b36be10c8551c01ac38c62"};
@@ -61,17 +61,14 @@ TEST_F(CoherenceIntegrationTest, single_burst_data_2018) {
         int band_count_ia = 1;
         alus::GdalTileReader ia_data_reader{FILE_NAME_IA, band_map_ia, band_count_ia, false};
         // small dataset as single tile
-        alus::Tile incidence_angle_data_set{ia_data_reader.GetBandXSize() - 1,
-                                            ia_data_reader.GetBandYSize() - 1,
-                                            ia_data_reader.GetBandXMin(),
-                                            ia_data_reader.GetBandYMin()};
+        alus::Tile incidence_angle_data_set{ia_data_reader.GetBandXSize() - 1, ia_data_reader.GetBandYSize() - 1,
+                                            ia_data_reader.GetBandXMin(), ia_data_reader.GetBandYMin()};
         ia_data_reader.ReadTile(incidence_angle_data_set);
         alus::snapengine::PugixmlMetaDataReader xml_reader{
             "./goods/coherence/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_split_Orb_Stack"
             ".dim"};
-        auto master_root = xml_reader.Read(alus::snapengine::MetaDataNodeNames::ABSTRACT_METADATA_ROOT);
-        auto slave_root =
-            xml_reader.Read(alus::snapengine::MetaDataNodeNames::SLAVE_METADATA_ROOT)->GetElements().at(0);
+        auto master_root = xml_reader.Read(alus::snapengine::AbstractMetadata::ABSTRACT_METADATA_ROOT);
+        auto slave_root = xml_reader.Read(alus::snapengine::AbstractMetadata::SLAVE_METADATA_ROOT)->GetElements().at(0);
 
         alus::MetaData meta_master{&ia_data_reader, master_root, ORBIT_DEGREE};
         alus::MetaData meta_slave{&ia_data_reader, slave_root, ORBIT_DEGREE};
@@ -99,16 +96,9 @@ TEST_F(CoherenceIntegrationTest, single_burst_data_2018) {
                                              coh_data_reader.GetDataProjection()};
         alus::CohTilesGenerator tiles_generator{
             coh_data_reader.GetBandXSize(), coh_data_reader.GetBandYSize(), TILE_X, TILE_Y, COH_WIN_RG, COH_WIN_RG};
-        alus::Coh coherence{SRP_NUMBER_POINTS,
-                            SRP_POLYNOMIAL_DEGREE,
-                            SUBTRACT_FLAT_EARTH,
-                            COH_WIN_RG,
-                            COH_WIN_AZ,
-                            TILE_X,
-                            TILE_Y,
-                            ORBIT_DEGREE,
-                            meta_master,
-                            meta_slave};
+        alus::Coh coherence{
+            SRP_NUMBER_POINTS, SRP_POLYNOMIAL_DEGREE, SUBTRACT_FLAT_EARTH, COH_WIN_RG, COH_WIN_AZ, TILE_X, TILE_Y,
+            ORBIT_DEGREE,      meta_master,           meta_slave};
 
         // create session for tensorflow
         tensorflow::Scope root = tensorflow::Scope::NewRootScope();
@@ -116,8 +106,8 @@ TEST_F(CoherenceIntegrationTest, single_burst_data_2018) {
         options.config.mutable_gpu_options()->set_allow_growth(true);
         tensorflow::ClientSession session(root, options);
         // run the algorithm
-        alus::TFAlgorithmRunner tf_algo_runner{
-            &coh_data_reader, &coh_data_writer, &tiles_generator, &coherence, &session, &root};
+        alus::TFAlgorithmRunner tf_algo_runner{&coh_data_reader, &coh_data_writer, &tiles_generator,
+                                               &coherence,       &session,         &root};
         tf_algo_runner.Run();
     }  // CLOSE ARTIFICAL SCOPE FOR DESTRUCTOR ACTIVATION (important for closing dataset)
 

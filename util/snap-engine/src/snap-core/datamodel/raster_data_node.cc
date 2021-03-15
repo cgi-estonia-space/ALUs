@@ -3,6 +3,8 @@
 #include <cmath>
 #include <stdexcept>
 
+#include "custom/dimension.h"
+#include "product.h"
 #include "product_node_group.h"
 
 namespace alus::snapengine {
@@ -26,13 +28,14 @@ RasterDataNode::RasterDataNode(std::string_view name, int data_type, long num_el
     no_data_ = nullptr;
     no_data_value_used_ = false;
     geophysical_no_data_value_ = 0.0;
-    valid_pixel_expression_ = nullptr;
+    valid_pixel_expression_ = "";
 
     // todo:looks like these are for rendering, should not be important atm.
     //        imageToModelTransform = null;
     //        modelToSceneTransform = MathTransform2D.IDENTITY;
     //        sceneToModelTransform = MathTransform2D.IDENTITY;
 
+//    todo: add support if needed
     //    overlay_masks_ = std::make_shared<ProductNodeGroup<>>(this, "overlayMasks", false);
 }
 bool RasterDataNode::IsFloatingPointType() { return scaling_applied_ || DataNode::IsFloatingPointType(); }
@@ -133,6 +136,47 @@ double RasterDataNode::ScaleInverse(double v) {
         v = log10(v);
     }
     return (v - scaling_offset_) / scaling_factor_;
+}
+std::shared_ptr<IGeoCoding> RasterDataNode::GetGeoCoding() {
+    if (geo_coding_ == nullptr) {
+        std::shared_ptr<Product> product = GetProduct();
+        if (product) {
+            return product->GetSceneGeoCoding();
+        }
+    }
+    return geo_coding_;
+}
+void RasterDataNode::ReadRasterData(int offset_x, int offset_y, int width, int height,
+                                    std::shared_ptr<ProductData> raster_data) {
+    ReadRasterData(offset_x, offset_y, width, height, raster_data, nullptr);
+}
+void RasterDataNode::ReadRasterDataFully() { ReadRasterDataFully(nullptr); }
+
+void RasterDataNode::SetGeoCoding(const std::shared_ptr<IGeoCoding>& geo_coding) {
+    if (geo_coding != geo_coding_) {
+        geo_coding_ = geo_coding;
+        // If our product has no geo-coding yet, it is set to the current one, if any
+        if (geo_coding_) {
+            std::shared_ptr<Product> product = GetProduct();
+            if (product && product->GetSceneGeoCoding() == nullptr &&
+                product->GetSceneRasterSize() == GetRasterSize()) {
+                product->SetSceneGeoCoding(geo_coding_);
+            }
+        }
+    }
+}
+std::shared_ptr<custom::Dimension> RasterDataNode::GetRasterSize() {
+    return std::make_shared<custom::Dimension>(GetRasterWidth(), GetRasterHeight());
+}
+void RasterDataNode::SetModified(bool modified) {
+    bool old_state = IsModified();
+    if (old_state != modified) {
+//todo: if overlay_masks get supported, then restore this code
+//        if (!modified && overlay_masks_ != nullptr) {
+//            overlay_masks_->SetModified(false);
+//        }
+        ProductNode::SetModified(modified);
+    }
 }
 
 }  // namespace alus::snapengine

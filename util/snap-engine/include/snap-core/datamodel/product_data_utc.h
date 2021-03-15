@@ -250,7 +250,6 @@ class Utc : public UInt {
      */
     std::string GetTypeString() override { return ProductData::GetTypeString(TYPE_UTC); }
 
-    ~Utc() = default;
 };
 
 }  // namespace snapengine

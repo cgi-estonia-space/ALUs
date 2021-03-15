@@ -1,9 +1,12 @@
-#include "product_node.h"
+#include "snap-core/datamodel/product_node.h"
 
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/trim.hpp>
 
+#include "ceres-core/ceres_assert.h"
 #include "guardian.h"
-#include "product.h"
+#include "snap-core/dataio/product_subset_def.h"
+#include "snap-core/datamodel/product.h"
 
 namespace alus {
 namespace snapengine {
@@ -11,8 +14,7 @@ namespace snapengine {
 void ProductNode::SetDescription(std::string_view description) { description_ = description; }
 void ProductNode::SetDescription(const std::optional<std::string_view>& description) { description_ = description; }
 
-ProductNode::ProductNode(std::string_view name) : ProductNode(name, {}) {
-}
+ProductNode::ProductNode(std::string_view name) : ProductNode(name, std::nullopt) {}
 
 ProductNode::ProductNode(std::string_view name, const std::optional<std::string_view>& description) {
     std::string name_str{std::string(name)};
@@ -32,7 +34,7 @@ std::shared_ptr<Product> ProductNode::GetProduct() {
     if (product_ == nullptr) {
         std::shared_ptr<ProductNode> owner = shared_from_this();
         do {
-//            todo:this might need to check if !check_type.empty()
+            //            todo:this might need to check if !check_type.empty()
             auto check_type = std::dynamic_pointer_cast<Product>(owner);
             if (check_type != nullptr) {
                 product_ = check_type;
@@ -48,11 +50,76 @@ void ProductNode::SetModified(bool modified) {
     bool old_state = modified_;
     if (old_state != modified) {
         modified_ = modified;
-        // If this node is modified, the owner is also modified.
-        if (modified_ && GetOwner() != nullptr) {
+        if (modified_ && GetOwner()) {
             GetOwner()->SetModified(true);
         }
     }
+}
+
+std::shared_ptr<IProductReader> ProductNode::GetProductReader() {
+    std::shared_ptr<Product> product = GetProduct();
+    if (product) {
+        return product->GetProductReader();
+    }
+    return nullptr;
+}
+
+std::string ProductNode::GetDisplayName() {
+    auto prefix = GetProductRefString();
+    if (!prefix.has_value()) {
+        return GetName();
+    }
+    return prefix.value() + " " + GetName();
+}
+
+std::optional<std::string> ProductNode::GetProductRefString() {
+    std::shared_ptr<Product> product = GetProduct();
+    if (product) {
+        return std::make_optional(product->GetRefStr());
+    }
+    return std::nullopt;
+}
+void ProductNode::SetName(std::string_view name) {
+    Guardian::AssertNotNull("name", name);
+    std::string name_str(name);
+    boost::algorithm::trim(name_str);
+    SetNodeName(name_str, false);
+}
+
+void ProductNode::SetNodeName(std::string_view trimmed_name, bool silent) {
+    Guardian::AssertNotNullOrEmpty("name contains only spaces", trimmed_name);
+    if (name_ != trimmed_name) {
+        std::shared_ptr<Product> product = GetProduct();
+        if (product) {
+            Assert::Argument(!product->ContainsRasterDataNode(trimmed_name),
+                             "The Product '" + product->GetName() + "' already contains " +
+                                 "a raster data node with the name '" + std::string(trimmed_name) + "'.");
+        }
+        if (!IsValidNodeName(trimmed_name)) {
+            throw std::invalid_argument("The given name '" + std::string(trimmed_name) + "' is not a valid node name.");
+        }
+        name_ = trimmed_name;
+        if (!silent) {
+            SetModified(true);
+        }
+    }
+}
+bool ProductNode::IsValidNodeName(std::string_view name) {
+    if (name == "" || boost::iequals("or", name) || boost::iequals("and", name) || boost::iequals("not", name)) {
+        return false;
+    }
+    std::string name_str(name);
+    boost::algorithm::trim(name_str);
+    return std::regex_match(name_str, std::regex(R"([^\\/:*?"<>|\.][^\\/:*?"<>|]*)"));
+}
+bool ProductNode::IsPartOfSubset(const std::shared_ptr<ProductSubsetDef>& subset_def) {
+    return subset_def == nullptr || subset_def->ContainsNodeName(GetName());
+}
+void ProductNode::Dispose() {
+    owner_ = nullptr;
+    product_ = nullptr;
+    description_ = std::nullopt;
+    name_ = "";
 }
 
 }  // namespace snapengine

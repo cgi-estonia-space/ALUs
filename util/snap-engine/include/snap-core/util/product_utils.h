@@ -20,6 +20,9 @@
 
 #include <memory>
 #include <string_view>
+#include <vector>
+
+#include "geo_pos.h"
 
 namespace alus {
 namespace snapengine {
@@ -240,6 +243,17 @@ public:
      * @see #copyRasterDataNodeProperties(RasterDataNode, RasterDataNode)
      */
     static void CopySpectralBandProperties(std::shared_ptr<Band> source_band, std::shared_ptr<Band> target_band);
+
+    /**
+     * Normalizes the given geographical polygon so that maximum longitude differences between two points are 180
+     * degrees. The method operates only on the longitude values of the given polygon.
+     *
+     * @param polygon a geographical, closed polygon
+     * @return 0 if normalizing has not been applied , -1 if negative normalizing has been applied, 1 if positive
+     * normalizing has been applied, 2 if positive and negative normalising has been applied
+     * @see #denormalizeGeoPolygon(GeoPos[])
+     */
+    static int NormalizeGeoPolygon(std::vector<GeoPos> polygon);
 };
 }  // namespace snapengine
 }  // namespace alus

@@ -15,6 +15,8 @@ res3=$?
 res4=$?
 ./integration-test-apply-orbit-file-op $result_output
 res5=$?
+./integration-sentinel1_product_reader $result_output
+res6=$?
 
-exit_value=$(($res1 | $res2 | $res3 | $res4 | $res5))
+exit_value=$(($res1 | $res2 | $res3 | $res4 | $res5 | $res6))
 exit $exit_value

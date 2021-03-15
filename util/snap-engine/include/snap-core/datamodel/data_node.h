@@ -18,24 +18,28 @@
  */
 #pragma once
 
-#include "product_node.h"
+#include "snap-core/datamodel/product_node.h"
 
 #include <any>
+#include <cstdint>
+#include <memory>
 #include <optional>
 #include <stdexcept>
 #include <string>
 
-#include "product_data.h"
+#include "snap-core/datamodel/product_data.h"
 
 namespace alus {
 namespace snapengine {
+
+class ProductSubsetDef;
 
 /**
  * A <code>DataNode</code> is the base class for all nodes within a data product which carry data. The data is
  * represented by an instance of <code>{@link ProductData}</code>.
  */
 class DataNode : public ProductNode {
-   private:
+private:
     /**
      * The data type. Always one of <code>ProductData.TYPE_<i>X</i></code>.
      */
@@ -45,21 +49,18 @@ class DataNode : public ProductNode {
     std::optional<std::string> unit_;
     bool synthetic_;
 
-    //   protected:
-    //    explicit ProductNode(const std::string_view name) : name_(name) {}
-    //    ProductNode(const std::string_view name, const std::string_view description)
-    //        : name_(name), description_(description) {}
-
     void CheckState() const {
         if (num_elems_ < 0) {
             throw std::runtime_error("number of elements must be at last 1");
         }
     }
 
-   protected:
+protected:
     std::shared_ptr<ProductData> data_;
+    //    TODO:// looks like c++ needs this for init (ok this was due to virtual keyword, if tests get fixed remove)
+    //    DataNode() = default;
 
-   public:
+public:
     // these are really only needed for broadcasting which we don't use atm, but might...
     //    static constexpr std::string_view PROPERTY_NAME_DATA{"data"};
     //    static constexpr std::string_view PROPERTY_NAME_READ_ONLY{"readOnly"};
@@ -190,6 +191,15 @@ class DataNode : public ProductNode {
     void Dispose() override;
 
     void SetUnit(std::optional<std::string> unit);
+
+    /**
+     * Gets the estimated size in bytes of this product node.
+     *
+     * @param subsetDef if not <code>null</code> the subset may limit the size returned
+     * @return the size in bytes.
+     */
+
+    uint64_t GetRawStorageSize(const std::shared_ptr<ProductSubsetDef>& subset_def) override;
 };
 }  // namespace snapengine
 }  // namespace alus
