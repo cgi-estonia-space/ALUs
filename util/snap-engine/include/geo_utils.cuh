@@ -27,7 +27,7 @@ namespace geoutils {
  * Convert geodetic coordinate into cartesian XYZ coordinate with specified geodetic system.
  *
  * Duplicate of a SNAP's geoutils.java's geo2xyzWGS84() for native.
- * Copied from a snap-engine's(https://github.com/senbox-org/snap-engine) repository originally stated to be implemented
+ * Copied from (https://github.com/senbox-org/snap-engine). It was originally stated:
  * by "Copyright (C) 2014 by Array Systems Computing Inc. http://www.array.ca"
  *
  * @param latitude  The latitude of a given pixel (in degree).

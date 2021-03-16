@@ -1,3 +1,21 @@
+/**
+ * This file is a filtered duplicate of a SNAP's
+ * static nested class Int which is inside org.esa.snap.core.datamodel.ProductData.java
+ * ported for native code.
+ * Copied from (https://github.com/senbox-org/snap-engine). It was originally stated:
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #include "product_data_int.h"
 
 #include <algorithm>
@@ -49,7 +67,7 @@ void Int::SetElems(std::any data) {
         array_ = std::any_cast<std::vector<int32_t>>(data);
     } else if (data.type() == typeid(std::vector<std::string>)) {
         auto string_data = std::any_cast<std::vector<std::string>>(data);
-        std::transform(string_data.begin(), string_data.end(), array_.begin(), [](const std::string &s) {
+        std::transform(string_data.begin(), string_data.end(), array_.begin(), [](const std::string& s) {
             // so in a way it could be 64bit and put into 32bit so we check min/max
             if (INT32_MIN <= std::stoll(s) && INT32_MAX >= std::stoll(s)) {
                 // std::stol at least 32 and int32_t is exactly 32

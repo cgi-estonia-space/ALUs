@@ -1,8 +1,8 @@
 /**
  * This file is a filtered duplicate of a SNAP's
- * static nested class UTC which is inside org.esa.snap.core.datamodel.ProductData.java
- * ported for native code. Copied from a snap-engine's(https://github.com/senbox-org/snap-engine) repository originally
- * stated to be implemented by "Copyright (C) 2010 Brockmann Consult GmbH (info@brockmann-consult.de)"
+ * static nested class Utc which is inside org.esa.snap.core.datamodel.ProductData.java
+ * ported for native code.
+ * Copied from (https://github.com/senbox-org/snap-engine). It was originally stated:
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -41,13 +41,13 @@ class ProductData;
  * @see ProductData.UTC#getMicroSecondsFraction()
  */
 class Utc : public UInt {
-   private:
+private:
     static constexpr double SECONDS_PER_DAY{86400.0};
     static constexpr double SECONDS_TO_DAYS{1.0 / SECONDS_PER_DAY};
     static constexpr double MICROS_PER_SECOND{1000000.0};
     static constexpr double MICROS_TO_SECONDS{1.0 / MICROS_PER_SECOND};
 
-   public:
+public:
     //    todo:we already have some solution for format, check that before doing
     /**
      * The default pattern used to format date strings.
@@ -143,9 +143,10 @@ class Utc : public UInt {
      *
      * @return a copy of this product data
      */
-   protected:
+protected:
     [[nodiscard]] std::shared_ptr<ProductData> CreateDeepClone() const override;
-   public:
+
+public:
     /**
      * Constructs a new {@code UTC} value.
      */
@@ -249,7 +250,6 @@ class Utc : public UInt {
      * Returns this value's data type String.
      */
     std::string GetTypeString() override { return ProductData::GetTypeString(TYPE_UTC); }
-
 };
 
 }  // namespace snapengine

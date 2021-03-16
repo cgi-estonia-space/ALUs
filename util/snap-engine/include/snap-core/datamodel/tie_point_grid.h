@@ -1,8 +1,8 @@
 /**
- * This file is a filtered duplicate of a SNAP's org.esa.snap.core.datamodel.TiePointGrid.java
+ * This file is a filtered duplicate of a SNAP's
+ * org.esa.snap.core.datamodel.TiePointGrid.java
  * ported for native code.
- * Copied from a snap-engine's(https://github.com/senbox-org/snap-engine) repository originally stated
- * to be implemented by "Copyright (C) 2010 Brockmann Consult GmbH (info@brockmann-consult.de)"
+ * Copied from (https://github.com/senbox-org/snap-engine). It was originally stated:
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -24,8 +24,8 @@
 #include <string_view>
 #include <vector>
 
-#include "raster_data_node.h"
 #include "ceres-core/i_progress_monitor.h"
+#include "raster_data_node.h"
 
 namespace alus {
 namespace snapengine {
@@ -528,7 +528,8 @@ public:
      * @throws IllegalArgumentException if the raster is null
      * @throws IllegalStateException    if this product raster was not added to a product so far, or if the product to
      *                                  which this product raster belongs to, has no associated product reader
-     * @see ProductReader#readBandRasterData(Band, int, int, int, int, ProductData, com.bc.ceres.core.ceres::IProgressMonitor)
+     * @see ProductReader#readBandRasterData(Band, int, int, int, int, ProductData,
+     * com.bc.ceres.core.ceres::IProgressMonitor)
      */
     void ReadRasterData(int offset_x, int offset_y, int width, int height, std::shared_ptr<ProductData> raster_data,
                         std::shared_ptr<ceres::IProgressMonitor> pm) override;

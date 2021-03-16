@@ -1,8 +1,8 @@
 /**
- * This file is a filtered duplicate of a SNAP's org.esa.snap.core.datamodel.quicklooks.Quicklook.java
+ * This file is a filtered duplicate of a SNAP's
+ * org.esa.snap.core.datamodel.quicklooks.Quicklook.java
  * ported for native code.
- * Copied from a snap-engine's(https://github.com/senbox-org/snap-engine) repository originally stated:
- * "Copyright (C) 2016 by Array Systems Computing Inc. http://www.array.ca
+ * Copied from (https://github.com/senbox-org/snap-engine). It was originally stated:
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
