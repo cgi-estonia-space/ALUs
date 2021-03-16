@@ -38,7 +38,7 @@ private:
     std::optional<T> ParseChildValue(pugi::xml_node node, std::string_view child_tag) {
         const std::string string_value = node.child_value(child_tag.data());
         if (string_value.empty()) {
-            return std::optional<T>{};
+            return std::nullopt;
         }
         auto parsed_value = std::make_optional(boost::lexical_cast<T>(string_value));
         return parsed_value;
