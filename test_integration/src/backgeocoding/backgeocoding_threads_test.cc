@@ -23,7 +23,7 @@ namespace alus::tests {
 
 // TODO: This test will receive it's final form once backgeocoding is chained with apply orbit file, split and safe
 // reading.
-TEST(backgeocoding, ThreadTest) {
+TEST(DISABLED_backgeocoding, ThreadTest) {
     /*std::cout << "Controller started." << '\n';
     std::shared_ptr<alus::Dataset<double>> master_input_dataset =
         std::make_shared<alus::Dataset<double>>("/home/erik/snapDebusTests/cohTestIn1_split_Orb.tif");

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
 project(aluserer
         LANGUAGES CXX CUDA
@@ -25,9 +25,9 @@ if (CUDA_FOUND)
     #    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --resource-usage")
     INCLUDE_DIRECTORIES(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
     if (CUDA_ARCH)
-        set(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCH} CACHE STRING "CUDA architectures")
+        set(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCH} CACHE STRING "CUDA architectures" FORCE)
     else (CUDA_ARCH)
-        set(CMAKE_CUDA_ARCHITECTURES 52 CACHE STRING "CUDA architectures")
+        set(CMAKE_CUDA_ARCHITECTURES 52 CACHE STRING "CUDA architectures" FORCE)
     endif ()
     message(STATUS "CUDA binary code will be generated for the following architecture(s) - ${CMAKE_CUDA_ARCHITECTURES}")
 else (CUDA_FOUND)
