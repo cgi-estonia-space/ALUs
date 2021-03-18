@@ -29,6 +29,7 @@
 #include "product.h"
 #include "product_data.h"
 #include "product_data_utc.h"
+#include "snap-core/datamodel/tie_point_grid.h"
 #include "spectral_band_info.h"
 
 namespace alus {
@@ -88,6 +89,70 @@ SpectralBandInfo PugixmlMetaDataReader::GetSpectralBandInfo(pugi::xml_node& spec
     return {band_index,       band_name,      product_data_type, log_10_scaled,       no_data_value_used,
             band_description, physical_unit,  solar_flux,        spectral_band_index, band_wavelength,
             bandwidth,        scaling_factor, scaling_offset,    no_data_value,       valid_mask_term};
+}
+
+snapengine::TiePointGrid PugixmlMetaDataReader::GetTiePointGrid(const pugi::xml_node& tie_point_grid_node) {
+    const std::string name = tie_point_grid_node.child_value(DimapProductConstants::TAG_TIE_POINT_GRID_NAME.data());
+
+    const auto grid_width =
+        std::stoi(tie_point_grid_node.child_value(DimapProductConstants::TAG_TIE_POINT_NCOLS.data()));
+    const auto grid_height =
+        std::stoi(tie_point_grid_node.child_value(DimapProductConstants::TAG_TIE_POINT_NROWS.data()));
+    const auto offset_x =
+        std::stod(tie_point_grid_node.child_value(DimapProductConstants::TAG_TIE_POINT_OFFSET_X.data()));
+    const auto offset_y =
+        std::stod(tie_point_grid_node.child_value(DimapProductConstants::TAG_TIE_POINT_OFFSET_Y.data()));
+    const auto subsampling_x =
+        std::stod(tie_point_grid_node.child_value(DimapProductConstants::TAG_TIE_POINT_STEP_X.data()));
+    const auto subsampling_y =
+        std::stod(tie_point_grid_node.child_value(DimapProductConstants::TAG_TIE_POINT_STEP_Y.data()));
+
+    auto is_cyclic = ParseChildValue<bool>(tie_point_grid_node, DimapProductConstants::TAG_TIE_POINT_CYCLIC);
+
+    std::vector<float> tie_points(grid_width * grid_height);
+    TiePointGrid tie_point_grid(
+        name, grid_width, grid_height, offset_x, offset_y, subsampling_x, subsampling_y, tie_points,
+        (is_cyclic && is_cyclic.value() ? TiePointGrid::DISCONT_AT_180 : TiePointGrid::DISCONT_NONE));
+
+    return tie_point_grid;
+}
+
+std::map<std::string, snapengine::TiePointGrid, std::less<>> PugixmlMetaDataReader::ReadTiePointGridsTag() {
+    std::map<std::string, snapengine::TiePointGrid, std::less<>> tie_point_grids;
+
+    std::string file_name;
+
+    if (product_) {
+        file_name = product_->GetFileLocation().parent_path().generic_path().string() +
+                    boost::filesystem::path::preferred_separator + product_->GetName() + ".xml";
+    } else if (!file_name_.empty()) {
+        file_name = file_name_;
+    } else {
+        throw std::runtime_error("no source file for metadata provided");
+    }
+
+    result_ = doc_.load_file(file_name.data(), pugi::parse_default | pugi::parse_declaration);
+    if (!result_) {
+        throw std::runtime_error("unable to load file " + file_name);
+    }
+
+    const auto root = doc_.document_element();
+    const auto tie_point_grids_node = root.select_node(DimapProductConstants::TAG_TIE_POINT_GRIDS.data());
+    if (!tie_point_grids_node) {
+        throw std::runtime_error(file_name + " does not contain " + DimapProductConstants::TAG_TIE_POINT_GRIDS.data() +
+                                 " tag");
+    }
+
+    const auto tie_point_grid_nodes = tie_point_grids_node.node().children();
+    for (const auto& tie_point_grid_node : tie_point_grid_nodes) {
+        if (tie_point_grid_node.name() == DimapProductConstants::TAG_TIE_POINT_NUM_TIE_POINT_GRIDS) {
+            continue;
+        }
+        auto tie_point_grid = GetTiePointGrid(tie_point_grid_node);
+        tie_point_grids.try_emplace(tie_point_grid.GetName(), tie_point_grid);
+    }
+
+    return tie_point_grids;
 }
 
 std::vector<SpectralBandInfo> PugixmlMetaDataReader::ReadImageInterpretationTag() {

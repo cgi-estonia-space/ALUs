@@ -1,19 +1,49 @@
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #include "terrain_correction_metadata.h"
 
 #include <algorithm>
+#include <iterator>
+#include <stdexcept>
+#include <string>
 
 #include "dataset.h"
 #include "pugixml_meta_data_reader.h"
+#include "snap-core/datamodel/tie_point_grid.h"
 #include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
 
 namespace alus::terraincorrection {
 
-Metadata::Metadata(std::string_view dim_metadata_file,
-                   std::string_view lat_tie_points_file,
+Metadata::Metadata(std::string_view dim_metadata_file, std::string_view lat_tie_points_file,
                    std::string_view lon_tie_points_file) {
     FillDimMetadata(dim_metadata_file);
+    FetchTiePointGrids(dim_metadata_file, lat_tie_point_grid_, lon_tie_point_grid_);
     FetchTiePoints(lat_tie_points_file, lat_tie_points_);
     FetchTiePoints(lon_tie_points_file, lon_tie_points_);
+
+    lat_tie_point_grid_.tie_points = lat_tie_points_.values.data();
+    lon_tie_point_grid_.tie_points = lon_tie_points_.values.data();
+}
+
+void Metadata::FetchTiePointGrids(std::string_view dim_metadata_file,
+                                  snapengine::tiepointgrid::TiePointGrid& lat_tie_point_grid,
+                                  snapengine::tiepointgrid::TiePointGrid& lon_tie_point_grid) {
+    snapengine::PugixmlMetaDataReader xml_reader{dim_metadata_file};
+    auto tie_point_grids = xml_reader.ReadTiePointGridsTag();
+
+    lat_tie_point_grid = GetTiePointGrid(tie_point_grids.at(std::string(LATITUDE_TIE_POINT_GRID)));
+    lon_tie_point_grid = GetTiePointGrid(tie_point_grids.at(std::string(LONGITUDE_TIE_POINT_GRID)));
 }
 
 void Metadata::FetchTiePoints(std::string_view tie_points_file, TiePoints& tie_points) {
@@ -22,9 +52,8 @@ void Metadata::FetchTiePoints(std::string_view tie_points_file, TiePoints& tie_p
     tie_points.grid_width = ds.GetRasterSizeX();
     tie_points.grid_height = ds.GetRasterSizeY();
     const auto& db = ds.GetHostDataBuffer();
-    std::transform(db.cbegin(), db.cend(), std::back_inserter(tie_points.values), [](double v) -> float {
-        return static_cast<float>(v);
-    });
+    std::transform(db.cbegin(), db.cend(), std::back_inserter(tie_points.values),
+                   [](double v) { return static_cast<float>(v); });
 }
 
 void Metadata::FillDimMetadata(std::string_view dim_metadata_file) {
@@ -82,6 +111,15 @@ void Metadata::FillDimMetadata(std::string_view dim_metadata_file) {
     metadata_fields_.azimuth_spacing = master_root->GetAttributeDouble(snapengine::AbstractMetadata::AZIMUTH_SPACING);
 
     metadata_fields_.band_info = xml_reader.ReadImageInterpretationTag();
+}
+snapengine::tiepointgrid::TiePointGrid Metadata::GetTiePointGrid(const snapengine::TiePointGrid& grid) {
+    return {grid.GetOffsetX(),
+            grid.GetOffsetY(),
+            grid.GetSubSamplingX(),
+            grid.GetSubSamplingY(),
+            static_cast<size_t>(grid.GetGridWidth()),
+            static_cast<size_t>(grid.GetGridHeight()),
+            nullptr};
 }
 
 }  // namespace alus::terraincorrection

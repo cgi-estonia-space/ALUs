@@ -30,6 +30,9 @@ class CrsGeocoding : public Geocoding {
     [[nodiscard]] PrecisePixelPosition GetPixelPosition(double lon, double lat) const override;
 
     explicit CrsGeocoding(const GeoTransformParameters& geo_transform_parameters);
+    CrsGeocoding(const CrsGeocoding&) = delete;
+    CrsGeocoding& operator=(const CrsGeocoding&) = delete;
+    ~CrsGeocoding() override = default;
 
     GeoTransformParameters geo_transform_parameters_;
 };

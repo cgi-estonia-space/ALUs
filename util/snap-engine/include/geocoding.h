@@ -30,6 +30,11 @@ class Geocoding {
     [[nodiscard]] virtual PrecisePixelPosition GetPixelPosition(Coordinates pixel_coordinates) const = 0;
     [[nodiscard]] virtual PrecisePixelPosition GetPixelPosition(std::tuple<double, double> pixel_coordinates) const = 0;
     [[nodiscard]] virtual PrecisePixelPosition GetPixelPosition(double lon, double lat) const = 0;
+
+    Geocoding() = default;
+    Geocoding(const Geocoding&) = delete;
+    Geocoding& operator=(const Geocoding&) = delete;
+    virtual ~Geocoding()  = default;
 };
 }  // namespace geocoding
 }  // namespace snapengine

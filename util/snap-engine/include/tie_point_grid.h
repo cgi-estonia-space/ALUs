@@ -19,6 +19,7 @@ namespace alus {
 namespace snapengine {
 namespace tiepointgrid {
 
+// TODO: deprecate in favour of snap-core/datamodel/tie_point_grid
 struct TiePointGrid {
     double offset_x;
     double offset_y;
@@ -42,7 +43,7 @@ struct TiePointGrid {
  *          (this check should be implemented later and discontinuity should be added either to function parameters
  *          or to TiePointGrid struct)
  */
-double GetPixelDouble(double x, double y, const tiepointgrid::TiePointGrid *grid);
+double GetPixelDouble(double x, double y, const tiepointgrid::TiePointGrid* grid);
 
 }  // namespace tiepointgrid
 }  // namespace snapengine

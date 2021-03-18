@@ -14,6 +14,7 @@
 #pragma once
 
 #include <cstddef>
+#include <memory>
 #include <string_view>
 #include <vector>
 
@@ -34,27 +35,33 @@ namespace alus::terraincorrection {
 class TerrainCorrection {
 public:
     explicit TerrainCorrection(Dataset<double> coh_ds, RangeDopplerTerrainMetadata metadata,
-                               const Metadata::TiePoints& lat_tie_points, const Metadata::TiePoints& lon_tie_points,
-                               const PointerHolder* srtm_3_tiles, size_t srtm_3_tiles_length_, int selected_band_id = 1);
+                               const snapengine::tiepointgrid::TiePointGrid& lat_tie_point_grid,
+                               const snapengine::tiepointgrid::TiePointGrid& lon_tie_point_grid,
+                               const PointerHolder* srtm_3_tiles, size_t srtm_3_tiles_length_,
+                               int selected_band_id = 1);
 
     snapengine::old::Product CreateTargetProduct(const snapengine::geocoding::Geocoding* geocoding,
-                                                 snapengine::geocoding::Geocoding*& target_geocoding,
                                                  std::string_view output_filename);
 
     void ExecuteTerrainCorrection(std::string_view output_file_name, size_t tile_width, size_t tile_height);
+
+    TerrainCorrection(const TerrainCorrection&) = delete;
+    TerrainCorrection(TerrainCorrection&&) = delete;
+    TerrainCorrection& operator=(const TerrainCorrection&) = delete;
+    TerrainCorrection& operator=(TerrainCorrection&&) = delete;
 
     ~TerrainCorrection();
 
 private:
     Dataset<double> coh_ds_;
     RangeDopplerTerrainMetadata metadata_;
-    const Metadata::TiePoints& lat_tie_points_;
-    const Metadata::TiePoints& lon_tie_points_;
     snapengine::geocoding::Geocoding* target_geocoding_{};
     const PointerHolder* d_srtm_3_tiles_;
     const size_t d_srtm_3_tiles_length_;
     std::vector<void*> cuda_arrays_to_clean_{};
     const int selected_band_id_;
+    const snapengine::tiepointgrid::TiePointGrid& lat_tie_point_grid_;
+    const snapengine::tiepointgrid::TiePointGrid& lon_tie_point_grid_;
 
     /**
      * Computes target image boundary by creating a rectangle around the source image. The source image should be

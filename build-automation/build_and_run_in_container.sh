@@ -45,6 +45,8 @@ docker exec -t alus_container bash -c "gdal_translate -of PNG -ot Byte -scale /t
 docker cp alus_container:/tmp/tc_test.png ~/ci-artifacts/.
 docker exec -t alus_container bash -c "gdal_translate -of PNG -ot Byte -scale /tmp/4_bands_coh.tif /tmp/4_bands_coh.png"
 docker cp alus_container:/tmp/4_bands_coh.png ~/ci-artifacts/.
+docker exec -t alus_container bash -c "gdal_translate -of PNG -ot Byte -scale /tmp/tc_beirut_test.tif /tmp/tc_beirut_test.png"
+docker cp alus_container:/tmp/tc_beirut_test.png ci-artifacts/.
 docker stop alus_container
 docker rm alus_container
 exit $tests_return_value
