@@ -3,33 +3,56 @@
 # Only use spaces to indent your .yml configuration.
 # -----
 # You can specify a custom docker image from Docker Hub as your build environment.
-image: cgialus/alus-ci:latest
-
 clone:
   lfs: true
-
+  depth: full
 pipelines:
   pull-requests:
     '**': # This runs as default for any branch not elsewhere defined
-      - step: # Setup
-          script:
-            - cd ~
-            - mkdir .aws
-            - cd .aws
-            - echo "[profile sid_man]" > config
-            - echo "aws_access_key_id = $SID_MAN_ACCESS_KEY_ID" >> config
-            - echo "aws_secret_access_key = $SID_MAN_SECRET_ACCESS_KEY" >> config
-            - echo "region = eu-central-1" >> config
-            - echo "output = json" >> config
-            - cd $BITBUCKET_CLONE_DIR
-            - git submodule update --init --recursive
-            - mkdir -p $BITBUCKET_CLONE_DIR/build/test-reports
-            - git ls-files --cached --recurse-submodules | tar Tczf - archive.tar.gz
-            - $BITBUCKET_CLONE_DIR/build-automation/run_ci_on_ec2_instance.sh "archive.tar.gz" $G3_4xLARGE_INSTANCE_ID "sid_man"
-          after-script:  
-            - date_stamp=$(date +"%Y_%m_%d_%H%M")
-            - cd $BITBUCKET_CLONE_DIR/build/ci-artifacts/
-            - >
-              for file in *; do
-                  [ -f "$file" ] && $BITBUCKET_CLONE_DIR/build-automation/put_to_alus_ci_artifacts.sh "${BITBUCKET_BUILD_NUMBER}_${BITBUCKET_BRANCH}_${date_stamp}" $file sid_man
-              done
+      - parallel:
+          - step: # Setup
+              image: cgialus/alus-ci:latest
+              script:
+                - cd ~
+                - mkdir .aws
+                - cd .aws
+                - echo "[profile sid_man]" > config
+                - echo "aws_access_key_id = $SID_MAN_ACCESS_KEY_ID" >> config
+                - echo "aws_secret_access_key = $SID_MAN_SECRET_ACCESS_KEY" >> config
+                - echo "region = eu-central-1" >> config
+                - echo "output = json" >> config
+                - cd $BITBUCKET_CLONE_DIR
+                - git submodule update --init --recursive
+                - mkdir -p $BITBUCKET_CLONE_DIR/build/test-reports
+                - git ls-files --cached --recurse-submodules | tar Tczf - archive.tar.gz
+                - $BITBUCKET_CLONE_DIR/build-automation/run_ci_on_ec2_instance.sh "archive.tar.gz" $G3_4xLARGE_INSTANCE_ID "sid_man"
+              after-script:
+                - date_stamp=$(date +"%Y_%m_%d_%H%M")
+                - cd $BITBUCKET_CLONE_DIR/build/ci-artifacts/
+                - >
+                  for file in *; do
+                      [ -f "$file" ] && $BITBUCKET_CLONE_DIR/build-automation/put_to_alus_ci_artifacts.sh "${BITBUCKET_BUILD_NUMBER}_${BITBUCKET_BRANCH}_${date_stamp}" $file sid_man
+                  done
+          - step: #SonarCloud
+              image: cgialus/alus-infra:latest
+              name: SonarCloud scan
+              script:
+                - cd $BITBUCKET_CLONE_DIR
+                - git submodule update --init --recursive
+                - export SONAR_SCANNER_VERSION=4.4.0.2170
+                - export SONAR_SCANNER_HOME=/root/.sonar/sonar-scanner-$SONAR_SCANNER_VERSION-linux
+                - export BW_OUTPUT=/root/.sonar/bw-output
+                - mkdir -p $BW_OUTPUT
+                - curl --create-dirs -sSLo /root/.sonar/sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_SCANNER_VERSION-linux.zip
+                - unzip -o /root/.sonar/sonar-scanner.zip -d /root/.sonar/
+                - export PATH=$SONAR_SCANNER_HOME/bin:$PATH
+                - export SONAR_SCANNER_OPTS="-server"
+                - curl --create-dirs -sSLo /root/.sonar/build-wrapper-linux-x86.zip https://sonarcloud.io/static/cpp/build-wrapper-linux-x86.zip
+                - unzip -o /root/.sonar/build-wrapper-linux-x86.zip -d /root/.sonar/
+                - export PATH=/root/.sonar/build-wrapper-linux-x86:$PATH
+                - rm -rf build
+                - cmake . -Bbuild
+                - cd build
+                - build-wrapper-linux-x86-64 --out-dir $BW_OUTPUT make -j8
+                - cd $BITBUCKET_CLONE_DIR
+                - sonar-scanner -Dsonar.cfamily.build-wrapper-output=$BW_OUTPUT -Dsonar.sources=algs,app,util -Dsonar.tests=test,test_integration -Dsonar.exclusions=tensorflow/**,external/**,build/**,.git/** -Dsonar.test.exclusions=tensorflow/**,external/**,build/**,.git/** -X
