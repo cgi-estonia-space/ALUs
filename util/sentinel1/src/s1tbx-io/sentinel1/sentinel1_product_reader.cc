@@ -1,3 +1,21 @@
+/**
+ * This file is a filtered duplicate of a SNAP's
+ * org.esa.s1tbx.io.sentinel1.Sentinel1ProductReader.java
+ * ported for native code.
+ * Copied from (https://github.com/senbox-org/s1tbx). It was originally stated:
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #include "sentinel1_product_reader.h"
 
 #include <algorithm>
@@ -91,10 +109,12 @@ void Sentinel1ProductReader::ReadBandRasterDataImpl(
             ReadSLCRasterBand(source_offset_x, source_offset_y, source_step_x, source_step_y, dest_buffer,
                               dest_offset_x, dest_offset_y, dest_width, dest_height, band_info);
         } else {
-//            currently only slc
-//            band_info->img_->ReadImageIORasterBand(source_offset_x, source_offset_y, source_step_x, source_step_y,
-//                                                   dest_buffer, dest_offset_x, dest_offset_y, dest_width, dest_height,
-//                                                   band_info->image_i_d_, band_info->band_sample_offset_);
+            //            currently only slc
+            //            band_info->img_->ReadImageIORasterBand(source_offset_x, source_offset_y, source_step_x,
+            //            source_step_y,
+            //                                                   dest_buffer, dest_offset_x, dest_offset_y, dest_width,
+            //                                                   dest_height, band_info->image_i_d_,
+            //                                                   band_info->band_sample_offset_);
         }
     } else {
         //    } else if ( std::dynamic_pointer_cast<Sentinel1Level2Directory>(data_dir_)) {
@@ -282,6 +302,7 @@ std::vector<int32_t> Sentinel1ProductReader::ReadRect(const std::shared_ptr<Band
     // this gets moved?
     return data;
 }
-Sentinel1ProductReader::Sentinel1ProductReader(const std::shared_ptr<snapengine::IProductReaderPlugIn>& reader_plug_in) : SARReader(reader_plug_in) {}
+Sentinel1ProductReader::Sentinel1ProductReader(const std::shared_ptr<snapengine::IProductReaderPlugIn>& reader_plug_in)
+    : SARReader(reader_plug_in) {}
 
 }  // namespace alus::s1tbx

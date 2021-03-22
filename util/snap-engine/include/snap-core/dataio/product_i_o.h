@@ -1,9 +1,8 @@
 /**
- * This file is a filtered duplicate of a SNAP's org.esa.snap.core.dataio.ProductIO.java
+ * This file is a filtered duplicate of a SNAP's
+ * org.esa.snap.core.dataio.ProductIO.java
  * ported for native code.
- * Copied from a snap-engine (https://github.com/senbox-org/snap-engine) repository originally stated:
- *
- * Copyright (C) 2010 Brockmann Consult GmbH (info@brockmann-consult.de)
+ * Copied from (https://github.com/senbox-org/snap-engine). It was originally stated:
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -19,14 +18,14 @@
  */
 #pragma once
 
-#include <memory>
 #include <any>
+#include <memory>
 
 #include <boost/filesystem.hpp>
 
 namespace alus::snapengine {
 
-//pre-declare
+// pre-declare
 class IProductReader;
 class Product;
 class ProductSubsetDef;
@@ -47,7 +46,9 @@ class ProductSubsetDef;
  */
 class ProductIO {
 private:
-    static std::shared_ptr<Product> ReadProductImpl(const boost::filesystem::path& file, const std::shared_ptr<ProductSubsetDef>& subset_def);
+    static std::shared_ptr<Product> ReadProductImpl(const boost::filesystem::path& file,
+                                                    const std::shared_ptr<ProductSubsetDef>& subset_def);
+
 public:
     /**
      * Tries to find a product reader instance suitable for the given input.
@@ -55,7 +56,8 @@ public:
      * registered product reader can handle the given {@code input} value.
      * <p>
      * The {@code input} may be of any type, but most likely it will be a file path given by a {@code String} or
-     * {@code File} value. Some readers may also directly support an {@link javax.imageio.stream.ImageInputStream} object.
+     * {@code File} value. Some readers may also directly support an {@link javax.imageio.stream.ImageInputStream}
+     * object.
      *
      * @param input the input object.
      *
@@ -84,6 +86,5 @@ public:
      * @see #readProduct(String)
      */
     static std::shared_ptr<Product> ReadProduct(const boost::filesystem::path& file);
-
 };
 }  // namespace alus::snapengine

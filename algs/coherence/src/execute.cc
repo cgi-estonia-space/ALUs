@@ -1,3 +1,16 @@
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #include <iostream>
 #include <string_view>
 
@@ -43,8 +56,7 @@ public:
         const auto metadata_file = aux_location_.substr(0, aux_location_.length() - 5);  // Strip ".data"
         alus::snapengine::PugixmlMetaDataReader xml_reader{metadata_file + ".dim"};
         auto master_root = xml_reader.Read(alus::snapengine::AbstractMetadata::ABSTRACT_METADATA_ROOT);
-        auto slave_root =
-            xml_reader.Read(alus::snapengine::AbstractMetadata::SLAVE_METADATA_ROOT)->GetElements().at(0);
+        auto slave_root = xml_reader.Read(alus::snapengine::AbstractMetadata::SLAVE_METADATA_ROOT)->GetElements().at(0);
 
         alus::MetaData meta_master{&ia_data_reader, master_root, orbit_degree_};
         alus::MetaData meta_slave{&ia_data_reader, slave_root, orbit_degree_};

@@ -1,8 +1,8 @@
 /**
- * This file is a filtered duplicate of a SNAP's org.esa.snap.core.datamodel.Mask.java
+ * This file is a filtered duplicate of a SNAP's
+ * org.esa.snap.core.datamodel.Mask.java
  * ported for native code.
- * Copied from a snap-engine's(https://github.com/senbox-org/snap-engine) repository originally stated
- * to be implemented by "Copyright (C) 2010 Brockmann Consult GmbH (info@brockmann-consult.de)"
+ * Copied from (https://github.com/senbox-org/snap-engine). It was originally stated:
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -33,12 +33,12 @@ class ImageType;
  * @since BEAM 4.7
  */
 class Mask : virtual public Band {
-   private:
-//    std::shared_ptr<ImageType> image_type_;
-//    std::shared_ptr<PropertyChangeListener> image_config_listener_;
-//    std::shared_ptr<PropertyContainer> image_config_;
+private:
+    //    std::shared_ptr<ImageType> image_type_;
+    //    std::shared_ptr<PropertyChangeListener> image_config_listener_;
+    //    std::shared_ptr<PropertyContainer> image_config_;
 
-   public:
+public:
     /**
      * Constructs a new mask.
      *
@@ -49,25 +49,26 @@ class Mask : virtual public Band {
      */
     Mask(std::string_view name, int width, int height, std::shared_ptr<ImageType> image_type);
 
-//    /**
-//     * @return The image type of this mask.
-//     */
-//    std::shared_ptr<ImageType> GetImageType() { return image_type_; }
-//
-//    /**
-//     * @return The image configuration of this mask.
-//     */
-//    std::shared_ptr<PropertyContainer> GetImageConfig() { return image_config_; }
-//
-//    Color GetImageColor() { return (Color)image_config_->GetValue(ImageType::PROPERTY_NAME_COLOR); }
-//
-//    void SetImageColor(Color color) { image_config_->SetValue(ImageType::PROPERTY_NAME_COLOR, color); }
-//
-//    double GetImageTransparency() { return (Double)image_config_->GetValue(ImageType::PROPERTY_NAME_TRANSPARENCY); }
-//
-//    void SetImageTransparency(double transparency) {
-//        image_config_->SetValue(ImageType::PROPERTY_NAME_TRANSPARENCY, transparency);
-//    }
+    //    /**
+    //     * @return The image type of this mask.
+    //     */
+    //    std::shared_ptr<ImageType> GetImageType() { return image_type_; }
+    //
+    //    /**
+    //     * @return The image configuration of this mask.
+    //     */
+    //    std::shared_ptr<PropertyContainer> GetImageConfig() { return image_config_; }
+    //
+    //    Color GetImageColor() { return (Color)image_config_->GetValue(ImageType::PROPERTY_NAME_COLOR); }
+    //
+    //    void SetImageColor(Color color) { image_config_->SetValue(ImageType::PROPERTY_NAME_COLOR, color); }
+    //
+    //    double GetImageTransparency() { return (Double)image_config_->GetValue(ImageType::PROPERTY_NAME_TRANSPARENCY);
+    //    }
+    //
+    //    void SetImageTransparency(double transparency) {
+    //        image_config_->SetValue(ImageType::PROPERTY_NAME_TRANSPARENCY, transparency);
+    //    }
 };
 }  // namespace snapengine
 }  // namespace alus

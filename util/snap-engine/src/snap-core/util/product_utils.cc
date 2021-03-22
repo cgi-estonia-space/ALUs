@@ -1,3 +1,21 @@
+/**
+ * This file is a filtered duplicate of a SNAP's
+ * org.esa.snap.core.util.ProductUtils.java
+ * ported for native code.
+ * Copied from (https://github.com/senbox-org/snap-engine). It was originally stated:
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #include "product_utils.h"
 
 #include <limits>
@@ -5,13 +23,13 @@
 
 #include "band.h"
 #include "ceres_assert.h"
+#include "flag_coding.h"
 #include "guardian.h"
 #include "index_coding.h"
 #include "metadata_attribute.h"
 #include "metadata_element.h"
 #include "product.h"
 #include "product_node_group.h"
-#include "flag_coding.h"
 
 namespace alus {
 namespace snapengine {

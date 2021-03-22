@@ -1,3 +1,21 @@
+/**
+ * This file is a filtered duplicate of a SNAP's
+ * org.esa.snap.core.datamodel.RasterDataNode.java
+ * ported for native code.
+ * Copied from (https://github.com/senbox-org/snap-engine). It was originally stated:
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #include "raster_data_node.h"
 
 #include <cmath>
@@ -35,7 +53,7 @@ RasterDataNode::RasterDataNode(std::string_view name, int data_type, long num_el
     //        modelToSceneTransform = MathTransform2D.IDENTITY;
     //        sceneToModelTransform = MathTransform2D.IDENTITY;
 
-//    todo: add support if needed
+    //    todo: add support if needed
     //    overlay_masks_ = std::make_shared<ProductNodeGroup<>>(this, "overlayMasks", false);
 }
 bool RasterDataNode::IsFloatingPointType() { return scaling_applied_ || DataNode::IsFloatingPointType(); }
@@ -171,10 +189,10 @@ std::shared_ptr<custom::Dimension> RasterDataNode::GetRasterSize() {
 void RasterDataNode::SetModified(bool modified) {
     bool old_state = IsModified();
     if (old_state != modified) {
-//todo: if overlay_masks get supported, then restore this code
-//        if (!modified && overlay_masks_ != nullptr) {
-//            overlay_masks_->SetModified(false);
-//        }
+        // todo: if overlay_masks get supported, then restore this code
+        //        if (!modified && overlay_masks_ != nullptr) {
+        //            overlay_masks_->SetModified(false);
+        //        }
         ProductNode::SetModified(modified);
     }
 }

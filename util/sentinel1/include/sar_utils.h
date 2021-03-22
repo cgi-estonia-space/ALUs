@@ -1,7 +1,8 @@
-/* This file is a filtered duplicate of a SNAP's
- * static nested class DOUBLE which is inside org.esa.s1tbx.commons.SARUtils.java
- * ported for native code. Copied from a s1tbx (https://github.com/senbox-org/s1tbx) repository originally stated:
- * Copyright (C) 2016 by Array Systems Computing Inc. http://www.array.ca
+/**
+ * This file is a filtered duplicate of a SNAP's
+ * org.esa.s1tbx.commons.SARUtils.java
+ * ported for native code.
+ * Copied from(https://github.com/senbox-org/s1tbx). It was originally stated:
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -35,7 +36,7 @@ class SarUtils {
      * @return wavelength
      * @throws Exception The exceptions.
      */
-   public:
+public:
     static double GetRadarFrequency(std::shared_ptr<snapengine::MetadataElement> abs_root);
 };
 

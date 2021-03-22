@@ -69,7 +69,7 @@ list(APPEND SNAP-ENGINE_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/snap-core/util/math/approximator.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/snap-core/util/geo_utils.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/snap-core/util/io/file_utils.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/snap-engine-utilities/math_utils.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/snap-core/util/math/math_utils.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/snap-engine-utilities/util/maths.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/snap-engine-utilities/util/test_utils.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/snap-engine-utilities/util/zip_utils.cc

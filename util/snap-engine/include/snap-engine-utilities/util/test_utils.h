@@ -1,8 +1,8 @@
 /**
- * This file is a filtered duplicate of a SNAP's org.esa.snap.engine_utilities.util.TestUtils.java
+ * This file is a filtered duplicate of a SNAP's
+ * org.esa.snap.engine_utilities.util.TestUtils.java
  * ported for native code.
- * Copied from a snap-engine's(https://github.com/senbox-org/snap-engine) repository originally stated:
- * Copyright (C) 2014 by Array Systems Computing Inc. http://www.array.ca
+ * Copied from (https://github.com/senbox-org/snap-engine). It was originally stated:
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -18,8 +18,8 @@
  */
 #pragma once
 
-#include <memory>
 #include <any>
+#include <memory>
 #include <string_view>
 
 #include <boost/filesystem.hpp>
@@ -29,7 +29,7 @@
 namespace alus {
 namespace snapengine {
 
-//pre-declare
+// pre-declare
 class Product;
 class Band;
 class MetadataElement;
@@ -49,11 +49,13 @@ private:
     inline static bool test_environment_initialized_ = false;
 
     static void AddGeoCoding(const std::shared_ptr<Product>& product);
-    static void CompareMetadata(const std::shared_ptr<Product>& test_product, const std::shared_ptr<Product>& expected_product, std::vector<std::string> exemption_list);
+    static void CompareMetadata(const std::shared_ptr<Product>& test_product,
+                                const std::shared_ptr<Product>& expected_product,
+                                std::vector<std::string> exemption_list);
 
 public:
     static constexpr std::string_view SKIPTEST{"skipTest"};
-//    static final Logger log = SystemUtils.LOG;
+    //    static final Logger log = SystemUtils.LOG;
 
     static void InitTestEnvironment();
 
@@ -61,31 +63,37 @@ public:
 
     static void VerifyProduct(const std::shared_ptr<Product>& product, bool verify_times, bool verify_geo_coding);
 
-    static void VerifyProduct(const std::shared_ptr<Product>& product, bool verify_times, bool verify_geo_coding, bool verify_band_data);
+    static void VerifyProduct(const std::shared_ptr<Product>& product, bool verify_times, bool verify_geo_coding,
+                              bool verify_band_data);
 
     static std::shared_ptr<Product> CreateProduct(std::string_view type, int w, int h);
 
-    static std::shared_ptr<Band> CreateBand(const std::shared_ptr<Product>& test_product, std::string_view band_name, int w, int h);
+    static std::shared_ptr<Band> CreateBand(const std::shared_ptr<Product>& test_product, std::string_view band_name,
+                                            int w, int h);
 
     static void AttributeEquals(const std::shared_ptr<MetadataElement>& elem, std::string_view name, double true_value);
 
-    static void AttributeEquals(const std::shared_ptr<MetadataElement>& elem, std::string_view name, std::string_view true_value);
+    static void AttributeEquals(const std::shared_ptr<MetadataElement>& elem, std::string_view name,
+                                std::string_view true_value);
 
-    static void CompareProducts(const std::shared_ptr<Product>& target_product, const std::shared_ptr<Product>& expected_product);
+    static void CompareProducts(const std::shared_ptr<Product>& target_product,
+                                const std::shared_ptr<Product>& expected_product);
 
-    static void ComparePixels(const std::shared_ptr<Product>& target_product, std::string_view band_name, std::vector<float> expected);
+    static void ComparePixels(const std::shared_ptr<Product>& target_product, std::string_view band_name,
+                              std::vector<float> expected);
 
-    static void ComparePixels(const std::shared_ptr<Product>& target_product, std::string_view band_name, int x, int y, std::vector<float> expected);
+    static void ComparePixels(const std::shared_ptr<Product>& target_product, std::string_view band_name, int x, int y,
+                              std::vector<float> expected);
 
-    static void CompareProducts(const std::shared_ptr<Product>& target_product, std::string_view expected_path, std::vector<std::string> exemption_list);
+    static void CompareProducts(const std::shared_ptr<Product>& target_product, std::string_view expected_path,
+                                std::vector<std::string> exemption_list);
 
     static void CompareArrays(std::vector<float> actual, std::vector<float> expected, float threshold);
 
     static bool ContainsProductType(std::vector<std::string> product_type_exemptions, std::string_view product_type);
 
     static bool SkipTest(const std::any& obj, std::string_view msg);
-
 };
 
-}  // snapengine alus
+}  // namespace snapengine
 }  // namespace alus

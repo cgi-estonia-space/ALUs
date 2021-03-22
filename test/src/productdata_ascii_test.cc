@@ -1,3 +1,21 @@
+/**
+ * This file is a filtered duplicate of a SNAP's
+ * org.esa.snap.core.datamodel.ProductDataAsciiTest.java
+ * ported for native code.
+ * Copied from (https://github.com/senbox-org/snap-engine). It was originally stated:
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #include <cstdint>
 #include <fstream>
 
@@ -25,11 +43,11 @@ TEST(ProductDataASCII, testSingleValueConstructor) {
     ASSERT_EQ("#", instance->GetElemString());
     ASSERT_EQ(true, instance->GetElemBoolean());
     ASSERT_EQ(1, instance->GetNumElems());
-    
+
     auto data = instance->GetElems();
-    ASSERT_EQ(true,  data.type() == typeid(std::vector<int8_t>));
-    ASSERT_EQ(1,std::any_cast<std::vector<int8_t>>(data).size());
-    
+    ASSERT_EQ(true, data.type() == typeid(std::vector<int8_t>));
+    ASSERT_EQ(1, std::any_cast<std::vector<int8_t>>(data).size());
+
     ASSERT_EQ(true, instance->IsScalar());
     ASSERT_EQ(false, instance->IsInt());
     ASSERT_EQ("#", instance->ToString());
@@ -41,7 +59,6 @@ TEST(ProductDataASCII, testSingleValueConstructor) {
     std::shared_ptr<ProductData> expected_unequal = ProductData::CreateInstance(ProductData::TYPE_ASCII);
     expected_unequal->SetElems(std::vector<int8_t>{126});
     ASSERT_EQ(false, instance->EqualElems(expected_unequal));
-
 }
 
 TEST(ProductDataASCII, testConstructor) {
@@ -79,7 +96,6 @@ TEST(ProductDataASCII, testConstructor) {
     std::shared_ptr<ProductData> expected_unequal = ProductData::CreateInstance(ProductData::TYPE_ASCII, 10);
     expected_unequal->SetElems(std::vector<int8_t>{'A', 'a', 'e', 'i', 'n', ' ', 'T', 'e', 's', 't'});
     ASSERT_EQ(false, instance->EqualElems(expected_unequal));
-    
 }
 
 }  // namespace

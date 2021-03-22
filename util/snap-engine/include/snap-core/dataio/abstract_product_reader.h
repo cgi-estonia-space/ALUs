@@ -1,9 +1,8 @@
 /**
- * This file is a filtered duplicate of a SNAP's org.esa.snap.core.dataio.AbstractProductReader.java
+ * This file is a filtered duplicate of a SNAP's
+ * org.esa.snap.core.dataio.AbstractProductReader.java
  * ported for native code.
- * Copied from a snap-engine (https://github.com/senbox-org/snap-engine) repository originally stated:
- *
- * Copyright (C) 2014 Brockmann Consult GmbH (info@brockmann-consult.de)
+ * Copied from (https://github.com/senbox-org/snap-engine). It was originally stated:
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -41,8 +40,7 @@ namespace alus::snapengine {
  * @see #readProductNodes
  * @see #readBandRasterData
  */
-class AbstractProductReader : public std::enable_shared_from_this<AbstractProductReader>,
-                              public IProductReader {
+class AbstractProductReader : public std::enable_shared_from_this<AbstractProductReader>, public IProductReader {
 private:
     /**
      * @since BEAM 4.9
@@ -70,14 +68,14 @@ private:
     std::shared_ptr<IProductReaderPlugIn> reader_plug_in_;
 
 protected:
-//    AbstractProductReader() = default;
+    //    AbstractProductReader() = default;
     /**
      * Constructs a new abstract product reader.
      *
      * @param readerPlugIn the reader plug-in which created this reader, can be {@code null} for internal reader
      *                     implementations
      */
-    explicit AbstractProductReader(std::shared_ptr<IProductReaderPlugIn>  reader_plug_in)
+    explicit AbstractProductReader(std::shared_ptr<IProductReaderPlugIn> reader_plug_in)
         : reader_plug_in_(std::move(reader_plug_in)) {}
 
     static std::shared_ptr<custom::Dimension> GetConfiguredTileSize(std::shared_ptr<Product> product,

@@ -1,9 +1,8 @@
 /**
- * This file is a filtered duplicate of a SNAP's org.esa.snap.core.dataio.ProductSubsetDef.java
+ * This file is a filtered duplicate of a SNAP's
+ * org.esa.snap.core.dataio.ProductSubsetDef.java
  * ported for native code.
- * Copied from a snap-engine (https://github.com/senbox-org/snap-engine) repository originally stated:
- *
- * Copyright (C) 2010 Brockmann Consult GmbH (info@brockmann-consult.de)
+ * Copied from (https://github.com/senbox-org/snap-engine). It was originally stated:
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
