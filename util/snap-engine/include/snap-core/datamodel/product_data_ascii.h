@@ -1,8 +1,8 @@
 /**
  * This file is a filtered duplicate of a SNAP's
  * static nested class ASCII which is inside org.esa.snap.core.datamodel.ProductData.java
- * ported for native code. Copied from a snap-engine's(https://github.com/senbox-org/snap-engine) repository originally
- * stated to be implemented by "Copyright (C) 2010 Brockmann Consult GmbH (info@brockmann-consult.de)"
+ * ported for native code.
+ * Copied from (https://github.com/senbox-org/snap-engine). It was originally stated:
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -29,7 +29,7 @@ namespace snapengine {
  * <p> Internally, data is stored in an array of the type {@code byte[]}.
  */
 class ASCII : public Byte {
-   protected:
+protected:
     /**
      * Retuns a "deep" copy of this product data.
      *
@@ -37,7 +37,7 @@ class ASCII : public Byte {
      */
     [[nodiscard]] std::shared_ptr<ProductData> CreateDeepClone() const override;
 
-   public:
+public:
     /**
      * Constructs a new {@code ASCII} value.
      *

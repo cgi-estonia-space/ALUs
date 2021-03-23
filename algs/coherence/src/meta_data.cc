@@ -1,3 +1,16 @@
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #include "meta_data.h"
 
 #include "date_utils.h"
@@ -8,7 +21,8 @@
 
 namespace alus {
 
-MetaData::MetaData(IDataTileReader *incidence_angle_reader, std::shared_ptr<snapengine::MetadataElement> element, int orbit_degree) {
+MetaData::MetaData(IDataTileReader* incidence_angle_reader, std::shared_ptr<snapengine::MetadataElement> element,
+                   int orbit_degree) {
     // get angle for first and last to understand if this is ok (need to calculate from input product...
 
     //    todo:check slave vs master on this  if they use the same input files we should not read these again
@@ -68,7 +82,7 @@ MetaData::MetaData(IDataTileReader *incidence_angle_reader, std::shared_ptr<snap
 }
 
 // todo: how should we tie this to specific product in our logic?
-bool MetaData::IsNearRangeOnLeft(IDataTileReader *incidence_angle_reader) {
+bool MetaData::IsNearRangeOnLeft(IDataTileReader* incidence_angle_reader) {
     const double INCIDENCE_ANGLE_TO_FIRST_PIXEL = incidence_angle_reader->GetValueAtXy(
         incidence_angle_reader->GetBandXMin(), incidence_angle_reader->GetBandYMin());
     const double INCIDENCE_ANGLE_TO_LAST_PIXEL = incidence_angle_reader->GetValueAtXy(

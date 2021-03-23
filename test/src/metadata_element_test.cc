@@ -1,18 +1,39 @@
+/**
+ * This file is a filtered duplicate of a SNAP's
+ * org.esa.snap.core.datamodel.MetadataElementTest.java
+ * ported for native code.
+ * Copied from (https://github.com/senbox-org/snap-engine). It was originally stated:
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #include <cstdint>
 #include <fstream>
+#include <memory>
+#include <stdexcept>
 
 #include "gmock/gmock.h"
-#include "metadata_element.h"
+
 #include "metadata_attribute.h"
+#include "metadata_element.h"
 
 namespace {
 using namespace alus::snapengine;
 
 class ProductDataMetadataElementTest : public ::testing::Test {
-   public:
+public:
     ~ProductDataMetadataElementTest() override = default;
 
-   protected:
+protected:
     MetadataElement test_group_;
 
     void SetUp() override { test_group_ = MetadataElement{"test"}; }
@@ -69,8 +90,8 @@ TEST(MetadataElement, testGetAttribute) {
     // a new object should not return anything on this request
     EXPECT_THROW(annot->GetAttributeAt(0), std::runtime_error);
 
-    auto att = std::make_shared<MetadataAttribute>(
-        "GuiTest_DialogAndModalDialog", ProductData::CreateInstance(ProductData::TYPE_INT32), false);
+    auto att = std::make_shared<MetadataAttribute>("GuiTest_DialogAndModalDialog",
+                                                   ProductData::CreateInstance(ProductData::TYPE_INT32), false);
     annot->AddAttribute(att);
     ASSERT_EQ(att, annot->GetAttributeAt(0));
 }
@@ -81,8 +102,8 @@ TEST(MetadataElement, testGetAttribute) {
 TEST(MetadataElement, testGetAttributeNames) {
     auto annot = std::make_shared<MetadataElement>("yepp");
 
-    auto att = std::make_shared<MetadataAttribute>(
-        "GuiTest_DialogAndModalDialog", ProductData::CreateInstance(ProductData::TYPE_INT32), false);
+    auto att = std::make_shared<MetadataAttribute>("GuiTest_DialogAndModalDialog",
+                                                   ProductData::CreateInstance(ProductData::TYPE_INT32), false);
 
     // initially no strings should be returned
     ASSERT_EQ(0, annot->GetAttributeNames().size());
@@ -98,8 +119,8 @@ TEST(MetadataElement, testGetAttributeNames) {
  */
 TEST(MetadataElement, testGetNumAttributes) {
     auto annot = std::make_shared<MetadataElement>("yepp");
-    auto att = std::make_shared<MetadataAttribute>(
-        "GuiTest_DialogAndModalDialog", ProductData::CreateInstance(ProductData::TYPE_INT32), false);
+    auto att = std::make_shared<MetadataAttribute>("GuiTest_DialogAndModalDialog",
+                                                   ProductData::CreateInstance(ProductData::TYPE_INT32), false);
 
     // a new object should not have any attributes
     ASSERT_EQ(0, annot->GetNumAttributes());
@@ -114,10 +135,10 @@ TEST(MetadataElement, testGetNumAttributes) {
  */
 TEST(MetadataElement, testRemoveAttribute) {
     auto annot = std::make_shared<MetadataElement>("yepp");
-    auto att = std::make_shared<MetadataAttribute>(
-        "GuiTest_DialogAndModalDialog", ProductData::CreateInstance(ProductData::TYPE_INT32), false);
-    auto att2 = std::make_shared<MetadataAttribute>(
-        "GuiTest_DialogAndModalDialog", ProductData::CreateInstance(ProductData::TYPE_INT32), false);
+    auto att = std::make_shared<MetadataAttribute>("GuiTest_DialogAndModalDialog",
+                                                   ProductData::CreateInstance(ProductData::TYPE_INT32), false);
+    auto att2 = std::make_shared<MetadataAttribute>("GuiTest_DialogAndModalDialog",
+                                                    ProductData::CreateInstance(ProductData::TYPE_INT32), false);
 
     // add one, check, remove again, check again
     annot->AddAttribute(att);
@@ -132,8 +153,8 @@ TEST(MetadataElement, testRemoveAttribute) {
     ASSERT_EQ(2, annot->GetNumAttributes());
 
     // try to remove non existent attribute
-    auto att3 = std::make_shared<MetadataAttribute>(
-        "DifferentName", ProductData::CreateInstance(ProductData::TYPE_INT32), false);
+    auto att3 = std::make_shared<MetadataAttribute>("DifferentName",
+                                                    ProductData::CreateInstance(ProductData::TYPE_INT32), false);
     annot->RemoveAttribute(att3);
     ASSERT_EQ(2, annot->GetNumAttributes());
 }

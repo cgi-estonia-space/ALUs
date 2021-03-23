@@ -1,3 +1,21 @@
+/**
+ * This file is a filtered duplicate of a SNAP's
+ * org.esa.s1tbx.io.sentinel1.Sentinel1Level1Directory.java
+ * ported for native code.
+ * Copied from(https://github.com/senbox-org/s1tbx). It was originally stated:
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #pragma once
 
 #include <memory>
@@ -28,8 +46,11 @@ private:
     std::string acq_mode_ = "";
     static constexpr double NO_DATA_VALUE = 0.0;  //-9999.0;
 
-    static std::shared_ptr<snapengine::MetadataElement> FindElement(const std::shared_ptr<snapengine::MetadataElement>& elem, std::string_view name);
-    static std::shared_ptr<snapengine::MetadataElement> FindElementContaining(const std::shared_ptr<snapengine::MetadataElement>& parent, std::string_view elem_name, std::string_view attrib_name, std::string_view att_value);
+    static std::shared_ptr<snapengine::MetadataElement> FindElement(
+        const std::shared_ptr<snapengine::MetadataElement>& elem, std::string_view name);
+    static std::shared_ptr<snapengine::MetadataElement> FindElementContaining(
+        const std::shared_ptr<snapengine::MetadataElement>& parent, std::string_view elem_name,
+        std::string_view attrib_name, std::string_view att_value);
     static void SetLatLongMetadata(const std::shared_ptr<snapengine::Product>& product,
                                    const std::shared_ptr<snapengine::TiePointGrid>& lat_grid,
                                    const std::shared_ptr<snapengine::TiePointGrid>& lon_grid);
@@ -39,16 +60,22 @@ private:
     void AddTiePointGrids(const std::shared_ptr<snapengine::Product>& product,
                           const std::shared_ptr<snapengine::Band>& band, std::string_view img_x_m_l_name,
                           std::string_view tpg_prefix);
-//    todo: check if this works like in snap...
+    //    todo: check if this works like in snap...
     void AddProductInfoJSON(const std::shared_ptr<snapengine::MetadataElement>& orig_prod_root);
-    void AddBandAbstractedMetadata(const std::shared_ptr<snapengine::MetadataElement>& abs_root, const std::shared_ptr<snapengine::MetadataElement>& orig_prod_root);
-    void AddOrbitStateVectors(const std::shared_ptr<snapengine::MetadataElement>& abs_root, const std::shared_ptr<snapengine::MetadataElement>& orbit_list);
-    void AddSRGRCoefficients(const std::shared_ptr<snapengine::MetadataElement>& abs_root, const std::shared_ptr<snapengine::MetadataElement>& coordinate_conversion);
-    void AddDopplerCentroidCoefficients(const std::shared_ptr<snapengine::MetadataElement>& abs_root, const std::shared_ptr<snapengine::MetadataElement>& doppler_centroid);
-    void AddVector(std::string_view name, const std::shared_ptr<snapengine::MetadataElement>& orbit_vector_list_elem, const std::shared_ptr<snapengine::MetadataElement>& orbit_elem, std::size_t num);
+    void AddBandAbstractedMetadata(const std::shared_ptr<snapengine::MetadataElement>& abs_root,
+                                   const std::shared_ptr<snapengine::MetadataElement>& orig_prod_root);
+    void AddOrbitStateVectors(const std::shared_ptr<snapengine::MetadataElement>& abs_root,
+                              const std::shared_ptr<snapengine::MetadataElement>& orbit_list);
+    void AddSRGRCoefficients(const std::shared_ptr<snapengine::MetadataElement>& abs_root,
+                             const std::shared_ptr<snapengine::MetadataElement>& coordinate_conversion);
+    void AddDopplerCentroidCoefficients(const std::shared_ptr<snapengine::MetadataElement>& abs_root,
+                                        const std::shared_ptr<snapengine::MetadataElement>& doppler_centroid);
+    void AddVector(std::string_view name, const std::shared_ptr<snapengine::MetadataElement>& orbit_vector_list_elem,
+                   const std::shared_ptr<snapengine::MetadataElement>& orbit_elem, std::size_t num);
     double GetBandTerrainHeight(const std::shared_ptr<snapengine::MetadataElement>& prod_elem);
     void AddCalibrationAbstractedMetadata(const std::shared_ptr<snapengine::MetadataElement>& orig_prod_root);
     void AddNoiseAbstractedMetadata(const std::shared_ptr<snapengine::MetadataElement>& orig_prod_root);
+
 protected:
     static void AddManifestMetadata(std::string_view product_name,
                                     const std::shared_ptr<snapengine::MetadataElement>& abs_root,

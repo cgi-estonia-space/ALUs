@@ -1,4 +1,9 @@
 /**
+ * This file is a filtered duplicate of a SNAP's
+ * org.esa.snap.core.datamodel.ProductData.java
+ * ported for native code.
+ * Copied from (https://github.com/senbox-org/snap-engine). It was originally stated:
+ *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
  * Software Foundation; either version 3 of the License, or (at your option)

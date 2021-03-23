@@ -1,3 +1,21 @@
+/**
+ * This file is a filtered duplicate of a SNAP's
+ * org.esa.s1tbx.io.orbits.sentinel1.SentinelPODOrbitFile.java
+ * ported for native code.
+ * Copied from (https://github.com/senbox-org/s1tbx). It was originally stated:
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #include "io/orbits/sentinel1/sentinel_p_o_d_orbit_file.h"
 
 #include <algorithm>
@@ -13,7 +31,7 @@ namespace alus {
 namespace s1tbx {
 
 std::vector<std::shared_ptr<snapengine::OrbitVector>> SentinelPODOrbitFile::GetOrbitData(double start_utc,
-                                                                                              double end_utc) {
+                                                                                         double end_utc) {
     auto start_osv = std::make_shared<snapengine::OrbitVector>(start_utc);
     int start_idx = static_cast<int>(
         std::binary_search(osv_list_.begin(), osv_list_.end(), start_osv, snapengine::OrbitVector::Compare));
@@ -109,10 +127,12 @@ std::shared_ptr<snapengine::OrbitVector> SentinelPODOrbitFile::GetOrbitData(doub
 
     double normalized_time = utc - t0;
 
-    return std::make_shared<snapengine::OrbitVector>(
-        utc, snapengine::Maths::PolyVal(normalized_time, x_pos_coeff), snapengine::Maths::PolyVal(normalized_time, y_pos_coeff),
-        snapengine::Maths::PolyVal(normalized_time, z_pos_coeff), snapengine::Maths::PolyVal(normalized_time, x_vel_coeff),
-        snapengine::Maths::PolyVal(normalized_time, y_vel_coeff), snapengine::Maths::PolyVal(normalized_time, z_vel_coeff));
+    return std::make_shared<snapengine::OrbitVector>(utc, snapengine::Maths::PolyVal(normalized_time, x_pos_coeff),
+                                                     snapengine::Maths::PolyVal(normalized_time, y_pos_coeff),
+                                                     snapengine::Maths::PolyVal(normalized_time, z_pos_coeff),
+                                                     snapengine::Maths::PolyVal(normalized_time, x_vel_coeff),
+                                                     snapengine::Maths::PolyVal(normalized_time, y_vel_coeff),
+                                                     snapengine::Maths::PolyVal(normalized_time, z_vel_coeff));
 }
 
 boost::filesystem::path SentinelPODOrbitFile::RetrieveOrbitFile(std::string_view orbit_type) {

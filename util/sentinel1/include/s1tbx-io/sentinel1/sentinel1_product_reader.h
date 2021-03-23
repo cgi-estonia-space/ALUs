@@ -1,9 +1,8 @@
 /**
- * This file is a filtered duplicate of a SNAP's org.esa.s1tbx.io.sentinel1.Sentinel1ProductReader.java
+ * This file is a filtered duplicate of a SNAP's
+ * org.esa.s1tbx.io.sentinel1.Sentinel1ProductReader.java
  * ported for native code.
- * Copied from a snap-engine's s1tbx (https://github.com/senbox-org/s1tbx) repository originally stated:
- *
- * Copyright (C) 2015 by Array Systems Computing Inc. http://www.array.ca
+ * Copied from (https://github.com/senbox-org/s1tbx). It was originally stated:
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free

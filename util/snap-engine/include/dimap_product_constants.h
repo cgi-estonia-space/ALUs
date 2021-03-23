@@ -1,7 +1,8 @@
 /**
- * This file is a filtered duplicate of a SNAP's org.esa.snap.core.dataio.dimap.DimapProductConstants.java ported
- * for native code. Copied from a snap-engine's(https://github.com/senbox-org/snap-engine) repository originally stated
- * to be implemented by "Copyright (C) 2010 Brockmann Consult GmbH (info@brockmann-consult.de)"
+ * This file is a filtered duplicate of a SNAP's
+ * org.esa.snap.core.dataio.dimap.DimapProductConstants.java
+ * ported for native code.
+ * Copied from (https://github.com/senbox-org/snap-engine). It was originally stated:
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -47,7 +48,7 @@ class DimapProductConstants {
     static constexpr std::string_view DIMAP_METADATA_PROFILE = "BEAM-DATAMODEL-V1";
     static constexpr std::string_view DIMAP_DATASET_SERIES = "BEAM-PRODUCT";
     static constexpr std::string_view DATASET_PRODUCER_NAME = " ";
-    // final static String DATASET_PRODUCER_NAME = "Brockmann-Consult | Phone +49 (04152) 889 300";
+
     static constexpr std::string_view DATA_FILE_FORMAT = "ENVI";
     static constexpr std::string_view DATA_FILE_FORMAT_DESCRIPTION = "ENVI File Format";
     static constexpr std::string_view DATA_FILE_ORGANISATION = "BAND_SEPARATE";

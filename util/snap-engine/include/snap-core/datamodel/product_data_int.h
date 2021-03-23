@@ -1,8 +1,8 @@
 /**
  * This file is a filtered duplicate of a SNAP's
- * static nested class INT which is inside org.esa.snap.core.datamodel.ProductData.java
- * ported for native code. Copied from a snap-engine's(https://github.com/senbox-org/snap-engine) repository originally
- * stated to be implemented by "Copyright (C) 2010 Brockmann Consult GmbH (info@brockmann-consult.de)"
+ * static nested class Int which is inside org.esa.snap.core.datamodel.ProductData.java
+ * ported for native code.
+ * Copied from (https://github.com/senbox-org/snap-engine). It was originally stated:
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -34,7 +34,7 @@ class ProductData;
  * <p> Internally, data is stored in an array of the type {@code int[]}.
  */
 class Int : public ProductData {
-   protected:
+protected:
     /**
      * The internal data array holding this value's data elements.
      */
@@ -58,7 +58,7 @@ class Int : public ProductData {
 
     [[nodiscard]] std::shared_ptr<ProductData> CreateDeepClone() const override;
 
-   public:
+public:
     /**
      * Constructs a new signed {@code int} value.
      *
