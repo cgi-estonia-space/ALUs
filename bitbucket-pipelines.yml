@@ -26,6 +26,7 @@ pipelines:
             - mkdir -p $BITBUCKET_CLONE_DIR/build/test-reports
             - git ls-files --cached --recurse-submodules | tar Tczf - archive.tar.gz
             - $BITBUCKET_CLONE_DIR/build-automation/run_ci_on_ec2_instance.sh "archive.tar.gz" $G3_4xLARGE_INSTANCE_ID "sid_man"
+          after-script:  
             - date_stamp=$(date +"%Y_%m_%d_%H%M")
             - cd $BITBUCKET_CLONE_DIR/build/ci-artifacts/
             - >
