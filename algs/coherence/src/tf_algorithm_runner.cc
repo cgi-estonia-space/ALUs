@@ -11,7 +11,7 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
-#include <tf_algorithm_runner.h>
+#include "tf_algorithm_runner.h"
 
 #include <iostream>
 #include <vector>
@@ -20,26 +20,22 @@ namespace alus {
 
 void TFAlgorithmRunner::Run() {
     // todo:resolve parameters in a better way here (maybe add user provided options during construction?)
-    auto tiles = this->tile_provider_->GetTiles();
-    this->algo_->PreTileCalc(*this->scope_);
+    auto tiles = tile_provider_->GetTiles();
+    algo_->PreTileCalc(*scope_);
     size_t i{0};
-    const size_t TILES_TO_PROCESS{tiles.size()};
+    const size_t tiles_to_process{tiles.size()};
     for (auto tile : tiles) {
-        this->tile_reader_->ReadTile(tile.GetTileIn());
+        tile_reader_->ReadTile(tile.GetTileIn());
         // todo:move to tensors
-        this->algo_->DataToTensors(tile.GetTileIn(), *this->tile_reader_);
-        // to prepare variables for actual tile manipulations
-        std::vector<tensorflow::Output> algo_graph_tile{this->algo_->TileCalc(*this->scope_, tile)};
-        tensorflow::ClientSession::FeedType& inputs = this->algo_->GetInputs();
+        algo_->DataToTensors(tile.GetTileIn(), *tile_reader_);
         std::vector<tensorflow::Tensor> outputs_101;
-        TF_CHECK_OK(this->session_->Run(inputs,
-                                        // todo:do both here using abstract function
-                                        algo_graph_tile, &outputs_101));
-        this->tile_writer_->WriteTile(tile.GetTileOut(), outputs_101[0].data());
-
+        TF_CHECK_OK(session_->Run(algo_->GetInputs(),
+                                  // todo:do both here using abstract function
+                                  std::vector<tensorflow::Output>{algo_->TileCalc(*scope_, tile)}, &outputs_101));
+        tile_writer_->WriteTile(tile.GetTileOut(), static_cast<float*>(outputs_101.at(0).data()), outputs_101.size());
         ++i;
         std::cout << '\r' << "Tile " << i << "/" << tiles.size() << " processed" << std::endl;
-        if (i >= TILES_TO_PROCESS) {
+        if (i >= tiles_to_process) {
             break;
         }
     }

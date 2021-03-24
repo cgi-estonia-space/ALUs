@@ -18,11 +18,13 @@
 #include <iostream>
 #include <string_view>
 
-#include <boost/algorithm/string.hpp>
 #include <gdal_priv.h>
+#include <boost/algorithm/string.hpp>
 
 #include "algorithm_parameters.h"
+#include "band_params.h"
 #include "coh_tiles_generator.h"
+#include "coh_window.h"
 #include "coherence_calc.h"
 #include "gdal_tile_reader.h"
 #include "gdal_tile_writer.h"
@@ -80,39 +82,25 @@ namespace alus {
         }
 
         std::unique_ptr<GdalTileWriter> coh_data_writer{};
+        BandParams band_params{band_map_out,
+                               band_count_out,
+                               coh_data_reader->GetBandXSize(),
+                               coh_data_reader->GetBandYSize(),
+                               coh_data_reader->GetBandXMin(),
+                               coh_data_reader->GetBandYMin()};
         if (output_driver_ != nullptr) {
-            coh_data_writer = std::make_unique<GdalTileWriter>(output_driver_,
-                                                               band_map_out,
-                                                               band_count_out,
-                                                               coh_data_reader->GetBandXSize(),
-                                                               coh_data_reader->GetBandYSize(),
-                                                               coh_data_reader->GetBandXMin(),
-                                                               coh_data_reader->GetBandYMin(),
-                                                               coh_data_reader->GetGeoTransform(),
-                                                               coh_data_reader->GetDataProjection());
+            coh_data_writer = std::make_unique<GdalTileWriter>(
+                output_driver_, band_params, coh_data_reader->GetGeoTransform(), coh_data_reader->GetDataProjection());
         } else {
-            coh_data_writer = std::make_unique<GdalTileWriter>(output_name_,
-                                                               band_map_out,
-                                                               band_count_out,
-                                                               coh_data_reader->GetBandXSize(),
-                                                               coh_data_reader->GetBandYSize(),
-                                                               coh_data_reader->GetBandXMin(),
-                                                               coh_data_reader->GetBandYMin(),
-                                                               coh_data_reader->GetGeoTransform(),
-                                                               coh_data_reader->GetDataProjection());
+            coh_data_writer = std::make_unique<GdalTileWriter>(
+                output_name_, band_params, coh_data_reader->GetGeoTransform(), coh_data_reader->GetDataProjection());
         }
         alus::CohTilesGenerator tiles_generator{
-            coh_data_reader->GetBandXSize(), coh_data_reader->GetBandYSize(), tile_width_, tile_height_,
-            coherence_window_range_,        coherence_window_azimuth_};
-        alus::Coh coherence{srp_number_points_,
-                            srp_polynomial_degree_,
-                            subtract_flat_earth_phase_,
-                            coherence_window_range_,
-                            coherence_window_azimuth_,
-                            tile_width_,
-                            tile_height_,
-                            orbit_degree_,
-                            meta_master,
+            coh_data_reader->GetBandXSize(), coh_data_reader->GetBandYSize(), static_cast<int>(tile_width_), static_cast<int>(tile_height_),
+            coherence_window_range_,         coherence_window_azimuth_};
+        CohWindow coh_window{coherence_window_range_, coherence_window_azimuth_};
+        alus::Coh coherence{srp_number_points_, srp_polynomial_degree_, subtract_flat_earth_phase_,
+                            coh_window,         orbit_degree_,          meta_master,
                             meta_slave};
 
         // create session for tensorflow
@@ -123,8 +111,8 @@ namespace alus {
         tensorflow::ClientSession session(root, options);
 
         // run the algorithm
-        alus::TFAlgorithmRunner tf_algo_runner{coh_data_reader.get(), coh_data_writer.get(), &tiles_generator,
-                                               &coherence,       &session,         &root};
+        alus::TFAlgorithmRunner tf_algo_runner{
+            coh_data_reader.get(), coh_data_writer.get(), &tiles_generator, &coherence, &session, &root};
         tf_algo_runner.Run();
 
         output_dataset_ = coh_data_writer->GetGdalDataset();

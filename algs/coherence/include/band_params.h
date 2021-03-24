@@ -1,3 +1,5 @@
+#include <utility>
+
 /**
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -13,25 +15,25 @@
  */
 #pragma once
 
-#include <string_view>
-#include <vector>
-
-#include "i_data_tile_read_write_base.h"
-#include "tile.h"
-
-/**
- * reads I tiles from tiles
- */
 namespace alus {
-class IDataTileReader : public IDataTileReadWriteBase {
-public:
-    IDataTileReader() = delete;
-    // todo:check if this works like expected
-    IDataTileReader(std::string_view file_name, const std::vector<int>& band_map, int band_count)
-        : IDataTileReadWriteBase(file_name, band_map, band_count) {}
-    virtual ~IDataTileReader() = default;
-    virtual void ReadTile(const Tile& tile) = 0;
-    [[nodiscard]] virtual const std::vector<float>& GetData() const = 0;
-    [[nodiscard]] virtual double GetValueAtXy(int x, int y) const = 0;
+
+struct BandParams {
+    std::vector<int> band_map;
+    int band_count;
+    int band_x_size{0};
+    int band_y_size{0};
+    int band_x_min{0};
+    int band_y_min{0};
+    BandParams(std::vector<int>  band_map, int band_count)
+        : band_map(std::move(band_map)), band_count(band_count){}
+    BandParams(std::vector<int>  band_map, int band_count, int band_x_size, int band_y_size, int band_x_min,
+               int band_y_min)
+        : band_map(std::move(band_map)),
+          band_count(band_count),
+          band_x_size(band_x_size),
+          band_y_size(band_y_size),
+          band_x_min(band_x_min),
+          band_y_min(band_y_min) {}
 };
+
 }  // namespace alus

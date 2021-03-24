@@ -22,7 +22,9 @@
 
 #include <openssl/md5.h>
 
+#include "band_params.h"
 #include "coh_tiles_generator.h"
+#include "coh_window.h"
 #include "coherence_calc.h"
 #include "gdal_tile_reader.h"
 #include "gdal_tile_writer.h"
@@ -39,7 +41,7 @@ std::string Md5FromFile(const std::string& path) {
     MD5((unsigned char*)src.data(), src.size(), result);
     std::ostringstream sout;
     sout << std::hex << std::setfill('0');
-    for (auto c : result) sout << std::setw(2) << (int)c;
+    for (auto c : result) sout << std::setw(2) << static_cast<int>(c);
     return sout.str();
 }
 
@@ -50,7 +52,7 @@ public:
 protected:
     boost::filesystem::path file_name_in_{"./goods/coherence/4_bands.tif"};
     boost::filesystem::path file_name_out_{"/tmp/4_bands_coh.tif"};
-    std::string expected_md5_{"377f197761b36be10c8551c01ac38c62"};
+    std::string expected_md5_{"87e3e14bbcad99099c3c35c01a647a86"};
 
     void SetUp() override { boost::filesystem::remove(file_name_out_); }
 };
@@ -65,13 +67,13 @@ TEST_F(CoherenceIntegrationTest, single_burst_data_2018) {
         // orbit interpolation degree
         constexpr int ORBIT_DEGREE{3};
         // calculation tile size x and y dimension
-        constexpr int TILE_X{2675};
-        constexpr int TILE_Y{1503};
+        constexpr int TILE_X_SIZE{2675};
+        constexpr int TILE_Y_SIZE{1503};
 
-        const char* FILE_NAME_IA = "./goods/coherence/incident_angle.img";
+        const char* file_name_ia = "./goods/coherence/incident_angle.img";
         std::vector<int> band_map_ia{1};
         int band_count_ia = 1;
-        alus::GdalTileReader ia_data_reader{FILE_NAME_IA, band_map_ia, band_count_ia, false};
+        alus::GdalTileReader ia_data_reader{file_name_ia, band_map_ia, band_count_ia, false};
         // small dataset as single tile
         alus::Tile incidence_angle_data_set{ia_data_reader.GetBandXSize() - 1, ia_data_reader.GetBandYSize() - 1,
                                             ia_data_reader.GetBandXMin(), ia_data_reader.GetBandYMin()};
@@ -97,25 +99,29 @@ TEST_F(CoherenceIntegrationTest, single_burst_data_2018) {
         int band_count_out = 1;
 
         alus::GdalTileReader coh_data_reader{file_name_in_.c_str(), band_map, band_count_in, true};
-        alus::GdalTileWriter coh_data_writer{file_name_out_.c_str(),
-                                             band_map_out,
-                                             band_count_out,
-                                             coh_data_reader.GetBandXSize(),
-                                             coh_data_reader.GetBandYSize(),
-                                             coh_data_reader.GetBandXMin(),
-                                             coh_data_reader.GetBandYMin(),
-                                             coh_data_reader.GetGeoTransform(),
+        alus::BandParams band_params{band_map_out,
+                                     band_count_out,
+                                     coh_data_reader.GetBandXSize(),
+                                     coh_data_reader.GetBandYSize(),
+                                     coh_data_reader.GetBandXMin(),
+                                     coh_data_reader.GetBandYMin()};
+        alus::GdalTileWriter coh_data_writer{file_name_out_.c_str(), band_params, coh_data_reader.GetGeoTransform(),
                                              coh_data_reader.GetDataProjection()};
-        alus::CohTilesGenerator tiles_generator{
-            coh_data_reader.GetBandXSize(), coh_data_reader.GetBandYSize(), TILE_X, TILE_Y, COH_WIN_RG, COH_WIN_RG};
-        alus::Coh coherence{
-            SRP_NUMBER_POINTS, SRP_POLYNOMIAL_DEGREE, SUBTRACT_FLAT_EARTH, COH_WIN_RG, COH_WIN_AZ, TILE_X, TILE_Y,
-            ORBIT_DEGREE,      meta_master,           meta_slave};
+        alus::CohTilesGenerator tiles_generator{coh_data_reader.GetBandXSize(),
+                                                coh_data_reader.GetBandYSize(),
+                                                TILE_X_SIZE,
+                                                TILE_Y_SIZE,
+                                                COH_WIN_RG,
+                                                COH_WIN_AZ};
+        alus::CohWindow coh_window{COH_WIN_RG, COH_WIN_AZ};
+        alus::Coh coherence{SRP_NUMBER_POINTS, SRP_POLYNOMIAL_DEGREE, SUBTRACT_FLAT_EARTH, coh_window,
+                            ORBIT_DEGREE,      meta_master,           meta_slave};
 
         // create session for tensorflow
         tensorflow::Scope root = tensorflow::Scope::NewRootScope();
         auto options = tensorflow::SessionOptions();
         options.config.mutable_gpu_options()->set_allow_growth(true);
+        //        options.config.mutable_gpu_options()->set_per_process_gpu_memory_fraction(0.1);
         tensorflow::ClientSession session(root, options);
         // run the algorithm
         alus::TFAlgorithmRunner tf_algo_runner{&coh_data_reader, &coh_data_writer, &tiles_generator,
