@@ -230,6 +230,7 @@ public:
     void SetMetadataReader(const std::shared_ptr<IMetaDataReader>& metadata_reader);
     const std::shared_ptr<IMetaDataWriter>& GetMetadataWriter() const;
     void SetMetadataWriter(const std::shared_ptr<IMetaDataWriter>& metadata_writer);
+    bool HasMetaDataReader() const;
 
     /**
      * Workaround static function which calls constructor with same parameters and also inits members which need

@@ -46,6 +46,9 @@ private:
     std::shared_ptr<IOrbitFile> orbit_provider_;
     std::shared_ptr<snapengine::MetadataElement> abs_root_;
 
+    // extension to snap, apply the orbit file to source only
+    bool modify_source_only_{false};
+
     /**
      * Update orbit state vectors using data from the orbit file.
      *
@@ -68,6 +71,8 @@ private:
 
 public:
     explicit ApplyOrbitFileOp(const std::shared_ptr<snapengine::Product>& source_product);
+
+    ApplyOrbitFileOp(const std::shared_ptr<snapengine::Product>& source_product, bool modify_source_only);
     /**
      * Initializes this operator and sets the one and only target product.
      * <p>The target product can be either defined by a field of type {@link Product} annotated with the

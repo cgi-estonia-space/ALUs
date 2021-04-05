@@ -189,6 +189,11 @@ void Product::SetMetadataReader(const std::shared_ptr<IMetaDataReader>& metadata
     metadata_reader_ = metadata_reader;
     metadata_reader_->SetProduct(SharedFromBase<Product>());
 }
+
+bool Product::HasMetaDataReader() const
+{
+    return metadata_reader_ != nullptr;
+}
 const std::shared_ptr<IMetaDataWriter>& Product::GetMetadataWriter() const {
     if (metadata_writer_) {
         return metadata_writer_;

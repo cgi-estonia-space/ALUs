@@ -25,7 +25,8 @@
 
 #include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
 #include "snap-engine-utilities/util/maths.h"
-#include "string_utils.h"
+#include "snap-core/util/string_utils.h"
+#include "snap-core/util/system_utils.h"
 
 namespace alus {
 namespace s1tbx {
@@ -206,7 +207,7 @@ boost::filesystem::path SentinelPODOrbitFile::GetDestFolder(std::string_view mis
     boost::filesystem::path dest_folder(/*pref_orbit_path + boost::filesystem::path::preferred_separator +*/
                                         // todo:hardcoded directory probably want to provide this from command line,
                                         // need to talk this over with others
-                                        "./goods/apply_orbit_file_op/orbit-files/" + std::string(mission_prefix) +
+                                        snapengine::SystemUtils::GetAuxDataPath().string() +  std::string(mission_prefix) +
                                         boost::filesystem::path::preferred_separator + std::to_string(year) +
                                         boost::filesystem::path::preferred_separator +
                                         snapengine::StringUtils::PadNum(month, 2, '0'));

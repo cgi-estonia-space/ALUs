@@ -44,24 +44,32 @@ class SystemUtils {
      * @since SNAP 2.0
      */
     static boost::filesystem::path GetAuxDataPath() {
-        return GetApplicationDataDir().toPath().resolve(AUXDATA_DIR_NAME);
+        //return GetApplicationDataDir().toPath().resolve(AUXDATA_DIR_NAME);
+        return aux_data_path_;
     }
 
-    /**
+    // Temporary solution for having a aux path usable for orbit file finding
+    static void SetAuxDataPath(const std::string& aux_data_path)
+    {
+        aux_data_path_ = aux_data_path;
+    }
+
+    /*
+    **
      * Gets the current user's application data directory.
      *
      * @return the current user's application data directory
      * @since BEAM 4.2
-     */
+     *
     static boost::filesystem::path GetApplicationDataDir() { return GetApplicationDataDir(false); }
 
-    /**
+    **
      * Optionally creates and returns the current user's application data directory.
      *
      * @param force if true, the directory will be created if it didn't exist before
      * @return the current user's application data directory
      * @since BEAM 4.2
-     */
+     *
     static boost::filesystem::path GetApplicationDataDir(bool force) {
         boost::filesystem::path dir = Config.instance().userDir().toFile();
         if (force && !(boost::filesystem::exists(dir) && boost::filesystem::is_directory(dir))) {
@@ -69,6 +77,9 @@ class SystemUtils {
         }
         return dir;
     }
+    */
+    private:
+        inline static boost::filesystem::path aux_data_path_;
 };
 
 }  // namespace snapengine

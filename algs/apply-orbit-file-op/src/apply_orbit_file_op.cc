@@ -34,7 +34,10 @@ namespace alus {
 namespace s1tbx {
 
 ApplyOrbitFileOp::ApplyOrbitFileOp(const std::shared_ptr<snapengine::Product>& source_product)
-    : source_product_(source_product) {}
+    : source_product_(source_product)  {}
+
+ApplyOrbitFileOp::ApplyOrbitFileOp(const std::shared_ptr<snapengine::Product>& source_product, bool modify_source_only)
+    : source_product_(source_product), modify_source_only_(modify_source_only) {}
 
 void ApplyOrbitFileOp::GetSourceMetadata() {
     // original snap version creates Product when it is opened inside snap, it uses DimapProductHelpers and calls
@@ -42,8 +45,10 @@ void ApplyOrbitFileOp::GetSourceMetadata() {
     // has everything set, snap version is absRoot = AbstractMetadata.getAbstractedMetadata(sourceProduct);  which uses
     // a bit different logic copy is using root element which is metadata todo: check if source product already gets
     // respective elements attached before (this logic is deviation from original snap logic)
-    source_product_->GetMetadataRoot()->AddElement(
-        source_product_->GetMetadataReader()->Read(alus::snapengine::AbstractMetadata::ABSTRACT_METADATA_ROOT));
+    if(source_product_->HasMetaDataReader()) {
+        source_product_->GetMetadataRoot()->AddElement(
+            source_product_->GetMetadataReader()->Read(alus::snapengine::AbstractMetadata::ABSTRACT_METADATA_ROOT));
+    }
     // get abstracted metadata from source product
     abs_root_ = snapengine::AbstractMetadata::GetAbstractedMetadata(source_product_);
     mission_ = abs_root_->GetAttributeString(snapengine::AbstractMetadata::MISSION);
@@ -78,7 +83,9 @@ void ApplyOrbitFileOp::Initialize() {
 
         // skip until we have more core datamodel ported
         //        GetTiePointGrid();
-        CreateTargetProduct();
+        if(!modify_source_only_) {
+            CreateTargetProduct();
+        }
 
         if (!product_updated_) {
             try {
@@ -163,7 +170,9 @@ void ApplyOrbitFileOp::UpdateOrbitStateVectors() {
                                          orbit_data->x_vel_, orbit_data->y_vel_, orbit_data->z_vel_);
     }
 
-    auto tgt_abs_root = snapengine::AbstractMetadata::GetAbstractedMetadata(target_product_);
+    const auto& modified_product = modify_source_only_ ? source_product_ : target_product_;
+
+    auto tgt_abs_root = snapengine::AbstractMetadata::GetAbstractedMetadata(modified_product);
     snapengine::AbstractMetadata::SetOrbitStateVectors(tgt_abs_root, orbit_state_vectors);
     // save orbit file name
     std::string orb_type = orbit_type_;

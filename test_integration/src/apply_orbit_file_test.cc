@@ -25,10 +25,13 @@
 #include "gmock/gmock.h"
 
 #include "apply_orbit_file_op.h"
+#include "../goods/apply_orbit_file_op/apply_orbit_test_data.h"
 #include "custom/dimension.h"
+#include "sentinel1_product_reader_plug_in.h"
 #include "snap-core/datamodel/pugixml_meta_data_reader.h"
 #include "snap-core/datamodel/pugixml_meta_data_writer.h"
 #include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
+#include "snap-core/util/system_utils.h"
 
 namespace {
 
@@ -42,6 +45,90 @@ std::string Md5FromFile(const std::string& path) {
     for (auto c : result) sout << std::setw(2) << static_cast<int>(c);
     return sout.str();
 }
+
+void VerifyOrbitStateVectorResult(const std::vector<alus::snapengine::OrbitStateVector>& alus_vec,
+                                  const std::vector<alus::snapengine::OrbitStateVector>& snap_vec) {
+    ASSERT_EQ(alus_vec.size(), snap_vec.size());
+
+    double max_diff[7] = {};
+    double max_rel_diff[7] = {};
+    for (size_t i = 0; i < alus_vec.size(); i++) {
+        const auto& alus = alus_vec[i];
+        const auto& snap = snap_vec[i];
+
+        const double diff_mjd = std::abs(alus.time_mjd_ - snap.time_mjd_);
+        const double diff_x_pos = std::abs(alus.x_pos_ - snap.x_pos_);
+        const double diff_y_pos = std::abs(alus.y_pos_ - snap.y_pos_);
+        const double diff_z_pos = std::abs(alus.z_pos_ - snap.z_pos_);
+        const double diff_x_vel = std::abs(alus.x_vel_ - snap.x_vel_);
+        const double diff_y_vel = std::abs(alus.y_vel_ - snap.y_vel_);
+        const double diff_z_vel = std::abs(alus.z_vel_ - snap.z_vel_);
+
+        // store absolute maximum value differences found so far
+        max_diff[0] = std::max(diff_mjd, max_diff[0]);
+        max_diff[1] = std::max(diff_x_pos, max_diff[1]);
+        max_diff[2] = std::max(diff_y_pos, max_diff[2]);
+        max_diff[3] = std::max(diff_z_pos, max_diff[3]);
+        max_diff[4] = std::max(diff_x_vel, max_diff[4]);
+        max_diff[5] = std::max(diff_y_vel, max_diff[5]);
+        max_diff[6] = std::max(diff_z_vel, max_diff[6]);
+
+        // store relative maximum value differences found so far
+        max_rel_diff[0] = max_diff[0] / snap.time_mjd_;
+        max_rel_diff[1] = max_diff[1] / snap.x_pos_;
+        max_rel_diff[2] = max_diff[2] / snap.y_pos_;
+        max_rel_diff[3] = max_diff[3] / snap.z_pos_;
+        max_rel_diff[4] = max_diff[4] / snap.x_vel_;
+        max_rel_diff[5] = max_diff[5] / snap.y_vel_;
+        max_rel_diff[6] = max_diff[6] / snap.z_vel_;
+
+        // debug printing commented out
+        /*
+        printf("%.15f , %.15f , %.15f , %.15f , %.15f , %.15f , %.15f\n", alus.time_mjd_, alus.x_pos_,
+               alus.y_pos_, alus.z_pos_, alus.x_vel_, alus.y_vel_, alus.z_vel_);
+        printf("%.15f , %.15f , %.15f , %.15f , %.15f , %.15f , %.15f\n\n", snap.time_mjd_, snap.x_pos_,
+               snap.y_pos_, snap.z_pos_, snap.x_vel_, snap.y_vel_, snap.z_vel_);
+        */
+
+    }
+
+    const double MJD_DELTA = 1e-9;
+    ASSERT_LE(max_diff[0], MJD_DELTA );
+
+    // compare the biggest position alus vs snap deltas upper bound
+    const double POS_DELTA = 0.001;
+    ASSERT_LE(max_diff[1], POS_DELTA);
+    ASSERT_LE(max_diff[2], POS_DELTA);
+    ASSERT_LE(max_diff[3], POS_DELTA);
+
+    // velocity comparison
+    const double VEL_DELTA = 0.000001;
+    ASSERT_LE(max_diff[4], VEL_DELTA);
+    ASSERT_LE(max_diff[5], VEL_DELTA);
+    ASSERT_LE(max_diff[6], VEL_DELTA);
+
+
+    for(double rel_diff : max_rel_diff)
+    {
+        // the relative error should be less than 1 ppb
+        ASSERT_LE(std::abs(rel_diff), 1e-9);
+    }
+
+    // debug printing commented out
+    /*
+    std::cout << "maximum value diffs\n";
+    for(double d : max_diff)
+    {
+        printf("%.15f\n", d);
+    }
+    std::cout << "Relative diff:\n";
+    for(double d : max_rel_diff)
+    {
+        printf("%.15f\n", d);
+    }
+    */
+}
+
 
 class ApplyOrbitFileOpIntegrationTest : public ::testing::Test {
 public:
@@ -85,7 +172,10 @@ protected:
     boost::filesystem::path file_location_out_{file_directory_out_.generic_string() +
                                                boost::filesystem::path::preferred_separator + file_name_out_ + ".tif"};
 
-    void SetUp() override { boost::filesystem::remove_all(file_location_out_.parent_path()); }
+    void SetUp() override {
+        alus::snapengine::SystemUtils::SetAuxDataPath("./goods/apply_orbit_file_op/orbit-files/");
+        boost::filesystem::remove_all(file_location_out_.parent_path());
+    }
 
     void TearDown() override { boost::filesystem::remove_all(file_location_out_.parent_path()); }
 };
@@ -141,5 +231,54 @@ TEST_F(ApplyOrbitFileOpIntegrationTest, single_burst_data_2018) {
         }
         ASSERT_THAT(count_vector_data_files, expected_output_vector_data_md5sums_.size());
     }
+}
+
+TEST_F(ApplyOrbitFileOpIntegrationTest, modify_source_only_test) {
+    {  // ARTIFICAL SCOPE TO FORCE DESTRUCTORS
+        ASSERT_TRUE(boost::filesystem::exists(file_location_in_));
+        ASSERT_FALSE(boost::filesystem::exists(file_location_out_));
+
+        const std::string product_type{"SLC"};
+        alus::snapengine::custom::Dimension product_size{21400, 1503};
+        // todo: move to some utility like in snap..
+        std::size_t file_extension_pos = file_location_in_.filename().string().find(".tif");
+        auto file_name_in = file_location_in_.filename().string().substr(0, file_extension_pos);
+        auto source_product = alus::snapengine::Product::CreateProduct(file_name_in, product_type.c_str(),
+                                                                       product_size.width, product_size.height);
+        source_product->SetFileLocation(file_location_in_);
+        source_product->SetMetadataReader(std::make_shared<alus::snapengine::PugixmlMetaDataReader>());
+        auto operation = alus::s1tbx::ApplyOrbitFileOp(source_product, true);
+        operation.Initialize();
+
+        auto metadata = alus::snapengine::AbstractMetadata::GetAbstractedMetadata(source_product);
+
+        auto orb_vecs = alus::snapengine::AbstractMetadata::GetOrbitStateVectors(metadata);
+
+        ASSERT_NE(metadata->GetAttribute(alus::snapengine::AbstractMetadata::ORBIT_STATE_VECTOR_FILE), nullptr);
+
+        const auto& test_data = OSV_TEST_DATA_S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_split;
+
+        VerifyOrbitStateVectorResult(orb_vecs, test_data);
+    }
+}
+
+TEST_F(ApplyOrbitFileOpIntegrationTest, modify_safe_test) {
+
+    boost::filesystem::path input_path = "./goods/sentinel1_product_reader/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563.SAFE";
+
+    auto reader_plug_in = std::make_shared<alus::s1tbx::Sentinel1ProductReaderPlugIn>();
+    //auto can_read = reader_plug_in->GetDecodeQualification(input_path);
+    auto reader = reader_plug_in->CreateReaderInstance();
+    auto product = reader->ReadProductNodes(boost::filesystem::canonical("manifest.safe", input_path), nullptr);
+
+    auto operation = alus::s1tbx::ApplyOrbitFileOp(product, true);
+    operation.Initialize();
+
+    auto metadata = alus::snapengine::AbstractMetadata::GetAbstractedMetadata(product);
+    auto alus_vec = alus::snapengine::AbstractMetadata::GetOrbitStateVectors(metadata);
+
+    VerifyOrbitStateVectorResult(alus_vec, OSV_TESTDATA_S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563);
+
+
 }
 }  // namespace

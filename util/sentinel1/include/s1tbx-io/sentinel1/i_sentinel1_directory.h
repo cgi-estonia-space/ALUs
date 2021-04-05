@@ -35,7 +35,7 @@ class BandInfo;
  */
 class ISentinel1Directory {
 public:
-    static constexpr std::string_view SENTINEL_DATE_FORMAT_PATTERN{"%d-%b-%Y %H:%M:%S"};
+    static constexpr std::string_view SENTINEL_DATE_FORMAT_PATTERN{"%Y-%m-%d %H:%M:%S"};
 
     virtual void Close() = 0;
 

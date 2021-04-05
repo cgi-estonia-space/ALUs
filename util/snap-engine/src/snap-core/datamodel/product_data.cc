@@ -102,7 +102,7 @@ std::shared_ptr<ProductData> ProductData::CreateInstance(int type, int num_elems
         case ProductData::TYPE_ASCII:
             return std::make_shared<ASCII>(num_elems);
         case ProductData::TYPE_UTC:
-            return std::make_shared<Utc>(num_elems);
+            return std::make_shared<Utc>();
         default:
             throw std::invalid_argument("Unknown type. Cannot create product data instance.");
     }
