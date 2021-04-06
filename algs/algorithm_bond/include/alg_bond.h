@@ -48,6 +48,7 @@ public:
     }
     virtual void SetParameters(const app::AlgorithmParameters::Table& param_values) = 0;
     virtual void SetSrtm3Buffers(const PointerHolder* /*buffers*/, size_t /*length*/) {}
+    virtual void SetEgm96Buffers(const float* /*egm96_device_array*/) {}
     virtual void SetTileSize(size_t width, size_t height) = 0;
     virtual void SetOutputFilename(
         [[maybe_unused]] const std::string& output_name) { /* Either one of the SetOutputFilename() or SetOutputDriver()

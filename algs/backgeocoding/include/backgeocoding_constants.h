@@ -13,12 +13,12 @@
  */
 #pragma once
 
-namespace alus{
-namespace backgeocoding{
+namespace alus {
+namespace backgeocoding {
 
 constexpr double INVALID_INDEX{-9999.0};
 constexpr size_t Z_DATA_SIZE{4};
 constexpr int INVALID_BURST_OFFSET{-9999};
 
-}//namespace
-}//namespace
+}  // namespace backgeocoding
+}  // namespace alus

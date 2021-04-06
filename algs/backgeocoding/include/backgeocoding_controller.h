@@ -25,9 +25,9 @@
 #include "alus_file_reader.h"
 #include "alus_file_writer.h"
 #include "backgeocoding.h"
+#include "pointer_holders.h"
 
-namespace alus {
-namespace backgeocoding {
+namespace alus::backgeocoding {
 
 struct PositionComputeResults {
     Rectangle slave_area;
@@ -51,7 +51,7 @@ public:
     BackgeocodingController(const BackgeocodingController&) = delete;  // class does not support copying(and moving)
     BackgeocodingController& operator=(const BackgeocodingController&) = delete;
 
-    void PrepareToCompute();
+    void PrepareToCompute(const float* egm96_device_Array, PointerArray srtm3_tiles);
     void RegisterThreadEnd();
     void ReadMaster(Rectangle master_area, double* i_tile, double* q_tile);
     PositionComputeResults PositionCompute(int m_burst_index, int s_burst_index, Rectangle target_area,
@@ -119,5 +119,4 @@ private:
     std::vector<BackgeocodingController::BackgeocodingWorker> workers_;
 };
 
-}  // namespace backgeocoding
-}  // namespace alus
+}  // namespace alus::backgeocoding

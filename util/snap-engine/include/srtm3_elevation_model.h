@@ -22,6 +22,7 @@
 #include "earth_gravitational_model96.h"
 #include "pointer_holders.h"
 #include "srtm3_format_computation.h"
+#include "srtm3_elevation_model_constants.h"
 
 namespace alus {
 namespace snapengine {
@@ -48,6 +49,7 @@ private:
 
 public:
     Srtm3ElevationModel(std::vector<std::string> file_names);
+    ~Srtm3ElevationModel();
 
     void ReadSrtmTiles(EarthGravitationalModel96* egm_96);
     PointerHolder* GetSrtmBuffersInfo() const { return device_formated_srtm_buffers_info_; }
@@ -56,7 +58,12 @@ public:
     void HostToDevice() override;
     void DeviceToHost() override;
 
-    ~Srtm3ElevationModel();
+    static int GetTileWidthInDegrees(){
+        return srtm3elevationmodel::DEGREE_RES;
+    }
+    static int GetTileWidth(){
+        return srtm3elevationmodel::TILE_WIDTH_PIXELS;
+    }
 };
 
 }  // namespace snapengine

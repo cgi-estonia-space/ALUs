@@ -18,12 +18,15 @@
 #include "dataset.h"
 #include "gmock/gmock.h"
 #include "target_dataset.h"
+#include "dem_assistant.h"
 
 namespace alus::tests {
 
 // TODO: This test will receive it's final form once backgeocoding is chained with apply orbit file, split and safe
 // reading.
 TEST(DISABLED_backgeocoding, ThreadTest) {
+    std::vector<std::string> srtm3_files{"./goods/srtm_41_01.tif", "./goods/srtm_41_01.tif"};
+    std::shared_ptr<alus::app::DemAssistant> dem_assistant = alus::app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(std::move(srtm3_files));
     /*std::cout << "Controller started." << '\n';
     std::shared_ptr<alus::Dataset<double>> master_input_dataset =
         std::make_shared<alus::Dataset<double>>("/home/erik/snapDebusTests/cohTestIn1_split_Orb.tif");
@@ -62,7 +65,7 @@ TEST(DISABLED_backgeocoding, ThreadTest) {
     alus::backgeocoding::BackgeocodingController controller(master_input_dataset, slave_input_dataset, output_dataset,
                                                             "/home/erik/snapDebusTests/georgTestMaster_Orb.dim",
                                                             "/home/erik/snapDebusTests/georgTestSlave_Orb.dim");
-    controller.PrepareToCompute();
+    controller.PrepareToCompute(dem_assistant->GetEgm96ValuesOnGpu(), {dem_assistant->GetSrtm3ValuesOnGpu(), dem_assistant->GetSrtm3TilesCount()});
     controller.DoWork();
 }
 

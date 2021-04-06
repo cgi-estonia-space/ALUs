@@ -19,6 +19,7 @@
 #include "backgeocoding.h"
 #include "comparators.h"
 #include "shapes.h"
+#include "dem_assistant.h"
 
 namespace {
 
@@ -153,6 +154,8 @@ bool RunBackgeocoding(alus::backgeocoding::Backgeocoding* backgeocoding, Backgeo
 }
 
 TEST(backgeocoding, correctness) {
+    std::vector<std::string> srtm3_files{"./goods/srtm_41_01.tif", "./goods/srtm_41_01.tif"};
+    std::shared_ptr<alus::app::DemAssistant> dem_assistant = alus::app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(std::move(srtm3_files));
     alus::backgeocoding::Backgeocoding backgeocoding;
     BackgeocodingTester land_tester("./goods/backgeocoding/qPhase.txt", "./goods/backgeocoding/iPhase.txt",
                                     "./goods/backgeocoding/slaveTileQ.txt", "./goods/backgeocoding/slaveTileI.txt");
@@ -163,9 +166,7 @@ TEST(backgeocoding, correctness) {
                                      "./goods/backgeocoding/slaveTileICoast.txt");
     coast_tester.ReadTestData();
 
-    backgeocoding.SetSRTMDirectory("./goods/");
-    backgeocoding.SetEGMGridFile("./goods/backgeocoding/ww15mgh_b.grd");
-    backgeocoding.FeedPlaceHolders();
+    backgeocoding.SetElevationData(dem_assistant->GetEgm96ValuesOnGpu(), {dem_assistant->GetSrtm3ValuesOnGpu(), dem_assistant->GetSrtm3TilesCount()});
     backgeocoding.PrepareToCompute("./goods/master_metadata.dim", "./goods/slave_metadata.dim");
 
     int burst_offset = backgeocoding.GetBurstOffset();
