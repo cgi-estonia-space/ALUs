@@ -25,18 +25,33 @@ public:
 
         Metadata metadata(metadata_dim_file_, metadata_folder_path_ + "/tie_point_grids/latitude.img",
                           metadata_folder_path_ + "/tie_point_grids/longitude.img");
-        Dataset<double> input(this->input_dataset_name_);
-        TerrainCorrection tc(std::move(input), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
-                             metadata.GetLonTiePointGrid(), srtm3_buffers_, srtm3_buffers_length_);
-        tc.ExecuteTerrainCorrection(output_file_name_, tile_width_, tile_height_);
+
+        std::unique_ptr<TerrainCorrection> tc{nullptr};
+        if (input_dataset_ != nullptr) {
+            Dataset<double> input(this->input_dataset_);
+            tc = std::make_unique<TerrainCorrection>(std::move(input), metadata.GetMetadata(),
+                                                     metadata.GetLatTiePointGrid(), metadata.GetLonTiePointGrid(),
+                                                     srtm3_buffers_, srtm3_buffers_length_);
+        } else {
+            Dataset<double> input(this->input_dataset_name_);
+            tc = std::make_unique<TerrainCorrection>(std::move(input), metadata.GetMetadata(),
+                                                     metadata.GetLatTiePointGrid(), metadata.GetLonTiePointGrid(),
+                                                     srtm3_buffers_, srtm3_buffers_length_);
+        }
+
+        tc->ExecuteTerrainCorrection(output_file_name_, tile_width_, tile_height_);
 
         return 0;
     }
 
-    [[nodiscard]] RasterDimension CalculateInputTileFrom(RasterDimension output) const override { return output; }
-
-    void SetInputs(const std::string& input_dataset, const std::string& metadata_path) override {
+    void SetInputFilenames(const std::string& input_dataset, const std::string& metadata_path) override {
         input_dataset_name_ = input_dataset;
+        metadata_folder_path_ = metadata_path;
+        metadata_dim_file_ = metadata_folder_path_.substr(0, metadata_folder_path_.length() - 5) + ".dim";
+    }
+
+    void SetInputDataset(GDALDataset* input, const std::string& metadata_path) override {
+        input_dataset_ = input;
         metadata_folder_path_ = metadata_path;
         metadata_dim_file_ = metadata_folder_path_.substr(0, metadata_folder_path_.length() - 5) + ".dim";
     }
@@ -73,6 +88,7 @@ private:
     }
 
     std::string input_dataset_name_{};
+    GDALDataset* input_dataset_{};
     std::string metadata_folder_path_{};
     std::string metadata_dim_file_{};
     std::string output_file_name_{};

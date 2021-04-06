@@ -37,6 +37,11 @@ template <typename BufferType>
 Dataset<BufferType>::Dataset(std::string_view filename) { LoadDataset(filename); }
 
 template <typename BufferType>
+Dataset<BufferType>::Dataset(GDALDataset* input_dataset) : dataset_{input_dataset} {
+    LoadDataset("");
+}
+
+template <typename BufferType>
 Dataset<BufferType>::Dataset(std::string_view filename, const GeoTransformSourcePriority& georef_source) {
     CPLSetThreadLocalConfigOption("GDAL_GEOREF_SOURCES", GEOREF_CONFIG_STRING_TABLE.at(georef_source).c_str());
     try {
@@ -54,11 +59,13 @@ Dataset<BufferType>::Dataset(std::string_view filename, const GeoTransformSource
 
 template <typename BufferType>
 void Dataset<BufferType>::LoadDataset(std::string_view filename) {
-    // TODO: move this to a place where it is unifiedly called once when system
-    // starts.
-    GDALAllRegister();  // Register all known drivers.
+    if (dataset_ == nullptr) {
+        // TODO: move this to a place where it is unifiedly called once when system
+        // starts.
+        GDALAllRegister();  // Register all known drivers.
+        this->dataset_ = (GDALDataset*)GDALOpen(filename.data(), GA_ReadOnly);
+    }
 
-    this->dataset_ = (GDALDataset*)GDALOpen(filename.data(), GA_ReadOnly);
     if (this->dataset_ == nullptr) {
         throw DatasetError(CPLGetLastErrorMsg(), filename.data(),
                            CPLGetLastErrorNo());

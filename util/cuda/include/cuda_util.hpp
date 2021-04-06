@@ -13,6 +13,15 @@ namespace cuda {
 
 int GetGridDim(int blockDim, int dataDim);
 
+// An overload for calling "cudaSetDevice()" from CUDA API in host code.
+cudaError_t CudaSetDevice(int device_nr);
+
+// An overload for calling "cudaDeviceReset()" from CUDA API in host code.
+cudaError_t CudaDeviceReset();
+
+// An overload for calling "cudaDeviceSynchronize()" from CUDA API in host code.
+cudaError_t CudaDeviceSynchronize();
+
 }//namespace cuda
 
 

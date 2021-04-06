@@ -6,14 +6,13 @@
 
 #include <boost/program_options.hpp>
 
-#include "alg_bond.h"
+#include "alg_load.h"
 #include "algorithm_parameters.h"
 #include "dem_assistant.h"
 
 namespace po = boost::program_options;
 
 int main(int argc, char* argv[]) {
-
     std::string alg_to_run{};
     std::string input_file{};
     std::string output_path{};
@@ -24,6 +23,7 @@ int main(int argc, char* argv[]) {
     std::string params_file_path{};
     std::vector<std::string> dem_files_param{};
 
+    // clang-format off
     po::options_description options("Alus options");
     options.add_options()("help,h", "Print help")(
         "alg_name", po::value<std::string>(&alg_to_run), "Specify algorithm to run")(
@@ -47,9 +47,9 @@ int main(int argc, char* argv[]) {
                 "multiple times for multiple DEM files or a space separated files in a single argument. Only SRTM3 is"
                 "supported.")(
         "list_algs,l", "Print available algorithms");
+    // clang-format on
 
-    void* alg_lib{nullptr};
-
+    int alg_execute_status{};
     try {
         po::variables_map vm;
         po::store(po::parse_command_line(argc, argv, options), vm);
@@ -61,94 +61,66 @@ int main(int argc, char* argv[]) {
         }
 
         std::cout << "Algorithm to run: " << alg_to_run << std::endl;
+        const alus::AlgorithmLoadGuard alg_guard{alg_to_run};
 
-        auto const lib_file_path = "./lib" + alg_to_run + ".so";
-        alg_lib = dlopen(lib_file_path.c_str(), RTLD_LAZY);
-        if (alg_lib == nullptr) {
-            std::cerr << "Cannot load library " << dlerror() << std::endl;
-            return 1;
+        alus::app::AlgorithmParameters::AlgParamTables command_line_parameters;
+        if (!alg_params.empty()) {
+            command_line_parameters = alus::app::AlgorithmParameters::TryCreateFrom(alg_params);
         }
 
-        auto tc_creator = (AlgorithmBondEntry)dlsym(alg_lib, "CreateAlgorithm");
-        if (tc_creator == nullptr) {
-            std::cerr << "Cannot load symbol - " << dlerror() << std::endl;
-            dlclose(alg_lib);
-            return 3;
+        alus::app::AlgorithmParameters::AlgParamTables file_conf_parameters;
+        if (!params_file_path.empty()) {
+            file_conf_parameters = alus::app::AlgorithmParameters::TryCreateFromFile(params_file_path);
         }
 
-        auto tc_deleter = (AlgorithmBondEnd)dlsym(alg_lib, "DeleteAlgorithm");
-        if (tc_deleter == nullptr) {
-            std::cerr << "Cannot load symbol - " << dlerror() << std::endl;
-            dlclose(alg_lib);
-            return 4;
+        std::string warnings{};
+        const auto& merged_parameters =
+            alus::app::AlgorithmParameters::MergeAndWarn(file_conf_parameters, command_line_parameters, warnings);
+
+        std::cout << warnings << std::endl;
+        if (merged_parameters.count(alg_to_run)) {
+            alg_guard.GetInstanceHandle()->SetParameters(merged_parameters.at(alg_to_run));
+        } else if (!merged_parameters.empty() &&
+                   merged_parameters.count("")) {  // Parameters without algorithm specification
+            alg_guard.GetInstanceHandle()->SetParameters(merged_parameters.at(""));
         }
 
-        {
-            auto alg = std::unique_ptr<alus::AlgBond, AlgorithmBondEnd>(tc_creator(), tc_deleter);
-
-            if (vm.count("alg_help")) {
-                std::cout << alg->GetArgumentsHelp();
+        if (vm.count("alg_help")) {
+            std::cout << alg_guard.GetInstanceHandle()->GetArgumentsHelp();
+        } else {
+            std::shared_ptr<alus::app::DemAssistant> dem_assistant{};
+            if (!dem_files_param.empty()) {
+                std::cout << "Processing DEM files and moving to GPU." << std::endl;
+                dem_assistant = alus::app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(std::move(dem_files_param));
             }
-            else {
 
-                std::shared_ptr<alus::app::DemAssistant> dem_assistant{};
-                if (!dem_files_param.empty()) {
-                    std::cout << "Processing DEM files and moving to GPU." << std::endl;
-                    dem_assistant =
-                        alus::app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(std::move(dem_files_param));
-                }
+            alg_guard.GetInstanceHandle()->SetInputFilenames(input_file, aux_location);
+            alg_guard.GetInstanceHandle()->SetTileSize(tile_width, tile_height);
+            alg_guard.GetInstanceHandle()->SetOutputFilename(output_path);
 
-                alg->SetInputs(input_file, aux_location);
-                alg->SetTileSize(tile_width, tile_height);
-                alg->SetOutputFilename(output_path);
-
-                alus::app::AlgorithmParameters::AlgParamTables command_line_parameters;
-                if (!alg_params.empty()) {
-                    command_line_parameters = alus::app::AlgorithmParameters::TryCreateFrom(alg_params);
-                }
-
-                alus::app::AlgorithmParameters::AlgParamTables file_conf_parameters;
-                if (!params_file_path.empty()) {
-                    file_conf_parameters = alus::app::AlgorithmParameters::TryCreateFromFile(params_file_path);
-                }
-
-                std::string warnings{};
-                const auto& merged_parameters = alus::app::AlgorithmParameters::MergeAndWarn(file_conf_parameters,
-                                                                                             command_line_parameters,
-                                                                                             warnings);
-                std::cout << warnings << std::endl;
-                if (merged_parameters.count(alg_to_run)) {
-                    alg->SetParameters(merged_parameters.at(alg_to_run));
-                } else if (!merged_parameters.empty()) { // Parameters without algorithm specification
-                    alg->SetParameters(merged_parameters.at(""));
-                }
-
-                if (dem_assistant != nullptr) {
-                    alg->SetSrtm3Buffers(dem_assistant->GetSrtm3ValuesOnGpu(), dem_assistant->GetSrtm3TilesCount());
-                }
-
-                alg->Execute();
+            if (dem_assistant != nullptr) {
+                alg_guard.GetInstanceHandle()->SetSrtm3Buffers(dem_assistant->GetSrtm3ValuesOnGpu(),
+                                                               dem_assistant->GetSrtm3TilesCount());
             }
+
+            alg_execute_status = alg_guard.GetInstanceHandle()->Execute();
         }
-
-        dlclose(alg_lib); // TODO: Guard this!
-
     } catch (const po::error& e) {
         std::cerr << e.what() << std::endl;
         std::cout << options << std::endl;
-        return 1; //TODO: Create constants for exit codes.
+        return 1;  // TODO: Create constants for exit codes.
     } catch (const std::fstream::failure& e) {
         std::cerr << "Exception opening/reading file - " << e.what() << std::endl;
         return 2;
     } catch (const std::exception& e) {
-        std::cerr << "An exception was caught - " << e.what() << std::endl
-                  << "Exciting" << std::endl;
+        std::cerr << "An exception was caught - " << e.what() << std::endl << "Exciting" << std::endl;
         return 3;
     } catch (...) {
-        std::cerr << "Exception of unknown type was caught." << std::endl << "ERRNO:" << std::endl
+        std::cerr << "Exception of unknown type was caught." << std::endl
+                  << "ERRNO:" << std::endl
                   << strerror(errno) << std::endl;
         return 4;
     }
 
-    return 0;
+    return alg_execute_status;
 }

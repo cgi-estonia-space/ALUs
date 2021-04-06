@@ -1,5 +1,6 @@
 list(APPEND CUDA_UTIL_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/cuda_util.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/cuda_util.cu
         )
 
 list(APPEND CUDA_UTIL_INCLUDE_DIRS

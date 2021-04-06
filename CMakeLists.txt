@@ -70,6 +70,7 @@ add_subdirectory(util/snap-engine)
 add_subdirectory(util/multi_threading)
 
 # Algorithms
+add_subdirectory(algs/algorithm_bond)
 add_subdirectory(algs/coherence)
 add_subdirectory(algs/inverter)
 add_subdirectory(algs/inverter_parallel)
@@ -78,6 +79,7 @@ add_subdirectory(algs/range_doppler_terrain_correction)
 add_subdirectory(algs/backgeocoding)
 add_subdirectory(algs/apply-orbit-file-op)
 add_subdirectory(algs/sentinel1_calibrate)
+add_subdirectory(algs/coherence_estimation_routine)
 
 # Test helpers
 add_subdirectory(test/range_doppler_geocoding)
