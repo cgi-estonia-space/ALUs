@@ -12,19 +12,23 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 #include "backgeocoding_controller.h"
+
+#include <vector>
+
 #include "dataset.h"
 #include "gmock/gmock.h"
 #include "target_dataset.h"
 
 namespace alus::tests {
 
-//TODO: Fully enable and configure it to use our general test files once the metadata is done in.
+// TODO: This test will receive it's final form once backgeocoding is chained with apply orbit file, split and safe
+// reading.
 TEST(backgeocoding, ThreadTest) {
-    std::cout << "Controller started." << '\n';
+    /*std::cout << "Controller started." << '\n';
     std::shared_ptr<alus::Dataset<double>> master_input_dataset =
-        std::make_unique<alus::Dataset<double>>("/home/erik/snapDebusTests/cohTestIn1_split_Orb.tif");
+        std::make_shared<alus::Dataset<double>>("/home/erik/snapDebusTests/cohTestIn1_split_Orb.tif");
     std::shared_ptr<alus::Dataset<double>> slave_input_dataset =
-        std::make_unique<alus::Dataset<double>>("/home/erik/snapDebusTests/cohTestIn2_split_Orb.tif");
+        std::make_shared<alus::Dataset<double>>("/home/erik/snapDebusTests/cohTestIn2_split_Orb.tif");
 
     alus::TargetDatasetParams params;
     params.filename = "/home/erik/snapDebusTests/alusTest.tif";
@@ -34,12 +38,32 @@ TEST(backgeocoding, ThreadTest) {
     params.transform = master_input_dataset->GetTransform();
     params.projectionRef = master_input_dataset->GetGdalDataset()->GetProjectionRef();
 
-    std::shared_ptr<alus::TargetDataset<float>> output_dataset = std::make_unique<alus::TargetDataset<float>>(params);
+    std::shared_ptr<alus::TargetDataset<float>> output_dataset = std::make_shared<alus::TargetDataset<float>>(params);
 
     alus::backgeocoding::BackgeocodingController controller(master_input_dataset, slave_input_dataset,
-                                                            output_dataset);
+                                                            output_dataset, "./goods/master_metadata.dim",
+    "./goods/slave_metadata.dim"); controller.PrepareToCompute(); controller.DoWork();*/
+
+    std::shared_ptr<alus::Dataset<double>> master_input_dataset =
+        std::make_shared<alus::Dataset<double>>("/home/erik/snapDebusTests/georgTestMaster_Orb.tif");
+    std::shared_ptr<alus::Dataset<double>> slave_input_dataset =
+        std::make_shared<alus::Dataset<double>>("/home/erik/snapDebusTests/georgTestSlave_Orb.tif");
+
+    alus::TargetDatasetParams params;
+    params.filename = "/home/erik/snapDebusTests/alusTest2.tif";
+    params.band_count = 2;
+    params.driver = master_input_dataset->GetGdalDataset()->GetDriver();
+    params.dimension = master_input_dataset->GetRasterDimensions();
+    params.transform = master_input_dataset->GetTransform();
+    params.projectionRef = master_input_dataset->GetGdalDataset()->GetProjectionRef();
+
+    std::shared_ptr<alus::TargetDataset<float>> output_dataset = std::make_shared<alus::TargetDataset<float>>(params);
+
+    alus::backgeocoding::BackgeocodingController controller(master_input_dataset, slave_input_dataset, output_dataset,
+                                                            "/home/erik/snapDebusTests/georgTestMaster_Orb.dim",
+                                                            "/home/erik/snapDebusTests/georgTestSlave_Orb.dim");
     controller.PrepareToCompute();
-    controller.StartWork();
+    controller.DoWork();
 }
 
 // TODO: Bring this back with metadata and perhaps integrate into the full test above. It does not hurt to follow the

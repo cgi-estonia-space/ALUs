@@ -11,28 +11,19 @@ namespace {
 TEST(ExtendedAmountTest, ComputeExtendedAmount) {
     alus::backgeocoding::Backgeocoding backgeocoding;
 
-    backgeocoding.SetSentinel1Placeholders("./goods/backgeocoding/dcEstimateList.txt",
-                                           "./goods/backgeocoding/azimuthList.txt",
-                                           "./goods/backgeocoding/masterBurstLineTimes.txt",
-                                           "./goods/backgeocoding/slaveBurstLineTimes.txt",
-                                           "./goods/backgeocoding/masterGeoLocation.txt",
-                                           "./goods/backgeocoding/slaveGeoLocation.txt");
-
-    backgeocoding.SetOrbitVectorsFiles("./goods/backgeocoding/masterOrbitStateVectors.txt",
-                                       "./goods/backgeocoding/slaveOrbitStateVectors.txt");
     backgeocoding.SetSRTMDirectory("./goods/");
     backgeocoding.SetEGMGridFile("./goods/backgeocoding/ww15mgh_b.grd");
     backgeocoding.FeedPlaceHolders();
-    backgeocoding.PrepareToCompute();
+    backgeocoding.PrepareToCompute("./goods/master_metadata.dim", "./goods/slave_metadata.dim");
 
     alus::Rectangle const input{4000, 17000, 100, 100};
     alus::backgeocoding::AzimuthAndRangeBounds const expected_output{
-        -0.01773467106249882, 0.0, -3.770974349203243, 3.8862058607542167};
+        -0.01785065843796474, 0.0, -3.185590399236844, 3.8288619352210844};
 
     alus::backgeocoding::AzimuthAndRangeBounds result =
         backgeocoding.ComputeExtendedAmount(input.x, input.y, input.width, input.height);
-    EXPECT_THAT(result.range_max, testing::DoubleNear(expected_output.range_max, 1e-9));
-    EXPECT_THAT(result.range_min, testing::DoubleNear(expected_output.range_min, 1e-9));
+    EXPECT_THAT(result.range_max, testing::DoubleNear(expected_output.range_max, 1e-6));
+    EXPECT_THAT(result.range_min, testing::DoubleNear(expected_output.range_min, 1e-6));
     EXPECT_THAT(result.azimuth_min, testing::DoubleEq(expected_output.azimuth_min));
     EXPECT_THAT(result.azimuth_max, testing::DoubleEq(expected_output.azimuth_max));
 

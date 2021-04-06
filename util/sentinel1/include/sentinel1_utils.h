@@ -23,6 +23,8 @@
 #include "allocators.h"
 #include "calibration_vector.h"
 #include "comparators.h"
+#include "i_meta_data_reader.h"
+#include "metadata_attribute.h"
 #include "metadata_element.h"
 #include "orbit_state_vectors.h"
 #include "product_data_utc.h"
@@ -52,30 +54,7 @@ struct DCPolynomial {
  * This class refers to Sentinel1Utils class from s1tbx module.
  */
 class Sentinel1Utils : public cuda::CudaFriendlyObject {
-private:
-    int num_of_sub_swath_;
 
-    bool is_doppler_centroid_available_ = false;
-    bool is_range_depend_doppler_rate_available_ = false;
-    bool is_orbit_available_ = false;
-    std::unique_ptr<s1tbx::OrbitStateVectors> orbit_;
-
-    std::vector<DCPolynomial> GetDCEstimateList(std::string subswath_name);
-    std::vector<DCPolynomial> ComputeDCForBurstCenters(std::vector<DCPolynomial> dc_estimate_list, int subswath_index);
-    std::vector<AzimuthFmRate> GetAzimuthFmRateList(std::string subswath_name);
-    DCPolynomial ComputeDC(double center_time, std::vector<DCPolynomial> dc_estimate_list);
-    void WritePlaceolderInfo(int placeholder_type);
-    void GetProductOrbit();
-    double GetVelocity(double time);
-    double GetLatitudeValue(Sentinel1Index index, SubSwathInfo* subswath);
-    double GetLongitudeValue(Sentinel1Index index, SubSwathInfo* subswath);
-
-    // files for placeholder data
-    std::string orbit_state_vectors_file_ = "";
-    std::string dc_estimate_list_file_ = "";
-    std::string azimuth_list_file_ = "";
-    std::string burst_line_time_file_ = "";
-    std::string geo_location_file_ = "";
 
 public:
     std::vector<SubSwathInfo> subswath_;
@@ -90,10 +69,15 @@ public:
 
     int source_image_width_{0};
     int source_image_height_{0};
-    int near_range_on_left_{1};
-    int srgr_flag_{0};
+    bool near_range_on_left_{true};
+    bool srgr_flag_{false};
 
     DeviceSentinel1Utils* device_sentinel_1_utils_{nullptr};
+
+    explicit Sentinel1Utils(std::string_view metadata_file_name);
+    ~Sentinel1Utils();
+    Sentinel1Utils(const Sentinel1Utils&) = delete; // class does not support copying(and moving)
+    Sentinel1Utils& operator=(const Sentinel1Utils&) = delete;
 
     double* ComputeDerampDemodPhase(int subswath_index, int s_burst_index, Rectangle rectangle);
     Sentinel1Index ComputeIndex(double azimuth_time, double slant_range_time, SubSwathInfo* subswath);
@@ -103,17 +87,13 @@ public:
     void ComputeRangeDependentDopplerRate();
     void ComputeDopplerRate();
     double GetSlantRangeTime(int x, int subswath_index);
-    double GetLatitude(double azimuth_time, double slant_range_time, SubSwathInfo* subswath);
-    double GetLongitude(double azimuth_time, double slant_range_time, SubSwathInfo* subswath);
-
-    void SetPlaceHolderFiles(std::string_view orbit_state_vectors_file, std::string_view dc_estimate_list_file,
-                             std::string_view azimuth_list_file, std::string_view burst_line_time_file,
-                             std::string_view geo_location_file);
-    void ReadPlaceHolderFiles();
 
     void HostToDevice() override;
     void DeviceToHost() override;
     void DeviceFree() override;
+
+    double GetLatitude(double azimuth_time, double slant_range_time, SubSwathInfo* subswath);
+    double GetLongitude(double azimuth_time, double slant_range_time, SubSwathInfo* subswath);
 
     alus::s1tbx::OrbitStateVectors* GetOrbitStateVectors() {
         if (is_orbit_available_) {
@@ -121,10 +101,6 @@ public:
         }
         return nullptr;
     }
-
-    Sentinel1Utils();
-    Sentinel1Utils(int placeholderType);
-    ~Sentinel1Utils();
 
     static std::shared_ptr<snapengine::Utc> GetTime(std::shared_ptr<snapengine::MetadataElement> element,
                                                     std::string_view tag);
@@ -143,6 +119,32 @@ public:
     static std::vector<CalibrationVector> GetCalibrationVectors(
         const std::shared_ptr<snapengine::MetadataElement>& calibration_vector_list_element, bool output_sigma_band,
         bool output_beta_band, bool output_gamma_band, bool output_dn_band);
+
+private:
+    int num_of_sub_swath_;
+
+    bool is_doppler_centroid_available_ = false;
+    bool is_range_depend_doppler_rate_available_ = false;
+    bool is_orbit_available_ = false;
+
+    std::unique_ptr<s1tbx::OrbitStateVectors> orbit_;
+    std::unique_ptr<snapengine::IMetaDataReader> metadata_reader_;
+
+    std::vector<DCPolynomial> GetDCEstimateList(std::string subswath_name);
+    std::vector<DCPolynomial> ComputeDCForBurstCenters(std::vector<DCPolynomial> dc_estimate_list, int subswath_index);
+    std::vector<AzimuthFmRate> GetAzimuthFmRateList(std::string subswath_name);
+    DCPolynomial ComputeDC(double center_time, std::vector<DCPolynomial> dc_estimate_list);
+    void GetProductOrbit();
+    double GetVelocity(double time);
+
+    double GetLatitudeValue(Sentinel1Index index, SubSwathInfo* subswath);
+    double GetLongitudeValue(Sentinel1Index index, SubSwathInfo* subswath);
+    void FillSubswathMetaData();
+    void FillUtilsMetadata();
+
+    [[nodiscard]] std::vector<int> GetIntVector(std::shared_ptr<snapengine::MetadataAttribute> attribute, std::string_view delimiter) const;
+    [[nodiscard]] std::vector<double> GetDoubleVector(std::shared_ptr<snapengine::MetadataAttribute> attribute,
+                                        std::string_view delimiter) const;
 };
 }  // namespace s1tbx
 }  // namespace alus

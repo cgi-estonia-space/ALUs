@@ -20,11 +20,12 @@
 namespace alus {
 namespace backgeocoding {
 
+// regardless whether you mask or not, you need to run the if(data.device_x_points[idx] ... to purify the indexes.
 __global__ void ElevationMask(ElevationMaskData data) {
     const size_t idx = threadIdx.x + (blockDim.x * blockIdx.x);
 
     if (idx < data.size) {
-        if(data.device_x_points[idx] == INVALID_INDEX || data.device_y_points[idx] == INVALID_INDEX){
+        if (data.device_x_points[idx] == INVALID_INDEX || data.device_y_points[idx] == INVALID_INDEX) {
             data.device_x_points[idx] = INVALID_INDEX;
             data.device_y_points[idx] = INVALID_INDEX;
             return;
@@ -34,9 +35,12 @@ __global__ void ElevationMask(ElevationMaskData data) {
         const double lon = data.device_lon_array[idx];
         const double alt = snapengine::srtm3elevationmodel::GetElevation(lat, lon, &data.tiles);
 
+        // TODO: this may need to change if we decide not to use mask.
         if (alt == snapengine::srtm3elevationmodel::NO_DATA_VALUE) {
             data.device_x_points[idx] = INVALID_INDEX;
             data.device_y_points[idx] = INVALID_INDEX;
+        } else {
+            (*data.not_null_counter)++;  // race condition is not important here.
         }
     }
 }

@@ -60,6 +60,9 @@ public:
     static constexpr std::string_view ORIGINAL_PRODUCT_METADATA = "Original_Product_Metadata";
     static constexpr std::string_view BAND_PREFIX = "Band_";
 
+    static constexpr std::string_view LATITUDE = "latitude";
+    static constexpr std::string_view LONGITUDE = "longitude";
+
     /**
      * Abstracted metadata generic to most EO products
      */
@@ -233,6 +236,9 @@ public:
     static constexpr std::string_view IMAGE_ANNOTATION = "imageAnnotation";
     static constexpr std::string_view IMAGE_INFORMATION = "imageInformation";
     static constexpr std::string_view NUMBER_OF_LINES = "numberOfLines";
+    static constexpr std::string_view NUMBER_OF_SAMPLES = "numberOfSamples";
+    static constexpr std::string_view LINES_PER_BURST = "linesPerBurst";
+    static constexpr std::string_view SAMPLES_PER_BURST = "samplesPerBurst";
 
     // Calibration vector metadata
     static constexpr std::string_view AZIMUTH_TIME = "azimuthTime";
@@ -247,6 +253,25 @@ public:
     static constexpr std::string_view CALIBRATION_VECTOR_LIST = "calibrationVectorList";
 
     static constexpr std::string_view COMPACT_MODE = "compact_mode";
+
+    //From Sentinel1 Utils
+    static constexpr std::string_view SWATH_TIMING = "swathTiming";
+    static constexpr std::string_view BURST_LIST = "burstList";
+    static constexpr std::string_view GENERAL_ANNOTATION = "generalAnnotation";
+    static constexpr std::string_view PRODUCT_INFORMATION = "productInformation";
+    static constexpr std::string_view ANTENNA_PATTERN = "antennaPattern";
+    static constexpr std::string_view ANTENNA_PATTERN_LIST = "antennaPatternList";
+    static constexpr std::string_view AZIMUTH_TIME_INTERVAL = "azimuthTimeInterval";
+    static constexpr std::string_view RANGE_PIXEL_SPACING = "rangePixelSpacing";
+    static constexpr std::string_view PRODUCT_FIRST_LINE_UTC_TIME = "productFirstLineUtcTime";
+    static constexpr std::string_view PRODUCT_LAST_LINE_UTC_TIME = "productLastLineUtcTime";
+    static constexpr std::string_view AZIMUTH_STEERING_RATE = "azimuthSteeringRate";
+    static constexpr std::string_view FIRST_VALID_SAMPLE = "firstValidSample";
+    static constexpr std::string_view LAST_VALID_SAMPLE = "lastValidSample";
+    static constexpr std::string_view GEOLOCATION_GRID = "geolocationGrid";
+    static constexpr std::string_view GEOLOCATION_GRID_POINT_LIST = "geolocationGridPointList";
+    static constexpr std::string_view INCIDENCE_ANGLE = "incidenceAngle";
+    static constexpr std::string_view ELEVATION_ANGLE = "elevationAngle";
 
     static bool GetAttributeBoolean(const std::shared_ptr<MetadataElement>& element, std::string_view view);
 

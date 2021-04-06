@@ -27,4 +27,15 @@ T ** Allocate2DArray(int x, int y){
     }
     return result;
 }
+
+template <typename T>
+void Deallocate2DArray(T** ptr)
+{
+    if(ptr != nullptr)
+    {
+        delete[] ptr[0];
+        delete[] ptr;
+    }
+}
+
 }  // namespace alus

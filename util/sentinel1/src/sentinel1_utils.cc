@@ -1,5 +1,19 @@
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #include "sentinel1_utils.h"
 
+#include <iostream>
 #include <map>
 #include <memory>
 #include <string>
@@ -11,169 +25,332 @@
 #include "abstract_metadata.h"
 #include "general_constants.h"
 #include "product_data_utc.h"
+#include "pugixml_meta_data_reader.h"
+#include "sar_utils.h"
 
 namespace alus {
 namespace s1tbx {
 
-Sentinel1Utils::Sentinel1Utils() { WritePlaceolderInfo(2); }
-
-Sentinel1Utils::Sentinel1Utils(int placeholderType) { WritePlaceolderInfo(placeholderType); }
+Sentinel1Utils::Sentinel1Utils(std::string_view metadata_file_name) {
+    metadata_reader_ = std::make_unique<snapengine::PugixmlMetaDataReader>(metadata_file_name);
+    FillSubswathMetaData();
+    FillUtilsMetadata();
+}
 
 Sentinel1Utils::~Sentinel1Utils() { DeviceFree(); }
 
-// TODO: using placeholder data
-void Sentinel1Utils::WritePlaceolderInfo(int placeholder_type) {
+void Sentinel1Utils::FillUtilsMetadata() {
+    std::shared_ptr<snapengine::MetadataElement> abstract_metadata =
+        metadata_reader_->Read(alus::snapengine::AbstractMetadata::ABSTRACT_METADATA_ROOT);
+
+    srgr_flag_ =
+        snapengine::AbstractMetadata::GetAttributeBoolean(abstract_metadata, snapengine::AbstractMetadata::SRGR_FLAG);
+    wavelength_ = s1tbx::SarUtils::GetRadarFrequency(abstract_metadata);
+    range_spacing_ = snapengine::AbstractMetadata::GetAttributeDouble(abstract_metadata,
+                                                                      snapengine::AbstractMetadata::RANGE_SPACING);
+    azimuth_spacing_ = snapengine::AbstractMetadata::GetAttributeDouble(abstract_metadata,
+                                                                        snapengine::AbstractMetadata::AZIMUTH_SPACING);
+    first_line_utc_ = abstract_metadata->GetAttributeUtc(snapengine::AbstractMetadata::FIRST_LINE_TIME)->GetMjd();
+    last_line_utc_ = abstract_metadata->GetAttributeUtc(snapengine::AbstractMetadata::LAST_LINE_TIME)->GetMjd();
+    line_time_interval_ = abstract_metadata->GetAttributeDouble(snapengine::AbstractMetadata::LINE_TIME_INTERVAL) /
+                          snapengine::constants::secondsInDay;
+
+    std::shared_ptr<snapengine::MetadataElement> size_info =
+        metadata_reader_->Read("product")
+            ->GetElement(alus::snapengine::AbstractMetadata::IMAGE_ANNOTATION)
+            ->GetElement(alus::snapengine::AbstractMetadata::IMAGE_INFORMATION);
+
+    source_image_width_ = size_info->GetAttributeInt(snapengine::AbstractMetadata::NUMBER_OF_SAMPLES);
+    source_image_height_ = size_info->GetAttributeInt(snapengine::AbstractMetadata::NUMBER_OF_LINES);
+
+    if (srgr_flag_) {
+        throw std::runtime_error("Use of srgr flag currently not supported in Sentinel 1 utils.");
+    } else {
+        near_edge_slant_range_ = snapengine::AbstractMetadata::GetAttributeDouble(
+            abstract_metadata, snapengine::AbstractMetadata::SLANT_RANGE_TO_FIRST_PIXEL);
+    }
+
+    if (subswath_.empty()) {
+        throw std::runtime_error("Subswath size 0 currently not supported in Sentinel 1 Utils");
+    }
+    near_range_on_left_ = (subswath_.at(0).incidence_angle_[0][0] < subswath_.at(0).incidence_angle_[0][1]);
+
+}
+
+void Sentinel1Utils::FillSubswathMetaData() {
+    subswath_.emplace_back();
     num_of_sub_swath_ = 1;
+    SubSwathInfo* subswath = &subswath_.at(0);
 
-    SubSwathInfo temp;
-    subswath_.push_back(temp);
+    std::shared_ptr<snapengine::MetadataElement> product =
+        metadata_reader_->Read("product");
+    std::shared_ptr<snapengine::MetadataElement> image_annotation =
+        product->GetElement(alus::snapengine::AbstractMetadata::IMAGE_ANNOTATION);
+    std::shared_ptr<snapengine::MetadataElement> image_information =
+        image_annotation->GetElement(alus::snapengine::AbstractMetadata::IMAGE_INFORMATION);
 
-    // master
-    switch (placeholder_type) {
-        case 1:
+    std::shared_ptr<snapengine::MetadataElement> swath_timing =
+        product->GetElement(snapengine::AbstractMetadata::SWATH_TIMING);
+    std::shared_ptr<snapengine::MetadataElement> burst_list =
+        swath_timing->GetElement(snapengine::AbstractMetadata::BURST_LIST);
+    std::shared_ptr<snapengine::MetadataElement> general_annotation =
+        product->GetElement(snapengine::AbstractMetadata::GENERAL_ANNOTATION);
+    std::shared_ptr<snapengine::MetadataElement> product_information =
+        general_annotation->GetElement(snapengine::AbstractMetadata::PRODUCT_INFORMATION);
 
-            first_line_utc_ = 6362.663629015139;
-            last_line_utc_ = 6362.664239377373;
-            line_time_interval_ = 2.3791160879629606E-8;
-            near_edge_slant_range_ = 803365.0384269019;
-            wavelength_ = 0.05546576;
-            range_spacing_ = 2.329562;
-            azimuth_spacing_ = 13.91421;
+    std::shared_ptr<snapengine::MetadataElement> antenna_pattern =
+        product->GetElement(snapengine::AbstractMetadata::ANTENNA_PATTERN);
+    std::shared_ptr<snapengine::MetadataElement> antenna_pattern_list =
+        antenna_pattern->GetElement(snapengine::AbstractMetadata::ANTENNA_PATTERN_LIST);
 
-            source_image_width_ = 21401;
-            source_image_height_ = 28557;
-            near_range_on_left_ = 1;
-            srgr_flag_ = 0;
-            // srgrConvParams = null;
+    subswath->azimuth_time_interval_ =
+        std::stod(image_information->GetAttributeString(snapengine::AbstractMetadata::AZIMUTH_TIME_INTERVAL));
+    subswath->num_of_samples_ =
+        std::stoi(image_information->GetAttributeString(snapengine::AbstractMetadata::NUMBER_OF_SAMPLES));
+    subswath->num_of_lines_ =
+        std::stoi(image_information->GetAttributeString(snapengine::AbstractMetadata::NUMBER_OF_LINES));
+    subswath->num_of_bursts_ = std::stoi(burst_list->GetAttributeString(snapengine::AbstractMetadata::COUNT));
+    subswath->lines_per_burst_ =
+        std::stoi(swath_timing->GetAttributeString(snapengine::AbstractMetadata::LINES_PER_BURST));
+    subswath->samples_per_burst_ =
+        std::stoi(swath_timing->GetAttributeString(snapengine::AbstractMetadata::SAMPLES_PER_BURST));
+    subswath->range_pixel_spacing_ =
+        std::stod(image_information->GetAttributeString(snapengine::AbstractMetadata::RANGE_PIXEL_SPACING));
+    subswath->slr_time_to_first_pixel_ = std::stod(image_information->GetAttributeString("slantRangeTime")) / 2.0;
+    subswath->slr_time_to_last_pixel_ = subswath->slr_time_to_first_pixel_ + (double)(subswath->num_of_samples_ - 1) *
+                                                                                 subswath->range_pixel_spacing_ /
+                                                                                 snapengine::constants::lightSpeed;
 
-            subswath_.at(0).azimuth_time_interval_ = 0.002055556299999998;
-            subswath_.at(0).num_of_bursts_ = 19;
-            subswath_.at(0).lines_per_burst_ = 1503;
-            subswath_.at(0).samples_per_burst_ = 21401;
-            subswath_.at(0).first_valid_pixel_ = 267;
-            subswath_.at(0).last_valid_pixel_ = 20431;
-            subswath_.at(0).range_pixel_spacing_ = 2.329562;
-            subswath_.at(0).slr_time_to_first_pixel_ = 0.002679737321566982;
-            subswath_.at(0).slr_time_to_last_pixel_ = 0.0028460277850849134;
-            subswath_.at(0).subswath_name_ = "IW1";
-            subswath_.at(0).first_line_time_ = 5.49734137546908E8;
-            subswath_.at(0).last_line_time = 5.49734190282205E8;
-            subswath_.at(0).radar_frequency_ = 5.40500045433435E9;
-            subswath_.at(0).azimuth_steering_rate_ = 1.590368784;
-            subswath_.at(0).num_of_geo_lines_ = 21;
-            subswath_.at(0).num_of_geo_points_per_line_ = 21;
+    subswath->first_line_time_ =
+        GetTime(image_information, snapengine::AbstractMetadata::PRODUCT_FIRST_LINE_UTC_TIME)->GetMjd() *
+        snapengine::constants::secondsInDay;
+
+    subswath->last_line_time_ =
+        GetTime(image_information, snapengine::AbstractMetadata::PRODUCT_LAST_LINE_UTC_TIME)->GetMjd() *
+        snapengine::constants::secondsInDay;
+
+    subswath->radar_frequency_ = std::stod(product_information->GetAttributeString("radarFrequency"));
+    subswath->azimuth_steering_rate_ =
+        std::stod(product_information->GetAttributeString(snapengine::AbstractMetadata::AZIMUTH_STEERING_RATE));
+
+    subswath->first_valid_pixel_ = 0;
+    subswath->last_valid_pixel_ = subswath->num_of_samples_;
+
+    int k = 0;
+    if (subswath->num_of_bursts_ > 0) {
+        int first_valid_pixel = 0;
+        int last_valid_pixel = subswath->num_of_samples_;
+        std::vector<std::shared_ptr<snapengine::MetadataElement>> burst_list_elem = burst_list->GetElements();
+        for (auto list_elem : burst_list_elem) {
+
+            subswath->burst_first_line_time_.push_back(
+                GetTime(list_elem, snapengine::AbstractMetadata::AZIMUTH_TIME)->GetMjd() *
+                snapengine::constants::secondsInDay);
+
+            subswath->burst_last_line_time_.push_back(subswath->burst_first_line_time_.at(k) +
+                                                      (subswath->lines_per_burst_ - 1) *
+                                                          subswath->azimuth_time_interval_);
+
+            std::shared_ptr<snapengine::MetadataElement> first_valid_sample_elem =
+                list_elem->GetElement(snapengine::AbstractMetadata::FIRST_VALID_SAMPLE);
+            std::shared_ptr<snapengine::MetadataElement> last_valid_sample_elem =
+                list_elem->GetElement(snapengine::AbstractMetadata::LAST_VALID_SAMPLE);
+
+            subswath->first_valid_sample_.push_back(GetIntVector(
+                first_valid_sample_elem->GetAttribute(snapengine::AbstractMetadata::FIRST_VALID_SAMPLE), " "));
+            subswath->last_valid_sample_.push_back(GetIntVector(
+                last_valid_sample_elem->GetAttribute(snapengine::AbstractMetadata::LAST_VALID_SAMPLE), " "));
+
+            int first_valid_line_idx = -1;
+            int last_valid_line_idx = -1;
+            for (size_t line_idx = 0; line_idx < subswath->first_valid_sample_.at(k).size(); line_idx++) {
+                if (subswath->first_valid_sample_.at(k).at(line_idx) != -1) {
+                    if (subswath->first_valid_sample_.at(k).at(line_idx) > first_valid_pixel) {
+                        first_valid_pixel = subswath->first_valid_sample_.at(k).at(line_idx);
+                    }
+
+                    if (first_valid_line_idx == -1) {
+                        first_valid_line_idx = line_idx;
+                        last_valid_line_idx = line_idx;
+                    } else {
+                        last_valid_line_idx++;
+                    }
+                }
+            }
+
+            for (auto last_pixel : subswath->last_valid_sample_.at(k)) {
+                if (last_pixel != -1 && last_pixel < last_valid_pixel) {
+                    last_valid_pixel = last_pixel;
+                }
+            }
+
+            subswath->burst_first_valid_line_time_.push_back(subswath->burst_first_line_time_.at(k) +
+                                                             first_valid_line_idx * subswath->azimuth_time_interval_);
+
+            subswath->burst_last_valid_line_time_.push_back(subswath->burst_first_line_time_.at(k) +
+                                                            last_valid_line_idx * subswath->azimuth_time_interval_);
+
+            subswath->first_valid_line_.push_back(first_valid_line_idx);
+            subswath->last_valid_line_.push_back(last_valid_line_idx);
+
+            k++;
+        }
+        subswath->first_valid_pixel_ = first_valid_pixel;
+        subswath->last_valid_pixel_ = last_valid_pixel;
+        subswath->first_valid_line_time_ = subswath->burst_first_valid_line_time_.at(0);
+        subswath->last_valid_line_time_ = subswath->burst_last_valid_line_time_.at(subswath->num_of_bursts_ - 1);
+    }
+
+    subswath->slr_time_to_first_valid_pixel_ =
+        subswath->slr_time_to_first_pixel_ +
+        subswath->first_valid_pixel_ * subswath->range_pixel_spacing_ / snapengine::constants::lightSpeed;
+
+    subswath->slr_time_to_last_valid_pixel_ =
+        subswath->slr_time_to_first_pixel_ +
+        subswath->last_valid_pixel_ * subswath->range_pixel_spacing_ / snapengine::constants::lightSpeed;
+
+    // get geolocation grid points
+    std::shared_ptr<snapengine::MetadataElement> geolocation_grid =
+        product->GetElement(snapengine::AbstractMetadata::GEOLOCATION_GRID);
+    std::shared_ptr<snapengine::MetadataElement> geolocation_grid_point_list =
+        geolocation_grid->GetElement(snapengine::AbstractMetadata::GEOLOCATION_GRID_POINT_LIST);
+
+    const int num_of_geo_location_grid_points =
+        std::stoi(geolocation_grid_point_list->GetAttributeString(snapengine::AbstractMetadata::COUNT));
+    std::vector<std::shared_ptr<snapengine::MetadataElement>> geolocation_grid_point_list_elem =
+        geolocation_grid_point_list->GetElements();
+    int num_of_geo_points_per_line = 0;
+
+    int line = 0;
+    for (auto list_elem : geolocation_grid_point_list_elem) {
+        if (num_of_geo_points_per_line == 0) {
+            line = std::stoi(list_elem->GetAttributeString(snapengine::AbstractMetadata::LINE));
+            num_of_geo_points_per_line++;
+        } else if (line == std::stoi(list_elem->GetAttributeString(snapengine::AbstractMetadata::LINE))) {
+            num_of_geo_points_per_line++;
+        } else {
             break;
-        // slave
-        case 2:
+        }
+    }
 
-            first_line_utc_ = 6374.66363659448;
-            last_line_utc_ = 6374.6642469804865;
-            line_time_interval_ = 2.3791160879629606E-8;
-            near_edge_slant_range_ = 803365.0384269019;
-            wavelength_ = 0.05546576;
-            range_spacing_ = 2.329562;
-            azimuth_spacing_ = 13.91417;
+    if (num_of_geo_points_per_line == 0) {
+        throw std::runtime_error("Number of geopoints in sentinel 1 utils is not allowed to be 0.");
+    }
 
-            source_image_width_ = 21401;
-            source_image_height_ = 28557;
-            near_range_on_left_ = 1;
-            srgr_flag_ = 0;
-            // srgrConvParams = null;
+    int num_of_geo_lines = num_of_geo_location_grid_points / num_of_geo_points_per_line;
+    bool missing_tie_points = false;
+    int first_missing_line_idx = -1;
+    if (num_of_geo_lines <= subswath->num_of_bursts_) {
+        missing_tie_points = true;
+        first_missing_line_idx = num_of_geo_lines;
+        num_of_geo_lines = subswath->num_of_bursts_ + 1;
+    }
 
-            subswath_.at(0).azimuth_time_interval_ = 0.002055556299999998;
-            subswath_.at(0).num_of_bursts_ = 19;
-            subswath_.at(0).lines_per_burst_ = 1503;
-            subswath_.at(0).samples_per_burst_ = 21401;
-            subswath_.at(0).first_valid_pixel_ = 267;
-            subswath_.at(0).last_valid_pixel_ = 20431;
-            subswath_.at(0).range_pixel_spacing_ = 2.329562;
-            subswath_.at(0).slr_time_to_first_pixel_ = 0.002679737321566982;
-            subswath_.at(0).slr_time_to_last_pixel_ = 0.0028460277850849134;
-            subswath_.at(0).subswath_name_ = "IW1";
-            subswath_.at(0).first_line_time_ = 5.50770938201763E8;
-            subswath_.at(0).last_line_time = 5.50770990939114E8;
-            subswath_.at(0).radar_frequency_ = 5.40500045433435E9;
-            subswath_.at(0).azimuth_steering_rate_ = 1.590368784;
-            subswath_.at(0).num_of_geo_lines_ = 21;
-            subswath_.at(0).num_of_geo_points_per_line_ = 21;
-            break;
+    subswath->num_of_geo_lines_ = num_of_geo_lines;
+    subswath->num_of_geo_points_per_line_ = num_of_geo_points_per_line;
+    subswath->azimuth_time_ = Allocate2DArray<double>(num_of_geo_lines, num_of_geo_points_per_line);
+    subswath->slant_range_time_ = Allocate2DArray<double>(num_of_geo_lines, num_of_geo_points_per_line);
+    subswath->latitude_ = Allocate2DArray<double>(num_of_geo_lines, num_of_geo_points_per_line);
+    subswath->longitude_ = Allocate2DArray<double>(num_of_geo_lines, num_of_geo_points_per_line);
+    subswath->incidence_angle_ = Allocate2DArray<double>(num_of_geo_lines, num_of_geo_points_per_line);
+
+    k = 0;
+    for (auto list_elem : geolocation_grid_point_list_elem) {
+        int i = k / num_of_geo_points_per_line;
+        int j = k - i * num_of_geo_points_per_line;
+        subswath->azimuth_time_[i][j] = GetTime(list_elem, snapengine::AbstractMetadata::AZIMUTH_TIME)->GetMjd() *
+                                        snapengine::constants::secondsInDay;
+        subswath->slant_range_time_[i][j] = std::stod(list_elem->GetAttributeString("slantRangeTime")) / 2.0;
+        subswath->latitude_[i][j] = std::stod(list_elem->GetAttributeString(snapengine::AbstractMetadata::LATITUDE));
+        subswath->longitude_[i][j] = std::stod(list_elem->GetAttributeString(snapengine::AbstractMetadata::LONGITUDE));
+        subswath->incidence_angle_[i][j] =
+            std::stod(list_elem->GetAttributeString(snapengine::AbstractMetadata::INCIDENCE_ANGLE));
+        k++;
+    }
+
+    // compute the missing tie points by extrapolation assuming the missing lines are at the bottom
+    if (missing_tie_points && first_missing_line_idx >= 2) {
+        for (int line_idx = first_missing_line_idx; line_idx < num_of_geo_lines; line_idx++) {
+            double mu = line_idx - first_missing_line_idx + 2.0;
+            for (int pixel_idx = 0; pixel_idx < num_of_geo_points_per_line; pixel_idx++) {
+                subswath->azimuth_time_[line_idx][pixel_idx] =
+                    mu * subswath->azimuth_time_[first_missing_line_idx - 1][pixel_idx] +
+                    (1 - mu) * subswath->azimuth_time_[first_missing_line_idx - 2][pixel_idx];
+
+                subswath->slant_range_time_[line_idx][pixel_idx] =
+                    mu * subswath->slant_range_time_[first_missing_line_idx - 1][pixel_idx] +
+                    (1 - mu) * subswath->slant_range_time_[first_missing_line_idx - 2][pixel_idx];
+
+                subswath->latitude_[line_idx][pixel_idx] =
+                    mu * subswath->latitude_[first_missing_line_idx - 1][pixel_idx] +
+                    (1 - mu) * subswath->latitude_[first_missing_line_idx - 2][pixel_idx];
+
+                subswath->longitude_[line_idx][pixel_idx] =
+                    mu * subswath->longitude_[first_missing_line_idx - 1][pixel_idx] +
+                    (1 - mu) * subswath->longitude_[first_missing_line_idx - 2][pixel_idx];
+
+                subswath->incidence_angle_[line_idx][pixel_idx] =
+                    mu * subswath->incidence_angle_[first_missing_line_idx - 1][pixel_idx] +
+                    (1 - mu) * subswath->incidence_angle_[first_missing_line_idx - 2][pixel_idx];
+            }
+        }
+    }
+
+    int num_ap_records = std::stoi(antenna_pattern_list->GetAttributeString(snapengine::AbstractMetadata::COUNT));
+
+    if (num_ap_records > 0) {
+        std::vector<std::shared_ptr<snapengine::MetadataElement>> antenna_pattern_list_elem =
+            antenna_pattern_list->GetElements();
+        for (auto list_elem : antenna_pattern_list_elem) {
+            std::shared_ptr<snapengine::MetadataElement> slant_range_time_elem =
+                list_elem->GetElement("slantRangeTime");
+            std::shared_ptr<snapengine::MetadataElement> elevation_angle_elem =
+                list_elem->GetElement(snapengine::AbstractMetadata::ELEVATION_ANGLE);
+
+            subswath->ap_slant_range_time_.push_back(
+                GetDoubleVector(slant_range_time_elem->GetAttribute("slantRangeTime"), " "));
+            subswath->ap_elevation_angle_.push_back(GetDoubleVector(
+                elevation_angle_elem->GetAttribute(snapengine::AbstractMetadata::ELEVATION_ANGLE), " "));
+        }
     }
 }
 
-void Sentinel1Utils::ReadPlaceHolderFiles() {
-    int size;
-    std::ifstream burst_line_time_reader(burst_line_time_file_);
-    if (!burst_line_time_reader.is_open()) {
-        throw std::ios::failure("Burst Line times file not open.");
-    }
-    burst_line_time_reader >> size;
+[[nodiscard]] std::vector<double> Sentinel1Utils::GetDoubleVector(std::shared_ptr<snapengine::MetadataAttribute> attribute,
+                                                    std::string_view delimiter) const {
+    std::vector<double> result;
 
-    subswath_.at(0).burst_first_line_time_.resize(size);
-    subswath_.at(0).burst_last_line_time_.resize(size);
-
-    for (int i = 0; i < size; i++) {
-        burst_line_time_reader >> subswath_.at(0).burst_first_line_time_[i];
-    }
-    for (int i = 0; i < size; i++) {
-        burst_line_time_reader >> subswath_.at(0).burst_last_line_time_[i];
-    }
-
-    burst_line_time_reader.close();
-
-    std::ifstream geo_location_reader(geo_location_file_);
-    if (!geo_location_reader.is_open()) {
-        throw std::ios::failure("Geo Location file not open.");
-    }
-    int num_of_geo_lines2, num_of_geo_points_per_line2;
-
-    geo_location_reader >> num_of_geo_lines2 >> num_of_geo_points_per_line2;
-    if ((num_of_geo_lines2 != subswath_.at(0).num_of_geo_lines_) ||
-        (num_of_geo_points_per_line2 != subswath_.at(0).num_of_geo_points_per_line_)) {
-        throw std::runtime_error("Geo lines and Geo points per lines are not equal to ones in the file.");
-    }
-    subswath_.at(0).azimuth_time_ = Allocate2DArray<double>(num_of_geo_lines2, num_of_geo_points_per_line2);
-    subswath_.at(0).slant_range_time_ = Allocate2DArray<double>(num_of_geo_lines2, num_of_geo_points_per_line2);
-    subswath_.at(0).latitude_ = Allocate2DArray<double>(num_of_geo_lines2, num_of_geo_points_per_line2);
-    subswath_.at(0).longitude_ = Allocate2DArray<double>(num_of_geo_lines2, num_of_geo_points_per_line2);
-    subswath_.at(0).incidence_angle_ = Allocate2DArray<double>(num_of_geo_lines2, num_of_geo_points_per_line2);
-
-    for (int i = 0; i < num_of_geo_lines2; i++) {
-        for (int j = 0; j < num_of_geo_points_per_line2; j++) {
-            geo_location_reader >> subswath_.at(0).azimuth_time_[i][j];
+    if (attribute->GetDataType() == snapengine::ProductData::TYPE_ASCII) {
+        std::string data_str = attribute->GetData()->GetElemString();
+        size_t pos = 0;
+        std::string token;
+        while ((pos = data_str.find(delimiter)) != std::string::npos) {
+            token = data_str.substr(0, pos);
+            result.push_back(std::stod(token));
+            data_str.erase(0, pos + delimiter.length());
         }
-    }
-    for (int i = 0; i < num_of_geo_lines2; i++) {
-        for (int j = 0; j < num_of_geo_points_per_line2; j++) {
-            geo_location_reader >> subswath_.at(0).slant_range_time_[i][j];
-        }
-    }
-    for (int i = 0; i < num_of_geo_lines2; i++) {
-        for (int j = 0; j < num_of_geo_points_per_line2; j++) {
-            geo_location_reader >> subswath_.at(0).latitude_[i][j];
-        }
-    }
-    for (int i = 0; i < num_of_geo_lines2; i++) {
-        for (int j = 0; j < num_of_geo_points_per_line2; j++) {
-            geo_location_reader >> subswath_.at(0).longitude_[i][j];
-        }
-    }
-    for (int i = 0; i < num_of_geo_lines2; i++) {
-        for (int j = 0; j < num_of_geo_points_per_line2; j++) {
-            geo_location_reader >> subswath_.at(0).incidence_angle_[i][j];
-        }
+        result.push_back(std::stod(data_str));
     }
 
-    geo_location_reader.close();
+    return result;
 }
 
-void Sentinel1Utils::SetPlaceHolderFiles(std::string_view orbit_state_vectors_file,
-                                         std::string_view dc_estimate_list_file, std::string_view azimuth_list_file,
-                                         std::string_view burst_line_time_file, std::string_view geo_location_file) {
-    orbit_state_vectors_file_ = orbit_state_vectors_file;
-    dc_estimate_list_file_ = dc_estimate_list_file;
-    azimuth_list_file_ = azimuth_list_file;
-    burst_line_time_file_ = burst_line_time_file;
-    geo_location_file_ = geo_location_file;
+[[nodiscard]] std::vector<int> Sentinel1Utils::GetIntVector(std::shared_ptr<snapengine::MetadataAttribute> attribute,
+                                              std::string_view delimiter) const {
+    std::vector<int> result;
+
+    if (attribute->GetDataType() == snapengine::ProductData::TYPE_ASCII) {
+        std::string data_str = attribute->GetData()->GetElemString();
+        size_t pos = 0;
+        std::string token;
+        while ((pos = data_str.find(delimiter)) != std::string::npos) {
+            token = data_str.substr(0, pos);
+            result.push_back(std::stoi(token));
+            data_str.erase(0, pos + delimiter.length());
+        }
+        result.push_back(std::stoi(data_str));
+    }
+
+    return result;
 }
 
 double* Sentinel1Utils::ComputeDerampDemodPhase(int subswath_index, int s_burst_index, Rectangle rectangle) {
@@ -207,32 +384,14 @@ double* Sentinel1Utils::ComputeDerampDemodPhase(int subswath_index, int s_burst_
     return result;
 }
 
-// TODO: is using placeholder info
 void Sentinel1Utils::GetProductOrbit() {
-    std::vector<snapengine::OrbitStateVector> original_vectors;
-    int i;
-    int count;
-    snapengine::OrbitStateVector temp_vector;
+    std::shared_ptr<snapengine::MetadataElement> abstract_metadata =
+        metadata_reader_->Read(alus::snapengine::AbstractMetadata::ABSTRACT_METADATA_ROOT);
+    std::vector<snapengine::OrbitStateVector> original_vectors =
+        snapengine::AbstractMetadata::GetOrbitStateVectors(abstract_metadata);
 
-    std::ifstream vector_reader(orbit_state_vectors_file_);
-    if (!vector_reader.is_open()) {
-        throw std::ios::failure("Vector reader is not open.");
-    }
-    vector_reader >> count;
-    std::cout << "writing original vectors: " << count << '\n';
-    for (i = 0; i < count; i++) {
-        int days{}, seconds{}, microseconds{};
-        vector_reader >> days >> seconds >> microseconds;
-        temp_vector.time_ = std::make_shared<snapengine::Utc>(days, seconds, microseconds);
-        vector_reader >> temp_vector.time_mjd_;
-        vector_reader >> temp_vector.x_pos_ >> temp_vector.y_pos_ >> temp_vector.z_pos_;
-        vector_reader >> temp_vector.x_vel_ >> temp_vector.y_vel_ >> temp_vector.z_vel_;
-        original_vectors.push_back(temp_vector);
-    }
-    vector_reader >> count;
     orbit_ = std::make_unique<alus::s1tbx::OrbitStateVectors>(original_vectors);
 
-    vector_reader.close();
     is_orbit_available_ = true;
 }
 
@@ -254,7 +413,7 @@ void Sentinel1Utils::ComputeDopplerRate() {
 
     wave_length = alus::snapengine::constants::lightSpeed / subswath_.at(0).radar_frequency_;
     for (int s = 0; s < num_of_sub_swath_; s++) {
-        az_time = (subswath_.at(s).first_line_time_ + subswath_.at(s).last_line_time) / 2.0;
+        az_time = (subswath_.at(s).first_line_time_ + subswath_.at(s).last_line_time_) / 2.0;
         subswath_.at(s).doppler_rate_ =
             Allocate2DArray<double>(subswath_.at(s).num_of_bursts_, subswath_.at(s).samples_per_burst_);
         v = GetVelocity(az_time / alus::snapengine::constants::secondsInDay);  // DLR: 7594.0232
@@ -275,36 +434,47 @@ double Sentinel1Utils::GetSlantRangeTime(int x, int subswath_index) {
            x * subswath_.at(subswath_index - 1).range_pixel_spacing_ / alus::snapengine::constants::lightSpeed;
 }
 
-// TODO: using mock data
 std::vector<DCPolynomial> Sentinel1Utils::GetDCEstimateList(std::string subswath_name) {
-    std::vector<DCPolynomial> result;
-    int count;
-    int i;
-    int j;
-    int temp_count;
-    double temp;
-    std::cout << "Mocking for subswath: " << subswath_name << '\n';
-    std::ifstream dc_lister(dc_estimate_list_file_);
-    if (!dc_lister.is_open()) {
-        throw std::ios::failure("Azimuth list reader is not open.");
-    }
+    std::cout << "We are supposed to select subswath " << subswath_name << " for dc list, but we will use default."
+              << std::endl;
 
-    dc_lister >> count;
-    result.reserve(count);
-    for (i = 0; i < count; i++) {
-        DCPolynomial temp_poly;
-        dc_lister >> temp_poly.time >> temp_poly.t0 >> temp_count;
-        temp_poly.data_dc_polynomial.reserve(temp_count);
-        for (j = 0; j < temp_count; j++) {
-            dc_lister >> temp;
-            temp_poly.data_dc_polynomial.push_back(temp);
+    std::shared_ptr<snapengine::MetadataElement> product =
+        metadata_reader_->Read("product");
+    std::shared_ptr<snapengine::MetadataElement> image_annotation = product->GetElement("imageAnnotation");
+    std::shared_ptr<snapengine::MetadataElement> processing_information =
+        image_annotation->GetElement("processingInformation");
+    std::string dc_method = processing_information->GetAttributeString("dcMethod");
+    std::shared_ptr<snapengine::MetadataElement> doppler_centroid = product->GetElement("dopplerCentroid");
+    std::shared_ptr<snapengine::MetadataElement> dc_estimate_list = doppler_centroid->GetElement("dcEstimateList");
+    int count = std::stoi(dc_estimate_list->GetAttributeString("count"));
+
+    std::vector<DCPolynomial> results;
+
+    if (count > 0) {
+        std::vector<std::shared_ptr<snapengine::MetadataElement>> dc_estimate_list_elem =
+            dc_estimate_list->GetElements();
+        for (size_t i = 0; i < dc_estimate_list_elem.size(); i++) {
+            std::shared_ptr<snapengine::MetadataElement> list_elem = dc_estimate_list_elem.at(i);
+            results.emplace_back();
+
+            results.at(i).time = GetTime(list_elem, "azimuthTime")->GetMjd() * snapengine::constants::secondsInDay;
+            results.at(i).t0 = list_elem->GetAttributeDouble("t0");
+
+            if (dc_method.find("Data Analysis") != std::string::npos) {
+                std::shared_ptr<snapengine::MetadataElement> data_dc_polynomial_elem =
+                    list_elem->GetElement("dataDcPolynomial");
+                results.at(i).data_dc_polynomial =
+                    GetDoubleVector(data_dc_polynomial_elem->GetAttribute("dataDcPolynomial"), " ");
+            } else {
+                std::shared_ptr<snapengine::MetadataElement> geometry_dc_polynomial_elem =
+                    list_elem->GetElement("geometryDcPolynomial");
+                results.at(i).data_dc_polynomial =
+                    GetDoubleVector(geometry_dc_polynomial_elem->GetAttribute("geometryDcPolynomial"), " ");
+            }
         }
-        result.push_back(temp_poly);
     }
 
-    dc_lister.close();
-
-    return result;
+    return results;
 }
 
 DCPolynomial Sentinel1Utils::ComputeDC(double center_time, std::vector<DCPolynomial> dc_estimate_list) {
@@ -389,27 +559,44 @@ void Sentinel1Utils::ComputeDopplerCentroid() {
     is_doppler_centroid_available_ = true;
 }
 
-// TODO: useing mock data
 std::vector<AzimuthFmRate> Sentinel1Utils::GetAzimuthFmRateList(std::string subswath_name) {
-    std::vector<AzimuthFmRate> result;
-    int count, i;
-    std::cout << "Getting azimuth FM list for subswath: " << subswath_name << '\n';
-    std::ifstream azimuth_list_reader(azimuth_list_file_);
-    if (!azimuth_list_reader.is_open()) {
-        throw std::ios::failure("Azimuth list reader is not open.");
+    std::cout << "We are supposed to read subswath " << subswath_name
+              << " Azimuth fm rate list, but we will be using default subswath." << std::endl;
+
+    std::shared_ptr<snapengine::MetadataElement> product =
+        metadata_reader_->Read("product");
+    std::shared_ptr<snapengine::MetadataElement> general_annotation = product->GetElement("generalAnnotation");
+    std::shared_ptr<snapengine::MetadataElement> azimuth_fm_rate_list =
+        general_annotation->GetElement("azimuthFmRateList");
+    int count = std::stoi(azimuth_fm_rate_list->GetAttributeString("count"));
+    std::vector<AzimuthFmRate> az_fm_rate_list;
+
+    if (count > 0) {
+        std::vector<std::shared_ptr<snapengine::MetadataElement>> az_fm_rate_list_elem =
+            azimuth_fm_rate_list->GetElements();
+        for (size_t i = 0; i < az_fm_rate_list_elem.size(); i++) {
+            std::shared_ptr<snapengine::MetadataElement> list_elem = az_fm_rate_list_elem.at(i);
+            az_fm_rate_list.emplace_back();
+
+            az_fm_rate_list.at(i).time = GetTime(list_elem, "azimuthTime")->GetMjd() * snapengine::constants::secondsInDay;
+            az_fm_rate_list.at(i).t0 = std::stod(list_elem->GetAttributeString("t0"));
+
+            std::shared_ptr<snapengine::MetadataElement> azimuth_fm_rate_polynomial_elem =
+                list_elem->GetElement("azimuthFmRatePolynomial");
+            if (azimuth_fm_rate_polynomial_elem) {
+                std::vector<double> coeffs =
+                    GetDoubleVector(azimuth_fm_rate_polynomial_elem->GetAttribute("azimuthFmRatePolynomial"), " ");
+                az_fm_rate_list.at(i).c0 = coeffs.at(0);
+                az_fm_rate_list.at(i).c1 = coeffs.at(1);
+                az_fm_rate_list.at(i).c2 = coeffs.at(2);
+            } else {
+                az_fm_rate_list.at(i).c0 = std::stod(list_elem->GetAttributeString("c0"));
+                az_fm_rate_list.at(i).c1 = std::stod(list_elem->GetAttributeString("c1"));
+                az_fm_rate_list.at(i).c2 = std::stod(list_elem->GetAttributeString("c2"));
+            }
+        }
     }
-
-    azimuth_list_reader >> count;
-    result.reserve(count);
-    for (i = 0; i < count; i++) {
-        AzimuthFmRate temp;
-        azimuth_list_reader >> temp.time >> temp.t0 >> temp.c0 >> temp.c1 >> temp.c2;
-        result.push_back(temp);
-    }
-
-    azimuth_list_reader.close();
-
-    return result;
+    return az_fm_rate_list;
 }
 
 void Sentinel1Utils::ComputeRangeDependentDopplerRate() {

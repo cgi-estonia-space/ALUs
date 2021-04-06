@@ -1,4 +1,19 @@
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #include "subswath_info.h"
+
+#include "allocators.h"
 
 namespace alus {
 namespace s1tbx {
@@ -7,34 +22,17 @@ SubSwathInfo::SubSwathInfo(){
 
 }
 SubSwathInfo::~SubSwathInfo(){
-    if(doppler_rate_ != nullptr){
-        delete[] doppler_rate_;
-    }
-    if(doppler_centroid_ != nullptr){
-        delete[] doppler_centroid_;
-    }
-    if(range_depend_doppler_rate_ != nullptr){
-        delete[] range_depend_doppler_rate_;
-    }
-    if(reference_time_ != nullptr){
-        delete[] reference_time_;
-    }
 
-    if(azimuth_time_ != nullptr){
-        delete[] azimuth_time_;
-    }
-    if(slant_range_time_ != nullptr){
-        delete[] slant_range_time_;
-    }
-    if(latitude_ != nullptr){
-        delete[] latitude_;
-    }
-    if(longitude_ != nullptr){
-        delete[] longitude_;
-    }
-    if(incidence_angle_ != nullptr){
-        delete[] incidence_angle_;
-    }
+    Deallocate2DArray<double>(doppler_rate_);
+    Deallocate2DArray<double>(doppler_centroid_);
+    Deallocate2DArray<double>(range_depend_doppler_rate_);
+    Deallocate2DArray<double>(reference_time_);
+    Deallocate2DArray<double>(azimuth_time_);
+    Deallocate2DArray<double>(slant_range_time_);
+    Deallocate2DArray<double>(latitude_);
+    Deallocate2DArray<double>(longitude_);
+    Deallocate2DArray<double>(incidence_angle_);
+
     DeviceFree();
 }
 
@@ -68,7 +66,7 @@ void SubSwathInfo::HostToDevice(){
     temp_pack.first_valid_pixel = this->first_valid_pixel_;
     temp_pack.last_valid_pixel = this->last_valid_pixel_;
     temp_pack.first_line_time = this->first_line_time_;
-    temp_pack.last_line_time = this->last_line_time;
+    temp_pack.last_line_time = this->last_line_time_;
     temp_pack.slr_time_to_first_pixel = this->slr_time_to_first_pixel_;
     temp_pack.slr_time_to_last_pixel = this->slr_time_to_last_pixel_;
     temp_pack.range_pixel_spacing = this->range_pixel_spacing_;

@@ -119,13 +119,7 @@ class ZeroDopplerTimeTester : public alus::cuda::CudaFriendlyObject {
 };
 
 TEST(SarGeoCodingTestSimple, ZeroDopplerTimeTest) {
-    alus::s1tbx::Sentinel1Utils master_utils(1);
-    master_utils.SetPlaceHolderFiles("./goods/backgeocoding/masterOrbitStateVectors.txt",
-                                     "./goods/backgeocoding/dcEstimateList.txt",
-                                     "./goods/backgeocoding/azimuthList.txt",
-                                     "./goods/backgeocoding/masterBurstLineTimes.txt",
-                                     "./goods/backgeocoding/masterGeoLocation.txt");
-    master_utils.ReadPlaceHolderFiles();
+    alus::s1tbx::Sentinel1Utils master_utils("./goods/master_metadata.dim");
     master_utils.ComputeDopplerRate();
     master_utils.ComputeReferenceTime();
     master_utils.subswath_[0].HostToDevice();

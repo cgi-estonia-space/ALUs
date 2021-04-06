@@ -14,8 +14,9 @@
 #pragma once
 
 #include <memory>
-#include <vector>
 #include <string>
+#include <string_view>
+#include <vector>
 
 #include "earth_gravitational_model96.h"
 #include "extended_amount_computation.h"
@@ -27,30 +28,53 @@
 namespace alus {
 namespace backgeocoding {
 
-struct CoreComputeParams{
+struct CoreComputeParams {
     Rectangle slave_rectangle;
     int s_burst_index;
     Rectangle target_area;
     size_t demod_size;
-    double *device_slave_i;
-    double *device_slave_q;
+    double* device_slave_i;
+    double* device_slave_q;
 
-    double *device_demod_i;
-    double *device_demod_q;
-    double *device_demod_phase;
+    double* device_demod_i;
+    double* device_demod_q;
+    double* device_demod_phase;
 
-    double *device_x_points;
-    double *device_y_points;
+    double* device_x_points;
+    double* device_y_points;
     // I phase and Q pahse
-    float *device_i_results;
-    float *device_q_results;
+    float* device_i_results;
+    float* device_q_results;
 };
 
 /**
  * The contents of this class originate from s1tbx module's BackGeocodingOp java class.
  */
 class Backgeocoding {
-   private:
+public:
+    Backgeocoding() = default;
+    ~Backgeocoding();
+    Backgeocoding(const Backgeocoding&) = delete;  // class does not support copying(and moving)
+    Backgeocoding& operator=(const Backgeocoding&) = delete;
+
+    void FeedPlaceHolders();
+    void PrepareToCompute(std::string_view master_metadata_file, std::string_view slave_metadata_file);
+    void CoreCompute(CoreComputeParams params);
+    Rectangle PositionCompute(int m_burst_index, int s_burst_index, Rectangle master_area, double* device_x_points,
+                              double* device_y_points);
+
+    AzimuthAndRangeBounds ComputeExtendedAmount(int x_0, int y_0, int w, int h);
+    int ComputeBurstOffset();
+
+    void SetSRTMDirectory(std::string directory);
+    void SetEGMGridFile(std::string grid_file);
+
+    int GetNrOfBursts() { return master_utils_->subswath_.at(0).num_of_bursts_; }
+    int GetLinesPerBurst() { return master_utils_->subswath_.at(0).lines_per_burst_; }
+    int GetSamplesPerBurst() { return master_utils_->subswath_.at(0).samples_per_burst_; }
+    int GetBurstOffset() { return slave_burst_offset_; }
+
+private:
     /**
      * This came from chopping up the getBoundingBox function and dividing its functionality over several other
      * functions. You see we could not implement it as it was on the gpu. This struct should touch all of the parts of
@@ -73,64 +97,16 @@ class Backgeocoding {
     cuda::KernelArray<snapengine::OrbitStateVectorComputation> d_master_orbit_vectors_{};
     cuda::KernelArray<snapengine::OrbitStateVectorComputation> d_slave_orbit_vectors_{};
 
-    // placeholder files
-    std::string slave_orbit_state_vectors_file_ = "../unit-test/goods/backgeocoding/slaveOrbitStateVectors.txt";
-    std::string master_orbit_state_vectors_file_ = "../unit-test/goods/backgeocoding/masterOrbitStateVectors.txt";
-    std::string dc_estimate_list_file_ = "../unit-test/goods/backgeocoding/dcEstimateList.txt";
-    std::string azimuth_list_file_ = "../unit-test/goods/backgeocoding/azimuthList.txt";
-    std::string master_burst_line_time_file_ = "../unit-test/goods/backgeocoding/masterBurstLineTimes.txt";
-    std::string slave_burst_line_time_file_ = "../unit-test/goods/backgeocoding/slaveBurstLineTimes.txt";
-    std::string master_geo_location_file_ = "../unit-test/goods/backgeocoding/masterGeoLocation.txt";
-    std::string slave_geo_location_file_ = "../unit-test/goods/backgeocoding/slaveGeoLocation.txt";
-
-    // std::string srtm_41_01File = "../test/goods/srtm_41_01.tif";
-    // std::string srtm_42_01File = "../test/goods/srtm_42_01.tif";
-    std::string srtms_directory_ = "../unit-test/goods/";
+    std::string srtms_directory_ = "../unit-test/goods";
     std::string grid_file_ = "../unit-test/goods/ww15mgh_b.grd";
 
     void PrepareSrtm3Data();
 
-    std::vector<double> ComputeImageGeoBoundary(
-        s1tbx::SubSwathInfo *sub_swath, int burst_index, int x_min, int x_max, int y_min, int y_max);
-    bool ComputeSlavePixPos(int m_burst_index,
-                            int s_burst_index,
-                            Rectangle master_area,
-                            AzimuthAndRangeBounds az_rg_bounds,
-                            CoordMinMax *coord_min_max,
-                            double *device_x_points,
-                            double *device_y_points);
-
-   public:
-    void FeedPlaceHolders();
-    void PrepareToCompute();
-    void CoreCompute(CoreComputeParams params);
-    Rectangle PositionCompute(int m_burst_index,
-                              int s_burst_index,
-                              Rectangle master_area,
-                              double *device_x_points,
-                              double *device_y_points);
-    Backgeocoding() = default;
-    ~Backgeocoding();
-
-    void SetSentinel1Placeholders(std::string dc_estimate_list_file,
-                                  std::string azimuth_list_file,
-                                  std::string master_burst_line_time_file,
-                                  std::string slave_burst_line_time_file,
-                                  std::string master_geo_location_file,
-                                  std::string slave_geo_location_file);
-
-    void SetOrbitVectorsFiles(std::string master_orbit_state_vectors_file, std::string slave_orbit_state_vectors_file);
-
-    void SetSRTMDirectory(std::string directory);
-    void SetEGMGridFile(std::string grid_file);
-
-    AzimuthAndRangeBounds ComputeExtendedAmount(int x_0, int y_0, int w, int h);
-    int ComputeBurstOffset();
-
-    int GetNrOfBursts(){ return master_utils_->subswath_.at(0).num_of_bursts_; }
-    int GetLinesPerBurst(){ return master_utils_->subswath_.at(0).lines_per_burst_; }
-    int GetSamplesPerBurst(){ return master_utils_->subswath_.at(0).samples_per_burst_; }
-    int GetBurstOffset(){return slave_burst_offset_;}
+    std::vector<double> ComputeImageGeoBoundary(s1tbx::SubSwathInfo* sub_swath, int burst_index, int x_min, int x_max,
+                                                int y_min, int y_max);
+    bool ComputeSlavePixPos(int m_burst_index, int s_burst_index, Rectangle master_area,
+                            AzimuthAndRangeBounds az_rg_bounds, CoordMinMax* coord_min_max, double* device_x_points,
+                            double* device_y_points);
 };
 
 }  // namespace backgeocoding
