@@ -16,22 +16,35 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
-#include "sar_utils.h"
+#pragma once
 
-#include <stdexcept>
+#include <memory>
 
-#include "general_constants.h"
-#include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
+#include "snap-core/datamodel/metadata_element.h"
 
 namespace alus::s1tbx {
 
-double SarUtils::GetRadarFrequency(std::shared_ptr<snapengine::MetadataElement> abs_root) {
-    double radar_freq = snapengine::AbstractMetadata::GetAttributeDouble(
-                            abs_root, alus::snapengine::AbstractMetadata::RADAR_FREQUENCY) *
-                        snapengine::constants::oneMillion;  // Hz
-    if (radar_freq <= 0.0) {
-        throw std::runtime_error("Invalid radar frequency: " + std::to_string(radar_freq));
-    }
-    return snapengine::constants::lightSpeed / radar_freq;
-}
+/**
+ * SAR specific common functions
+ */
+class SarUtils {
+public:
+    /**
+     * Get radar frequency from the abstracted metadata (in Hz).
+     *
+     * @param absRoot the AbstractMetadata
+     * @return wavelength
+     * @throws Exception The exceptions.
+     */
+    [[deprecated]] static double GetRadarFrequency(const std::shared_ptr<snapengine::MetadataElement>& abs_root);
+    /**
+     * Get radar wavelength from the abstracted metadata (in nm).
+     *
+     * @param absRoot the AbstractMetadata
+     * @return wavelength
+     * @throws Exception The exceptions.
+     */
+    static double GetRadarWavelength(const std::shared_ptr<snapengine::MetadataElement>& abs_root);
+};
+
 }  // namespace alus::s1tbx

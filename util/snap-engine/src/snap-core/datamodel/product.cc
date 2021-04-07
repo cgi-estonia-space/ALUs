@@ -21,6 +21,8 @@
 #include <stdexcept>
 
 // TEMPORARY// todo: try to move behind IProductReader
+#include "custom/i_image_reader.h"
+#include "custom/i_image_writer.h"
 #include "i_meta_data_reader.h"
 #include "i_meta_data_writer.h"
 
@@ -56,7 +58,8 @@ Product::Product(std::string_view name, std::string_view type) : Product(name, t
 Product::Product(std::string_view name, std::string_view type, const std::shared_ptr<IProductReader>& reader)
     : Product(name, type, nullptr, reader) {}
 
-Product::Product(std::string_view name, std::string_view type, const std::shared_ptr<custom::Dimension>& scene_raster_size,
+Product::Product(std::string_view name, std::string_view type,
+                 const std::shared_ptr<custom::Dimension>& scene_raster_size,
                  const std::shared_ptr<IProductReader>& reader)
     : ProductNode(name) {
     Guardian::AssertNotNullOrEmpty("type", type);
@@ -173,10 +176,15 @@ int Product::GetSceneRasterWidth() { return GetSceneRasterSize()->width; }
 int Product::GetSceneRasterHeight() { return GetSceneRasterSize()->height; }
 
 const std::shared_ptr<IDataTileReader>& Product::GetReader() const { return reader_old_; }
+const std::shared_ptr<custom::IImageReader>& Product::GetImageReader() const { return image_reader_; }
+const std::shared_ptr<custom::IImageWriter>& Product::GetImageWriter() const { return image_writer_; }
 void Product::SetReader(const std::shared_ptr<IDataTileReader>& reader) { reader_old_ = reader; }
+void Product::SetImageReader(const std::shared_ptr<custom::IImageReader>& reader) { image_reader_ = reader; }
 
 const std::shared_ptr<IDataTileWriter>& Product::GetWriter() const { return writer_old_; }
 void Product::SetWriter(const std::shared_ptr<IDataTileWriter>& writer) { writer_old_ = writer; }
+
+void Product::SetImageWriter(const std::shared_ptr<custom::IImageWriter>& writer) { image_writer_ = writer; }
 
 const std::shared_ptr<IMetaDataReader>& Product::GetMetadataReader() const {
     if (metadata_reader_) {
@@ -190,10 +198,7 @@ void Product::SetMetadataReader(const std::shared_ptr<IMetaDataReader>& metadata
     metadata_reader_->SetProduct(SharedFromBase<Product>());
 }
 
-bool Product::HasMetaDataReader() const
-{
-    return metadata_reader_ != nullptr;
-}
+bool Product::HasMetaDataReader() const { return metadata_reader_ != nullptr; }
 const std::shared_ptr<IMetaDataWriter>& Product::GetMetadataWriter() const {
     if (metadata_writer_) {
         return metadata_writer_;
@@ -461,6 +466,7 @@ std::shared_ptr<Product> Product::InitProductMembers(const std::shared_ptr<Produ
     product->SetModified(false);
     return product;
 }
+
 void Product::SetRefNo(int ref_no) {
     Guardian::AssertWithinRange("refNo", ref_no, 1, std::numeric_limits<int>::max());
     if (ref_no_ != 0 && ref_no_ != ref_no) {

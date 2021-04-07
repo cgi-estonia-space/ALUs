@@ -34,7 +34,7 @@ namespace alus {
 namespace s1tbx {
 
 ApplyOrbitFileOp::ApplyOrbitFileOp(const std::shared_ptr<snapengine::Product>& source_product)
-    : source_product_(source_product)  {}
+    : source_product_(source_product) {}
 
 ApplyOrbitFileOp::ApplyOrbitFileOp(const std::shared_ptr<snapengine::Product>& source_product, bool modify_source_only)
     : source_product_(source_product), modify_source_only_(modify_source_only) {}
@@ -45,7 +45,7 @@ void ApplyOrbitFileOp::GetSourceMetadata() {
     // has everything set, snap version is absRoot = AbstractMetadata.getAbstractedMetadata(sourceProduct);  which uses
     // a bit different logic copy is using root element which is metadata todo: check if source product already gets
     // respective elements attached before (this logic is deviation from original snap logic)
-    if(source_product_->HasMetaDataReader()) {
+    if (source_product_->HasMetaDataReader()) {
         source_product_->GetMetadataRoot()->AddElement(
             source_product_->GetMetadataReader()->Read(alus::snapengine::AbstractMetadata::ABSTRACT_METADATA_ROOT));
     }
@@ -83,7 +83,7 @@ void ApplyOrbitFileOp::Initialize() {
 
         // skip until we have more core datamodel ported
         //        GetTiePointGrid();
-        if(!modify_source_only_) {
+        if (!modify_source_only_) {
             CreateTargetProduct();
         }
 

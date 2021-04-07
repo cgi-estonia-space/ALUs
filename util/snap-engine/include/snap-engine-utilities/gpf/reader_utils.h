@@ -55,6 +55,9 @@ public:
                                                             const std::shared_ptr<Band>& band_i,
                                                             const std::shared_ptr<Band>& band_q,
                                                             std::string_view band_name, std::string_view suffix);
+    static std::shared_ptr<Band> CreateVirtualPhaseBand(const std::shared_ptr<Product>& product, const std::shared_ptr<Band>& band_i,
+                                       const std::shared_ptr<Band>& band_q, std::string_view count_str);
+
     static void AddGeoCoding(const std::shared_ptr<Product>& product, std::vector<float> lat_corners,
                              std::vector<float> lon_corners);
 

@@ -202,7 +202,33 @@ add_custom_command(TARGET integration-test-apply-orbit-file-op
         COMMAND ln -s ${CMAKE_CURRENT_LIST_DIR}/goods/apply_orbit_file_op
         ${CMAKE_BINARY_DIR}/test_integration/goods/apply_orbit_file_op
         )
+#---------------------------topsar-deburst-op integration test-----------------------
+list(APPEND TEST_SOURCES_TOPSAR_DEBURST_OP
+        src/topsar_deburst_op_test.cc
+        )
+add_executable(integration-test-topsar-deburst-op ${TEST_SOURCES_TOPSAR_DEBURST_OP})
 
+target_include_directories(integration-test-topsar-deburst-op PUBLIC ${TEST_INCLUDE})
+
+target_link_libraries(integration-test-topsar-deburst-op
+        PRIVATE
+        Boost::filesystem
+        Boost::iostreams
+        gmock_main
+        cuda_util-static
+        gdal-util-static
+        sentinel1-util-static
+        topsar-deburst-op-static
+        crypto
+        )
+
+add_custom_command(TARGET integration-test-topsar-deburst-op
+        POST_BUILD
+        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/test_integration/goods
+        COMMAND rm -rf ${CMAKE_BINARY_DIR}/test_integration/goods/topsar_deburst_op
+        COMMAND ln -s ${CMAKE_CURRENT_LIST_DIR}/goods/topsar_deburst_op
+        ${CMAKE_BINARY_DIR}/test_integration/goods/topsar_deburst_op
+        )
 #--------------------------sentinel1 product reader integration test-----------------------
 list(APPEND TEST_SOURCES_SENTINEL1_PRODUCT_READER
         src/test_sentinel1_product_reader.cc

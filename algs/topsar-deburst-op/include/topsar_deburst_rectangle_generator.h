@@ -14,22 +14,24 @@
 #pragma once
 
 #include <memory>
+#include <vector>
+
+#include "custom/rectangle.h"
 
 namespace alus {
-namespace snapengine {
-namespace custom {
 
-struct Rectangle {
-    Rectangle() = default;
-    Rectangle(int x, int y, int width, int height) : x(x), y(y), width(width), height(height) {}
-    explicit Rectangle(const std::shared_ptr<Rectangle>& rectangle)
-        : x(rectangle->x), y(rectangle->y), width(rectangle->width), height(rectangle->height) {}
-    int x;
-    int y;
-    int width;
-    int height;
+class TOPSARDeburstRectanglesGenerator {
+private:
+    int band_x_size_;
+    int band_y_size_;
+    int rectangle_x_size_;
+    int rectangle_y_size_;
+
+    [[nodiscard]] static int GetNumberOfRectanglesDim(int band_size_dim, int rectangle_size_dim);
+    [[nodiscard]] std::vector<snapengine::custom::Rectangle> GenerateRectangles() const;
+
+public:
+    TOPSARDeburstRectanglesGenerator(int band_x_size, int band_y_size, int rectangle_x_size, int rectangle_y_size);
+    [[nodiscard]] std::vector<snapengine::custom::Rectangle> GetRectangles() const;
 };
-
-}  // namespace custom
-}  // namespace snapengine
 }  // namespace alus

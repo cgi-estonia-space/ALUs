@@ -26,10 +26,11 @@
 #include <string_view>
 #include <vector>
 
-#include "metadata_element.h"
 #include "orbit_state_vector.h"
-#include "product.h"
-#include "product_data_utc.h"
+#include "snap-core/datamodel/band.h"
+#include "snap-core/datamodel/metadata_element.h"
+#include "snap-core/datamodel/product.h"
+#include "snap-core/datamodel/product_data_utc.h"
 
 namespace alus::snapengine {
 
@@ -254,7 +255,7 @@ public:
 
     static constexpr std::string_view COMPACT_MODE = "compact_mode";
 
-    //From Sentinel1 Utils
+    // From Sentinel1 Utils
     static constexpr std::string_view SWATH_TIMING = "swathTiming";
     static constexpr std::string_view BURST_LIST = "burstList";
     static constexpr std::string_view GENERAL_ANNOTATION = "generalAnnotation";
@@ -333,7 +334,8 @@ public:
      * @param tag   the name of the attribute
      * @param value the UTC value
      */
-    static void SetAttribute(const std::shared_ptr<MetadataElement>& dest, std::string_view tag, const std::shared_ptr<Utc>& value);
+    static void SetAttribute(const std::shared_ptr<MetadataElement>& dest, std::string_view tag,
+                             const std::shared_ptr<Utc>& value);
 
     /**
      * Sets an attribute as a double
@@ -365,10 +367,10 @@ public:
     /**
      * Returns the orignal product metadata or the root if not found
      *
-     * @param product input product
+     * @param p input product
      * @return original metadata
      */
-    static std::shared_ptr<MetadataElement> GetOriginalProductMetadata(std::shared_ptr<Product> product);
+    static std::shared_ptr<MetadataElement> GetOriginalProductMetadata(const std::shared_ptr<Product>& p);
 
     /**
      * Creates and returns the orignal product metadata
@@ -392,8 +394,11 @@ public:
      * @param name    the name of the element
      * @return abstracted metadata root
      */
-    static std::shared_ptr<MetadataElement> AddBandAbstractedMetadata(const std::shared_ptr<snapengine::MetadataElement>& abs_root, std::string_view name);
+    static std::shared_ptr<MetadataElement> AddBandAbstractedMetadata(
+        const std::shared_ptr<snapengine::MetadataElement>& abs_root, std::string_view name);
 
+    static std::shared_ptr<MetadataElement> GetBandAbsMetadata(
+        const std::shared_ptr<snapengine::MetadataElement>& abs_root, const std::shared_ptr<snapengine::Band>& band);
 };
 
 }  // namespace alus::snapengine

@@ -17,6 +17,8 @@ res4=$?
 res5=$?
 ./integration-sentinel1_product_reader "$result_output"
 res6=$?
+./integration-test-topsar-deburst-op "$result_output"
+res7=$?
 
-exit_value=$((res1 | res2 | res3 | res4 | res5 | res6))
+exit_value=$((res1 | res2 | res3 | res4 | res5 | res6 | res7))
 exit $exit_value

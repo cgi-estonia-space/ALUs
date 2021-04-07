@@ -36,6 +36,7 @@ namespace snapengine {
  */
 class Product;
 class IProductReader;
+class IProductWriter;
 class ProductSubsetDef;
 class ProductNode : public std::enable_shared_from_this<ProductNode> {
 private:
@@ -174,6 +175,7 @@ public:
      * @return the product reader, or <code>null</code> if no such exists
      */
     virtual std::shared_ptr<IProductReader> GetProductReader();
+    virtual std::shared_ptr<IProductWriter> GetProductWriter();
 
     /**
      * Releases all of the resources used by this object instance and all of its owned children. Its primary use is to

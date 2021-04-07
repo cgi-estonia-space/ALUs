@@ -6,7 +6,7 @@ list(APPEND SENTINEL1_UTIL_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/sentinel1_utils.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/subswath_info.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/point.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/sar_utils.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/s1tbx-commons/sar_utils.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/poly_utils.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/orbit.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/orbit_state_vectors.cc

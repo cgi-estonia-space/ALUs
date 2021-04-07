@@ -238,5 +238,24 @@ std::optional<boost::filesystem::path> ReaderUtils::GetPathFromInput(const std::
     return std::nullopt;
 }
 
+std::shared_ptr<Band> ReaderUtils::CreateVirtualPhaseBand(const std::shared_ptr<Product>& product,
+                                                          const std::shared_ptr<Band>& band_i,
+                                                          const std::shared_ptr<Band>& band_q,
+                                                          std::string_view count_str) {
+    std::string expression{"atan2(" + band_q->GetName() + ',' + band_i->GetName() + ')'};
+
+    auto virt_band = std::make_shared<VirtualBand>("Phase" + std::string(count_str), ProductData::TYPE_FLOAT32,
+                                                   band_i->GetRasterWidth(), band_i->GetRasterHeight(), expression);
+    virt_band->SetUnit(Unit::PHASE);
+    virt_band->SetDescription(std::make_optional<std::string>("Phase from complex data"));
+    if (band_i->IsNoDataValueUsed()) {
+        virt_band->SetNoDataValueUsed(true);
+        virt_band->SetNoDataValue(band_i->GetNoDataValue());
+    }
+    virt_band->SetOwner(product);
+    product->AddBand(virt_band);
+    return virt_band;
+}
+
 }  // namespace snapengine
 }  // namespace alus

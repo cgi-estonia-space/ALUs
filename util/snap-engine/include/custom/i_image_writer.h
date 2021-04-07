@@ -13,7 +13,6 @@
  */
 #pragma once
 
-#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -22,29 +21,27 @@
 namespace alus::snapengine::custom {
 
 // Placeholder interface for image readers, currently only viable solution is GDAL anyway.
-class IImageReader {
+class IImageWriter {
 public:
-    IImageReader() = default;
-    IImageReader(const IImageReader&) = delete;
-    IImageReader& operator=(const IImageReader&) = delete;
-    virtual ~IImageReader() = default;
+    IImageWriter() = default;
+    IImageWriter(const IImageWriter&) = delete;
+    IImageWriter& operator=(const IImageWriter&) = delete;
+    virtual ~IImageWriter() = default;
+
     /***
      * Just to provide interface between different implementations of band data readers e.g gdal RasterIO
      *
      * @param 2D rectangle area to be read from data
      * @param data container into which data will be placed
      */
-    virtual void ReadSubSampledData(const std::shared_ptr<custom::Rectangle>& rectangle,
-                                    std::vector<int32_t>& data) = 0;
-    //    todo: this approach might come back in the future
-    //    virtual void ReadSubSampledData(const std::shared_ptr<custom::Rectangle>& rectangle, std::vector<float>& data)
-    //    = 0;
+    virtual void WriteSubSampledData(const custom::Rectangle& rectangle, std::vector<float>& data, int band_indx) = 0;
 
-    virtual void ReadSubSampledData(const custom::Rectangle& rectangle, int band_indx) = 0;
+    //    todo: virtual and generics do not match, might want to go through ProductData, currently not important to
+    //    support more than float virtual void WriteSubSampledData(const std::shared_ptr<custom::Rectangle>& rectangle,
+    //                                    std::vector<int32_t>& data) = 0;
 
-    virtual void Open(std::string_view path_to_band_file, bool has_transform, bool has_correct_proj) = 0;
-
-    virtual const std::vector<float>& GetData() const = 0;
+    virtual void Open(std::string_view path_to_band_file, int raster_size_x, int raster_size_y,
+                      std::vector<double> affine_geo_transform_out, const std::string_view data_projection_out) = 0;
 
     /**
      * close dataset

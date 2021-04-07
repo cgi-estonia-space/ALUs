@@ -1,9 +1,9 @@
-list(APPEND APPLY_ORBIT_FILE_OP_SOURCES
-        ${CMAKE_CURRENT_LIST_DIR}/src/apply_orbit_file_op.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/gdal_data_copy.cc
+list(APPEND TOPSAR_DEBURST_OP_SOURCES
+        ${CMAKE_CURRENT_LIST_DIR}/src/topsar_deburst_op.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/topsar_deburst_rectangle_generator.cc
         )
 
-list(APPEND APPLY_ORBIT_FILE_OP_INCLUDE_DIRS
+list(APPEND TOPSAR_DEBURST_OP_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/include
         ${CMAKE_CURRENT_LIST_DIR}/../algorithm_bond/include
         ${CMAKE_CURRENT_LIST_DIR}/../../app/include
@@ -25,38 +25,40 @@ list(APPEND APPLY_ORBIT_FILE_OP_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-engine-utilities/util
         ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-engine-utilities/datamodel
         #      OTHER
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/exotic_operations/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/cuda/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/common/include
         ${CMAKE_CURRENT_LIST_DIR}/../../external/pugixml/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/gdal/include
         ${CMAKE_CURRENT_LIST_DIR}/../../common/include
         )
 
-add_library(apply-orbit-file-op-obj
+add_library(topsar-deburst-op-obj
         OBJECT
-        ${APPLY_ORBIT_FILE_OP_SOURCES}
+        ${TOPSAR_DEBURST_OP_SOURCES}
         )
-target_include_directories(apply-orbit-file-op-obj
+target_include_directories(topsar-deburst-op-obj
         PRIVATE
-        ${APPLY_ORBIT_FILE_OP_INCLUDE_DIRS}
+        ${TOPSAR_DEBURST_OP_INCLUDE_DIRS}
         )
 
-add_library(apply-orbit-file-op-static
+add_library(topsar-deburst-op-static
         STATIC
-        $<TARGET_OBJECTS:apply-orbit-file-op-obj>
+        $<TARGET_OBJECTS:topsar-deburst-op-obj>
         )
-target_include_directories(apply-orbit-file-op-static
+target_include_directories(topsar-deburst-op-static
         PUBLIC
-        ${APPLY_ORBIT_FILE_OP_INCLUDE_DIRS}
+        ${TOPSAR_DEBURST_OP_INCLUDE_DIRS}
         )
-set_target_properties(apply-orbit-file-op-static
+set_target_properties(topsar-deburst-op-static
         PROPERTIES
-        OUTPUT_NAME apply-orbit-file-op
+        OUTPUT_NAME topsar-deburst-op
         )
-target_link_libraries(apply-orbit-file-op-static
+target_link_libraries(topsar-deburst-op-static
         PUBLIC
         gdal
         snap-engine-static
         sentinel1-util-static
-        exotic_operations-static
         pugixml-static
         )
 

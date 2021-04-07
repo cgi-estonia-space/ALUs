@@ -1,6 +1,6 @@
 /**
  * This file is a filtered duplicate of a SNAP's
- * org.esa.s1tbx.commons.SARUtils.java
+ * org.esa.s1tbx.commons.SARGeocoding.java
  * ported for native code.
  * Copied from(https://github.com/senbox-org/s1tbx). It was originally stated:
  *
@@ -20,25 +20,25 @@
 
 #include <memory>
 
-#include "metadata_element.h"
+#include "snap-core/datamodel/tie_point_grid.h"
 
-namespace alus {
-namespace s1tbx {
+namespace alus::s1tbx {
 
 /**
  * SAR specific common functions
  */
-class SarUtils {
-    /**
-     * Get radar frequency from the abstracted metadata (in Hz).
-     *
-     * @param absRoot the AbstractMetadata
-     * @return wavelength
-     * @throws Exception The exceptions.
-     */
+class SARGeocoding {
 public:
-    static double GetRadarFrequency(std::shared_ptr<snapengine::MetadataElement> abs_root);
+    static bool IsNearRangeOnLeft(const std::shared_ptr<snapengine::TiePointGrid>& incidence_angle,
+                                  int source_image_width) {
+        // for products without incidence angle tpg just assume left facing
+        if (incidence_angle == nullptr) {
+            return true;
+        }
+        double incidence_angle_to_first_pixel = incidence_angle->GetPixelDouble(0, 0);
+        double incidence_angle_to_last_pixel = incidence_angle->GetPixelDouble(source_image_width - 1, 0);
+        return (incidence_angle_to_first_pixel <= incidence_angle_to_last_pixel);
+    }
 };
 
-}  // namespace s1tbx
-}  // namespace alus
+}  // namespace alus::s1tbx
