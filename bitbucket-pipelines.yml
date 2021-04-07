@@ -56,3 +56,81 @@ pipelines:
                 - build-wrapper-linux-x86-64 --out-dir $BW_OUTPUT make -j8
                 - cd $BITBUCKET_CLONE_DIR
                 - sonar-scanner -Dsonar.cfamily.build-wrapper-output=$BW_OUTPUT -Dsonar.sources=algs,app,util -Dsonar.tests=test,test_integration -Dsonar.exclusions=tensorflow/**,external/**,build/**,.git/** -Dsonar.test.exclusions=tensorflow/**,external/**,build/**,.git/** -X
+
+  custom:
+    nightly-release: #name of this pipeline
+      - parallel:
+          - step:
+              name: 'CI check'
+              image: cgialus/alus-ci:latest
+              script:
+                - cd ~
+                - mkdir .aws
+                - cd .aws
+                - echo "[profile sid_man]" > config
+                - echo "aws_access_key_id = $SID_MAN_ACCESS_KEY_ID" >> config
+                - echo "aws_secret_access_key = $SID_MAN_SECRET_ACCESS_KEY" >> config
+                - echo "region = eu-central-1" >> config
+                - echo "output = json" >> config
+                - cd $BITBUCKET_CLONE_DIR
+                - git submodule update --init --recursive
+                - mkdir -p $BITBUCKET_CLONE_DIR/build/test-reports
+                - git ls-files --cached --recurse-submodules | tar Tczf - archive.tar.gz
+                - $BITBUCKET_CLONE_DIR/build-automation/run_ci_on_ec2_instance.sh "archive.tar.gz" $G3_4xLARGE_INSTANCE_ID "sid_man"
+              after-script:
+                - date_stamp=$(date +"%Y_%m_%d_%H%M")
+                - cd $BITBUCKET_CLONE_DIR/build/ci-artifacts/
+                - >
+                  for file in *; do
+                      [ -f "$file" ] && $BITBUCKET_CLONE_DIR/build-automation/put_to_alus_ci_artifacts.sh "${BITBUCKET_BUILD_NUMBER}_${BITBUCKET_BRANCH}_${date_stamp}" $file sid_man
+                  done
+          - step:
+              name: 'Build Alus release package'
+              image: cgialus/alus-infra:latest
+              clone:
+                depth: 1
+                enabled: true
+                lfs: true
+              script:
+                - git submodule update --init --recursive
+                - build_dir="build-nightly"
+                - cmake . -B${build_dir} -DENABLE_UNIT_TESTS=false -DENABLE_INTEGRATION_TESTS=false -DCUDA_ARCH="52;70"
+                - cmake --build $build_dir --target all -- -j 8
+                - cd $build_dir
+                - date_stamp=$(date +"%Y_%m_%d_%H%M")
+                - build_package_name="alus-nightly-${BITBUCKET_BUILD_NUMBER}-${date_stamp}"
+                - mv alus_package $build_package_name
+                - cp ../README.md $build_package_name/.
+                - cp ../VERSION $build_package_name/.
+                - echo $BITBUCKET_COMMIT >> $build_package_name/VERSION
+                - echo $build_package_name >> $build_package_name/VERSION
+                - tar -czvf ${build_package_name}.tar.gz $build_package_name
+              artifacts:
+                - build-nightly/*.tar.gz
+      - step:
+          name: 'End to end tests and publish'
+          image: cgialus/alus-ci:latest
+          clone:
+            enabled: false
+          script:
+            - cd ~
+            - mkdir .aws
+            - cd .aws
+            - echo "[profile sid_man]" > config
+            - echo "aws_access_key_id = $SID_MAN_ACCESS_KEY_ID" >> config
+            - echo "aws_secret_access_key = $SID_MAN_SECRET_ACCESS_KEY" >> config
+            - echo "region = eu-central-1" >> config
+            - echo "output = json" >> config
+            - aws ec2 start-instances --instance-ids $P3_2xLARGE_INSTANCE_ID --profile sid_man
+            - sleep 60
+            - ip_address=$(aws ec2 describe-instances --instance-ids $P3_2xLARGE_INSTANCE_ID --profile sid_man | grep PublicDnsName | head -1 | awk -F'[:]' '{print $2}' | xargs)
+            - ip_address=${ip_address%?}
+            - echo $ip_address
+            - cd $BITBUCKET_CLONE_DIR
+            - cd build-nightly
+            - build_filename=$(basename *.tar.gz)
+            - build_id="${build_filename%%.*}"
+            - scp -r -oStrictHostKeyChecking=no *.tar.gz ubuntu@$ip_address:/home/ubuntu/nightly_builds/
+            - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "/home/ubuntu/nightly_builds/execute_nightly.sh ${build_id}"
+          after-script:
+            - aws ec2 stop-instances --instance-ids $P3_2xLARGE_INSTANCE_ID --profile sid_man
