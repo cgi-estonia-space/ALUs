@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/platform/cloud/libram_file_block_cache.pic.a
-bazel-out/host/bin/tensorflow/core/platform/cloud/_objs/ram_file_block_cache/ram_file_block_cache.pic.o

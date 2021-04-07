@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/stream_executor/libscratch_allocator.pic.a
-bazel-out/host/bin/tensorflow/stream_executor/_objs/scratch_allocator/scratch_allocator.pic.o

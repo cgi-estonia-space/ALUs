@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/platform/libdenormal.pic.a
-bazel-out/host/bin/tensorflow/core/platform/_objs/denormal/denormal.pic.o

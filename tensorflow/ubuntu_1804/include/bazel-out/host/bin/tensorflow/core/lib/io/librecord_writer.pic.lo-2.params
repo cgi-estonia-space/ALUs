@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/lib/io/librecord_writer.pic.lo
-bazel-out/host/bin/tensorflow/core/lib/io/_objs/record_writer/record_writer.pic.o

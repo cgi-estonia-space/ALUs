@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/stream_executor/rocm/librocm_platform_id.pic.a
-bazel-out/host/bin/tensorflow/stream_executor/rocm/_objs/rocm_platform_id/rocm_platform_id.pic.o

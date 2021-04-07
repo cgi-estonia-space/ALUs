@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/grappler/optimizers/libevaluation_utils.pic.a
-bazel-out/host/bin/tensorflow/core/grappler/optimizers/_objs/evaluation_utils/evaluation_utils.pic.o

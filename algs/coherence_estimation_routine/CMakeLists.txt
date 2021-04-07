@@ -1,6 +1,5 @@
 list(APPEND COHERENCE_ESTIMATION_ROUTINE_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/coherence_estimation_routine_execute.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/geotiff_and_beam_dimap_execute.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/safe_execute.cc
         )
 
@@ -24,7 +23,7 @@ target_link_libraries(coherence-estimation-routine-shared
         apply-orbit-file-op-static
         coregistration-static
         backgeocoding-static
-        coherence-static
+        coherence-cuda-static
         gdal-util-static
         snap-engine-static
         topsar-deburst-op-static

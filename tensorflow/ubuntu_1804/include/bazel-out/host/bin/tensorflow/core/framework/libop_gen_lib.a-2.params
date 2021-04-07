@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/framework/libop_gen_lib.a
-bazel-out/host/bin/tensorflow/core/framework/_objs/op_gen_lib/op_gen_lib.o

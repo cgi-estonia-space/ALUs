@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/stream_executor/host/libhost_platform_id.pic.a
-bazel-out/host/bin/tensorflow/stream_executor/host/_objs/host_platform_id/host_platform_id.pic.o

@@ -1,4 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/platform/default/libplatform_port.a
-bazel-out/host/bin/tensorflow/core/platform/default/_objs/platform_port/port.o
-bazel-out/host/bin/tensorflow/core/platform/default/_objs/platform_port/cpu_info.o

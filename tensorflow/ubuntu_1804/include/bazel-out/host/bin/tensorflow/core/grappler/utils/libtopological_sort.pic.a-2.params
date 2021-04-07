@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/grappler/utils/libtopological_sort.pic.a
-bazel-out/host/bin/tensorflow/core/grappler/utils/_objs/topological_sort/topological_sort.pic.o

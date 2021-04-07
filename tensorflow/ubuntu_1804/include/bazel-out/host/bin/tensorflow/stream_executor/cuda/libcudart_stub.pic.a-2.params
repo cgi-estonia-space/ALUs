@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/stream_executor/cuda/libcudart_stub.pic.a
-bazel-out/host/bin/tensorflow/stream_executor/cuda/_objs/cudart_stub/cudart_stub.pic.o

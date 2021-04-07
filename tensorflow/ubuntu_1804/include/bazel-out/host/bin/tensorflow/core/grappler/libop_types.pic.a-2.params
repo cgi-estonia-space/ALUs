@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/grappler/libop_types.pic.a
-bazel-out/host/bin/tensorflow/core/grappler/_objs/op_types/op_types.pic.o

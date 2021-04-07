@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/platform/librandom.pic.a
-bazel-out/host/bin/tensorflow/core/platform/_objs/random/random.pic.o

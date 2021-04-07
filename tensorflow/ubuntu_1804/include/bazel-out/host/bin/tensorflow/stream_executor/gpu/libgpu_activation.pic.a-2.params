@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/stream_executor/gpu/libgpu_activation.pic.a
-bazel-out/host/bin/tensorflow/stream_executor/gpu/_objs/gpu_activation/gpu_activation.pic.o

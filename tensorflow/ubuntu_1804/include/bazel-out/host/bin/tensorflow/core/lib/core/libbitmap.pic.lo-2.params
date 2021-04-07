@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/lib/core/libbitmap.pic.lo
-bazel-out/host/bin/tensorflow/core/lib/core/_objs/bitmap/bitmap.pic.o

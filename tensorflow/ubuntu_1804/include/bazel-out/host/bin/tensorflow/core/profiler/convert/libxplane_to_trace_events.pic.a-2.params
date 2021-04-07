@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/profiler/convert/libxplane_to_trace_events.pic.a
-bazel-out/host/bin/tensorflow/core/profiler/convert/_objs/xplane_to_trace_events/xplane_to_trace_events.pic.o

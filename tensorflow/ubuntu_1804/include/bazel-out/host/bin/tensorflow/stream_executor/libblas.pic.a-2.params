@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/stream_executor/libblas.pic.a
-bazel-out/host/bin/tensorflow/stream_executor/_objs/blas/blas.pic.o

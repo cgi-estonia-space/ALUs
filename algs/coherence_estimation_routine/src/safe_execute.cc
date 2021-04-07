@@ -20,12 +20,18 @@
 #include <boost/filesystem.hpp>
 
 #include "alus_log.h"
-#include "coherence_execute.h"
+#include "coherence_calc_cuda.h"
+#include "coh_tiles_generator.h"
+#include "cuda_algorithm_runner.h"
+#include "gdal_tile_reader.h"
+#include "gdal_tile_writer.h"
 #include "coregistration_controller.h"
 #include "custom/gdal_image_reader.h"
 #include "custom/gdal_image_writer.h"
 #include "snap-core/datamodel/band.h"
 #include "snap-core/datamodel/product_data.h"
+#include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
+#include "s1tbx-commons/s_a_r_geocoding.h"
 #include "terrain_correction.h"
 #include "terrain_correction_metadata.h"
 #include "topsar_deburst_op.h"
@@ -72,17 +78,58 @@ int CoherenceEstimationRoutineExecute::ExecuteSafe() {
         std::string coh_output_file = boost::filesystem::change_extension(cor_output_file, "").string() + "_coh.tif";
         {
             const auto coh_start = std::chrono::system_clock::now();
-            auto alg = CoherenceExecuter();
-            alg.SetInputProducts(main_product, secondary_product);
-            alg.SetParameters(alg_params_);
-            alg.SetTileSize(tile_width_, tile_height_);
-            alg.SetInputFilenames({cor_output_file}, {});
-            alg.SetOutputFilename(coh_output_file);
-            const auto res = alg.Execute();
-            if (res != 0) {
-                LOGE << "Running Coherence operation resulted in non success execution - " << res << " -aborting.";
-                return res;
+            const auto near_range_on_left = s1tbx::SARGeocoding::IsNearRangeOnLeft(
+                main_product->GetTiePointGrid("incident_angle"), main_product->GetSceneRasterWidth());
+
+            alus::coherence_cuda::MetaData meta_master{near_range_on_left, snapengine::AbstractMetadata::GetAbstractedMetadata(main_product), orbit_degree_};
+            alus::coherence_cuda::MetaData meta_slave{near_range_on_left, snapengine::AbstractMetadata::GetAbstractedMetadata(secondary_product), orbit_degree_};
+
+            std::vector<int> band_map{1, 2, 3, 4};
+            std::vector<int> band_map_out{1};
+            int band_count_in = 4;
+            int band_count_out = 1;
+
+            if(coherence_window_azimuth_ == 0) {
+                //pixel
+                coherence_window_azimuth_ = std::round(coherence_window_range_ * meta_master.GetRangeAzimuthSpacingRatio());
             }
+            LOGI << "coherence window:(" <<coherence_window_range_ << ", " << coherence_window_azimuth_ << ")";
+
+            if(subtract_flat_earth_phase_) {
+                LOGI << "substract flat earth phase: " << srp_polynomial_degree_ << ", " << srp_number_points_ << ", "
+                    << orbit_degree_;
+            }
+
+            alus::coherence_cuda::GdalTileReader coh_data_reader{cor_output_file.c_str(), band_map, band_count_in, true};
+
+            alus::BandParams band_params{band_map_out,
+                                                         band_count_out,
+                                                         coh_data_reader.GetBandXSize(),
+                                                         coh_data_reader.GetBandYSize(),
+                                                         coh_data_reader.GetBandXMin(),
+                                                         coh_data_reader.GetBandYMin()};
+
+            alus::coherence_cuda::GdalTileWriter coh_data_writer{
+                coh_output_file.c_str(), band_params, coh_data_reader.GetGeoTransform(), coh_data_reader.GetDataProjection()};
+
+            alus::coherence_cuda::CohTilesGenerator tiles_generator{coh_data_reader.GetBandXSize(),
+                                                                    coh_data_reader.GetBandYSize(),
+                                                                    static_cast<int>(tile_width_),
+                                                                    static_cast<int>(tile_height_),
+                                                                    coherence_window_range_,
+                                                                    coherence_window_azimuth_};
+
+            alus::coherence_cuda::CohWindow coh_window{coherence_window_range_, coherence_window_azimuth_};
+            alus::coherence_cuda::CohCuda coherence{srp_number_points_,
+                                                    srp_polynomial_degree_,
+                                                    subtract_flat_earth_phase_,
+                                                    coh_window,
+                                                    orbit_degree_,
+                                                    meta_master,
+                                                    meta_slave};
+
+            alus::coherence_cuda::CUDAAlgorithmRunner cuda_algo_runner{&coh_data_reader, &coh_data_writer, &tiles_generator,&coherence};
+            cuda_algo_runner.Run();
             LOGI << "Coherence done - "
                       << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() -
                                                                                coh_start).count() << "ms";

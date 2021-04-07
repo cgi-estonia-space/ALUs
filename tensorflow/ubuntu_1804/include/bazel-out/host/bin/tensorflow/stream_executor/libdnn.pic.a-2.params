@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/stream_executor/libdnn.pic.a
-bazel-out/host/bin/tensorflow/stream_executor/_objs/dnn/dnn.pic.o

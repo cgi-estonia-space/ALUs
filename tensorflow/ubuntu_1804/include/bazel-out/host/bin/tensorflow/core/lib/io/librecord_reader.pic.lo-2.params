@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/lib/io/librecord_reader.pic.lo
-bazel-out/host/bin/tensorflow/core/lib/io/_objs/record_reader/record_reader.pic.o

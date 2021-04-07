@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/framework/libop_def_builder.pic.a
-bazel-out/host/bin/tensorflow/core/framework/_objs/op_def_builder/op_def_builder.pic.o

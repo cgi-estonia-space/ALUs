@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/cc/saved_model/libloader_lite_impl.pic.lo
-bazel-out/host/bin/tensorflow/cc/saved_model/_objs/loader_lite_impl/loader.pic.o

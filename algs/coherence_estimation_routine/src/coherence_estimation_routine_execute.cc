@@ -18,10 +18,10 @@
 #include <sstream>
 
 #include <boost/filesystem.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 
 #include "alus_log.h"
 #include "backgeocoding_bond.h"
-#include "coherence_execute.h"
 #include "terrain_correction_executor.h"
 
 namespace {
@@ -32,7 +32,12 @@ constexpr std::string_view PARAMETER_ID_SECONDARY_SCENE_ORBIT_FILE{"secondary_sc
 constexpr std::string_view PARAMETER_ID_ORBIT_FILE_DIR{"orbit_file_dir"};
 constexpr std::string_view PARAMETER_ID_SUBSWATH{"subswath"};
 constexpr std::string_view PARAMETER_ID_POLARIZATION{"polarization"};
-constexpr std::string_view PARAMETER_ID_COH_TC_METADATA_DIM{"coherence_terrain_correction_metadata"};
+constexpr std::string_view PARAMETER_ID_SRP_NUMBER_POINTS{"srp_number_points"};
+constexpr std::string_view PARAMETER_ID_SRP_POLYNOMIAL_DEGREE{"srp_polynomial_degree"};
+constexpr std::string_view PARAMETER_ID_SUBTRACT_FLAT_EARTH_PHASE{"subtract_flat_earth_phase"};
+constexpr std::string_view PARAMETER_ID_RG_WINDOW{"rg_window"};
+constexpr std::string_view PARAMETER_ID_AZ_WINDOW{"az_window"};
+constexpr std::string_view PARAMETER_ID_ORBIT_DEGREE{"orbit_degree"};
 }  // namespace
 
 namespace alus {
@@ -55,13 +60,14 @@ int CoherenceEstimationRoutineExecute::Execute() {
 
     PrintProcessingParameters();
 
-    GDALSetCacheMax64(4e9); // GDAL Cache 4GB, enough for for whole swath input + output
+    GDALSetCacheMax64(8e9); // GDAL Cache 4GB, enough for for whole swath input + output
 
     int exit_code{};
     if (IsSafeInput()) {
         exit_code = ExecuteSafe();
     } else {
-        exit_code = ExecuteGeoTiffAndBeamDimap();
+        LOGE << "Did not detect a SAFE input";
+        exit_code = 1;
     }
 
     return exit_code;
@@ -80,8 +86,7 @@ void CoherenceEstimationRoutineExecute::SetParameters(const app::AlgorithmParame
         {PARAMETER_ID_SECONDARY_SCENE_ORBIT_FILE, secondary_scene_orbit_file_},
         {PARAMETER_ID_ORBIT_FILE_DIR, orbit_file_dir_},
         {PARAMETER_ID_SUBSWATH, subswath_},
-        {PARAMETER_ID_POLARIZATION, polarization_},
-        {PARAMETER_ID_COH_TC_METADATA_DIM, coherence_terrain_correction_metadata_param_}};
+        {PARAMETER_ID_POLARIZATION, polarization_}};
 
     for (const auto& parameter : string_parameters_var_table) {
         auto value_it = param_values.find(std::string(parameter.first));
@@ -91,6 +96,8 @@ void CoherenceEstimationRoutineExecute::SetParameters(const app::AlgorithmParame
     }
 
     alg_params_ = param_values;
+
+    ParseCoherenceParams();
 }
 
 void CoherenceEstimationRoutineExecute::SetSrtm3Manager(snapengine::Srtm3ElevationModel* manager) {
@@ -112,24 +119,77 @@ void CoherenceEstimationRoutineExecute::SetOutputFilename(const std::string& out
 
 std::string CoherenceEstimationRoutineExecute::GetArgumentsHelp() const {
     std::stringstream help_stream;
-    help_stream << EXECUTOR_NAME << " parameters:"
-                << PARAMETER_ID_MAIN_SCENE << " - string Full or partial identifier of main scene of input datasets"
+    help_stream << EXECUTOR_NAME << " parameters:\n"
+                << PARAMETER_ID_MAIN_SCENE << " - string Full or partial identifier of main scene of input datasets\n"
                
-                << PARAMETER_ID_MAIN_SCENE_ORBIT_FILE << " - string Full path of the main scene's orbit file"
+                << PARAMETER_ID_MAIN_SCENE_ORBIT_FILE << " - string Full path of the main scene's orbit file\n"
                
-                << PARAMETER_ID_SECONDARY_SCENE_ORBIT_FILE << " - string Full path of the secondary scene's orbit file"
+                << PARAMETER_ID_SECONDARY_SCENE_ORBIT_FILE << " - string Full path of the secondary scene's orbit file\n"
                
                 << PARAMETER_ID_ORBIT_FILE_DIR << " - string ESA SNAP compatible root folder or orbit files. "
-                                                  "For example: /home/user/.snap/auxData/Orbits/Sentinel-1/POEORB/"
+                                                  "For example: /home/user/.snap/auxData/Orbits/Sentinel-1/POEORB/\n"
                
-                << PARAMETER_ID_SUBSWATH << " - string Subswath to process - valid values: IW1, IW2, IW3"
-                << PARAMETER_ID_POLARIZATION << " - string Polarization to process - valid value: VV, VH";
+                << PARAMETER_ID_SUBSWATH << " - string Subswath to process - valid values: IW1, IW2, IW3\n"
+                << PARAMETER_ID_POLARIZATION << " - string Polarization to process - valid value: VV, VH\n";
 
     help_stream << backgeocoding::BackgeocodingBond().GetArgumentsHelp();
-    help_stream << CoherenceExecuter().GetArgumentsHelp();
+    help_stream << GetCoherenceHelp();
     help_stream << terraincorrection::TerrainCorrectionExecutor().GetArgumentsHelp();
 
     return help_stream.str();
+}
+
+std::string CoherenceEstimationRoutineExecute::GetCoherenceHelp() const {
+    std::stringstream help_stream;
+    // clang-format off
+    help_stream << "Coherence configuration options:\n"
+                << PARAMETER_ID_SRP_NUMBER_POINTS << " - unsigned integer (default:" << srp_number_points_ << ")\n"
+
+                << PARAMETER_ID_SRP_POLYNOMIAL_DEGREE << " - unsigned integer (default:" << srp_polynomial_degree_
+                << ")\n"
+                << PARAMETER_ID_SUBTRACT_FLAT_EARTH_PHASE
+                << " - true/false (default:" << (subtract_flat_earth_phase_ ? "true" : "false") << ")\n"
+                << PARAMETER_ID_RG_WINDOW << " - range window size in pixels (default:" << coherence_window_range_
+                << ")\n"
+                << PARAMETER_ID_AZ_WINDOW
+                << " - azimuth window size in pixels, if zero derived from range window (default:" <<
+                    coherence_window_azimuth_  << ")\n"
+                << PARAMETER_ID_ORBIT_DEGREE << " - unsigned integer (default:" << orbit_degree_ << ")\n";
+    // clang-format on
+
+    return help_stream.str();
+}
+
+void CoherenceEstimationRoutineExecute::ParseCoherenceParams() {
+
+    auto orb_deg_it = alg_params_.find(PARAMETER_ID_ORBIT_DEGREE.data());
+    if (orb_deg_it != alg_params_.end()) {
+        orbit_degree_ = std::stoi(orb_deg_it->second);
+    }
+    auto az_window_it = alg_params_.find(PARAMETER_ID_AZ_WINDOW.data());
+    if (az_window_it != alg_params_.end()) {
+        coherence_window_azimuth_ = std::stoi(az_window_it->second);
+    }
+    auto rg_window_it = alg_params_.find(PARAMETER_ID_RG_WINDOW.data());
+    if (rg_window_it != alg_params_.end()) {
+        coherence_window_range_ = std::stoi(rg_window_it->second);
+    }
+
+    auto sfep_it = alg_params_.find(PARAMETER_ID_SUBTRACT_FLAT_EARTH_PHASE.data());
+    if (sfep_it != alg_params_.end()) {
+        if (boost::iequals(sfep_it->second, subtract_flat_earth_phase_ ? "false" : "true")) {
+            subtract_flat_earth_phase_ = !subtract_flat_earth_phase_;
+        }
+    }
+    auto srp_poly_it = alg_params_.find(PARAMETER_ID_SRP_POLYNOMIAL_DEGREE.data());
+    if (srp_poly_it != alg_params_.end()) {
+        srp_polynomial_degree_ = std::stoi(srp_poly_it->second);
+    }
+
+    auto srp_nr_it = alg_params_.find(PARAMETER_ID_SRP_NUMBER_POINTS.data());
+    if (srp_nr_it != alg_params_.end()) {
+        srp_number_points_ = std::stoi(srp_nr_it->second);
+    }
 }
 
 void CoherenceEstimationRoutineExecute::PrintProcessingParameters() const {

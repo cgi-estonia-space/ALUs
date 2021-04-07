@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/framework/libop_def_proto_cc_impl.pic.lo
-bazel-out/host/bin/tensorflow/core/framework/_objs/op_def_proto_cc_impl/op_def.pb.pic.o

@@ -1,4 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/example/libexample_protos_cc_impl.pic.lo
-bazel-out/host/bin/tensorflow/core/example/_objs/example_protos_cc_impl/example.pb.pic.o
-bazel-out/host/bin/tensorflow/core/example/_objs/example_protos_cc_impl/feature.pb.pic.o

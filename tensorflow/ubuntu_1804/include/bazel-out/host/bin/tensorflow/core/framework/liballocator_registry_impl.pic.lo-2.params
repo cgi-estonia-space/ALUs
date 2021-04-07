@@ -1,4 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/framework/liballocator_registry_impl.pic.lo
-bazel-out/host/bin/tensorflow/core/framework/_objs/allocator_registry_impl/allocator_registry.pic.o
-bazel-out/host/bin/tensorflow/core/framework/_objs/allocator_registry_impl/cpu_allocator_impl.pic.o

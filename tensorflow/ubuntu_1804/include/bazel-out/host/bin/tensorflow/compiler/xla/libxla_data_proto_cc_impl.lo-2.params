@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/compiler/xla/libxla_data_proto_cc_impl.lo
-bazel-out/host/bin/tensorflow/compiler/xla/_objs/xla_data_proto_cc_impl/xla_data.pb.o

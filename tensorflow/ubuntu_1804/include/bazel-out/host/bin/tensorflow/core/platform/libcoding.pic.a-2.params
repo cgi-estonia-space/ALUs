@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/platform/libcoding.pic.a
-bazel-out/host/bin/tensorflow/core/platform/_objs/coding/coding.pic.o

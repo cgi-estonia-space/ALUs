@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/grappler/costs/libutils.pic.a
-bazel-out/host/bin/tensorflow/core/grappler/costs/_objs/utils/utils.pic.o

@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/c/libops.lo
-bazel-out/host/bin/tensorflow/c/_objs/ops/ops.o

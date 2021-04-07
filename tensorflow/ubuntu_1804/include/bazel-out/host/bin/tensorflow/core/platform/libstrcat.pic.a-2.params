@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/platform/libstrcat.pic.a
-bazel-out/host/bin/tensorflow/core/platform/_objs/strcat/strcat.pic.o

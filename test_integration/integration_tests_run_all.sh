@@ -7,7 +7,7 @@ set -x
 
 ./integration-test-backgeocoding "$result_output"
 res1=$?
-./integration-test-coherence "$result_output"
+./integration-test-coherence-cuda "$result_output"
 res2=$?
 ./integration-test-snap-engine "$result_output"
 res3=$?

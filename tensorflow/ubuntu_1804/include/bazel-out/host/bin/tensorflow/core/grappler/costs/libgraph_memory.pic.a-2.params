@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/grappler/costs/libgraph_memory.pic.a
-bazel-out/host/bin/tensorflow/core/grappler/costs/_objs/graph_memory/graph_memory.pic.o

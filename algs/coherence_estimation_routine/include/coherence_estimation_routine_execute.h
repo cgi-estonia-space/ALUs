@@ -47,8 +47,8 @@ private:
 
     bool IsSafeInput() const;
     int ExecuteSafe();
-    int ExecuteGeoTiffAndBeamDimap();
-
+    void ParseCoherenceParams();
+    std::string GetCoherenceHelp() const;
 
     std::vector<std::string> input_datasets_{};
     std::vector<std::string> metadata_paths_{};
@@ -67,5 +67,11 @@ private:
     std::string coherence_terrain_correction_metadata_param_{};
     std::string main_scene_file_path_{};
     std::string secondary_scene_file_path_{};
+    int srp_number_points_{501};
+    int srp_polynomial_degree_{5};
+    bool subtract_flat_earth_phase_{true};
+    int coherence_window_range_{15};
+    int coherence_window_azimuth_{0}; // if left as zero, derived from range window
+    int orbit_degree_{3};
 };
 }

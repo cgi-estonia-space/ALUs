@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/platform/hadoop/libhadoop_file_system.pic.lo
-bazel-out/host/bin/tensorflow/core/platform/hadoop/_objs/hadoop_file_system/hadoop_file_system.pic.o
