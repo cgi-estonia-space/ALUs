@@ -23,7 +23,7 @@
 namespace alus {
 namespace snapengine {
 
-const std::reference_wrapper<IFX> IFX::XXXX = *new functions::FX_X4();
+const std::reference_wrapper<IFX> IFX::XXXX = *new functions::FX_X4(); //todo object slicing might break something here
 const std::reference_wrapper<IFX> IFX::XXX = *new functions::FX_X3();
 const std::reference_wrapper<IFX> IFX::XX = *new functions::FX_X2();
 const std::reference_wrapper<IFX> IFX::X = *new functions::FX_X();

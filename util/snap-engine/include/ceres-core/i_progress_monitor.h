@@ -58,6 +58,10 @@ namespace ceres {
  */
 class IProgressMonitor {
 public:
+    IProgressMonitor() = default;
+    IProgressMonitor(const IProgressMonitor&) = delete;
+    IProgressMonitor& operator=(const IProgressMonitor&) = delete;
+    virtual ~IProgressMonitor() = default;
     /**
      * Constant indicating an unknown amount of work.
      */
@@ -138,8 +142,6 @@ public:
      * @param work the number of work units just completed
      */
     virtual void Worked(int work) = 0;
-
-    virtual ~IProgressMonitor() = default;
 };
 }  // namespace ceres
 }  // namespace alus

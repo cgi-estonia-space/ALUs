@@ -40,6 +40,10 @@ namespace alus::snapengine {
  */
 class IProductReaderPlugIn {
 public:
+    IProductReaderPlugIn() = default;
+    IProductReaderPlugIn(const IProductReaderPlugIn&) = delete;
+    IProductReaderPlugIn& operator=(const IProductReaderPlugIn&) = delete;
+    virtual ~IProductReaderPlugIn() = default;
     /**
      * Gets the qualification of the product reader to decode a given input object.
      * Things to consider when implementing this method:
@@ -73,7 +77,5 @@ public:
      * @return a new reader instance, never <code>null</code>
      */
     virtual std::shared_ptr<snapengine::IProductReader> CreateReaderInstance() = 0;
-
-    virtual ~IProductReaderPlugIn() = default;
 };
 }  // namespace alus::snapengine

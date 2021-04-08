@@ -43,6 +43,10 @@ public:
     virtual int GetRasterHeight() = 0;
 
     virtual std::shared_ptr<Product> GetProduct() = 0;
+
+    IScene(const IScene&) = delete;
+    IScene& operator=(const IScene&) = delete;
+    virtual ~IScene() = default;
 };
 
 }  // namespace snapengine

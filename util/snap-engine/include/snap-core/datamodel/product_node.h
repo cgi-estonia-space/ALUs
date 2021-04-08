@@ -48,6 +48,9 @@ private:
 
 protected:
     ProductNode() = default;
+    ProductNode(const ProductNode&) = delete;
+    ProductNode& operator=(const ProductNode&) = delete;
+    virtual ~ProductNode() = default;
     /**
      * Constructs a new product node with the given name.
      *

@@ -106,7 +106,7 @@ public:
      *
      * @return true, if so
      */
-    static bool AreValid(std::vector<GeoPoint> a) {
+    static bool AreValid(const std::vector<GeoPoint>& a) {
         return std::all_of(a.cbegin(), a.cend(), [](const GeoPoint& gp) { return gp.IsValid(); });
     };
 

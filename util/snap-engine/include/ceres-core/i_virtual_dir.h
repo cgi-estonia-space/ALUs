@@ -43,6 +43,10 @@ protected:
     static constexpr int TEMP_DIR_ATTEMPTS = 10000;
 
 public:
+    IVirtualDir() = default;
+    IVirtualDir(const IVirtualDir&) = delete;
+    IVirtualDir& operator=(const IVirtualDir&) = delete;
+    virtual ~IVirtualDir() = default;
     /**
      * Creates an instance of a virtual directory object from a given directory or ZIP-file.
      *

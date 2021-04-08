@@ -123,8 +123,8 @@ TEST(TerrainCorrection, ParsesMetadataCorrectlyForSaaremaa1) {
 
     const auto EXPECTED_FIRST_LINE_TIME = Utc::Parse("15-JUL-2019 16:04:43.800577");
     const auto EXPECTED_LAST_LINE_TIME = Utc::Parse("15-JUL-2019 16:04:46.885967");
-    EXPECT_THAT(metadata_fields.first_line_time.GetMjd(), DoubleEq(EXPECTED_FIRST_LINE_TIME->GetMjd()));
-    EXPECT_THAT(metadata_fields.last_line_time.GetMjd(), DoubleEq(EXPECTED_LAST_LINE_TIME->GetMjd()));
+    EXPECT_THAT(metadata_fields.first_line_time->GetMjd(), DoubleEq(EXPECTED_FIRST_LINE_TIME->GetMjd()));
+    EXPECT_THAT(metadata_fields.last_line_time->GetMjd(), DoubleEq(EXPECTED_LAST_LINE_TIME->GetMjd()));
 
     EXPECT_THAT(metadata_fields.azimuth_spacing, DoubleEq(13.91157));
 

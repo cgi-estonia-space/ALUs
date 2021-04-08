@@ -63,7 +63,7 @@ private:
         return std::make_optional(boost::lexical_cast<T>(string_value));
     }
 
-    snapengine::TiePointGrid GetTiePointGrid(const pugi::xml_node& tie_point_grid_node);
+    std::unique_ptr<snapengine::TiePointGrid>  GetTiePointGrid(const pugi::xml_node& tie_point_grid_node);
 
 public:
     PugixmlMetaDataReader() = default;
@@ -88,7 +88,7 @@ public:
      * @return Map of TiePointGrid names and their according TiePointGrid classes.
      * @todo Should be refactored and integrated into the SAFE or .dim file reader.
      */
-    std::map<std::string, snapengine::TiePointGrid, std::less<>> ReadTiePointGridsTag();
+    std::map<std::string, std::unique_ptr<snapengine::TiePointGrid>, std::less<>> ReadTiePointGridsTag();
     ~PugixmlMetaDataReader() override;
 };
 

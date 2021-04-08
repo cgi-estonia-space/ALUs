@@ -46,6 +46,9 @@ protected:
      * @param type the value's type
      */
     explicit ProductData(int type);
+    ProductData(const ProductData&) = delete;
+    ProductData& operator=(const ProductData&) = delete;
+    virtual ~ProductData() = default;
 
     /**
      * Retuns a "deep" copy of this product data.

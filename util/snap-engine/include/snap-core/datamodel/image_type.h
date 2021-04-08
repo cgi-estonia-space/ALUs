@@ -31,6 +31,9 @@ class ImageType {
 
    protected:
     ImageType(std::string_view name) : name_(name) {}
+    ImageType(const ImageType&) = delete;
+    ImageType& operator=(const ImageType&) = delete;
+    virtual ~ImageType() = default;
 
    public:
     static constexpr std::string_view PROPERTY_NAME_COLOR = "color";

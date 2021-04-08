@@ -54,7 +54,7 @@ class TargetDataset: public AlusFileWriter<OutputType> {
     [[nodiscard]] RasterDimension getDimensions() const { return
                                                           this->dimensions; }
 
-    ~TargetDataset();
+    ~TargetDataset() override;
 
    private:
     GDALDataset* gdalDs;

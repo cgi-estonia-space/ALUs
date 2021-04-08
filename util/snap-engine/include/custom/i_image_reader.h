@@ -26,6 +26,10 @@ namespace custom {
 // Placeholder interface for image readers, currently only viable solution is GDAL anyway.
 class IImageReader {
 public:
+    IImageReader() = default;
+    IImageReader(const IImageReader&) = delete;
+    IImageReader& operator=(const IImageReader&) = delete;
+    virtual ~IImageReader() = default;
     /***
      * Just to provide interface between different implementations of band data readers e.g gdal RasterIO
      *

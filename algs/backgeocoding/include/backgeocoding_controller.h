@@ -106,6 +106,8 @@ private:
             std::thread worker(&BackgeocodingWorker::Work, this);
             worker.detach();
         }
+        BackgeocodingWorker(const Backgeocoding&) = delete;
+        BackgeocodingWorker& operator=(const Backgeocoding&) = delete;
         ~BackgeocodingWorker();
         void Work();
 

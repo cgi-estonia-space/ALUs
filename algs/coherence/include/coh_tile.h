@@ -18,7 +18,7 @@
 
 namespace alus {
 
-class CohTile : virtual public IoTile {
+class CohTile : public IoTile {
    private:
     // padding is added for the edge tiles, and also helps to calculate overlapping data regions
     int y_min_pad_{}, y_max_pad_{}, x_min_pad_{}, x_max_pad_{};

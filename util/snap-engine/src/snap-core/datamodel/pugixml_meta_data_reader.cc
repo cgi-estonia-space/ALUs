@@ -91,7 +91,7 @@ SpectralBandInfo PugixmlMetaDataReader::GetSpectralBandInfo(pugi::xml_node& spec
             bandwidth,        scaling_factor, scaling_offset,    no_data_value,       valid_mask_term};
 }
 
-snapengine::TiePointGrid PugixmlMetaDataReader::GetTiePointGrid(const pugi::xml_node& tie_point_grid_node) {
+std::unique_ptr<snapengine::TiePointGrid> PugixmlMetaDataReader::GetTiePointGrid(const pugi::xml_node& tie_point_grid_node) {
     const std::string name = tie_point_grid_node.child_value(DimapProductConstants::TAG_TIE_POINT_GRID_NAME.data());
 
     const auto grid_width =
@@ -110,15 +110,13 @@ snapengine::TiePointGrid PugixmlMetaDataReader::GetTiePointGrid(const pugi::xml_
     auto is_cyclic = ParseChildValue<bool>(tie_point_grid_node, DimapProductConstants::TAG_TIE_POINT_CYCLIC);
 
     std::vector<float> tie_points(grid_width * grid_height);
-    TiePointGrid tie_point_grid(
+    return std::make_unique<TiePointGrid>(
         name, grid_width, grid_height, offset_x, offset_y, subsampling_x, subsampling_y, tie_points,
         (is_cyclic && is_cyclic.value() ? TiePointGrid::DISCONT_AT_180 : TiePointGrid::DISCONT_NONE));
-
-    return tie_point_grid;
 }
 
-std::map<std::string, snapengine::TiePointGrid, std::less<>> PugixmlMetaDataReader::ReadTiePointGridsTag() {
-    std::map<std::string, snapengine::TiePointGrid, std::less<>> tie_point_grids;
+std::map<std::string, std::unique_ptr<snapengine::TiePointGrid>, std::less<>> PugixmlMetaDataReader::ReadTiePointGridsTag() {
+    std::map<std::string, std::unique_ptr<snapengine::TiePointGrid>, std::less<>> tie_point_grids;
 
     std::string file_name;
 
@@ -149,7 +147,7 @@ std::map<std::string, snapengine::TiePointGrid, std::less<>> PugixmlMetaDataRead
             continue;
         }
         auto tie_point_grid = GetTiePointGrid(tie_point_grid_node);
-        tie_point_grids.try_emplace(tie_point_grid.GetName(), tie_point_grid);
+        tie_point_grids.try_emplace(tie_point_grid->GetName(), std::move(tie_point_grid));
     }
 
     return tie_point_grids;

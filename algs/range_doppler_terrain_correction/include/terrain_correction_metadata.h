@@ -46,8 +46,8 @@ struct RangeDopplerTerrainMetadata {
     double incidence_far;
     int slice_num;
     int data_take_id;
-    snapengine::Utc first_line_time;
-    snapengine::Utc last_line_time;
+    std::shared_ptr<snapengine::Utc> first_line_time;
+    std::shared_ptr<snapengine::Utc> last_line_time;
     double first_near_lat;
     double first_near_long;
     double first_far_lat;
@@ -136,17 +136,18 @@ public:
     Metadata() = delete;
     Metadata(std::string_view dim_metadata_file, std::string_view lat_tie_points_file,
              std::string_view lon_tie_points_file);
-    ~Metadata() = default;
 
     [[nodiscard]] const TiePoints& GetLatTiePoints() const { return lat_tie_points_; }
     [[nodiscard]] const TiePoints& GetLonTiePoints() const { return lon_tie_points_; }
-    [[nodiscard]] RangeDopplerTerrainMetadata GetMetadata() const { return metadata_fields_; }
+    [[nodiscard]] const RangeDopplerTerrainMetadata& GetMetadata() const { return metadata_fields_; }
     [[nodiscard]] const snapengine::tiepointgrid::TiePointGrid& GetLatTiePointGrid() const {
         return lat_tie_point_grid_;
     }
     [[nodiscard]] const snapengine::tiepointgrid::TiePointGrid& GetLonTiePointGrid() const {
         return lon_tie_point_grid_;
     }
+
+    ~Metadata() = default;
 
 private:
     static constexpr std::string_view LATITUDE_TIE_POINT_GRID{"latitude"};

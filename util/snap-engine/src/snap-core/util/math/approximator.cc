@@ -72,8 +72,8 @@ namespace snapengine {
 void Approximator::ApproximateFXY(const std::vector<std::vector<double>>& data, std::vector<int> indices,
                                   const std::vector<std::reference_wrapper<IFXY>>& f, std::vector<double>& c) {
     auto n = f.size();
-    Eigen::MatrixXd a(n, n);
-    Eigen::VectorXd b(n);
+    Eigen::MatrixXd a = Eigen::MatrixXd::Zero(n, n);
+    Eigen::VectorXd b = Eigen::VectorXd::Zero(n);
     double x;
     double y;
     double z;
@@ -101,7 +101,7 @@ void Approximator::ApproximateFXY(const std::vector<std::vector<double>>& data, 
             a(i, j) = a(j, i);
         }
         // Column n+1
-        for (auto point : data) {
+        for (const auto& point : data) {
             x = point.at(i_x);
             y = point.at(i_y);
             z = point.at(i_z);

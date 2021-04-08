@@ -30,7 +30,7 @@ int inverterParallelTimeTest(std::string const &fileName) {
     std::cout << "Parallel color inversion" << std::endl;
 
     CPLErr error;
-    AlgoData algoData;
+    AlgoData algoData{};
     double adfGeoTransform[6];
     clock_t t = clock();
 

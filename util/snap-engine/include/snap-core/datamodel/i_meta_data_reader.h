@@ -28,6 +28,10 @@ protected:
 
 public:
     IMetaDataReader() = default;
+    IMetaDataReader(const IMetaDataReader&) = delete;
+    IMetaDataReader& operator=(const IMetaDataReader&) = delete;
+    virtual ~IMetaDataReader() = default;
+
     explicit IMetaDataReader(const std::shared_ptr<Product>& product) : product_(product){};
     explicit IMetaDataReader(const std::string_view file_name) : file_name_(file_name){};
     /**
@@ -40,7 +44,6 @@ public:
     // in case of default constructor user needs to provide source product
     virtual void SetProduct(const std::shared_ptr<Product>& product) = 0;
 
-    virtual ~IMetaDataReader() = default;
 };
 }  // namespace snapengine
 }  // namespace alus

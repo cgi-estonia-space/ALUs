@@ -76,7 +76,7 @@ class Ellipsoid {
      */
     static s1tbx::Point Ell2Xyz(double phi, double lambda, double height);
 
-    static s1tbx::Point Ell2Xyz(std::vector<double> phi_lambda_height);
+    static s1tbx::Point Ell2Xyz(const std::vector<double>& phi_lambda_height);
 
     static s1tbx::Point Ell2Xyz(const GeoPoint& geo_point, double height);
 

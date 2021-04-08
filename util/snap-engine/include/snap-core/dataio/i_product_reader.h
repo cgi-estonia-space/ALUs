@@ -60,6 +60,10 @@ public:
     //     */
     //    ProductReaderPlugIn getReaderPlugIn();
 
+    IProductReader() = default;
+    IProductReader(const IProductReader&) = delete;
+    IProductReader& operator=(const IProductReader&) = delete;
+    virtual ~IProductReader() = default;
     /**
      * Retrieves the current input destination object. The return value might be {@code null} if the
      * input has not been set so far.

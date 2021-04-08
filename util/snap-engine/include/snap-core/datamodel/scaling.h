@@ -28,6 +28,10 @@ namespace snapengine {
  */
 class Scaling {
 public:
+    Scaling() = default;
+    Scaling(const Scaling&) = delete;
+    Scaling& operator=(const Scaling&) = delete;
+    virtual ~Scaling() = default;
     /**
      * The forward scaling method.
      * @param value the value to be scaled

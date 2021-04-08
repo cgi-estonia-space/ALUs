@@ -47,6 +47,10 @@ using CoordinateReferenceSystemWKT = std::string;
  */
 class IGeoCoding {
 public:
+    IGeoCoding() = default;
+    IGeoCoding(const IGeoCoding&) = delete;
+    IGeoCoding& operator=(const IGeoCoding&) = delete;
+    virtual ~IGeoCoding() = default;
     /**
      * Checks whether or not the longitudes of this geo-coding cross the +/- 180 degree meridian.
      *

@@ -63,6 +63,9 @@ private:
 
     void UpdateOrbits();
 
+    ApplyOrbitFileOp(const ApplyOrbitFileOp&) = delete;
+    ApplyOrbitFileOp& operator=(const ApplyOrbitFileOp&) = delete;
+
 public:
     explicit ApplyOrbitFileOp(const std::shared_ptr<snapengine::Product>& source_product);
     /**

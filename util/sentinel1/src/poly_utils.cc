@@ -21,9 +21,9 @@
 namespace alus {
 
 // todo: rethink where this should be
-double PolyUtils::PolyVal1D(double x, std::vector<double> coeffs) {
+double PolyUtils::PolyVal1D(double x, const std::vector<double>& coeffs) {
     double sum = 0.0;
-    for (std::vector<double>::reverse_iterator it = coeffs.rbegin(); it != coeffs.rend(); it++) {
+    for (auto it = coeffs.rbegin(); it != coeffs.rend(); it++) {
         sum *= x;
         sum += *it;
         //    coeffs.at(d);
@@ -36,7 +36,7 @@ double PolyUtils::PolyVal1D(double x, std::vector<double> coeffs) {
     return sum;
 }
 
-std::vector<double> PolyUtils::Solve33(std::vector<std::vector<double>> a, std::vector<double> rhs) {
+std::vector<double> PolyUtils::Solve33(const std::vector<std::vector<double>>& a, const std::vector<double>& rhs) {
     std::vector<double> result(3);
 
     if (a.at(0).size() != 3 || a.size() != 3) {
@@ -69,7 +69,7 @@ std::vector<double> PolyUtils::Solve33(std::vector<std::vector<double>> a, std::
     return result;
 }
 
-Eigen::VectorXd PolyUtils::PolyFit(Eigen::VectorXd xvals, Eigen::VectorXd yvals, int order) {
+Eigen::VectorXd PolyUtils::PolyFit(const Eigen::VectorXd& xvals, const Eigen::VectorXd& yvals, int order) {
     // todo: assert(xvals.size() == yvals.size());
     // todo: assert(order >= 1 && order <= xvals.size() - 1);
     Eigen::MatrixXd A(xvals.size(), order + 1);
@@ -89,18 +89,19 @@ Eigen::VectorXd PolyUtils::PolyFit(Eigen::VectorXd xvals, Eigen::VectorXd yvals,
     return result;
 }
 
-Eigen::VectorXd PolyUtils::Normalize(Eigen::VectorXd t) {
+Eigen::VectorXd PolyUtils::Normalize(const Eigen::VectorXd& t) {
     int i = t.size() / 2;
     return (t - (t(i) * Eigen::VectorXd::Ones(t.size()))) / 10.0;
 }
 
-Eigen::VectorXd PolyUtils::PolyFitNormalized(Eigen::VectorXd t, Eigen::VectorXd y, int degree) {
+Eigen::VectorXd PolyUtils::PolyFitNormalized(const Eigen::VectorXd& t, const Eigen::VectorXd& y, int degree) {
     return PolyFit(Normalize(t), y, degree);
 }
 
 std::vector<double> PolyUtils::PolyFitNormalized(std::vector<double> t, std::vector<double> y, int degree) {
-    auto result = PolyFit(Normalize(Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(t.data(), t.size())),
-                          Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(y.data(), y.size()), degree);
+    //todo likely don't need to send copies of input vectors
+    auto result = PolyFit(Normalize(Eigen::Map<const Eigen::VectorXd, Eigen::Unaligned>(t.data(), t.size())),
+                          Eigen::Map<const Eigen::VectorXd, Eigen::Unaligned>(y.data(), y.size()), degree);
     return std::vector<double>(result.data(), result.data() + result.rows() * result.cols());
 }
 

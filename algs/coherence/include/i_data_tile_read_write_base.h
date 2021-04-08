@@ -33,6 +33,9 @@ protected:
     std::string_view data_projection_{};
     std::vector<double> affine_geo_transform_;
 
+    IDataTileReadWriteBase(const IDataTileReadWriteBase&) = delete;
+    IDataTileReadWriteBase& operator=(const IDataTileReadWriteBase&) = delete;
+
 public:
     IDataTileReadWriteBase(const std::string_view& file_name, const std::vector<int>& band_map, int band_count)
         : file_name_(file_name), band_map_(band_map), band_count_(band_count) {}

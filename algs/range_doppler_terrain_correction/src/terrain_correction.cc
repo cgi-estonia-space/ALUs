@@ -79,13 +79,13 @@ void FillHostGetPositionMetadata(GetPositionMetadata& h_get_position_metadata,
     h_get_position_metadata.sensor_velocity.array = h_velocities.data();
 }
 
-TerrainCorrection::TerrainCorrection(Dataset<double> coh_ds, RangeDopplerTerrainMetadata metadata,
+TerrainCorrection::TerrainCorrection(Dataset<double> coh_ds, const RangeDopplerTerrainMetadata& metadata,
                                      const snapengine::tiepointgrid::TiePointGrid& lat_tie_point_grid,
                                      const snapengine::tiepointgrid::TiePointGrid& lon_tie_point_grid,
                                      const PointerHolder* srtm_3_tiles, size_t srtm_3_tiles_length,
                                      int selected_band_id)
     : coh_ds_{std::move(coh_ds)},
-      metadata_{std::move(metadata)},
+      metadata_{metadata},
       d_srtm_3_tiles_(srtm_3_tiles),
       d_srtm_3_tiles_length_(srtm_3_tiles_length),
       selected_band_id_(selected_band_id),
@@ -111,7 +111,7 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
     target_product.dataset_.GetGdalDataset()->GetGeoTransform(target_geo_transform_array);
     GeoTransformParameters const target_geo_transform{GeoTransformConstruct::buildFromGDAL(target_geo_transform_array)};
 
-    const auto line_time_interval_in_days{(metadata_.last_line_time.GetMjd() - metadata_.first_line_time.GetMjd()) /
+    const auto line_time_interval_in_days{(metadata_.last_line_time->GetMjd() - metadata_.first_line_time->GetMjd()) /
                                           static_cast<double>(coh_ds_y_size - 1)};
 
     const auto pos_vector_items_length = coh_ds_y_size;
@@ -126,7 +126,7 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
     CHECK_CUDA_ERR(cudaMemset(kernel_sensor_velocities.array, 0, pos_vector_array_bytes_size));
 
     const auto computation_metadata = CreateComputationMetadata();
-    CalculateVelocitiesAndPositions(coh_ds_y_size, metadata_.first_line_time.GetMjd(), line_time_interval_in_days,
+    CalculateVelocitiesAndPositions(coh_ds_y_size, metadata_.first_line_time->GetMjd(), line_time_interval_in_days,
                                     computation_metadata.orbit_state_vectors, kernel_sensor_velocities,
                                     kernel_sensor_positions);
 
@@ -324,8 +324,8 @@ ComputationMetadata TerrainCorrection::CreateComputationMetadata() {
 
     ComputationMetadata md{};
     md.orbit_state_vectors = kernel_orbits;
-    md.first_line_time_mjd = metadata_.first_line_time.GetMjd();
-    md.last_line_time_mjd = metadata_.last_line_time.GetMjd();
+    md.first_line_time_mjd = metadata_.first_line_time->GetMjd();
+    md.last_line_time_mjd = metadata_.last_line_time->GetMjd();
     md.first_near_lat = metadata_.first_near_lat;
     md.first_near_long = metadata_.first_near_long;
     md.first_far_lat = metadata_.first_far_lat;

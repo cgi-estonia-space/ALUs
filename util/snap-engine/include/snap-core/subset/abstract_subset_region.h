@@ -34,6 +34,11 @@ protected:
     virtual void ValidateDefaultSize(int default_product_width, int default_product_height,
                                      std::string_view exception_message_prefix);
 
+    AbstractSubsetRegion() = default;
+    AbstractSubsetRegion(const AbstractSubsetRegion&) = delete;
+    AbstractSubsetRegion& operator=(const AbstractSubsetRegion&) = delete;
+    virtual ~AbstractSubsetRegion() = default;
+
 public:
     virtual std::shared_ptr<custom::Rectangle> ComputeProductPixelRegion(
         std::shared_ptr<IGeoCoding> product_default_geo_coding, int default_product_width, int default_product_height,

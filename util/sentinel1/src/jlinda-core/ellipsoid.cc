@@ -76,7 +76,7 @@ s1tbx::Point Ellipsoid::Ell2Xyz(const double phi, const double lambda, const dou
     const double a = nph * cos(phi);
     return s1tbx::Point(a * cos(lambda), a * sin(lambda), (nph - e2_ * n) * sin(phi));
 }
-s1tbx::Point Ellipsoid::Ell2Xyz(std::vector<double> phi_lambda_height) {
+s1tbx::Point Ellipsoid::Ell2Xyz(const std::vector<double>& phi_lambda_height) {
     const double phi = phi_lambda_height.at(0);
     const double lambda = phi_lambda_height.at(1);
     const double height = phi_lambda_height.at(2);

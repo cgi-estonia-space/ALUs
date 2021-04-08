@@ -21,6 +21,9 @@ namespace alus {
 class ITileProvider {
 public:
     [[nodiscard]] virtual std::vector<CohTile> GetTiles() const = 0;
+    ITileProvider() = default;
+    ITileProvider(const ITileProvider&) = delete;
+    ITileProvider& operator=(const ITileProvider&) = delete;
     virtual ~ITileProvider() = default;
 };
 }  // namespace alus

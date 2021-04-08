@@ -61,5 +61,10 @@ public:
         }
         return nullptr;
     }
+
+    ISentinel1Directory() = default;
+    ISentinel1Directory(const ISentinel1Directory&) = delete;
+    ISentinel1Directory& operator=(const ISentinel1Directory&) = delete;
+    virtual ~ISentinel1Directory() = default;
 };
 }  // namespace alus::s1tbx

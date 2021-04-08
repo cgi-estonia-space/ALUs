@@ -31,6 +31,10 @@ namespace alus {
 class AlgBond {
 public:
     AlgBond() = default;
+    AlgBond(const AlgBond&) = delete;
+    AlgBond& operator=(const AlgBond&) = delete;
+
+    virtual ~AlgBond() = default;
 
     virtual void SetInputFilenames([[maybe_unused]] const std::string& input_dataset,
                                    [[maybe_unused]] const std::string&
@@ -57,8 +61,6 @@ public:
     [[nodiscard]] virtual GDALDataset* GetProcessedDataset() const { return nullptr; }
 
     [[nodiscard]] virtual std::string GetArgumentsHelp() const = 0;
-
-    virtual ~AlgBond() = default;
 
 private:
     virtual void PrintProcessingParameters() const {}

@@ -53,6 +53,9 @@ public:
      */
     virtual boost::filesystem::path GetOrbitFile() = 0;
 
+    IOrbitFile() = default;
+    IOrbitFile(const IOrbitFile&) = delete;
+    IOrbitFile& operator=(const IOrbitFile&) = delete;
     virtual ~IOrbitFile() = default;
 };
 }  // namespace s1tbx

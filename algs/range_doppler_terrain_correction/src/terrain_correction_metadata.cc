@@ -42,8 +42,8 @@ void Metadata::FetchTiePointGrids(std::string_view dim_metadata_file,
     snapengine::PugixmlMetaDataReader xml_reader{dim_metadata_file};
     auto tie_point_grids = xml_reader.ReadTiePointGridsTag();
 
-    lat_tie_point_grid = GetTiePointGrid(tie_point_grids.at(std::string(LATITUDE_TIE_POINT_GRID)));
-    lon_tie_point_grid = GetTiePointGrid(tie_point_grids.at(std::string(LONGITUDE_TIE_POINT_GRID)));
+    lat_tie_point_grid = GetTiePointGrid(*tie_point_grids.at(std::string(LATITUDE_TIE_POINT_GRID)));
+    lon_tie_point_grid = GetTiePointGrid(*tie_point_grids.at(std::string(LONGITUDE_TIE_POINT_GRID)));
 }
 
 void Metadata::FetchTiePoints(std::string_view tie_points_file, TiePoints& tie_points) {
@@ -68,10 +68,10 @@ void Metadata::FillDimMetadata(std::string_view dim_metadata_file) {
         throw std::runtime_error("Invalid input for range pixel spacing: " +
                                  std::to_string(metadata_fields_.range_spacing));
     }
-    metadata_fields_.first_line_time = *snapengine::AbstractMetadata::ParseUtc(
+    metadata_fields_.first_line_time = snapengine::AbstractMetadata::ParseUtc(
         master_root->GetAttributeString(snapengine::AbstractMetadata::FIRST_LINE_TIME));
 
-    metadata_fields_.last_line_time = *snapengine::AbstractMetadata::ParseUtc(
+    metadata_fields_.last_line_time = snapengine::AbstractMetadata::ParseUtc(
         master_root->GetAttributeString(snapengine::AbstractMetadata::LAST_LINE_TIME));
 
     metadata_fields_.line_time_interval =

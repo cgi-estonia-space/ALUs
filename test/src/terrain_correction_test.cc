@@ -113,8 +113,8 @@ ComputationMetadata CreateComputationMetadata(RangeDopplerTerrainMetadata metada
                               cudaMemcpyHostToDevice));
 
     md.orbit_state_vectors = kernel_orbits;
-    md.first_line_time_mjd = metadata.first_line_time.GetMjd();
-    md.last_line_time_mjd = metadata.last_line_time.GetMjd();
+    md.first_line_time_mjd = metadata.first_line_time->GetMjd();
+    md.last_line_time_mjd = metadata.last_line_time->GetMjd();
     md.first_near_lat = metadata.first_near_lat;
     md.first_near_long = metadata.first_near_long;
     md.first_far_lat = metadata.first_far_lat;

@@ -29,17 +29,18 @@
 namespace {
 using namespace alus::snapengine;
 
+/*
 class ProductDataMetadataElementTest : public ::testing::Test {
 public:
     ~ProductDataMetadataElementTest() override = default;
 
 protected:
-    MetadataElement test_group_;
+    std::unique_ptr<MetadataElement> test_group_;
 
-    void SetUp() override { test_group_ = MetadataElement{"test"}; }
+    void SetUp() override { test_group_ = std::make_unique<MetadataElement>("test"); }
     //    void TearDown() override { Test::TearDown(); }
 };
-
+*/
 /**
  * Tests construction failures
  */

@@ -45,19 +45,17 @@ class GdalErrorException final : public std::runtime_error {
 
 template <typename BufferType>
 GDALDataType FindGdalDataType() {
-    BufferType temp_type{0};
-    size_t my_hash_code = typeid(temp_type).hash_code();
-
-    if(my_hash_code == typeid(double).hash_code()){
+    if(std::is_same_v<BufferType, double>){
         return GDALDataType::GDT_Float64;
-    }else if(my_hash_code == typeid(float).hash_code()) {
+    }else if(std::is_same_v<BufferType, float>) {
         return GDALDataType::GDT_Float32;
-    }else if(my_hash_code == typeid(int16_t).hash_code()) {
+    }else if(std::is_same_v<BufferType, int16_t>) {
         return GDALDataType::GDT_Int16;
-    }else if(my_hash_code == typeid(int).hash_code() || my_hash_code == typeid(int32_t).hash_code()){
+    }else if(std::is_same_v<BufferType, int32_t>){
         return GDALDataType::GDT_Int32;
     }else{
-        throw std::invalid_argument(std::string(typeid(temp_type).name()) + " is not an implemented type for this dataset.");
+        //todo this function and error can be compile time, but requires refactoring in other places
+        throw std::invalid_argument(std::string(typeid(BufferType).name()) + " is not an implemented type for this dataset.");
     }
 }
 }  // namespace alus
