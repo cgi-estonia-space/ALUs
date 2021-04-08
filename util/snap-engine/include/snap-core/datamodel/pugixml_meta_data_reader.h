@@ -13,15 +13,23 @@
  */
 #pragma once
 
+#include <algorithm>
+#include <cctype>
+#include <functional>
+#include <ios>
+#include <map>
 #include <memory>
 #include <optional>
+#include <sstream>
 #include <string_view>
+#include <type_traits>
 #include <vector>
 
 #include <boost/lexical_cast.hpp>
 
 #include "i_meta_data_reader.h"
 #include "pugixml.hpp"
+#include "snap-core/datamodel/tie_point_grid.h"
 #include "spectral_band_info.h"
 
 namespace alus {
@@ -40,22 +48,22 @@ private:
      * Parses xml_node and reads information from requested top-level tag. This parse function does not search for
      * deep-nested values.
      *
-     * @tparam T any type supported by boost::lexical_cast
+     * @tparam T any type supported by boost::lexical_cast. Bool types support values "0", "1", "true", "false", and are
+     * case-insensitive.
      * @param node pugi::xml_node whose child tag value should be returned.
      * @param child_tag Name of the top-level tag whose value should be parsed.
      * @return std::optional of the given type.
-     *
-     * @note Bool strings should be parsable boost::lexical_cast i.e. they should be either "1" or "0"
      */
     template <typename T>
-    std::optional<T> ParseChildValue(pugi::xml_node node, std::string_view child_tag) {
+    std::optional<T> ParseChildValue(const pugi::xml_node& node, std::string_view child_tag) {
         const std::string string_value = node.child_value(child_tag.data());
         if (string_value.empty()) {
             return std::nullopt;
         }
-        auto parsed_value = std::make_optional(boost::lexical_cast<T>(string_value));
-        return parsed_value;
+        return std::make_optional(boost::lexical_cast<T>(string_value));
     }
+
+    snapengine::TiePointGrid GetTiePointGrid(const pugi::xml_node& tie_point_grid_node);
 
 public:
     PugixmlMetaDataReader() = default;
@@ -72,8 +80,36 @@ public:
      * @todo Should be refactored and integrated into the SAFE or .dim file reader.
      */
     std::vector<SpectralBandInfo> ReadImageInterpretationTag();
+
+    /**
+     * Method for accessing Tie_Point_Grids tag of BEAM-DIMAP format and reading tie_point_grid info from the
+     * aforementioned tag.
+     *
+     * @return Map of TiePointGrid names and their according TiePointGrid classes.
+     * @todo Should be refactored and integrated into the SAFE or .dim file reader.
+     */
+    std::map<std::string, snapengine::TiePointGrid, std::less<>> ReadTiePointGridsTag();
     ~PugixmlMetaDataReader() override;
 };
+
+// Has to be outside of class namespace due to gcc not implementing C++ Core DR 727:
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85282
+template <>
+inline std::optional<bool> PugixmlMetaDataReader::ParseChildValue(const pugi::xml_node& node, std::string_view child_tag) {
+    std::string string_value = node.child_value(child_tag.data());
+    if (string_value.empty()) {
+        return std::nullopt;
+    }
+    try {
+        return std::make_optional(boost::lexical_cast<bool>(string_value));
+    } catch (const boost::bad_lexical_cast& e) {
+        std::transform(string_value.begin(), string_value.end(), string_value.begin(), ::tolower);
+        std::istringstream stream(string_value);
+        bool parsed_boolean;
+        stream >> std::boolalpha >> parsed_boolean;
+        return std::make_optional(parsed_boolean);
+    }
+}
 
 }  // namespace snapengine
 }  // namespace alus

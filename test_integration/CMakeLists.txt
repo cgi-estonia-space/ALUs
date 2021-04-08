@@ -115,13 +115,37 @@ target_link_libraries(integration-test-tc
         )
 add_custom_command(TARGET integration-test-tc
         POST_BUILD
-        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/test_integration/goods
-        COMMAND cp -rn ${CMAKE_CURRENT_LIST_DIR}/goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb.data.zip
+        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/test_integration/goods/terrain_correction
+
+        COMMAND cp -aln ${CMAKE_CURRENT_LIST_DIR}/goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb.data.zip
         ${CMAKE_BINARY_DIR}/test_integration/goods/.
+
+        COMMAND cp -aln ${CMAKE_CURRENT_LIST_DIR}/goods/terrain_correction/Beirut_IW1_6_VH_orb_stack_cor_deb_coh.data.zip
+        ${CMAKE_BINARY_DIR}/test_integration/goods/terrain_correction/.
+
         COMMAND cd ${CMAKE_BINARY_DIR}/test_integration/goods &&
         unzip -oq S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb.data.zip
-        COMMAND cp -rn ${CMAKE_CURRENT_LIST_DIR}/goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb.tif
+
+        COMMAND cd ${CMAKE_BINARY_DIR}/test_integration/goods/terrain_correction &&
+        unzip -oq Beirut_IW1_6_VH_orb_stack_cor_deb_coh.data.zip
+
+        COMMAND cp -aln ${CMAKE_CURRENT_LIST_DIR}/goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb.tif
         ${CMAKE_BINARY_DIR}/test_integration/goods/.
+
+        COMMAND cp -aln ${CMAKE_CURRENT_LIST_DIR}/goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_TC.tif
+        ${CMAKE_BINARY_DIR}/test_integration/goods/.
+
+        COMMAND cp -aln ${CMAKE_CURRENT_LIST_DIR}/goods/terrain_correction/Beirut_IW1_6_VH_orb_stack_cor_deb_coh.tif
+        ${CMAKE_BINARY_DIR}/test_integration/goods/terrain_correction/.
+
+        COMMAND cp -aln ${CMAKE_CURRENT_LIST_DIR}/goods/terrain_correction/Beirut_IW1_6_VH_orb_stack_cor_deb_coh_TC.tif
+        ${CMAKE_BINARY_DIR}/test_integration/goods/terrain_correction/.
+
+#        Copy srtm3 files necessary for Beirut test image
+        COMMAND cp -aln ${CMAKE_CURRENT_LIST_DIR}/goods/srtm_43_06.zip ${CMAKE_BINARY_DIR}/test_integration/goods/.
+        COMMAND cd ${CMAKE_BINARY_DIR}/test_integration/goods && unzip -qn srtm_43_06.zip
+        COMMAND cp -aln ${CMAKE_CURRENT_LIST_DIR}/goods/srtm_44_06.zip ${CMAKE_BINARY_DIR}/test_integration/goods/.
+        COMMAND cd ${CMAKE_BINARY_DIR}/test_integration/goods && unzip -qn srtm_44_06.zip
         )
 
 add_executable(integration-test-backgeocoding ${TEST_SOURCES_BACKGEOCODING})

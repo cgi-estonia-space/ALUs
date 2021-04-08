@@ -18,7 +18,6 @@
 #include <thrust/host_vector.h>
 
 #include <algorithm>
-#include <cassert>
 #include <chrono>
 #include <cmath>
 #include <memory>
@@ -80,44 +79,26 @@ void FillHostGetPositionMetadata(GetPositionMetadata& h_get_position_metadata,
 }
 
 TerrainCorrection::TerrainCorrection(Dataset<double> coh_ds, RangeDopplerTerrainMetadata metadata,
-                                     const Metadata::TiePoints& lat_tie_points,
-                                     const Metadata::TiePoints& lon_tie_points, const PointerHolder* srtm_3_tiles,
-                                     size_t srtm_3_tiles_length, int selected_band_id)
+                                     const snapengine::tiepointgrid::TiePointGrid& lat_tie_point_grid,
+                                     const snapengine::tiepointgrid::TiePointGrid& lon_tie_point_grid,
+                                     const PointerHolder* srtm_3_tiles, size_t srtm_3_tiles_length,
+                                     int selected_band_id)
     : coh_ds_{std::move(coh_ds)},
       metadata_{std::move(metadata)},
-      lat_tie_points_{lat_tie_points},
-      lon_tie_points_{lon_tie_points},
       d_srtm_3_tiles_(srtm_3_tiles),
       d_srtm_3_tiles_length_(srtm_3_tiles_length),
-      selected_band_id_(selected_band_id) {}
+      selected_band_id_(selected_band_id),
+      lat_tie_point_grid_{lat_tie_point_grid},
+      lon_tie_point_grid_{lon_tie_point_grid} {}
 
 void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_name, size_t tile_width,
                                                  size_t tile_height) {
     coh_ds_.LoadRasterBand(1);
     auto const coh_ds_y_size{static_cast<size_t>(coh_ds_.GetYSize())};
 
-    assert(lat_tie_points_.values.size() == lat_tie_points_.grid_width * lat_tie_points_.grid_height);
-    assert(lon_tie_points_.values.size() == lon_tie_points_.grid_width * lon_tie_points_.grid_height);
-
-    const snapengine::tiepointgrid::TiePointGrid lat_grid{0,
-                                                          0,
-                                                          1163,
-                                                          300,
-                                                          lat_tie_points_.grid_width,
-                                                          lat_tie_points_.grid_height,
-                                                          const_cast<float*>(lat_tie_points_.values.data())};
-    const snapengine::tiepointgrid::TiePointGrid lon_grid{0,
-                                                          0,
-                                                          1163,
-                                                          300,
-                                                          lon_tie_points_.grid_width,
-                                                          lon_tie_points_.grid_height,
-                                                          const_cast<float*>(lon_tie_points_.values.data())};
-
-    snapengine::geocoding::TiePointGeocoding source_geocoding(lat_grid, lon_grid);
-    snapengine::geocoding::Geocoding* target_geocoding = nullptr;
+    snapengine::geocoding::TiePointGeocoding source_geocoding(lat_tie_point_grid_, lon_tie_point_grid_);
     snapengine::old::Product target_product =
-        CreateTargetProduct(&source_geocoding, target_geocoding, output_file_name);
+        CreateTargetProduct(&source_geocoding, output_file_name);
     auto const target_x_size{target_product.dataset_.GetXSize()};
     auto const target_y_size{target_product.dataset_.GetYSize()};
 
@@ -178,7 +159,6 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
     thread_pool.Synchronise();
 
     printf("Tile processing finished\n");
-    //    delete target_geocoding;  // TODO: implement destructors (SNAPGPU-163)
 }
 
 std::vector<double> TerrainCorrection::ComputeImageBoundary(const snapengine::geocoding::Geocoding* geocoding,
@@ -260,8 +240,7 @@ std::vector<TcTile> TerrainCorrection::CalculateTiles(snapengine::resampling::Ti
 }
 
 snapengine::old::Product TerrainCorrection::CreateTargetProduct(
-    const snapengine::geocoding::Geocoding* source_geocoding, snapengine::geocoding::Geocoding*& target_geocoding,
-    const std::string_view output_filename) {
+    const snapengine::geocoding::Geocoding* source_geocoding, const std::string_view output_filename) {
     const char* const output_format = "GTiff";
 
     double pixel_spacing_in_meter = std::trunc(metadata_.azimuth_spacing * 100 + 0.5) / 100.0;
@@ -319,10 +298,12 @@ snapengine::old::Product TerrainCorrection::CreateTargetProduct(
                              : coh_ds_.GetGdalDataset()->GetRasterBand(selected_band_id_)->GetNoDataValue());
     CPLFree(projection_wkt);
 
-    target_geocoding = new snapengine::geocoding::CrsGeocoding(
-        {output_geo_transform[0], output_geo_transform[3], output_geo_transform[1], output_geo_transform[5]});
-    snapengine::old::Product target_product{target_geocoding, *output_dataset,
-                                            "TIFF"};  // TODO: replace with Product class (SNAPGPU-163)
+    GeoTransformParameters geo_transform_parameters{output_geo_transform[0], output_geo_transform[3],
+                                                    output_geo_transform[1], output_geo_transform[5]};
+
+    snapengine::old::Product target_product{std::unique_ptr<snapengine::geocoding::CrsGeocoding>{}, *output_dataset,
+                                            "TIFF"};
+    target_product.geocoding_ = std::make_unique<snapengine::geocoding::CrsGeocoding>(geo_transform_parameters);
 
     return target_product;
 }

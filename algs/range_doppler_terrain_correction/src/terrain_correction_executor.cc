@@ -26,8 +26,8 @@ public:
         Metadata metadata(metadata_dim_file_, metadata_folder_path_ + "/tie_point_grids/latitude.img",
                           metadata_folder_path_ + "/tie_point_grids/longitude.img");
         Dataset<double> input(this->input_dataset_name_);
-        TerrainCorrection tc(std::move(input), metadata.GetMetadata(), metadata.GetLatTiePoints(),
-                             metadata.GetLonTiePoints(), srtm3_buffers_, srtm3_buffers_length_);
+        TerrainCorrection tc(std::move(input), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
+                             metadata.GetLonTiePointGrid(), srtm3_buffers_, srtm3_buffers_length_);
         tc.ExecuteTerrainCorrection(output_file_name_, tile_width_, tile_height_);
 
         return 0;

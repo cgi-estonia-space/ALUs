@@ -37,6 +37,10 @@ class TiePointGeocoding : public Geocoding {
     TiePointGeocoding(tiepointgrid::TiePointGrid latitude_grid, tiepointgrid::TiePointGrid longitude_grid)
         : latitude_grid_(latitude_grid), longitude_grid_(longitude_grid){};
 
+    TiePointGeocoding(const TiePointGeocoding&) = delete;
+    TiePointGeocoding& operator=(const TiePointGeocoding&) = delete;
+    ~TiePointGeocoding() override = default;
+
     tiepointgrid::TiePointGrid latitude_grid_;
     tiepointgrid::TiePointGrid longitude_grid_;
 

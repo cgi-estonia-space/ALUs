@@ -13,6 +13,8 @@
  */
 #pragma once
 
+#include <memory>
+
 #include "dataset.h"
 #include "geocoding.h"
 
@@ -22,7 +24,7 @@ namespace old {
 
 class Product {
 public:
-    alus::snapengine::geocoding::Geocoding* geocoding_;
+    std::unique_ptr<alus::snapengine::geocoding::Geocoding> geocoding_;
     alus::Dataset<double> dataset_;
     const char* FILE_FORMAT_;
 };

@@ -59,29 +59,29 @@ using namespace alus::snapengine;
 class TerrainCorrectionTest : public ::testing::Test {
 public:
     TerrainCorrectionTest() {
-        coh_ds_ = std::make_optional<alus::Dataset<double>>(COH_1_TIF);
+        coh_ds_ = std::make_optional<Dataset<double>>(COH_1_TIF);
         coh_ds_.value().LoadRasterBand(1);
-        dem_ds_ = std::make_optional<alus::Dataset<double>>(DEM_PATH_1);
+        dem_ds_ = std::make_optional<Dataset<double>>(DEM_PATH_1);
         dem_ds_.value().LoadRasterBand(1);
         metadata_ = std::make_optional<Metadata>(main_metadata_file_, lat_tie_points_file_, lon_tie_points_file_);
         tc_metadata_ = metadata_->GetMetadata();
 
-        egm_96_ = std::make_unique<snapengine::EarthGravitationalModel96>();
+        egm_96_ = std::make_unique<EarthGravitationalModel96>();
         egm_96_->HostToDevice();
 
         std::vector<std::string> files{"./goods/srtm_41_01.tif", "./goods/srtm_42_01.tif"};
-        srtm_3_model_ = std::make_unique<snapengine::Srtm3ElevationModel>(files);
+        srtm_3_model_ = std::make_unique<Srtm3ElevationModel>(files);
         srtm_3_model_->ReadSrtmTiles(egm_96_.get());
         srtm_3_model_->HostToDevice();
     }
 
-    std::optional<alus::Dataset<double>> coh_ds_;
-    std::optional<alus::Dataset<double>> coh_data_ds_;
-    std::optional<alus::Dataset<double>> dem_ds_;
+    std::optional<Dataset<double>> coh_ds_;
+    std::optional<Dataset<double>> coh_data_ds_;
+    std::optional<Dataset<double>> dem_ds_;
     std::optional<Metadata> metadata_;
     std::optional<RangeDopplerTerrainMetadata> tc_metadata_;
-    std::unique_ptr<snapengine::Srtm3ElevationModel> srtm_3_model_;
-    std::unique_ptr<snapengine::EarthGravitationalModel96> egm_96_;
+    std::unique_ptr<Srtm3ElevationModel> srtm_3_model_;
+    std::unique_ptr<EarthGravitationalModel96> egm_96_;
     const size_t srtm_3_tiles_length_{2};
 
 protected:
@@ -97,7 +97,7 @@ private:
 };
 
 ComputationMetadata CreateComputationMetadata(RangeDopplerTerrainMetadata metadata,
-                                              std::vector<snapengine::OrbitStateVectorComputation>& computation_orbit) {
+                                              std::vector<OrbitStateVectorComputation>& computation_orbit) {
     ComputationMetadata md{};
 
     for (auto&& orbit : metadata.orbit_state_vectors2) {
@@ -105,11 +105,11 @@ ComputationMetadata CreateComputationMetadata(RangeDopplerTerrainMetadata metada
             {orbit.time_mjd_, orbit.x_pos_, orbit.y_pos_, orbit.z_pos_, orbit.x_vel_, orbit.y_vel_, orbit.z_vel_});
     }
 
-    cuda::KernelArray<snapengine::OrbitStateVectorComputation> kernel_orbits{nullptr, computation_orbit.size()};
+    cuda::KernelArray<OrbitStateVectorComputation> kernel_orbits{nullptr, computation_orbit.size()};
     CHECK_CUDA_ERR(
-        cudaMalloc(&kernel_orbits.array, sizeof(snapengine::OrbitStateVectorComputation) * kernel_orbits.size));
+        cudaMalloc(&kernel_orbits.array, sizeof(OrbitStateVectorComputation) * kernel_orbits.size));
     CHECK_CUDA_ERR(cudaMemcpy(kernel_orbits.array, computation_orbit.data(),
-                              sizeof(snapengine::OrbitStateVectorComputation) * kernel_orbits.size,
+                              sizeof(OrbitStateVectorComputation) * kernel_orbits.size,
                               cudaMemcpyHostToDevice));
 
     md.orbit_state_vectors = kernel_orbits;
@@ -179,7 +179,7 @@ TEST_F(TerrainCorrectionTest, getPositionTrueScenario) {
     std::vector<double> const ALTS_TRUE{26.655392062820304, 26.766483052830047, 26.877574042861347, 26.98866503287109,
                                         27.099756022880833, 27.16567189351999,  27.204560294821366, 27.243448696122737,
                                         27.28233709742411,  25.688039075802656};
-    std::vector<alus::s1tbx::PositionData> const POS_DATA_TRUE{
+    std::vector<s1tbx::PositionData> const POS_DATA_TRUE{
         {{3069968.8651965917, 1310368.109966936, 5416775.0928144},
          {3658851.937123117, 1053331.0349233549, 5954284.711984713},
          1499.0,
@@ -246,7 +246,7 @@ TEST_F(TerrainCorrectionTest, getPositionTrueScenario) {
                                        799303.6132771898, sensorPositions,       sensorVelocity, orbitStateVectors};
     const auto series_size = POS_DATA_TRUE.size();
     for (size_t i = 0; i < series_size; i++) {
-        alus::s1tbx::PositionData pos_data{};
+        s1tbx::PositionData pos_data{};
         const auto ret = GetPosition(LATS_TRUE.at(i), LONS_TRUE.at(i), ALTS_TRUE.at(i), pos_data, metadata);
         EXPECT_TRUE(ret);
         EXPECT_DOUBLE_EQ(pos_data.earth_point.x, POS_DATA_TRUE.at(i).earth_point.x);
@@ -271,7 +271,7 @@ TEST_F(TerrainCorrectionTest, getPositionFalseScenario) {
     std::vector<double> const ALTS_FALSE{32.416427961115495, 32.38403161384701, 32.3516352665848,   32.319238919316305,
                                          32.286842572054105, 32.2544462247919,  32.182097076725086, 32.01600429552241,
                                          31.849911514287488, 31.683818733084806};
-    std::vector<alus::s1tbx::PositionData> const POS_DATA_FALSE{
+    std::vector<s1tbx::PositionData> const POS_DATA_FALSE{
         {{3084869.388681489, 1264575.8165823026, 5419183.743972956}, {0.0, 0.0, 0.0}, 0.0, 0.0, 0.0},
         {{3084866.615145824, 1264582.5379252795, 5419183.716329651}, {0.0, 0.0, 0.0}, 0.0, 0.0, 0.0},
         {{3084863.8415955133, 1264589.2592621732, 5419183.688686345}, {0.0, 0.0, 0.0}, 0.0, 0.0, 0.0},
@@ -298,7 +298,7 @@ TEST_F(TerrainCorrectionTest, getPositionFalseScenario) {
                                        799303.6132771898, sensorPositions,       sensorVelocity, orbitStateVectors};
     const auto series_size = POS_DATA_FALSE.size();
     for (size_t i = 0; i < series_size; i++) {
-        alus::s1tbx::PositionData pos_data{};
+        s1tbx::PositionData pos_data{};
         const auto ret = GetPosition(LATS_FALSE.at(i), LONS_FALSE.at(i), ALTS_FALSE.at(i), pos_data, metadata);
         EXPECT_FALSE(ret);
         EXPECT_DOUBLE_EQ(pos_data.earth_point.x, POS_DATA_FALSE.at(i).earth_point.x);
@@ -323,7 +323,7 @@ TEST_F(TerrainCorrectionTest, getPositionTrueScenarioKernel) {
     std::vector<double> const ALTS_TRUE{26.655392062820304, 26.766483052830047, 26.877574042861347, 26.98866503287109,
                                         27.099756022880833, 27.16567189351999,  27.204560294821366, 27.243448696122737,
                                         27.28233709742411,  25.688039075802656};
-    std::vector<alus::s1tbx::PositionData> const POS_DATA_TRUE{
+    std::vector<s1tbx::PositionData> const POS_DATA_TRUE{
         {{3069968.8651965917, 1310368.109966936, 5416775.0928144},
          {3658851.937123117, 1053331.0349233549, 5954284.711984713},
          1499.0,
@@ -384,7 +384,7 @@ TEST_F(TerrainCorrectionTest, getPositionTrueScenarioKernel) {
     }
 
     const auto series_size = POS_DATA_TRUE.size();
-    std::vector<alus::s1tbx::PositionData> positionResults(series_size);
+    std::vector<s1tbx::PositionData> positionResults(series_size);
     std::vector<bool> successResults(series_size);
     LaunchGetPositionKernel(LATS_TRUE, LONS_TRUE, ALTS_TRUE, positionResults, metadata, SENSOR_POSITION,
                             SENSOR_VELOCITY, comp_orbits, successResults);
@@ -441,9 +441,9 @@ TEST_F(TerrainCorrectionTest, CreateTargetProduct) {
         58.536052703857420, 58.544315338134766, 58.552471160888670, 58.560520172119140, 58.568466186523440,
         58.576309204101560};
 
-    alus::cuda::KernelArray<float> lat_tie_point_array{lat_tie_points.data(), lat_tie_points.size()};
+    cuda::KernelArray<float> lat_tie_point_array{lat_tie_points.data(), lat_tie_points.size()};
 
-    alus::snapengine::tiepointgrid::TiePointGrid lat_grid{0, 0, 1163, 300, 21, 6, lat_tie_point_array.array};
+    tiepointgrid::TiePointGrid lat_grid{0, 0, 1163, 300, 21, 6, lat_tie_point_array.array};
 
     std::vector<float> lon_tie_points{
         21.985961914062500, 22.075984954833984, 22.165037155151367, 22.253160476684570, 22.340394973754883,
@@ -473,18 +473,17 @@ TEST_F(TerrainCorrectionTest, CreateTargetProduct) {
         23.179439544677734, 23.258728027343750, 23.337465286254883, 23.415666580200195, 23.493349075317383,
         23.570529937744140};
 
-    alus::cuda::KernelArray<float> lon_tie_point_array{lon_tie_points.data(), lon_tie_points.size()};
+    cuda::KernelArray<float> lon_tie_point_array{lon_tie_points.data(), lon_tie_points.size()};
 
-    alus::snapengine::tiepointgrid::TiePointGrid lon_grid{0, 0, 1163, 300, 21, 6, lon_tie_point_array.array};
+    tiepointgrid::TiePointGrid lon_grid{0, 0, 1163, 300, 21, 6, lon_tie_point_array.array};
 
-    alus::snapengine::geocoding::TiePointGeocoding source_geocoding(lat_grid, lon_grid);
-    alus::snapengine::geocoding::Geocoding* target_geocoding = nullptr;
-    auto coh_dataset = alus::Dataset<double>(COH_1_TIF);
+    geocoding::TiePointGeocoding source_geocoding(lat_grid, lon_grid);
+    auto coh_dataset = Dataset<double>(COH_1_TIF);
     coh_dataset.LoadRasterBand(1);
-    terraincorrection::TerrainCorrection terrain_correction(
-        std::move(coh_dataset), metadata_.value().GetMetadata(), metadata_.value().GetLatTiePoints(),
-        metadata_.value().GetLonTiePoints(), srtm_3_model_->GetSrtmBuffersInfo(), srtm_3_tiles_length_);
-    auto target = terrain_correction.CreateTargetProduct(&source_geocoding, target_geocoding, TC_OUTPUT);
+    TerrainCorrection terrain_correction(
+        std::move(coh_dataset), metadata_.value().GetMetadata(), metadata_.value().GetLatTiePointGrid(),
+        metadata_.value().GetLonTiePointGrid(), srtm_3_model_->GetSrtmBuffersInfo(), srtm_3_tiles_length_);
+    auto target = terrain_correction.CreateTargetProduct(&source_geocoding, TC_OUTPUT);
     double target_geo_transform[6];
     target.dataset_.GetGdalDataset()->GetGeoTransform(target_geo_transform);
 
@@ -505,7 +504,7 @@ TEST_F(TerrainCorrectionTest, DISABLED_GetNonBorderSourceRectangle) {
     const GeoTransformParameters target_geo_transform{21.908443888855807, 58.57642850390358, 1.2495565602102545e-4,
                                                       -1.2495565602102545e-4};
 
-    std::vector<snapengine::OrbitStateVectorComputation> computation_orbit;
+    std::vector<OrbitStateVectorComputation> computation_orbit;
     ComputationMetadata computation_metadata =
         CreateComputationMetadata(metadata_.value().GetMetadata(), computation_orbit);
 
@@ -558,7 +557,7 @@ TEST_F(TerrainCorrectionTest, GetInvalidSourceRectangle) {
     const GeoTransformParameters target_geo_transform{21.908443888855807, 58.57642850390358, 1.2495565602102545e-4,
                                                       -1.2495565602102545e-4};
 
-    std::vector<snapengine::OrbitStateVectorComputation> computation_orbit;
+    std::vector<OrbitStateVectorComputation> computation_orbit;
     ComputationMetadata computation_metadata =
         CreateComputationMetadata(metadata_.value().GetMetadata(), computation_orbit);
 
@@ -601,7 +600,7 @@ TEST_F(TerrainCorrectionTest, GetSourceRectangleWithAverageHeight) {
     const GeoTransformParameters target_geo_transform{21.908443888855807, 58.57642850390358, 1.2495565602102545e-4,
                                                       -1.2495565602102545e-4};
 
-    std::vector<snapengine::OrbitStateVectorComputation> computation_orbit;
+    std::vector<OrbitStateVectorComputation> computation_orbit;
     ComputationMetadata computation_metadata =
         CreateComputationMetadata(metadata_.value().GetMetadata(), computation_orbit);
     GetPositionMetadata get_position_metadata{};
@@ -653,7 +652,7 @@ TEST_F(TerrainCorrectionTest, GetSourceRectangleWithAverageHeightInvalid) {
     const GeoTransformParameters target_geo_transform{21.908443888855807, 58.57642850390358, 1.2495565602102545e-4,
                                                       -1.2495565602102545e-4};
 
-    std::vector<snapengine::OrbitStateVectorComputation> computation_orbit;
+    std::vector<OrbitStateVectorComputation> computation_orbit;
     ComputationMetadata computation_metadata =
         CreateComputationMetadata(metadata_.value().GetMetadata(), computation_orbit);
     GetPositionMetadata get_position_metadata{};

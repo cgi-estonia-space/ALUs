@@ -347,7 +347,6 @@ __global__ void GetSourceRectangleKernel(TcTileCoordinates tile_coordinates, Ter
     if (!CheckPositionAndCellValidity(position_data, coordinates, altitude, args)) {
         return;
     }
-
     args.valid_pixels.array[index] = true;
 
     range_indices[index] = static_cast<int>(position_data.range_index);

@@ -21,7 +21,9 @@
 #include "cuda_util.hpp"
 #include "metadata_enums.h"
 #include "orbit_state_vector.h"
+#include "snap-core/datamodel/tie_point_grid.h"
 #include "spectral_band_info.h"
+#include "tie_point_grid.h"
 
 namespace alus {
 namespace terraincorrection {
@@ -122,6 +124,7 @@ struct RangeDopplerTerrainMetadata {
     std::vector<snapengine::SpectralBandInfo> band_info;
 };
 
+// TODO: rewrite implementing SNAP internal model
 class Metadata final {
 public:
     struct TiePoints {
@@ -133,19 +136,36 @@ public:
     Metadata() = delete;
     Metadata(std::string_view dim_metadata_file, std::string_view lat_tie_points_file,
              std::string_view lon_tie_points_file);
+    ~Metadata() = default;
 
     [[nodiscard]] const TiePoints& GetLatTiePoints() const { return lat_tie_points_; }
     [[nodiscard]] const TiePoints& GetLonTiePoints() const { return lon_tie_points_; }
     [[nodiscard]] RangeDopplerTerrainMetadata GetMetadata() const { return metadata_fields_; }
-
-    ~Metadata() = default;
+    [[nodiscard]] const snapengine::tiepointgrid::TiePointGrid& GetLatTiePointGrid() const {
+        return lat_tie_point_grid_;
+    }
+    [[nodiscard]] const snapengine::tiepointgrid::TiePointGrid& GetLonTiePointGrid() const {
+        return lon_tie_point_grid_;
+    }
 
 private:
+    static constexpr std::string_view LATITUDE_TIE_POINT_GRID{"latitude"};
+    static constexpr std::string_view LONGITUDE_TIE_POINT_GRID{"longitude"};
+
     static void FetchTiePoints(std::string_view tie_points_file, TiePoints& tie_points);
     void FillDimMetadata(std::string_view dim_metadata_file);
+    static void FetchTiePointGrids(std::string_view dim_metadata_file,
+                                   snapengine::tiepointgrid::TiePointGrid& lat_tie_point_grid,
+                                   snapengine::tiepointgrid::TiePointGrid& lon_tie_point_grid);
+    [[nodiscard]] static snapengine::tiepointgrid::TiePointGrid GetTiePointGrid(const snapengine::TiePointGrid& grid);
+
 
     TiePoints lat_tie_points_;
     TiePoints lon_tie_points_;
+
+    snapengine::tiepointgrid::TiePointGrid lat_tie_point_grid_;
+    snapengine::tiepointgrid::TiePointGrid lon_tie_point_grid_;
+
     RangeDopplerTerrainMetadata metadata_fields_;
 };
 
