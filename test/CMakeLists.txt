@@ -61,7 +61,6 @@ target_link_libraries(unit_test
         range-doppler-geocoding-test-static
         sar-geocoding-test-static
         coherence-static
-        multi_threading-static
         sentinel1-calibrate-static
         )
 

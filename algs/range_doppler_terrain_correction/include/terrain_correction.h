@@ -21,7 +21,6 @@
 #include "computation_metadata.h"
 #include "dataset.h"
 #include "dem.hpp"
-#include "executable.h"
 #include "get_position.h"
 #include "pointer_holders.h"
 #include "product_old.h"
@@ -90,15 +89,20 @@ private:
 
     void FreeCudaArrays();
 
-    class TileProcessor : public multithreading::Executable {
+    class TileProcessor {
     public:
-        void Execute() override;
         TileProcessor(TcTile& tile, TerrainCorrection* terrain_correction, GetPositionMetadata& h_get_position_metadata,
                       GetPositionMetadata& d_get_position_metadata, GeoTransformParameters target_geo_transform,
                       int diff_lat, const terraincorrection::ComputationMetadata& comp_metadata,
                       snapengine::old::Product& target_product);
 
+        void operator()() { // boost thread pool calls the objects operator()
+            Execute();
+        }
+
     private:
+        void Execute();
+
         TcTile& tile_;
         TerrainCorrection* terrain_correction_;
         GetPositionMetadata& host_get_position_metadata_;
@@ -107,6 +111,9 @@ private:
         int diff_lat_{};
         const ComputationMetadata& comp_metadata_;
         snapengine::old::Product& target_product_;
+
+        inline static std::mutex gdal_read_mutex_;
+        inline static std::mutex gdal_write_mutex_;
     };
 };
 }  // namespace alus::terraincorrection

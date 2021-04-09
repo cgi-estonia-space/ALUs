@@ -13,6 +13,8 @@
  */
 #include "terrain_correction.h"
 
+#include <boost/asio/post.hpp>
+#include <boost/asio/thread_pool.hpp>
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
 #include <thrust/host_vector.h>
@@ -24,7 +26,6 @@
 #include <utility>
 #include <vector>
 
-#include "alus_thread_pool.h"
 #include "crs_geocoding.h"
 #include "cuda_util.hpp"
 #include "dem.hpp"
@@ -148,15 +149,14 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
 
     auto const tile_loop_start{std::chrono::steady_clock::now()};
 
-    multithreading::ThreadPool thread_pool{};
+    boost::asio::thread_pool thread_pool;
     std::for_each(tiles.begin(), tiles.end(), [&](auto&& tile) {
-        auto processor =
-            std::make_shared<TileProcessor>(tile, this, h_get_position_metadata, d_get_position_metadata,
-                                            target_geo_transform, diff_lat, computation_metadata, target_product);
-        thread_pool.Enqueue(processor);
+
+        boost::asio::post(thread_pool, TileProcessor(tile, this, h_get_position_metadata, d_get_position_metadata,
+            target_geo_transform, diff_lat, computation_metadata, target_product));
     });
-    thread_pool.Start();
-    thread_pool.Synchronise();
+
+    thread_pool.wait();
 
     printf("Tile processing finished\n");
 }
@@ -408,23 +408,29 @@ void TerrainCorrection::TileProcessor::Execute() {
                    nullptr};
     args.resampling_raster.source_tile_i = &source_tile;
 
-    CHECK_GDAL_ERROR(terrain_correction_->coh_ds_.GetGdalDataset()
-                         ->GetRasterBand(terrain_correction_->selected_band_id_)
-                         ->RasterIO(GF_Read, source_rectangle.x, source_rectangle.y, source_rectangle.width,
-                                    source_rectangle.height, source_tile_data.data(), source_rectangle.width,
-                                    source_rectangle.height, GDALDataType::GDT_Float64, 0, 0));
+    {
+        std::unique_lock<std::mutex> lock(gdal_read_mutex_);
+        CHECK_GDAL_ERROR(terrain_correction_->coh_ds_.GetGdalDataset()
+                             ->GetRasterBand(terrain_correction_->selected_band_id_)
+                             ->RasterIO(GF_Read, source_rectangle.x, source_rectangle.y, source_rectangle.width,
+                                        source_rectangle.height, source_tile_data.data(), source_rectangle.width,
+                                        source_rectangle.height, GDALDataType::GDT_Float64, 0, 0));
+    }
     CHECK_CUDA_ERR(cudaMalloc(&source_tile.data_buffer, sizeof(double) * source_tile_data.size()));
     CHECK_CUDA_ERR(cudaMemcpy(source_tile.data_buffer, source_tile_data.data(),
                               sizeof(double) * source_tile_data.size(), cudaMemcpyHostToDevice));
 
     CHECK_CUDA_ERR(LaunchTerrainCorrectionKernel(tile_, args));
 
-    CHECK_GDAL_ERROR(target_product_.dataset_.GetGdalDataset()
-                         ->GetRasterBand(terrain_correction_->selected_band_id_)
-                         ->RasterIO(GF_Write, tile_coordinates.target_x_0, tile_coordinates.target_y_0,
-                                    tile_coordinates.target_width, tile_coordinates.target_height,
-                                    tile_.target_tile_data_buffer.array, tile_coordinates.target_width,
-                                    tile_coordinates.target_height, GDT_Float64, 0, 0));
+    {
+        std::unique_lock<std::mutex> lock(gdal_write_mutex_);
+        CHECK_GDAL_ERROR(target_product_.dataset_.GetGdalDataset()
+                             ->GetRasterBand(terrain_correction_->selected_band_id_)
+                             ->RasterIO(GF_Write, tile_coordinates.target_x_0, tile_coordinates.target_y_0,
+                                        tile_coordinates.target_width, tile_coordinates.target_height,
+                                        tile_.target_tile_data_buffer.array, tile_coordinates.target_width,
+                                        tile_coordinates.target_height, GDT_Float64, 0, 0));
+    }
 
     CHECK_CUDA_ERR(cudaFree(args.resampling_raster.source_tile_i->data_buffer));
     CHECK_CUDA_ERR(cudaFree(args.valid_pixels.array));
