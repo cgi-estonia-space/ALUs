@@ -67,7 +67,6 @@ add_subdirectory(util/exotic_operations)
 add_subdirectory(util/common)
 add_subdirectory(util/cuda)
 add_subdirectory(util/snap-engine)
-add_subdirectory(util/multi_threading)
 
 # Algorithms
 add_subdirectory(algs/algorithm_bond)

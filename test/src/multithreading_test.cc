@@ -13,43 +13,33 @@
  */
 #include "gmock/gmock.h"
 
-#include <memory>
-#include <numeric>
+#include <boost/asio/thread_pool.hpp>
+#include <boost/asio/post.hpp>
 
-#include "alus_thread_pool.h"
-#include "executable.h"
+#include <atomic>
 
 namespace {
 
-class TestExecutable : public alus::multithreading::Executable {
-   public:
-    TestExecutable(std::vector<int> &test_vector, int index) : test_vector_(test_vector), index_(index) {}
-
-   private:
-    void Execute() override {
-        sleep(4); // Artificially postpone write operation in order to test Synchronise method
-        test_vector_[index_] = index_ + 1;
-    }
-
-   private:
-    std::vector<int> &test_vector_;
-    int index_;
-};
 
 TEST(MultiThreadingTest, MultiThreading) {
-    int const THREAD_COUNT{4};
-    int const EXPECTED_SUM{10};
-    std::vector<int> test_vector(THREAD_COUNT, 0);
+    std::atomic<uint64_t> test_atomic = 0;
+    constexpr uint64_t RERUNS = 100;
+    constexpr uint64_t INCREMENTS = 10000;
 
-    alus::multithreading::ThreadPool thread_pool(THREAD_COUNT);
-    for (int I = 0; I < THREAD_COUNT; ++I) {
-        auto executable = std::make_shared<TestExecutable>(test_vector, I);
-        thread_pool.Enqueue(executable);
+    /*
+        a simple threadpool stress test
+        The test against boost is left in for future reference,
+        if we choose use another library or implement our own
+     */
+    for(uint64_t i = 0; i < RERUNS; i++) {
+
+        test_atomic = 0;
+        boost::asio::thread_pool thread_pool(4);
+        for(uint64_t j = 0; j < INCREMENTS; j++) {
+            boost::asio::post(thread_pool, [&test_atomic](){ test_atomic++; });
+        }
+        thread_pool.wait();
+        ASSERT_EQ(INCREMENTS, test_atomic);
     }
-    thread_pool.Start();
-    thread_pool.Synchronise();
-    int actual_sum = std::accumulate(test_vector.begin(), test_vector.end(), 0);
-
-    ASSERT_EQ(EXPECTED_SUM, actual_sum);
 }
 }  // namespace
