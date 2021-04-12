@@ -15,6 +15,7 @@ target_link_libraries(alus
         PUBLIC
         dl
         Boost::program_options
+        alg-bond-static
         app-util-static
         snap-engine-static
         )

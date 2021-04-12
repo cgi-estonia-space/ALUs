@@ -56,6 +56,7 @@ class Dataset: public AlusFileReader<BufferType> {
 
     Dataset() = default;
     explicit Dataset(std::string_view filename);
+    explicit Dataset(GDALDataset* input_dataset);
     explicit Dataset(std::string_view filename, const GeoTransformSourcePriority& georef_source);
     void LoadRasterBand(int band_nr) override ;
     Dataset(GDALDataset& dataset);

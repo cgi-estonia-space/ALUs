@@ -15,6 +15,7 @@
 #include <string_view>
 
 #include <boost/algorithm/string.hpp>
+#include <gdal_priv.h>
 
 #include "alg_bond.h"
 #include "algorithm_parameters.h"
@@ -42,7 +43,7 @@ class CoherenceExecuter final : public AlgBond {
 public:
     CoherenceExecuter() { std::cout << __FUNCTION__ << std::endl; };
 
-    int Execute() override {
+    [[nodiscard]] int Execute() override {
         PrintProcessingParameters();
 
         auto const FILE_NAME_IA = aux_location_ + "/tie_point_grids/incident_angle.img";
@@ -69,18 +70,37 @@ public:
         int band_count_in = 4;
         int band_count_out = 1;
 
-        alus::GdalTileReader coh_data_reader{input_name_, band_map, band_count_in, fetch_transform_};
-        alus::GdalTileWriter coh_data_writer{output_name_,
-                                             band_map_out,
-                                             band_count_out,
-                                             coh_data_reader.GetBandXSize(),
-                                             coh_data_reader.GetBandYSize(),
-                                             coh_data_reader.GetBandXMin(),
-                                             coh_data_reader.GetBandYMin(),
-                                             coh_data_reader.GetGeoTransform(),
-                                             coh_data_reader.GetDataProjection()};
+        std::unique_ptr<GdalTileReader> coh_data_reader{};
+        if (input_dataset_ != nullptr) {
+            coh_data_reader = std::make_unique<GdalTileReader>(input_dataset_, band_map, band_count_in, fetch_transform_);
+        } else {
+            coh_data_reader = std::make_unique<GdalTileReader>(input_name_, band_map, band_count_in, fetch_transform_);
+        }
+
+        std::unique_ptr<GdalTileWriter> coh_data_writer{};
+        if (output_driver_ != nullptr) {
+            coh_data_writer = std::make_unique<GdalTileWriter>(output_driver_,
+                                                               band_map_out,
+                                                               band_count_out,
+                                                               coh_data_reader->GetBandXSize(),
+                                                               coh_data_reader->GetBandYSize(),
+                                                               coh_data_reader->GetBandXMin(),
+                                                               coh_data_reader->GetBandYMin(),
+                                                               coh_data_reader->GetGeoTransform(),
+                                                               coh_data_reader->GetDataProjection());
+        } else {
+            coh_data_writer = std::make_unique<GdalTileWriter>(output_name_,
+                                                               band_map_out,
+                                                               band_count_out,
+                                                               coh_data_reader->GetBandXSize(),
+                                                               coh_data_reader->GetBandYSize(),
+                                                               coh_data_reader->GetBandXMin(),
+                                                               coh_data_reader->GetBandYMin(),
+                                                               coh_data_reader->GetGeoTransform(),
+                                                               coh_data_reader->GetDataProjection());
+        }
         alus::CohTilesGenerator tiles_generator{
-            coh_data_reader.GetBandXSize(), coh_data_reader.GetBandYSize(), tile_width_, tile_height_,
+            coh_data_reader->GetBandXSize(), coh_data_reader->GetBandYSize(), tile_width_, tile_height_,
             coherence_window_range_,        coherence_window_azimuth_};
         alus::Coh coherence{srp_number_points_,
                             srp_polynomial_degree_,
@@ -100,16 +120,22 @@ public:
         tensorflow::ClientSession session(root, options);
 
         // run the algorithm
-        alus::TFAlgorithmRunner tf_algo_runner{&coh_data_reader, &coh_data_writer, &tiles_generator,
+        alus::TFAlgorithmRunner tf_algo_runner{coh_data_reader.get(), coh_data_writer.get(), &tiles_generator,
                                                &coherence,       &session,         &root};
         tf_algo_runner.Run();
 
+        output_dataset_ = coh_data_writer->GetGdalDataset();
+
         return 0;
     }
-    [[nodiscard]] RasterDimension CalculateInputTileFrom(RasterDimension output) const override { return output; }
 
-    void SetInputs(const std::string& input_dataset, const std::string& metadata_path) override {
+    void SetInputFilenames(const std::string& input_dataset, const std::string& metadata_path) override {
         input_name_ = input_dataset;
+        aux_location_ = metadata_path;
+    }
+
+    void SetInputDataset(GDALDataset* input, const std::string& metadata_path) override {
+        input_dataset_ = input;
         aux_location_ = metadata_path;
     }
 
@@ -170,6 +196,14 @@ public:
         return help_stream.str();
     }
 
+    void SetOutputDriver(GDALDriver* output_driver) override {
+        output_driver_ = output_driver;
+    }
+
+    [[nodiscard]] GDALDataset* GetProcessedDataset() const override {
+        return output_dataset_;
+    }
+
     ~CoherenceExecuter() override { std::cout << __FUNCTION__ << std::endl; };
 
 private:
@@ -186,7 +220,10 @@ private:
     }
 
     std::string input_name_{};
+    GDALDataset* input_dataset_{nullptr};
     std::string output_name_{};
+    GDALDriver* output_driver_{nullptr};
+    GDALDataset* output_dataset_{nullptr};
     std::string aux_location_{};
     size_t tile_width_{};
     size_t tile_height_{};

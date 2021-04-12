@@ -24,24 +24,17 @@ namespace alus {
 
 GdalTileReader::GdalTileReader(const std::string_view file_name, std::vector<int> band_map, int band_count,
                                bool has_transform)
-    : IDataTileReader(file_name, std::move(band_map), band_count) {
+    : IDataTileReader(file_name, std::move(band_map), band_count), do_close_dataset_{true} {
     GDALAllRegister();
     dataset_ = static_cast<GDALDataset*>(GDALOpen(file_name.data(), GA_ReadOnly));
     CHECK_GDAL_PTR(dataset_);
-    band_count_ = dataset_->GetRasterCount();
-    band_x_size_ = dataset_->GetRasterXSize();
-    band_y_size_ = dataset_->GetRasterYSize();
-    data_projection_ = dataset_->GetProjectionRef();
-    if (has_transform) {
-        affine_geo_transform_.resize(6);
-        const auto result = dataset_->GetGeoTransform(affine_geo_transform_.data());
-        // Fetching transform has been requested, but dataset's transform is invalid.
-        if (result != CE_None) {
-            // TODO: Use logging system to log this message.
-            std::cout << "Geo transform parameters are missing in input dataset - " << file_name << std::endl;
-            this->affine_geo_transform_.clear();
-        }
-    }
+    InitializeDatasetProperties(dataset_, has_transform);
+}
+
+GdalTileReader::GdalTileReader(GDALDataset* dataset, std::vector<int> band_map, int band_count, bool has_transform)
+    : IDataTileReader("", std::move(band_map), band_count), dataset_{dataset}, do_close_dataset_{false} {
+    CHECK_GDAL_PTR(dataset_);
+    InitializeDatasetProperties(dataset_, has_transform);
 }
 
 void GdalTileReader::ReadTile(const Tile& tile) {
@@ -64,7 +57,7 @@ void GdalTileReader::CleanBuffer() {
     }
 }
 void GdalTileReader::CloseDataSet() {
-    if (dataset_) {
+    if (dataset_ && do_close_dataset_) {
         GDALClose(dataset_);
         dataset_ = nullptr;
     }
@@ -80,6 +73,23 @@ std::vector<double> GdalTileReader::GetGeoTransform() const { return affine_geo_
 double GdalTileReader::GetValueAtXy(int x, int y) const {
     int index = band_x_size_ * y + x;
     return data_[index];
+}
+
+void GdalTileReader::InitializeDatasetProperties(GDALDataset* dataset, bool has_transform) {
+    band_count_ = dataset->GetRasterCount();
+    band_x_size_ = dataset->GetRasterXSize();
+    band_y_size_ = dataset->GetRasterYSize();
+    data_projection_ = dataset->GetProjectionRef();
+    if (has_transform) {
+        affine_geo_transform_.resize(6);
+        const auto result = dataset->GetGeoTransform(affine_geo_transform_.data());
+        // Fetching transform has been requested, but dataset's transform is invalid.
+        if (result != CE_None) {
+            // TODO: Use logging system to log this message.
+            std::cout << "Geo transform parameters are missing in input dataset - " << file_name_ << std::endl;
+            this->affine_geo_transform_.clear();
+        }
+    }
 }
 
 GdalTileReader::~GdalTileReader() {

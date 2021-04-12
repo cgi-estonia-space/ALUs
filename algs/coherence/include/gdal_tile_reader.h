@@ -26,6 +26,7 @@ namespace alus {
 class GdalTileReader : public IDataTileReader {
 public:
     GdalTileReader(std::string_view file_name, std::vector<int> band_map, int band_count, bool has_transform);
+    GdalTileReader(GDALDataset* dataset, std::vector<int> band_map, int band_count, bool has_transform);
     GdalTileReader(const GdalTileReader&) = delete;
     GdalTileReader& operator=(const GdalTileReader&) = delete;
     ~GdalTileReader() override;
@@ -45,8 +46,10 @@ public:
     // todo:  void ReadTileToTensors(const IDataTileIn &tile) override;
 private:
     void AllocateForTileData(const Tile& tile);
+    void InitializeDatasetProperties(GDALDataset* dataset, bool has_transform);
 
     GDALDataset* dataset_{};
+    bool do_close_dataset_;
     float* data_{};
 };
 }  // namespace alus
