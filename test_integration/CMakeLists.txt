@@ -42,6 +42,7 @@ target_link_libraries(backgeocoding-full
         cuda_util-static
         backgeocoding-static
         exotic_operations-static
+        app-util-static
         )
 
 
@@ -161,6 +162,7 @@ target_link_libraries(integration-test-backgeocoding
         snap-engine-static
         gdal-util-static
         exotic_operations-static
+        app-util-static
         )
 add_custom_command(TARGET integration-test-backgeocoding
         POST_BUILD

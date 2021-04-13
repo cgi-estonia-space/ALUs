@@ -36,9 +36,9 @@
 #include "srtm3_elevation_model_constants.h"
 #include "triangular_interpolation_computation.h"
 #include "elevation_mask_computation.h"
+#include "srtm3_elevation_model.h"
 
-namespace alus {
-namespace backgeocoding {
+namespace alus::backgeocoding {
 
 Backgeocoding::~Backgeocoding() {
     if (d_master_orbit_vectors_.array != nullptr) {
@@ -52,12 +52,13 @@ Backgeocoding::~Backgeocoding() {
     }
 }
 
-void Backgeocoding::FeedPlaceHolders() {
-    this->dem_sampling_lat_ = 8.333333333333334E-4;
-    this->dem_sampling_lon_ = 8.333333333333334E-4;
-}
-
 void Backgeocoding::PrepareToCompute(std::string_view master_metadata_file, std::string_view slave_metadata_file) {
+
+    //TODO: Exclusively supporting srtm3 atm
+    dem_sampling_lat_ = static_cast<double>(snapengine::Srtm3ElevationModel::GetTileWidthInDegrees()) /
+                        static_cast<double>(snapengine::Srtm3ElevationModel::GetTileWidth());
+    dem_sampling_lon_ = dem_sampling_lat_;
+
     this->slave_utils_ = std::make_unique<s1tbx::Sentinel1Utils>(slave_metadata_file);
     this->slave_utils_->ComputeDopplerRate();
     this->slave_utils_->ComputeReferenceTime();
@@ -92,21 +93,7 @@ void Backgeocoding::PrepareToCompute(std::string_view master_metadata_file, std:
                               cudaMemcpyHostToDevice));
     d_slave_orbit_vectors_.size = slave_orbit_vectors_computation.size();
 
-    this->PrepareSrtm3Data();
-
     slave_burst_offset_ = ComputeBurstOffset();
-}
-
-void Backgeocoding::PrepareSrtm3Data() {
-    this->egm96_ = std::make_unique<snapengine::EarthGravitationalModel96>();
-    this->egm96_->HostToDevice();
-
-    std::vector<std::string> files{this->srtms_directory_ + "/" + "srtm_41_01.tif",
-                                   this->srtms_directory_ + "/" + "srtm_42_01.tif"};
-
-    this->srtm3_dem_ = std::make_unique<snapengine::Srtm3ElevationModel>(files);
-    this->srtm3_dem_->ReadSrtmTiles(this->egm96_.get());
-    this->srtm3_dem_->HostToDevice();
 }
 
 Rectangle Backgeocoding::PositionCompute(int m_burst_index,
@@ -234,9 +221,8 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index,
 
     calc_data.num_lines = calc_data.lat_min_idx - calc_data.lat_max_idx;
     calc_data.num_pixels = calc_data.lon_max_idx - calc_data.lon_min_idx;
-    calc_data.tiles.array = this->srtm3_dem_->GetSrtmBuffersInfo();
-    calc_data.tiles.size = this->srtm3_dem_->GetDeviceSrtm3TilesCount();
-    calc_data.egm = const_cast<float*>(this->egm96_->GetDeviceValues());
+    calc_data.tiles = srtm3_tiles_;
+    calc_data.egm = const_cast<float*>(egm96_device_array_);
     calc_data.max_lats = alus::snapengine::earthgravitationalmodel96computation::MAX_LATS;
     calc_data.max_lons = alus::snapengine::earthgravitationalmodel96computation::MAX_LONS;
     // TODO: we may have to rewire this in the future, but no idea to where atm.
@@ -388,8 +374,7 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index,
         mask_data.device_lon_array = device_lon_array;
 
         mask_data.size = array_size;
-        mask_data.tiles.array = this->srtm3_dem_->GetSrtmBuffersInfo();
-        mask_data.tiles.size = this->srtm3_dem_->GetDeviceSrtm3TilesCount();
+        mask_data.tiles = srtm3_tiles_;
 
         int not_invalid_counter = 0;
 
@@ -473,27 +458,20 @@ std::vector<double> Backgeocoding::ComputeImageGeoBoundary(
     return results;
 }
 
-void Backgeocoding::SetSRTMDirectory(std::string directory) { this->srtms_directory_ = directory; }
-
-void Backgeocoding::SetEGMGridFile(std::string grid_file) { this->grid_file_ = grid_file; }
-
 AzimuthAndRangeBounds Backgeocoding::ComputeExtendedAmount(int x_0, int y_0, int w, int h) {
     AzimuthAndRangeBounds extended_amount{};
-    PointerArray tiles{};
-    tiles.array = this->srtm3_dem_->GetSrtmBuffersInfo();
-    tiles.size = this->srtm3_dem_->GetDeviceSrtm3TilesCount();
 
     CHECK_CUDA_ERR(LaunchComputeExtendedAmount(
         {x_0, y_0, w, h},
         extended_amount,
-        this->master_utils_->GetOrbitStateVectors()->orbit_state_vectors_computation_.data(),
-        this->master_utils_->GetOrbitStateVectors()->orbit_state_vectors_computation_.size(),
-        this->master_utils_->GetOrbitStateVectors()->GetDt(),
-        this->master_utils_->subswath_.at(0),
-        this->master_utils_->device_sentinel_1_utils_,
-        this->master_utils_->subswath_.at(0).device_subswath_info_,
-        tiles,
-        const_cast<float*>(this->egm96_->GetDeviceValues())));
+        master_utils_->GetOrbitStateVectors()->orbit_state_vectors_computation_.data(),
+        master_utils_->GetOrbitStateVectors()->orbit_state_vectors_computation_.size(),
+        master_utils_->GetOrbitStateVectors()->GetDt(),
+        master_utils_->subswath_.at(0),
+        master_utils_->device_sentinel_1_utils_,
+        master_utils_->subswath_.at(0).device_subswath_info_,
+        srtm3_tiles_,
+        const_cast<float*>(egm96_device_array_)));
     return extended_amount;
 }
 
@@ -570,13 +548,9 @@ void FreeBurstOffsetArguments(BurstOffsetKernelArgs &args) {
 }
 
 int Backgeocoding::ComputeBurstOffset() {
-    PointerArray srtm3_tiles{};
-
     BurstOffsetKernelArgs args{};
-    srtm3_tiles.array = this->srtm3_dem_->GetSrtmBuffersInfo();
-    srtm3_tiles.size = this->srtm3_dem_->GetDeviceSrtm3TilesCount();
 
-    PrepareBurstOffsetKernelArguments(args, srtm3_tiles, this->master_utils_.get(), this->slave_utils_.get());
+    PrepareBurstOffsetKernelArguments(args, srtm3_tiles_, this->master_utils_.get(), this->slave_utils_.get());
 
     int burst_offset;
     CHECK_CUDA_ERR(LaunchBurstOffsetKernel(args, &burst_offset));
@@ -585,5 +559,4 @@ int Backgeocoding::ComputeBurstOffset() {
     return burst_offset;
 }
 
-}  // namespace backgeocoding
-}  // namespace alus
+}  // namespace alus::backgeocoding

@@ -17,8 +17,9 @@
 #include <memory>
 #include <string_view>
 
-namespace alus {
-namespace backgeocoding {
+#include "pointer_holders.h"
+
+namespace alus::backgeocoding {
 
 BackgeocodingController::BackgeocodingController(std::shared_ptr<AlusFileReader<double>> master_input_dataset,
                                                  std::shared_ptr<AlusFileReader<double>> slave_input_dataset,
@@ -35,9 +36,9 @@ BackgeocodingController::BackgeocodingController(std::shared_ptr<AlusFileReader<
 
 BackgeocodingController::~BackgeocodingController() {}
 
-void BackgeocodingController::PrepareToCompute() {
+void BackgeocodingController::PrepareToCompute(const float* egm96_device_array, PointerArray srtm3_tiles) {
     backgeocoding_ = std::make_unique<Backgeocoding>();
-    backgeocoding_->FeedPlaceHolders();
+    backgeocoding_->SetElevationData(egm96_device_array, srtm3_tiles);
     backgeocoding_->PrepareToCompute(master_metadata_file_, slave_metadata_file_);
 
     num_of_bursts_ = backgeocoding_->GetNrOfBursts();
@@ -161,5 +162,4 @@ void BackgeocodingController::DoWork() {
     register_mutex_.unlock();
 }
 
-}  // namespace backgeocoding
-}  // namespace alus
+}  // namespace alus::backgeocoding

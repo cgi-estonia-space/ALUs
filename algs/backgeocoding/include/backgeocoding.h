@@ -18,15 +18,13 @@
 #include <string_view>
 #include <vector>
 
-#include "earth_gravitational_model96.h"
 #include "extended_amount_computation.h"
 #include "kernel_array.h"
 #include "orbit_state_vector_computation.h"
 #include "sentinel1_utils.h"
-#include "srtm3_elevation_model.h"
+#include "pointer_holders.h"
 
-namespace alus {
-namespace backgeocoding {
+namespace alus::backgeocoding {
 
 struct CoreComputeParams {
     Rectangle slave_rectangle;
@@ -57,7 +55,6 @@ public:
     Backgeocoding(const Backgeocoding&) = delete;  // class does not support copying(and moving)
     Backgeocoding& operator=(const Backgeocoding&) = delete;
 
-    void FeedPlaceHolders();
     void PrepareToCompute(std::string_view master_metadata_file, std::string_view slave_metadata_file);
     void CoreCompute(CoreComputeParams params);
     Rectangle PositionCompute(int m_burst_index, int s_burst_index, Rectangle master_area, double* device_x_points,
@@ -66,13 +63,15 @@ public:
     AzimuthAndRangeBounds ComputeExtendedAmount(int x_0, int y_0, int w, int h);
     int ComputeBurstOffset();
 
-    void SetSRTMDirectory(std::string directory);
-    void SetEGMGridFile(std::string grid_file);
-
     int GetNrOfBursts() { return master_utils_->subswath_.at(0).num_of_bursts_; }
     int GetLinesPerBurst() { return master_utils_->subswath_.at(0).lines_per_burst_; }
     int GetSamplesPerBurst() { return master_utils_->subswath_.at(0).samples_per_burst_; }
     int GetBurstOffset() { return slave_burst_offset_; }
+
+    void SetElevationData(const float* egm96_device_array, PointerArray srtm3_tiles){
+        egm96_device_array_ = egm96_device_array;
+        srtm3_tiles_ = srtm3_tiles;
+    }
 
 private:
     /**
@@ -92,15 +91,11 @@ private:
     std::unique_ptr<s1tbx::Sentinel1Utils> slave_utils_;
     double dem_sampling_lat_ = 0.0;
     double dem_sampling_lon_ = 0.0;
-    std::unique_ptr<snapengine::EarthGravitationalModel96> egm96_;
-    std::unique_ptr<snapengine::Srtm3ElevationModel> srtm3_dem_;
     cuda::KernelArray<snapengine::OrbitStateVectorComputation> d_master_orbit_vectors_{};
     cuda::KernelArray<snapengine::OrbitStateVectorComputation> d_slave_orbit_vectors_{};
 
-    std::string srtms_directory_ = "../unit-test/goods";
-    std::string grid_file_ = "../unit-test/goods/ww15mgh_b.grd";
-
-    void PrepareSrtm3Data();
+    const float* egm96_device_array_;
+    PointerArray srtm3_tiles_;
 
     std::vector<double> ComputeImageGeoBoundary(s1tbx::SubSwathInfo* sub_swath, int burst_index, int x_min, int x_max,
                                                 int y_min, int y_max);
@@ -109,5 +104,4 @@ private:
                             double* device_y_points);
 };
 
-}  // namespace backgeocoding
-}  // namespace alus
+}  // namespace alus::backgeocoding

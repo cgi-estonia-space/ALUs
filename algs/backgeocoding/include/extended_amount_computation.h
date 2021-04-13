@@ -15,7 +15,7 @@
 
 #include "orbit_state_vector_computation.h"
 #include "pointer_holders.h"
-#include "sentinel1_utils.cuh"
+#include "sentinel1_utils_computation.h"
 #include "shapes.h"
 #include "subswath_info.h"
 

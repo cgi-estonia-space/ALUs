@@ -13,8 +13,7 @@
  */
 #include "backgeocoding_controller.h"
 
-namespace alus {
-namespace backgeocoding {
+namespace alus::backgeocoding {
 
 BackgeocodingController::BackgeocodingWorker::~BackgeocodingWorker() {
     std::cout << "Death of worker: " << params_.index << std::endl;
@@ -118,5 +117,4 @@ void BackgeocodingController::BackgeocodingWorker::Work() {
     controller_->RegisterThreadEnd();
 }
 
-}  // namespace backgeocoding
-}  // namespace alus
+}  // namespace alus::backgeocoding

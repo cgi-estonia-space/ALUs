@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
         ("parameters_file", po::value<std::string>(&params_file_path)->default_value(""), "Algorithm specific "
              "configurations file path. File contents shall follow same syntax as '--parameters' option.")(
         "dem", po::value<std::vector<std::string>>(&dem_files_param), "Dem files with full path. Can be specified"
-                "multiple times for multiple DEM files or a space separated files in a single argument. Only SRTM3 is"
+                "multiple times for multiple DEM files or a space separated files in a single argument. Only SRTM3 is "
                 "supported.")(
         "list_algs,l", "Print available algorithms");
     // clang-format on
@@ -101,6 +101,7 @@ int main(int argc, char* argv[]) {
             if (dem_assistant != nullptr) {
                 alg_guard.GetInstanceHandle()->SetSrtm3Buffers(dem_assistant->GetSrtm3ValuesOnGpu(),
                                                                dem_assistant->GetSrtm3TilesCount());
+                alg_guard.GetInstanceHandle()->SetEgm96Buffers(dem_assistant->GetEgm96ValuesOnGpu());
             }
 
             alg_execute_status = alg_guard.GetInstanceHandle()->Execute();
