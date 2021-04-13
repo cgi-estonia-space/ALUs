@@ -31,9 +31,12 @@
 namespace alus {
 namespace s1tbx {
 
-Sentinel1Utils::Sentinel1Utils(std::string_view metadata_file_name) {
+Sentinel1Utils::Sentinel1Utils(std::string_view metadata_file_name) : num_of_sub_swath_(1) {
     metadata_reader_ = std::make_unique<snapengine::PugixmlMetaDataReader>(metadata_file_name);
-    FillSubswathMetaData();
+
+    subswath_.push_back(std::make_unique<SubSwathInfo>());
+
+    FillSubswathMetaData(subswath_.at(0).get());
     FillUtilsMetadata();
 }
 
@@ -73,14 +76,11 @@ void Sentinel1Utils::FillUtilsMetadata() {
     if (subswath_.empty()) {
         throw std::runtime_error("Subswath size 0 currently not supported in Sentinel 1 Utils");
     }
-    near_range_on_left_ = (subswath_.at(0).incidence_angle_[0][0] < subswath_.at(0).incidence_angle_[0][1]);
+    near_range_on_left_ = (subswath_.at(0)->incidence_angle_[0][0] < subswath_.at(0)->incidence_angle_[0][1]);
 
 }
 
-void Sentinel1Utils::FillSubswathMetaData() {
-    subswath_.emplace_back();
-    num_of_sub_swath_ = 1;
-    SubSwathInfo* subswath = &subswath_.at(0);
+void Sentinel1Utils::FillSubswathMetaData(SubSwathInfo *subswath) {
 
     std::shared_ptr<snapengine::MetadataElement> product =
         metadata_reader_->Read("product");
@@ -362,7 +362,7 @@ double* Sentinel1Utils::ComputeDerampDemodPhase(int subswath_index, int s_burst_
     const int x_max = x0 + w;
     const int y_max = y0 + h;
     const int s = subswath_index - 1;
-    const int first_line_in_burst = s_burst_index * subswath_.at(s).lines_per_burst_;
+    const int first_line_in_burst = s_burst_index * subswath_.at(s)->lines_per_burst_;
 
     double* result = new double[h * w * sizeof(double)];
     int yy, xx, x, y;
@@ -370,13 +370,13 @@ double* Sentinel1Utils::ComputeDerampDemodPhase(int subswath_index, int s_burst_
 
     for (y = y0; y < y_max; y++) {
         yy = y - y0;
-        ta = (y - first_line_in_burst) * subswath_.at(s).azimuth_time_interval_;
+        ta = (y - first_line_in_burst) * subswath_.at(s)->azimuth_time_interval_;
         for (x = x0; x < x_max; x++) {
             xx = x - x0;
-            kt = subswath_.at(s).doppler_rate_[s_burst_index][x];
+            kt = subswath_.at(s)->doppler_rate_[s_burst_index][x];
             deramp =
-                -alus::snapengine::constants::PI * kt * pow(ta - subswath_.at(s).reference_time_[s_burst_index][x], 2);
-            demod = -alus::snapengine::constants::TWO_PI * subswath_.at(s).doppler_centroid_[s_burst_index][x] * ta;
+                -alus::snapengine::constants::PI * kt * pow(ta - subswath_.at(s)->reference_time_[s_burst_index][x], 2);
+            demod = -alus::snapengine::constants::TWO_PI * subswath_.at(s)->doppler_centroid_[s_burst_index][x] * ta;
             result[yy * w + xx] = deramp + demod;
         }
     }
@@ -411,27 +411,27 @@ void Sentinel1Utils::ComputeDopplerRate() {
         ComputeRangeDependentDopplerRate();
     }
 
-    wave_length = alus::snapengine::constants::lightSpeed / subswath_.at(0).radar_frequency_;
+    wave_length = alus::snapengine::constants::lightSpeed / subswath_.at(0)->radar_frequency_;
     for (int s = 0; s < num_of_sub_swath_; s++) {
-        az_time = (subswath_.at(s).first_line_time_ + subswath_.at(s).last_line_time_) / 2.0;
-        subswath_.at(s).doppler_rate_ =
-            Allocate2DArray<double>(subswath_.at(s).num_of_bursts_, subswath_.at(s).samples_per_burst_);
+        az_time = (subswath_.at(s)->first_line_time_ + subswath_.at(s)->last_line_time_) / 2.0;
+        subswath_.at(s)->doppler_rate_ =
+            Allocate2DArray<double>(subswath_.at(s)->num_of_bursts_, subswath_.at(s)->samples_per_burst_);
         v = GetVelocity(az_time / alus::snapengine::constants::secondsInDay);  // DLR: 7594.0232
-        steering_rate = subswath_.at(s).azimuth_steering_rate_ * alus::snapengine::constants::DTOR;
+        steering_rate = subswath_.at(s)->azimuth_steering_rate_ * alus::snapengine::constants::DTOR;
         krot = 2 * v * steering_rate / wave_length;  // doppler rate by antenna steering
 
-        for (int b = 0; b < subswath_.at(s).num_of_bursts_; b++) {
-            for (int x = 0; x < subswath_.at(s).samples_per_burst_; x++) {
-                subswath_.at(s).doppler_rate_[b][x] = subswath_.at(s).range_depend_doppler_rate_[b][x] * krot /
-                                                      (subswath_.at(s).range_depend_doppler_rate_[b][x] - krot);
+        for (int b = 0; b < subswath_.at(s)->num_of_bursts_; b++) {
+            for (int x = 0; x < subswath_.at(s)->samples_per_burst_; x++) {
+                subswath_.at(s)->doppler_rate_[b][x] = subswath_.at(s)->range_depend_doppler_rate_[b][x] * krot /
+                                                      (subswath_.at(s)->range_depend_doppler_rate_[b][x] - krot);
             }
         }
     }
 }
 
 double Sentinel1Utils::GetSlantRangeTime(int x, int subswath_index) {
-    return subswath_.at(subswath_index - 1).slr_time_to_first_pixel_ +
-           x * subswath_.at(subswath_index - 1).range_pixel_spacing_ / alus::snapengine::constants::lightSpeed;
+    return subswath_.at(subswath_index - 1)->slr_time_to_first_pixel_ +
+           x * subswath_.at(subswath_index - 1)->range_pixel_spacing_ / alus::snapengine::constants::lightSpeed;
 }
 
 std::vector<DCPolynomial> Sentinel1Utils::GetDCEstimateList(std::string subswath_name) {
@@ -513,20 +513,20 @@ DCPolynomial Sentinel1Utils::ComputeDC(double center_time, std::vector<DCPolynom
 std::vector<DCPolynomial> Sentinel1Utils::ComputeDCForBurstCenters(std::vector<DCPolynomial> dc_estimate_list,
                                                                    int subswath_index) {
     double center_time;
-    if ((int)dc_estimate_list.size() >= subswath_[subswath_index - 1].num_of_bursts_) {
+    if ((int)dc_estimate_list.size() >= subswath_.at(subswath_index - 1)->num_of_bursts_) {
         std::cout << "used the fast lane" << '\n';
         return dc_estimate_list;
     }
 
-    std::vector<DCPolynomial> dcBurstList(subswath_[subswath_index - 1].num_of_bursts_);
-    for (int b = 0; b < subswath_[subswath_index - 1].num_of_bursts_; b++) {
+    std::vector<DCPolynomial> dcBurstList(subswath_.at(subswath_index - 1)->num_of_bursts_);
+    for (int b = 0; b < subswath_.at(subswath_index - 1)->num_of_bursts_; b++) {
         if (b < (int)dc_estimate_list.size()) {
             dcBurstList[b] = dc_estimate_list[b];
             std::cout << "using less list" << '\n';
         } else {
             std::cout << "using more list" << '\n';
-            center_time = 0.5 * (subswath_[subswath_index - 1].burst_first_line_time_[b] +
-                                 subswath_[subswath_index - 1].burst_last_line_time_[b]);
+            center_time = 0.5 * (subswath_.at(subswath_index - 1)->burst_first_line_time_[b] +
+                                 subswath_.at(subswath_index - 1)->burst_last_line_time_[b]);
 
             dcBurstList[b] = ComputeDC(center_time, dc_estimate_list);
         }
@@ -538,12 +538,12 @@ std::vector<DCPolynomial> Sentinel1Utils::ComputeDCForBurstCenters(std::vector<D
 void Sentinel1Utils::ComputeDopplerCentroid() {
     double slrt, dt, dc_value;
     for (int s = 0; s < num_of_sub_swath_; s++) {
-        std::vector<DCPolynomial> dc_estimate_list = GetDCEstimateList(subswath_.at(s).subswath_name_);
+        std::vector<DCPolynomial> dc_estimate_list = GetDCEstimateList(subswath_.at(s)->subswath_name_);
         std::vector<DCPolynomial> dc_burst_list = ComputeDCForBurstCenters(dc_estimate_list, s + 1);
-        subswath_.at(s).doppler_centroid_ =
-            Allocate2DArray<double>(subswath_.at(s).num_of_bursts_, subswath_.at(s).samples_per_burst_);
-        for (int b = 0; b < subswath_.at(s).num_of_bursts_; b++) {
-            for (int x = 0; x < subswath_.at(s).samples_per_burst_; x++) {
+        subswath_.at(s)->doppler_centroid_ =
+            Allocate2DArray<double>(subswath_.at(s)->num_of_bursts_, subswath_.at(s)->samples_per_burst_);
+        for (int b = 0; b < subswath_.at(s)->num_of_bursts_; b++) {
+            for (int x = 0; x < subswath_.at(s)->samples_per_burst_; x++) {
                 slrt = GetSlantRangeTime(x, s + 1) * 2;
                 dt = slrt - dc_burst_list[b].t0;
 
@@ -551,7 +551,7 @@ void Sentinel1Utils::ComputeDopplerCentroid() {
                 for (unsigned int i = 0; i < dc_burst_list[b].data_dc_polynomial.size(); i++) {
                     dc_value += dc_burst_list[b].data_dc_polynomial[i] * pow(dt, i);
                 }
-                subswath_.at(s).doppler_centroid_[b][x] = dc_value;
+                subswath_.at(s)->doppler_centroid_[b][x] = dc_value;
             }
         }
     }
@@ -603,14 +603,14 @@ void Sentinel1Utils::ComputeRangeDependentDopplerRate() {
     double slrt, dt;
 
     for (int s = 0; s < num_of_sub_swath_; s++) {
-        std::vector<AzimuthFmRate> az_fm_rate_list = GetAzimuthFmRateList(subswath_.at(s).subswath_name_);
-        subswath_.at(s).range_depend_doppler_rate_ =
-            Allocate2DArray<double>(subswath_.at(s).num_of_bursts_, subswath_.at(s).samples_per_burst_);
-        for (int b = 0; b < subswath_.at(s).num_of_bursts_; b++) {
-            for (int x = 0; x < subswath_.at(s).samples_per_burst_; x++) {
+        std::vector<AzimuthFmRate> az_fm_rate_list = GetAzimuthFmRateList(subswath_.at(s)->subswath_name_);
+        subswath_.at(s)->range_depend_doppler_rate_ =
+            Allocate2DArray<double>(subswath_.at(s)->num_of_bursts_, subswath_.at(s)->samples_per_burst_);
+        for (int b = 0; b < subswath_.at(s)->num_of_bursts_; b++) {
+            for (int x = 0; x < subswath_.at(s)->samples_per_burst_; x++) {
                 slrt = GetSlantRangeTime(x, s + 1) * 2;  // 1-way to 2-way
                 dt = slrt - az_fm_rate_list[b].t0;
-                subswath_.at(s).range_depend_doppler_rate_[b][x] =
+                subswath_.at(s)->range_depend_doppler_rate_[b][x] =
                     az_fm_rate_list[b].c0 + az_fm_rate_list[b].c1 * dt + az_fm_rate_list[b].c2 * dt * dt;
             }
         }
@@ -629,17 +629,17 @@ void Sentinel1Utils::ComputeReferenceTime() {
     }
 
     for (int s = 0; s < num_of_sub_swath_; s++) {
-        subswath_.at(s).reference_time_ =
-            Allocate2DArray<double>(subswath_.at(s).num_of_bursts_, subswath_.at(s).samples_per_burst_);
-        tmp1 = subswath_.at(s).lines_per_burst_ * subswath_.at(s).azimuth_time_interval_ / 2.0;
+        subswath_.at(s)->reference_time_ =
+            Allocate2DArray<double>(subswath_.at(s)->num_of_bursts_, subswath_.at(s)->samples_per_burst_);
+        tmp1 = subswath_.at(s)->lines_per_burst_ * subswath_.at(s)->azimuth_time_interval_ / 2.0;
 
-        for (int b = 0; b < subswath_.at(s).num_of_bursts_; b++) {
-            tmp2 = tmp1 + subswath_.at(s).doppler_centroid_[b][subswath_.at(s).first_valid_pixel_] /
-                              subswath_.at(s).range_depend_doppler_rate_[b][subswath_.at(s).first_valid_pixel_];
+        for (int b = 0; b < subswath_.at(s)->num_of_bursts_; b++) {
+            tmp2 = tmp1 + subswath_.at(s)->doppler_centroid_[b][subswath_.at(s)->first_valid_pixel_] /
+                              subswath_.at(s)->range_depend_doppler_rate_[b][subswath_.at(s)->first_valid_pixel_];
 
-            for (int x = 0; x < subswath_.at(s).samples_per_burst_; x++) {
-                subswath_.at(s).reference_time_[b][x] =
-                    tmp2 - subswath_.at(s).doppler_centroid_[b][x] / subswath_.at(s).range_depend_doppler_rate_[b][x];
+            for (int x = 0; x < subswath_.at(s)->samples_per_burst_; x++) {
+                subswath_.at(s)->reference_time_[b][x] =
+                    tmp2 - subswath_.at(s)->doppler_centroid_[b][x] / subswath_.at(s)->range_depend_doppler_rate_[b][x];
             }
         }
     }

@@ -16,6 +16,7 @@
 #include <chrono>
 #include <memory>
 #include <string_view>
+#include <thread>
 
 #include "pointer_holders.h"
 
@@ -30,9 +31,7 @@ BackgeocodingController::BackgeocodingController(std::shared_ptr<AlusFileReader<
       slave_input_dataset_(slave_input_dataset),
       output_dataset_(output_dataset),
       master_metadata_file_(master_metadata_file),
-      slave_metadata_file_(slave_metadata_file) {
-
-}
+      slave_metadata_file_(slave_metadata_file) {}
 
 BackgeocodingController::~BackgeocodingController() {}
 
@@ -46,74 +45,73 @@ void BackgeocodingController::PrepareToCompute(const float* egm96_device_array, 
     samples_per_burst_ = backgeocoding_->GetSamplesPerBurst();
 }
 
+void BackgeocodingController::RegisterException(std::exception_ptr e) {
+    std::unique_lock<std::mutex> lock(exception_mutex_);
+
+    exceptions_.push_back(e);
+    exceptions_thrown_++;
+}
+
 void BackgeocodingController::RegisterThreadEnd() {
-    register_mutex_.lock();
+    std::unique_lock<std::mutex> lock(register_mutex_);
 
     finished_count_++;
 
     if (finished_count_ == worker_count_) {
-        this->end_block_.notify_all();
+        end_block_.notify_all();
     } else {
-        this->thread_sync_.notify_one();
+        thread_sync_.notify_one();
     }
-    register_mutex_.unlock();
 }
 
 void BackgeocodingController::ReadMaster(Rectangle master_area, double* i_tile, double* q_tile) {
-    master_read_mutex_.lock();
-
+    std::unique_lock<std::mutex> lock(master_read_mutex_);
     // TODO: Could we read slave and master at the same time if we branch into 2 other threads during this thread.
     // TODO: find out if the band ordering is random or not. Then replace those numbers.
     master_input_dataset_->ReadRectangle(master_area, 1, i_tile);
     master_input_dataset_->ReadRectangle(master_area, 2, q_tile);
-
-    master_read_mutex_.unlock();
 }
 
 PositionComputeResults BackgeocodingController::PositionCompute(int m_burst_index, int s_burst_index,
                                                                 Rectangle target_area, double* device_x_points,
                                                                 double* device_y_points) {
     PositionComputeResults result;
-    position_compute_mutex_.lock();
+    std::unique_lock<std::mutex> lock(position_compute_mutex_);
 
     result.slave_area =
         backgeocoding_->PositionCompute(m_burst_index, s_burst_index, target_area, device_x_points, device_y_points);
     result.demod_size = result.slave_area.width * result.slave_area.height;
 
-    position_compute_mutex_.unlock();
-
     return result;
 }
 
 void BackgeocodingController::ReadSlave(Rectangle slave_area, double* i_tile, double* q_tile) {
-    slave_read_mutex_.lock();
+    std::unique_lock<std::mutex> lock(slave_read_mutex_);
 
     // TODO: find out if the band ordering is random or not. Then replace those numbers.
     slave_input_dataset_->ReadRectangle(slave_area, 1, i_tile);
     slave_input_dataset_->ReadRectangle(slave_area, 2, q_tile);
-
-    slave_read_mutex_.unlock();
 }
 
 void BackgeocodingController::CoreCompute(CoreComputeParams params) {
-    core_compute_mutex_.lock();
+    std::unique_lock<std::mutex> lock(core_compute_mutex_);
 
     backgeocoding_->CoreCompute(params);
-
-    core_compute_mutex_.unlock();
 }
 
-void BackgeocodingController::WriteOutputs(Rectangle output_area, float* i_results, float* q_results) {
-    output_write_mutex_.lock();
+void BackgeocodingController::WriteOutputs(Rectangle output_area, float* i_master_results, float* q_master_results, float* i_slave_results, float* q_slave_results) {
+    std::unique_lock<std::mutex> lock(output_write_mutex_);
 
-    output_dataset_->WriteRectangle(i_results, output_area, 1);
-    output_dataset_->WriteRectangle(q_results, output_area, 2);
+    output_dataset_->WriteRectangle(i_master_results, output_area, 1);
+    output_dataset_->WriteRectangle(q_master_results, output_area, 2);
 
-    output_write_mutex_.unlock();
+    output_dataset_->WriteRectangle(i_slave_results, output_area, 3);
+    output_dataset_->WriteRectangle(q_slave_results, output_area, 4);
 }
 
 void BackgeocodingController::DoWork() {
     WorkerParams params;
+    exceptions_thrown_ = 0;
     worker_count_ = 1;
     finished_count_ = 0;
     active_worker_count_ = 5;
@@ -145,8 +143,9 @@ void BackgeocodingController::DoWork() {
     }
 
     while (worker_counter_ < worker_count_) {
-        // waiting for all threads to actually start
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
+
     for (size_t i = 0; i < active_worker_count_ && i < worker_count_; i++) {
         thread_sync_.notify_one();
     }
@@ -160,6 +159,11 @@ void BackgeocodingController::DoWork() {
     register_mutex_.lock();
     std::cout << "Final thread release confirmed." << std::endl;
     register_mutex_.unlock();
+    if (exceptions_thrown_) {
+        std::cout << "Backgeocoding had " << exceptions_thrown_ << " exceptions thrown. Passing on the first one."
+                  << std::endl;
+        std::rethrow_exception(exceptions_.at(0));
+    }
 }
 
 }  // namespace alus::backgeocoding

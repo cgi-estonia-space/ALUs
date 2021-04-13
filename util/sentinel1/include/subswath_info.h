@@ -78,6 +78,8 @@ public:
 
     SubSwathInfo();
     ~SubSwathInfo();
+    SubSwathInfo(const SubSwathInfo&) = delete;  // class does not support copying(and moving)
+    SubSwathInfo& operator=(const SubSwathInfo&) = delete;
 
 };
 

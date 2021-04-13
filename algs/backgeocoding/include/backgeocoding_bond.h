@@ -11,18 +11,19 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
+#pragma once
 
-#include <string_view>
-#include <string>
 #include <memory>
+#include <string>
+#include <string_view>
 
 #include "alg_bond.h"
+#include "algorithm_parameters.h"
 #include "backgeocoding_controller.h"
 #include "dataset.h"
-#include "target_dataset.h"
-#include "algorithm_parameters.h"
 #include "pointer_holders.h"
 #include "raster_properties.hpp"
+#include "target_dataset.h"
 
 namespace alus::backgeocoding {
 
@@ -37,9 +38,8 @@ class BackgeocodingBond : public AlgBond {
 public:
     BackgeocodingBond() = default;
 
-    virtual void SetInputFilenames([[maybe_unused]] const std::string& input_dataset,
-                                   [[maybe_unused]] const std::string&
-                                   metadata_path) override;
+    void SetInputFilenames([[maybe_unused]] const std::string& input_dataset,
+                           [[maybe_unused]] const std::string& metadata_path) override;
     void SetParameters(const app::AlgorithmParameters::Table& param_values) override;
     void SetSrtm3Buffers(const PointerHolder* buffers, size_t length) override;
     void SetEgm96Buffers(const float* egm96_device_array) override;

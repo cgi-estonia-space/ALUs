@@ -41,7 +41,7 @@ public:
     double** reference_time_2_{nullptr};
     double** range_depend_doppler_rate_2_{nullptr};
 
-    std::vector<alus::s1tbx::SubSwathInfo> subswath_;
+    std::vector<std::unique_ptr<alus::s1tbx::SubSwathInfo>> subswath_;
 
     void Read4Arrays() {
         std::ifstream doppler_rate_reader("./goods/backgeocoding/slaveDopplerRate.txt");
@@ -96,18 +96,18 @@ public:
             throw std::ios::failure("Burst Line times file not open.");
         }
         burst_line_time_reader >> size;
-        subswath_.emplace_back();
-        subswath_.at(0).num_of_geo_lines_ = 21;
-        subswath_.at(0).num_of_geo_points_per_line_ = 21;
+        subswath_.push_back(std::make_unique<alus::s1tbx::SubSwathInfo>());
+        subswath_.at(0)->num_of_geo_lines_ = 21;
+        subswath_.at(0)->num_of_geo_points_per_line_ = 21;
 
-        subswath_.at(0).burst_first_line_time_.resize(size);
-        subswath_.at(0).burst_last_line_time_.resize(size);
+        subswath_.at(0)->burst_first_line_time_.resize(size);
+        subswath_.at(0)->burst_last_line_time_.resize(size);
 
         for(int i=0; i<size; i++){
-            burst_line_time_reader >> subswath_.at(0).burst_first_line_time_.at(i);
+            burst_line_time_reader >> subswath_.at(0)->burst_first_line_time_.at(i);
         }
         for(int i=0; i<size; i++){
-            burst_line_time_reader >> subswath_.at(0).burst_last_line_time_.at(i);
+            burst_line_time_reader >> subswath_.at(0)->burst_last_line_time_.at(i);
         }
 
         burst_line_time_reader.close();
@@ -122,39 +122,39 @@ public:
         int num_of_geo_points_per_line2;
 
         geo_location_reader >> num_of_geo_lines2 >> num_of_geo_points_per_line2;
-        if((num_of_geo_lines2 != subswath_.at(0).num_of_geo_lines_) || (num_of_geo_points_per_line2 != subswath_.at(0).num_of_geo_points_per_line_)){
+        if((num_of_geo_lines2 != subswath_.at(0)->num_of_geo_lines_) || (num_of_geo_points_per_line2 != subswath_.at(0)->num_of_geo_points_per_line_)){
             geo_location_reader.close();
             throw std::runtime_error("Geo lines and Geo points per lines are not equal to ones in the file.");
         }
-        subswath_.at(0).azimuth_time_ = alus::Allocate2DArray<double>(num_of_geo_lines2, num_of_geo_points_per_line2);
-        subswath_.at(0).slant_range_time_ = alus::Allocate2DArray<double>(num_of_geo_lines2, num_of_geo_points_per_line2);
-        subswath_.at(0).latitude_ = alus::Allocate2DArray<double>(num_of_geo_lines2, num_of_geo_points_per_line2);
-        subswath_.at(0).longitude_ = alus::Allocate2DArray<double>(num_of_geo_lines2, num_of_geo_points_per_line2);
-        subswath_.at(0).incidence_angle_ = alus::Allocate2DArray<double>(num_of_geo_lines2, num_of_geo_points_per_line2);
+        subswath_.at(0)->azimuth_time_ = alus::Allocate2DArray<double>(num_of_geo_lines2, num_of_geo_points_per_line2);
+        subswath_.at(0)->slant_range_time_ = alus::Allocate2DArray<double>(num_of_geo_lines2, num_of_geo_points_per_line2);
+        subswath_.at(0)->latitude_ = alus::Allocate2DArray<double>(num_of_geo_lines2, num_of_geo_points_per_line2);
+        subswath_.at(0)->longitude_ = alus::Allocate2DArray<double>(num_of_geo_lines2, num_of_geo_points_per_line2);
+        subswath_.at(0)->incidence_angle_ = alus::Allocate2DArray<double>(num_of_geo_lines2, num_of_geo_points_per_line2);
 
         for(int i=0; i< num_of_geo_lines2; i++){
             for(int j=0; j< num_of_geo_points_per_line2; j++){
-                geo_location_reader >> subswath_.at(0).azimuth_time_[i][j];
+                geo_location_reader >> subswath_.at(0)->azimuth_time_[i][j];
             }
         }
         for(int i=0; i< num_of_geo_lines2; i++){
             for(int j=0; j< num_of_geo_points_per_line2; j++){
-                geo_location_reader >> subswath_.at(0).slant_range_time_[i][j];
+                geo_location_reader >> subswath_.at(0)->slant_range_time_[i][j];
             }
         }
         for(int i=0; i< num_of_geo_lines2; i++){
             for(int j=0; j< num_of_geo_points_per_line2; j++){
-                geo_location_reader >> subswath_.at(0).latitude_[i][j];
+                geo_location_reader >> subswath_.at(0)->latitude_[i][j];
             }
         }
         for(int i=0; i< num_of_geo_lines2; i++){
             for(int j=0; j< num_of_geo_points_per_line2; j++){
-                geo_location_reader >> subswath_.at(0).longitude_[i][j];
+                geo_location_reader >> subswath_.at(0)->longitude_[i][j];
             }
         }
         for(int i=0; i< num_of_geo_lines2; i++){
             for(int j=0; j< num_of_geo_points_per_line2; j++){
-                geo_location_reader >> subswath_.at(0).incidence_angle_[i][j];
+                geo_location_reader >> subswath_.at(0)->incidence_angle_[i][j];
             }
         }
 
@@ -182,37 +182,37 @@ TEST(sentinel1, utils) {
     utils.ComputeReferenceTime();
 
     std::cout << "starting comparisons." << '\n';
-    ASSERT_TRUE(utils.subswath_[0].doppler_centroid_ != nullptr);
+    ASSERT_TRUE(utils.subswath_.at(0)->doppler_centroid_ != nullptr);
     ASSERT_TRUE(tester.doppler_centroid_2_ != nullptr);
 
-    ASSERT_TRUE(utils.subswath_[0].range_depend_doppler_rate_ != nullptr);
+    ASSERT_TRUE(utils.subswath_.at(0)->range_depend_doppler_rate_ != nullptr);
     ASSERT_TRUE(tester.range_depend_doppler_rate_2_ != nullptr);
 
-    ASSERT_TRUE(utils.subswath_[0].reference_time_ != nullptr);
+    ASSERT_TRUE(utils.subswath_.at(0)->reference_time_ != nullptr);
     ASSERT_TRUE(tester.reference_time_2_ != nullptr);
 
-    ASSERT_TRUE(utils.subswath_[0].doppler_rate_ != nullptr);
+    ASSERT_TRUE(utils.subswath_.at(0)->doppler_rate_ != nullptr);
     ASSERT_TRUE(tester.doppler_rate_2_ != nullptr);
 
     size_t doppler_count =
-        alus::EqualsArrays2Dd(utils.subswath_[0].doppler_rate_, tester.doppler_rate_2_,
-                              utils.subswath_[0].num_of_bursts_, utils.subswath_[0].samples_per_burst_);
+        alus::EqualsArrays2Dd(utils.subswath_.at(0)->doppler_rate_, tester.doppler_rate_2_,
+                              utils.subswath_.at(0)->num_of_bursts_, utils.subswath_.at(0)->samples_per_burst_);
     EXPECT_EQ(doppler_count, 0) << "Doppler Rates do not match. Mismatches: " << doppler_count << '\n';
 
     size_t reference_count =
-        alus::EqualsArrays2Dd(utils.subswath_[0].reference_time_, tester.reference_time_2_,
-                              utils.subswath_[0].num_of_bursts_, utils.subswath_[0].samples_per_burst_);
+        alus::EqualsArrays2Dd(utils.subswath_.at(0)->reference_time_, tester.reference_time_2_,
+                              utils.subswath_.at(0)->num_of_bursts_, utils.subswath_.at(0)->samples_per_burst_);
     EXPECT_EQ(reference_count, 0) << "Reference Times do not match. Mismatches: " << reference_count << '\n';
 
     size_t range_doppler_count =
-        alus::EqualsArrays2Dd(utils.subswath_[0].range_depend_doppler_rate_, tester.range_depend_doppler_rate_2_,
-                              utils.subswath_[0].num_of_bursts_, utils.subswath_[0].samples_per_burst_);
+        alus::EqualsArrays2Dd(utils.subswath_.at(0)->range_depend_doppler_rate_, tester.range_depend_doppler_rate_2_,
+                              utils.subswath_.at(0)->num_of_bursts_, utils.subswath_.at(0)->samples_per_burst_);
     EXPECT_EQ(range_doppler_count, 0) << "Range Dependent Doppler Rates do not match. Mismatches: "
                                       << range_doppler_count << '\n';
 
     size_t centroids_count =
-        alus::EqualsArrays2Dd(utils.subswath_[0].doppler_centroid_, tester.doppler_centroid_2_,
-                              utils.subswath_[0].num_of_bursts_, utils.subswath_[0].samples_per_burst_);
+        alus::EqualsArrays2Dd(utils.subswath_.at(0)->doppler_centroid_, tester.doppler_centroid_2_,
+                              utils.subswath_.at(0)->num_of_bursts_, utils.subswath_.at(0)->samples_per_burst_);
     EXPECT_EQ(centroids_count, 0) << "Doppler Centroids do not match. Mismatches: " << centroids_count << '\n';
 }
 
@@ -378,7 +378,7 @@ TEST(Sentinel1Utils, GetCalibrationVectors) {
 TEST(Sentinel1Utils, MasterTest){
     alus::s1tbx::Sentinel1Utils master_utils("./goods/master_metadata.dim");
 
-    alus::s1tbx::SubSwathInfo *subswath = &master_utils.subswath_.at(0);
+    alus::s1tbx::SubSwathInfo *subswath = master_utils.subswath_.at(0).get();
     
     EXPECT_DOUBLE_EQ(subswath->azimuth_time_interval_,0.002055556299999998);
     EXPECT_EQ(subswath->num_of_bursts_,19);
@@ -418,8 +418,8 @@ TEST(Sentinel1Utils, SlaveTest){
     Sentinel1UtilsTester tester;
     tester.ReadOriginalPlaceHolderFiles();
 
-    alus::s1tbx::SubSwathInfo *subswath = &slave_utils.subswath_.at(0);
-    alus::s1tbx::SubSwathInfo *tester_subswath = &tester.subswath_.at(0);
+    alus::s1tbx::SubSwathInfo *subswath = slave_utils.subswath_.at(0).get();
+    alus::s1tbx::SubSwathInfo *tester_subswath = tester.subswath_.at(0).get();
 
     EXPECT_DOUBLE_EQ(subswath->azimuth_time_interval_, 0.002055556299999998);
     EXPECT_EQ(subswath->num_of_bursts_, 19);

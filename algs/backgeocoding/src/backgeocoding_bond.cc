@@ -49,7 +49,7 @@ void BackgeocodingBond::SetParameters(const app::AlgorithmParameters::Table& par
     if (output_path != param_values.end()) {
         alus::TargetDatasetParams params;
         params.filename = output_path->second;
-        params.band_count = 2;
+        params.band_count = 4;
         params.driver = master_input_dataset_->GetGdalDataset()->GetDriver();
         params.dimension = master_input_dataset_->GetRasterDimensions();
         params.transform = master_input_dataset_->GetTransform();

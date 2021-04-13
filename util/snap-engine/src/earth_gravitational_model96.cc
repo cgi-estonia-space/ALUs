@@ -25,10 +25,8 @@ namespace alus::snapengine {
 EarthGravitationalModel96::EarthGravitationalModel96() { this->FetchGridValues(); }
 
 EarthGravitationalModel96::~EarthGravitationalModel96() {
-    if (this->egm_ != nullptr) {
-        delete[] this->egm_;
-    }
-    this->DeviceFree();
+    Deallocate2DArray(egm_);
+    DeviceFree();
 }
 
 void EarthGravitationalModel96::FetchGridValues() {

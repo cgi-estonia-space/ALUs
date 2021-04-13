@@ -122,7 +122,7 @@ TEST(SarGeoCodingTestSimple, ZeroDopplerTimeTest) {
     alus::s1tbx::Sentinel1Utils master_utils("./goods/master_metadata.dim");
     master_utils.ComputeDopplerRate();
     master_utils.ComputeReferenceTime();
-    master_utils.subswath_[0].HostToDevice();
+    master_utils.subswath_.at(0)->HostToDevice();
     master_utils.HostToDevice();
     alus::s1tbx::OrbitStateVectors *master_orbit = master_utils.GetOrbitStateVectors();
     const auto &master_orbit_vectors_computation = master_orbit->orbit_state_vectors_computation_;

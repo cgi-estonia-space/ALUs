@@ -63,10 +63,10 @@ public:
     AzimuthAndRangeBounds ComputeExtendedAmount(int x_0, int y_0, int w, int h);
     int ComputeBurstOffset();
 
-    int GetNrOfBursts() { return master_utils_->subswath_.at(0).num_of_bursts_; }
-    int GetLinesPerBurst() { return master_utils_->subswath_.at(0).lines_per_burst_; }
-    int GetSamplesPerBurst() { return master_utils_->subswath_.at(0).samples_per_burst_; }
-    int GetBurstOffset() { return slave_burst_offset_; }
+    int GetNrOfBursts() const { return master_utils_->subswath_.at(0)->num_of_bursts_; }
+    int GetLinesPerBurst() const { return master_utils_->subswath_.at(0)->lines_per_burst_; }
+    int GetSamplesPerBurst() const { return master_utils_->subswath_.at(0)->samples_per_burst_; }
+    int GetBurstOffset() const { return slave_burst_offset_; }
 
     void SetElevationData(const float* egm96_device_array, PointerArray srtm3_tiles){
         egm96_device_array_ = egm96_device_array;

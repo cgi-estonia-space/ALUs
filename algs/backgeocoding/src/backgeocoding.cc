@@ -62,13 +62,13 @@ void Backgeocoding::PrepareToCompute(std::string_view master_metadata_file, std:
     this->slave_utils_ = std::make_unique<s1tbx::Sentinel1Utils>(slave_metadata_file);
     this->slave_utils_->ComputeDopplerRate();
     this->slave_utils_->ComputeReferenceTime();
-    this->slave_utils_->subswath_[0].HostToDevice();
+    this->slave_utils_->subswath_.at(0)->HostToDevice();
     this->slave_utils_->HostToDevice();
 
     this->master_utils_ = std::make_unique<s1tbx::Sentinel1Utils>(master_metadata_file);
     this->master_utils_->ComputeDopplerRate();
     this->master_utils_->ComputeReferenceTime();
-    this->master_utils_->subswath_[0].HostToDevice();
+    this->master_utils_->subswath_.at(0)->HostToDevice();
     this->master_utils_->HostToDevice();
 
     const std::vector<snapengine::OrbitStateVectorComputation> &master_orbit_vectors_computation =
@@ -117,10 +117,10 @@ Rectangle Backgeocoding::PositionCompute(int m_burst_index,
     const int margin = snapengine::BILINEAR_INTERPOLATION_KERNEL_SIZE;
     Rectangle source_rectangle;
 
-    const int firstLineIndex = s_burst_index * slave_utils_->subswath_[0].lines_per_burst_;
-    const int lastLineIndex = firstLineIndex + slave_utils_->subswath_[0].lines_per_burst_ - 1;
+    const int firstLineIndex = s_burst_index * slave_utils_->subswath_.at(0)->lines_per_burst_;
+    const int lastLineIndex = firstLineIndex + slave_utils_->subswath_.at(0)->lines_per_burst_ - 1;
     const int firstPixelIndex = 0;
-    const int lastPixelIndex = slave_utils_->subswath_[0].samples_per_burst_ - 1;
+    const int lastPixelIndex = slave_utils_->subswath_.at(0)->samples_per_burst_ - 1;
 
     coord_min_max.x_min = std::max(coord_min_max.x_min - margin, firstPixelIndex);
     coord_min_max.x_max = std::min(coord_min_max.x_max + margin, lastPixelIndex);
@@ -143,7 +143,7 @@ void Backgeocoding::CoreCompute(CoreComputeParams params) {
                                      params.device_demod_phase,
                                      params.device_demod_i,
                                      params.device_demod_q,
-                                     slave_utils_->subswath_.at(0).device_subswath_info_,
+                                     slave_utils_->subswath_.at(0)->device_subswath_info_,
                                      params.s_burst_index));
 
     BilinearParams bilinear_params;
@@ -157,8 +157,8 @@ void Backgeocoding::CoreCompute(CoreComputeParams params) {
     bilinear_params.rectangle_x = params.slave_rectangle.x;
     bilinear_params.rectangle_y = params.slave_rectangle.y;
     bilinear_params.disable_reramp = disable_reramp_;
-    bilinear_params.subswath_start = slave_utils_->subswath_.at(0).lines_per_burst_ * params.s_burst_index;
-    bilinear_params.subswath_end = slave_utils_->subswath_.at(0).lines_per_burst_ * (params.s_burst_index + 1);
+    bilinear_params.subswath_start = slave_utils_->subswath_.at(0)->lines_per_burst_ * params.s_burst_index;
+    bilinear_params.subswath_end = slave_utils_->subswath_.at(0)->lines_per_burst_ * (params.s_burst_index + 1);
     bilinear_params.no_data_value = 0.0; //TODO: placeholder.
 
     CHECK_CUDA_ERR(LaunchBilinearInterpolation(params.device_x_points,
@@ -198,7 +198,7 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index,
     int xmax = master_area.x + master_area.width + boost::numeric_cast<int>(abs(az_rg_bounds.range_min));
 
     std::vector<double> lat_lon_min_max =
-        this->ComputeImageGeoBoundary(&this->master_utils_->subswath_[0], m_burst_index, xmin, xmax, ymin, ymax);
+        this->ComputeImageGeoBoundary(master_utils_->subswath_.at(0).get(), m_burst_index, xmin, xmax, ymin, ymax);
 
     double delta = fmax(this->dem_sampling_lat_, this->dem_sampling_lon_);
     double extralat = 20 * delta;
@@ -232,8 +232,8 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index,
     size_t valid_index_count = 0;
     const size_t az_rg_size = calc_data.num_lines * calc_data.num_pixels;
 
-    calc_data.device_master_subswath = this->master_utils_->subswath_[0].device_subswath_info_;
-    calc_data.device_slave_subswath = this->slave_utils_->subswath_[0].device_subswath_info_;
+    calc_data.device_master_subswath = this->master_utils_->subswath_.at(0)->device_subswath_info_;
+    calc_data.device_slave_subswath = this->slave_utils_->subswath_.at(0)->device_subswath_info_;
 
     calc_data.device_master_utils = this->master_utils_->device_sentinel_1_utils_;
     calc_data.device_slave_utils = this->slave_utils_->device_sentinel_1_utils_;
@@ -467,9 +467,9 @@ AzimuthAndRangeBounds Backgeocoding::ComputeExtendedAmount(int x_0, int y_0, int
         master_utils_->GetOrbitStateVectors()->orbit_state_vectors_computation_.data(),
         master_utils_->GetOrbitStateVectors()->orbit_state_vectors_computation_.size(),
         master_utils_->GetOrbitStateVectors()->GetDt(),
-        master_utils_->subswath_.at(0),
+        *master_utils_->subswath_.at(0),
         master_utils_->device_sentinel_1_utils_,
-        master_utils_->subswath_.at(0).device_subswath_info_,
+        master_utils_->subswath_.at(0)->device_subswath_info_,
         srtm3_tiles_,
         const_cast<float*>(egm96_device_array_)));
     return extended_amount;
@@ -505,18 +505,18 @@ void PrepareBurstOffsetKernelArguments(BurstOffsetKernelArgs &args,
     args.srtm3_tiles.size = srtm3_tiles.size;
 
     args.master_sentinel_utils = master_utils->device_sentinel_1_utils_;
-    args.master_subswath_info = master_utils->subswath_.at(0).device_subswath_info_;
+    args.master_subswath_info = master_utils->subswath_.at(0)->device_subswath_info_;
     args.master_orbit = d_master_orbit_state_vector;
     args.master_num_orbit_vec = master_vectors->orbit_state_vectors_computation_.size();
     args.master_dt = master_vectors->GetDt();
 
     args.slave_sentinel_utils = slave_utils->device_sentinel_1_utils_;
-    args.slave_subswath_info = slave_utils->subswath_.at(0).device_subswath_info_;
+    args.slave_subswath_info = slave_utils->subswath_.at(0)->device_subswath_info_;
     args.slave_orbit = d_slave_orbit_state_vector;
     args.slave_num_orbit_vec = slave_vectors->orbit_state_vectors_computation_.size();
     args.slave_dt = slave_vectors->GetDt();
 
-    s1tbx::SubSwathInfo *h_master_subswath = &master_utils->subswath_.at(0);
+    const s1tbx::SubSwathInfo *h_master_subswath = master_utils->subswath_.at(0).get();
     int subswath_geo_grid_size = h_master_subswath->num_of_geo_lines_ * h_master_subswath->num_of_geo_points_per_line_;
 
     args.width = h_master_subswath->num_of_geo_points_per_line_;

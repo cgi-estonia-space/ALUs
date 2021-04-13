@@ -57,7 +57,7 @@ class Sentinel1Utils : public cuda::CudaFriendlyObject {
 
 
 public:
-    std::vector<SubSwathInfo> subswath_;
+    std::vector<std::unique_ptr<SubSwathInfo>> subswath_;
 
     double first_line_utc_{0.0};
     double last_line_utc_{0.0};
@@ -139,7 +139,7 @@ private:
 
     double GetLatitudeValue(Sentinel1Index index, SubSwathInfo* subswath);
     double GetLongitudeValue(Sentinel1Index index, SubSwathInfo* subswath);
-    void FillSubswathMetaData();
+    void FillSubswathMetaData(SubSwathInfo *subswath);
     void FillUtilsMetadata();
 
     [[nodiscard]] std::vector<int> GetIntVector(std::shared_ptr<snapengine::MetadataAttribute> attribute, std::string_view delimiter) const;
