@@ -51,7 +51,7 @@ pipelines:
                 - unzip -o /root/.sonar/build-wrapper-linux-x86.zip -d /root/.sonar/
                 - export PATH=/root/.sonar/build-wrapper-linux-x86:$PATH
                 - rm -rf build
-                - cmake . -Bbuild
+                - cmake . -Bbuild -DSONARCLOUD_BUILD=1
                 - cd build
                 - build-wrapper-linux-x86-64 --out-dir $BW_OUTPUT make -j8
                 - cd $BITBUCKET_CLONE_DIR

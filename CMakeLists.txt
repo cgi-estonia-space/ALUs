@@ -57,6 +57,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_FLAGS "-Wall -Werror -Wextra -pedantic")
 
+if (SONARCLOUD_BUILD)
+    # fix build errors with SonarCloud code scanner
+    # workaround for parser crash with boost::asio - SonarCFamily CPP-2696
+    message(STATUS "SonarCloud configuration")
+    add_compile_definitions(BOOST_ASIO_DISABLE_NOEXCEPT)
+endif()
+
 # External libraries
 add_subdirectory(external/pugixml)
 
