@@ -42,6 +42,7 @@ public:
     std::mutex queue_mutex_;
     std::atomic<size_t> worker_counter_;
     const float output_no_data_value_ = 0.0;
+    int exceptions_thrown_ = 0;
 
     BackgeocodingController(std::shared_ptr<AlusFileReader<double>> master_input_dataset,
                             std::shared_ptr<AlusFileReader<double>> slave_input_dataset,
@@ -53,18 +54,20 @@ public:
 
     void PrepareToCompute(const float* egm96_device_Array, PointerArray srtm3_tiles);
     void RegisterThreadEnd();
+    void RegisterException(std::exception_ptr e);
     void ReadMaster(Rectangle master_area, double* i_tile, double* q_tile);
     PositionComputeResults PositionCompute(int m_burst_index, int s_burst_index, Rectangle target_area,
                                            double* device_x_points, double* device_y_points);
     void ReadSlave(Rectangle slave_area, double* i_tile, double* q_tile);
     void CoreCompute(CoreComputeParams params);
-    void WriteOutputs(Rectangle output_area, float* i_results, float* q_results);
+    void WriteOutputs(Rectangle output_area, float* i_master_results, float* q_master_results, float* i_slave_results, float* q_slave_results);
     void DoWork();
 
     std::condition_variable* GetThreadSync() { return &thread_sync_; }
 
 private:
     std::unique_ptr<Backgeocoding> backgeocoding_;
+    std::vector<std::exception_ptr> exceptions_;
     int num_of_bursts_;
     int lines_per_burst_;
     int samples_per_burst_;
@@ -80,6 +83,7 @@ private:
     std::mutex slave_read_mutex_;
     std::mutex core_compute_mutex_;
     std::mutex output_write_mutex_;
+    std::mutex exception_mutex_;
     size_t worker_count_;         // How many were set loose
     size_t finished_count_;       // How many have finished work
     size_t active_worker_count_;  // How many are working concurrently

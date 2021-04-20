@@ -35,7 +35,7 @@ TEST(DISABLED_backgeocoding, ThreadTest) {
 
     alus::TargetDatasetParams params;
     params.filename = "/home/erik/snapDebusTests/alusTest.tif";
-    params.band_count = 2;
+    params.band_count = 4;
     params.driver = master_input_dataset->GetGdalDataset()->GetDriver();
     params.dimension = master_input_dataset->GetRasterDimensions();
     params.transform = master_input_dataset->GetTransform();
@@ -54,7 +54,7 @@ TEST(DISABLED_backgeocoding, ThreadTest) {
 
     alus::TargetDatasetParams params;
     params.filename = "/home/erik/snapDebusTests/alusTest2.tif";
-    params.band_count = 2;
+    params.band_count = 4;
     params.driver = master_input_dataset->GetGdalDataset()->GetDriver();
     params.dimension = master_input_dataset->GetRasterDimensions();
     params.transform = master_input_dataset->GetTransform();
