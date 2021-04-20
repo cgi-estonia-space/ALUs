@@ -110,6 +110,7 @@ pipelines:
                 - build-automation/execute_nightly.sh
                 - build-automation/run_beirut_disaster_test.sh
                 - build-automation/run_virumaa_calibration_test.sh
+                - build-automation/run_virumaa_calibration_chain_test.sh
                 - build-automation/compare_alus_output.py
       - step:
           name: 'End to end tests and publish'
@@ -132,7 +133,7 @@ pipelines:
             - echo $ip_address
             - cd $BITBUCKET_CLONE_DIR
             - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "mkdir /tmp/nightly_builds"
-            - scp -oStrictHostKeyChecking=no build-automation/execute_nightly.sh build-automation/run_beirut_disaster_test.sh build-automation/compare_alus_output.py build-automation/run_virumaa_calibration_test.sh ubuntu@$ip_address:/tmp/nightly_builds
+            - scp -oStrictHostKeyChecking=no build-automation/execute_nightly.sh build-automation/run_beirut_disaster_test.sh build-automation/compare_alus_output.py build-automation/run_virumaa_calibration_test.sh build-automation/run_virumaa_calibration_chain_test.sh ubuntu@$ip_address:/tmp/nightly_builds
             - cd build-nightly
             - build_filename=$(basename *.tar.gz)
             - build_id="${build_filename%%.*}"
@@ -166,6 +167,7 @@ pipelines:
             - build-nightly/*.tar.gz
             - build-automation/execute_nightly.sh
             - build-automation/run_beirut_disaster_test.sh
+            - build-automation/run_virumaa_calibration_chain_test.sh
             - build-automation/run_virumaa_calibration_test.sh
             - build-automation/compare_alus_output.py
       - step:
@@ -189,7 +191,7 @@ pipelines:
             - echo $ip_address
             - cd $BITBUCKET_CLONE_DIR
             - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "mkdir /tmp/nightly_builds"
-            - scp -oStrictHostKeyChecking=no build-automation/execute_nightly.sh build-automation/run_beirut_disaster_test.sh build-automation/compare_alus_output.py build-automation/run_virumaa_calibration_test.sh ubuntu@$ip_address:/tmp/nightly_builds
+            - scp -oStrictHostKeyChecking=no build-automation/execute_nightly.sh build-automation/run_beirut_disaster_test.sh build-automation/compare_alus_output.py build-automation/run_virumaa_calibration_test.sh build-automation/run_virumaa_calibration_chain_test.sh ubuntu@$ip_address:/tmp/nightly_builds
             - cd build-nightly
             - build_filename=$(basename *.tar.gz)
             - build_id="${build_filename%%.*}"

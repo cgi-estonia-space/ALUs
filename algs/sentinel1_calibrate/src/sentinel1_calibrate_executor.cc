@@ -74,15 +74,15 @@ void Sentinel1CalibrateExecutor::SetTileSize(size_t width, size_t height) {
 int Sentinel1CalibrateExecutor::Execute() {
     try {
         ValidateParameters();
+        GDALSetCacheMax64(4e9); // GDAL Cache 4GB, enough for for whole swath input + output
         const auto reader_plug_in = std::make_shared<s1tbx::Sentinel1ProductReaderPlugIn>();
         const std::shared_ptr<snapengine::IProductReader> product_reader = reader_plug_in->CreateReaderInstance();
         std::shared_ptr<snapengine::Product> input_product =
             product_reader->ReadProductNodes(boost::filesystem::canonical(metadata_paths_.at(0)), nullptr);
-        const auto source_dataset =
-            std::make_shared<Dataset<float>>(boost::filesystem::canonical(input_dataset_filenames_.at(0)).string());
+        const auto source_path = boost::filesystem::canonical(input_dataset_filenames_.at(0)).string();
 
         Sentinel1Calibrator calibrator{input_product,
-                                       source_dataset,
+                                       source_path,
                                        sub_swaths_,
                                        polarisations_,
                                        calibration_bands_,

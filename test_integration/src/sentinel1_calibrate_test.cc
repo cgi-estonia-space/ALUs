@@ -38,14 +38,15 @@ protected:
 };
 
 TEST_F(Sentinel1CalibrateTest, Virumaa) {
+    GDALSetCacheMax64(4e9); // GDAL Cache 4GB, enough for for whole swath input + output
     ASSERT_THAT(boost::filesystem::exists(input_file_), ::testing::IsTrue());
     const std::shared_ptr<snapengine::IProductReader> product_reader = reader_plug_in_->CreateReaderInstance();
     std::shared_ptr<snapengine::Product> input_product =
         product_reader->ReadProductNodes(boost::filesystem::canonical(input_file_), nullptr);
-    const auto source_dataset = std::make_shared<Dataset<float>>(boost::filesystem::canonical(input_file_).string());
+    const auto source_path = boost::filesystem::canonical(input_file_).string();
 
     Sentinel1Calibrator calibrator{
-        input_product, source_dataset, {"IW1"}, {"VV"}, {false, true, false, false}, "/tmp/", false, 5000, 5000};
+        input_product, source_path, {"IW1"}, {"VV"}, {false, true, false, false}, "/tmp/", false, 5000, 5000};
     calibrator.Execute();
     const std::string result_file{
         "/tmp/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_Cal_IW1.tif"};

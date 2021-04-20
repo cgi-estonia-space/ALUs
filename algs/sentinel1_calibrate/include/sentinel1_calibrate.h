@@ -52,7 +52,7 @@ struct CInt16 {
 class Sentinel1Calibrator {
 public:
     Sentinel1Calibrator(
-        std::shared_ptr<snapengine::Product> source_product, std::shared_ptr<Dataset<float>> source_dataset,
+        std::shared_ptr<snapengine::Product> source_product, const std::string& src_path,
         std::vector<std::string> selected_sub_swaths, std::set<std::string, std::less<>> selected_polarisations,
         SelectedCalibrationBands selected_calibration_bands,
         std::string_view output_path, bool output_image_in_complex = false, int tile_width = 2000, int tile_height = 2000);
@@ -64,7 +64,8 @@ public:
 
     ~Sentinel1Calibrator();
 
-
+    std::shared_ptr<snapengine::Product> GetTargetProduct() { return target_product_; }
+    std::string GetTargetPath(const std::string& swath) { return target_paths_.at(swath); }
     void Execute();
 
 
@@ -72,7 +73,6 @@ private:
     std::shared_ptr<snapengine::Product> source_product_;
     std::map<std::string, std::vector<std::string>, std::less<>> target_band_name_to_source_band_name_;
     std::map<std::string, CalibrationInfo, std::less<>> target_band_to_calibration_info_;
-    std::shared_ptr<Dataset<float>> source_dataset_;
     std::vector<std::string> selected_sub_swaths_;
     std::set<std::string, std::less<>> selected_polarisations_;
     SelectedCalibrationBands selected_calibration_bands_;
@@ -89,6 +89,7 @@ private:
     int tile_width_;
     int tile_height_;
     std::map<std::string, std::shared_ptr<Dataset<float>>, std::less<>> target_datasets_;
+    std::map<std::string, std::string, std::less<>> target_paths_;
     std::string output_path_;
     std::vector<void*> cuda_arrays_to_clean_;
     Sentinel1CalibrateSafeHelper safe_helper_;

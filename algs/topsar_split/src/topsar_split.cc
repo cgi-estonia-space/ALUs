@@ -40,7 +40,6 @@ namespace alus::topsarsplit {
 TopsarSplit::TopsarSplit(std::string filename, std::string selected_subswath, std::string selected_polarisation)
     : subswath_(selected_subswath), selected_polarisations_({selected_polarisation}) {
     boost::filesystem::path path = std::string(filename);
-
     boost::filesystem::path measurement = path.string() + "/measurement";
     boost::filesystem::directory_iterator end_itr;
     std::string low_subswath = boost::to_lower_copy(selected_subswath);
