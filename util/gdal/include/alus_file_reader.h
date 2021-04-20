@@ -14,6 +14,7 @@
 #pragma once
 
 #include <vector>
+#include <map>
 
 #include "shapes.h"
 
@@ -26,6 +27,7 @@ template <typename BufferType>
 class AlusFileReader {
    public:
     virtual void ReadRectangle(Rectangle rectangle, int band_nr, BufferType *data_buffer) = 0;
+    virtual void ReadRectangle(Rectangle rectangle, std::map<int, BufferType*>& bands) = 0;
     virtual void LoadRasterBand(int band_nr) = 0;
     virtual std::vector<BufferType> const& GetHostDataBuffer() const = 0;
     virtual BufferType *GetDeviceDataBuffer() = 0;

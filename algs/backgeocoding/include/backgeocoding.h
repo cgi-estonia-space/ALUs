@@ -21,8 +21,8 @@
 #include "extended_amount_computation.h"
 #include "kernel_array.h"
 #include "orbit_state_vector_computation.h"
-#include "sentinel1_utils.h"
 #include "pointer_holders.h"
+#include "sentinel1_utils.h"
 
 namespace alus::backgeocoding {
 
@@ -47,6 +47,7 @@ struct CoreComputeParams {
 
 /**
  * The contents of this class originate from s1tbx module's BackGeocodingOp java class.
+ * IMPORTANT: input porducts may only have 1 subswath.
  */
 class Backgeocoding {
 public:
@@ -56,6 +57,9 @@ public:
     Backgeocoding& operator=(const Backgeocoding&) = delete;
 
     void PrepareToCompute(std::string_view master_metadata_file, std::string_view slave_metadata_file);
+    void PrepareToCompute(std::shared_ptr<snapengine::Product> master_product,
+                          std::shared_ptr<snapengine::Product> slave_product);
+
     void CoreCompute(CoreComputeParams params);
     Rectangle PositionCompute(int m_burst_index, int s_burst_index, Rectangle master_area, double* device_x_points,
                               double* device_y_points);
@@ -63,12 +67,14 @@ public:
     AzimuthAndRangeBounds ComputeExtendedAmount(int x_0, int y_0, int w, int h);
     int ComputeBurstOffset();
 
-    int GetNrOfBursts() const { return master_utils_->subswath_.at(0)->num_of_bursts_; }
-    int GetLinesPerBurst() const { return master_utils_->subswath_.at(0)->lines_per_burst_; }
-    int GetSamplesPerBurst() const { return master_utils_->subswath_.at(0)->samples_per_burst_; }
-    int GetBurstOffset() const { return slave_burst_offset_; }
+    [[nodiscard]] int GetNrOfBursts() const { return master_utils_->subswath_.at(0)->num_of_bursts_; }
+    [[nodiscard]] int GetLinesPerBurst() const { return master_utils_->subswath_.at(0)->lines_per_burst_; }
+    [[nodiscard]] int GetSamplesPerBurst() const { return master_utils_->subswath_.at(0)->samples_per_burst_; }
+    [[nodiscard]] int GetBurstOffset() const { return slave_burst_offset_; }
+    [[nodiscard]] s1tbx::Sentinel1Utils* GetMasterUtils() const { return master_utils_.get(); }
+    [[nodiscard]] s1tbx::Sentinel1Utils* GetSlaveUtils() const { return slave_utils_.get(); }
 
-    void SetElevationData(const float* egm96_device_array, PointerArray srtm3_tiles){
+    void SetElevationData(const float* egm96_device_array, PointerArray srtm3_tiles) {
         egm96_device_array_ = egm96_device_array;
         srtm3_tiles_ = srtm3_tiles;
     }
@@ -102,6 +108,7 @@ private:
     bool ComputeSlavePixPos(int m_burst_index, int s_burst_index, Rectangle master_area,
                             AzimuthAndRangeBounds az_rg_bounds, CoordMinMax* coord_min_max, double* device_x_points,
                             double* device_y_points);
+    void PrepareToComputeBody();
 };
 
 }  // namespace alus::backgeocoding

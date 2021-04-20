@@ -94,12 +94,16 @@ boost::posix_time::ptime Utc::GetAsCalendar() const {
 }
 
 std::string Utc::Format() const {
+    return Format(DATE_FORMAT_PATTERN);
+}
+
+std::string Utc::Format(std::string_view format) const {
     auto start_date_time = boost::posix_time::ptime(CreateCalendar());
     auto days = boost::gregorian::days(GetDaysFraction());
     auto seconds = boost::posix_time::seconds(GetSecondsFraction());
     // ptime to stringstream to string.
     std::stringstream stream;
-    stream.imbue(std::locale(std::locale::classic(), CreateDateFormatOut(DATE_FORMAT_PATTERN)));
+    stream.imbue(std::locale(std::locale::classic(), CreateDateFormatOut(format)));
     stream << (start_date_time + days + seconds) << ".";
     std::string micros_string = std::to_string(GetMicroSecondsFraction());
     for (int i = micros_string.length(); i < 6; i++) {
@@ -119,13 +123,10 @@ boost::posix_time::time_input_facet* Utc::CreateDateFormatIn(std::string_view pa
 }
 std::shared_ptr<Utc> Utc::Parse(std::string_view text) { return Parse(text, DATE_FORMAT_PATTERN); }
 
-std::shared_ptr<Utc> Utc::Parse(std::string_view text, std::string_view pattern) {
-    return Parse(text, CreateDateFormatIn(pattern));
-}
 
-std::shared_ptr<Utc> Utc::Parse(const std::string_view text, boost::posix_time::time_input_facet* date_time_format) {
+std::shared_ptr<Utc> Utc::Parse(const std::string_view text, std::string_view pattern) {
     Guardian::AssertNotNullOrEmpty("text", text);
-    Guardian::AssertNotNull("date_time_format", date_time_format);
+    //Guardian::AssertNotNull("date_time_format", date_time_format);
 
     auto dot_pos = text.find_last_of(".");
     std::string_view no_fraction_string = text;
@@ -150,9 +151,13 @@ std::shared_ptr<Utc> Utc::Parse(const std::string_view text, boost::posix_time::
         }
     }
     std::stringstream stream(std::string{no_fraction_string});
-    stream.imbue(std::locale(std::locale::classic(), date_time_format));
+    stream.imbue(std::locale(std::locale::classic(), CreateDateFormatIn(pattern)));
     boost::posix_time::ptime date(boost::posix_time::not_a_date_time);
     stream >> date;
+    if(date.is_not_a_date_time())
+    {
+        throw alus::ParseException("Unparseable date:" + std::string(text) + " for format: " + std::string(pattern));
+    }
 
     return Create(date, micros);
 }

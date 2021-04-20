@@ -22,10 +22,10 @@
 #include <string>
 #include <string_view>
 
-#include "i_meta_data_writer.h"
+#include "snap-core/datamodel/i_meta_data_writer.h"
 #include "io/orbits/sentinel1/i_orbit_file.h"
-#include "metadata_element.h"
-#include "product.h"
+#include "snap-core/datamodel/metadata_element.h"
+#include "snap-core/datamodel/product.h"
 
 namespace alus {
 namespace s1tbx {

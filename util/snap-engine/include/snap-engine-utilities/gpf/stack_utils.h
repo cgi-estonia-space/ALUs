@@ -1,6 +1,6 @@
 /**
  * This file is a filtered duplicate of a SNAP's
- * org.esa.snap.engine_utilities.datamodel.OrbitStateVector.java
+ * org.esa.snap.engine_utilities.gpf.StackUtils.java
  * ported for native code.
  * Copied from (https://github.com/senbox-org/snap-engine). It was originally stated:
  *
@@ -18,29 +18,16 @@
  */
 #pragma once
 
+#include <string>
 #include <memory>
 
-#include "snap-core/datamodel/product_data_utc.h"
+#include "snap-core/datamodel/product.h"
 
-namespace alus::snapengine {
-class OrbitStateVector {
+namespace alus::snapengine{
+
+class StackUtils{
 public:
-    std::shared_ptr<Utc> time_;
-    double time_mjd_;
-    double x_pos_, y_pos_, z_pos_;
-    double x_vel_, y_vel_, z_vel_;
-
-    OrbitStateVector() = default;
-    OrbitStateVector(const std::shared_ptr<Utc>& t, const double x_pos, const double y_pos, const double z_pos,
-                     const double x_vel, const double y_vel, const double z_vel)
-        : time_{t},
-          time_mjd_{t->GetMjd()},
-          x_pos_{x_pos},
-          y_pos_{y_pos},
-          z_pos_{z_pos},
-          x_vel_{x_vel},
-          y_vel_{y_vel},
-          z_vel_{z_vel} {}
+    static std::string CreateBandTimeStamp(std::shared_ptr<Product>& product);
 };
 
-}  // namespace alus::snapengine
+}

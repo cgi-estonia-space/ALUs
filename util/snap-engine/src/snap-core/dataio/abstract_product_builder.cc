@@ -1,6 +1,6 @@
 /**
  * This file is a filtered duplicate of a SNAP's
- * org.esa.snap.engine_utilities.datamodel.OrbitStateVector.java
+ * org.esa.snap.core.dataio.AbstractProductBuilder.java
  * ported for native code.
  * Copied from (https://github.com/senbox-org/snap-engine). It was originally stated:
  *
@@ -16,31 +16,12 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
-#pragma once
-
-#include <memory>
-
-#include "snap-core/datamodel/product_data_utc.h"
-
+#include "snap-core/dataio/abstract_product_builder.h"
 namespace alus::snapengine {
-class OrbitStateVector {
-public:
-    std::shared_ptr<Utc> time_;
-    double time_mjd_;
-    double x_pos_, y_pos_, z_pos_;
-    double x_vel_, y_vel_, z_vel_;
 
-    OrbitStateVector() = default;
-    OrbitStateVector(const std::shared_ptr<Utc>& t, const double x_pos, const double y_pos, const double z_pos,
-                     const double x_vel, const double y_vel, const double z_vel)
-        : time_{t},
-          time_mjd_{t->GetMjd()},
-          x_pos_{x_pos},
-          y_pos_{y_pos},
-          z_pos_{z_pos},
-          x_vel_{x_vel},
-          y_vel_{y_vel},
-          z_vel_{z_vel} {}
-};
+AbstractProductBuilder::AbstractProductBuilder(bool source_product_owner)
+    : AbstractProductReader(nullptr), source_product_owner_(source_product_owner) {}
+
+
 
 }  // namespace alus::snapengine

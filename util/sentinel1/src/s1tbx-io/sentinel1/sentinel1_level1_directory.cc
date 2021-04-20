@@ -1005,6 +1005,10 @@ void Sentinel1Level1Directory::AddBandAbstractedMetadata(
         ++num_bands;
         //        }
     }
+    snapengine::AbstractMetadata::SetAttribute(abs_root, snapengine::AbstractMetadata::RANGE_SPACING, range_spacing_total / num_bands);
+    snapengine::AbstractMetadata::SetAttribute(abs_root, snapengine::AbstractMetadata::AZIMUTH_SPACING, azimuth_spacing_total / num_bands);
+    snapengine::AbstractMetadata::SetAttribute(abs_root, snapengine::AbstractMetadata::AVG_SCENE_HEIGHT, height_sum / filenames.size());
+    snapengine::AbstractMetadata::SetAttribute(abs_root, snapengine::AbstractMetadata::BISTATIC_CORRECTION_APPLIED, 1);
 }
 
 void Sentinel1Level1Directory::AddOrbitStateVectors(const std::shared_ptr<snapengine::MetadataElement>& abs_root,

@@ -156,28 +156,6 @@ private:
      * @return
      */
     static std::shared_ptr<Product> InitProductMembers(const std::shared_ptr<Product>& product);
-    /**
-     * Creates a new product without any reader (in-memory product)
-     *
-     * @param name              the product name
-     * @param type              the product type
-     * @param sceneRasterWidth  the scene width in pixels for this data product
-     * @param sceneRasterHeight the scene height in pixels for this data product
-     */
-    Product(std::string_view name, std::string_view type, int scene_raster_width, int scene_raster_height);
-
-    /**
-     * Constructs a new product with the given name and the given reader.
-     *
-     * @param name              the product identifier
-     * @param type              the product type
-     * @param sceneRasterWidth  the scene width in pixels for this data product
-     * @param sceneRasterHeight the scene height in pixels for this data product
-     * @param reader            the reader used to create this product and read data from it.
-     * @see ProductReader
-     */
-    Product(std::string_view name, std::string_view type, int scene_raster_width, int scene_raster_height,
-            const std::shared_ptr<IProductReader>& reader);
 
     /**
      * Constructs a new product with the given name and type.
@@ -244,6 +222,29 @@ public:
     const std::shared_ptr<IMetaDataWriter>& GetMetadataWriter() const;
     void SetMetadataWriter(const std::shared_ptr<IMetaDataWriter>& metadata_writer);
     bool HasMetaDataReader() const;
+
+    /**
+     * Creates a new product without any reader (in-memory product)
+     *
+     * @param name              the product name
+     * @param type              the product type
+     * @param sceneRasterWidth  the scene width in pixels for this data product
+     * @param sceneRasterHeight the scene height in pixels for this data product
+     */
+    Product(std::string_view name, std::string_view type, int scene_raster_width, int scene_raster_height);
+
+    /**
+     * Constructs a new product with the given name and the given reader.
+     *
+     * @param name              the product identifier
+     * @param type              the product type
+     * @param sceneRasterWidth  the scene width in pixels for this data product
+     * @param sceneRasterHeight the scene height in pixels for this data product
+     * @param reader            the reader used to create this product and read data from it.
+     * @see ProductReader
+     */
+    Product(std::string_view name, std::string_view type, int scene_raster_width, int scene_raster_height,
+            const std::shared_ptr<IProductReader>& reader);
 
     /**
      * Workaround static function which calls constructor with same parameters and also inits members which need
@@ -821,6 +822,13 @@ public:
      * @see #containsPixel(double, double)
      */
     bool ContainsPixel(const std::shared_ptr<PixelPos>& pixel_pos);
+
+    /**
+     * Gets an estimated, raw storage size in bytes of this product node.
+     *
+     * @return the size in bytes.
+     */
+    uint64_t GetRawStorageSize() override;
 
     /**
      * Gets an estimated, raw storage size in bytes of this product node.

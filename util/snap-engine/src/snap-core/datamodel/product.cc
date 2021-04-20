@@ -293,6 +293,10 @@ void Product::SetProductType(std::string_view product_type) {
     }
 }
 
+uint64_t Product::GetRawStorageSize() {
+    return GetRawStorageSize(nullptr);
+}
+
 uint64_t Product::GetRawStorageSize(const std::shared_ptr<ProductSubsetDef>& subset_def) {
     uint64_t size = 0;
     for (int i = 0; i < GetNumBands(); i++) {

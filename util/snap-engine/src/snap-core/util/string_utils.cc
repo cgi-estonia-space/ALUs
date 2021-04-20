@@ -20,6 +20,8 @@
 
 #include <iterator>
 #include <sstream>
+#include <algorithm>
+#include <cctype>
 
 #include "guardian.h"
 
@@ -58,6 +60,29 @@ std::string StringUtils::ArrayToString(std::vector<std::string> vec, std::string
         oss << vec.back();
     }
     return oss.str();
+}
+
+std::string StringUtils::CreateValidName(std::string name, std::string valid_chars, char replace_char) {
+    //Guardian.assertNotNull("name", name);
+    std::string sorted_valid_chars;
+    if (valid_chars.empty()) {
+        sorted_valid_chars.push_back(0);
+    } else {
+        sorted_valid_chars = valid_chars;
+    }
+    std::sort(sorted_valid_chars.begin(), sorted_valid_chars.end());
+    std::string valid_name;
+    for (size_t i = 0; i < name.size(); i++) {
+        char ch = name.at(i);
+        if (std::isdigit(ch) || std::isalpha(ch)) {
+            valid_name.push_back(ch);
+        } else if (std::binary_search(sorted_valid_chars.begin(), sorted_valid_chars.end(), ch)) {
+            valid_name.push_back(ch);
+        } else {
+            valid_name.push_back(replace_char);
+        }
+    }
+    return valid_name;
 }
 
 }  // namespace snapengine

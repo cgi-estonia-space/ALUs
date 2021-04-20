@@ -18,15 +18,18 @@
  */
 #include "snap-engine-utilities/gpf/operator_utils.h"
 
-#include <boost/algorithm/string/case_conv.hpp>
-
 #include <memory>
 #include <stdexcept>
 #include <vector>
 
+#include <boost/algorithm/string/case_conv.hpp>
+
 #include "snap-core/datamodel/band.h"
-#include "snap-core/datamodel/virtual_band.h"
+#include "snap-core/datamodel/metadata_element.h"
 #include "snap-core/datamodel/product.h"
+#include "snap-core/datamodel/product_data_utc.h"
+#include "snap-core/datamodel/virtual_band.h"
+#include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
 
 namespace alus {
 namespace snapengine {
@@ -74,9 +77,10 @@ std::string OperatorUtils::GetPolarizationFromBandName(std::string_view band_nam
     }
     return "";
 }
+
 std::vector<std::shared_ptr<Band>> OperatorUtils::GetSourceBands(std::shared_ptr<Product> source_product,
-                                                std::vector<std::string> source_band_names,
-                                                bool include_virtual_bands) {
+                                                                 std::vector<std::string> source_band_names,
+                                                                 bool include_virtual_bands) {
     if (source_band_names.empty()) {
         const auto bands = source_product->GetBands();
         std::vector<std::string> band_name_list;
@@ -118,5 +122,21 @@ std::string OperatorUtils::GetSuffixFromBandName(std::string_view band_name) {
     }
     return "";
 }
+
+std::string OperatorUtils::GetAcquisitionDate(std::shared_ptr<MetadataElement>& root) {
+    std::string date_string;
+    // try {
+    std::shared_ptr<Utc> date = root->GetAttributeUtc(AbstractMetadata::FIRST_LINE_TIME);
+    // DateFormat dateFormat = Utc::CreateDateFormat("ddMMMyyyy");
+    // dateString = dateFormat.format(date->GetAsDate());
+    date_string = date->Format("DDmmmYYYY");
+    std::cout << "created date: " << date_string << std::endl;
+
+    /*} catch (Exception e) {
+        dateString = "";
+    }*/
+    return date_string;
+}
+
 }  // namespace snapengine
 }  // namespace alus

@@ -14,6 +14,8 @@ list(APPEND SNAP-ENGINE_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/snap-core/dataio/product_subset_def.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/snap-core/dataio/abstract_product_reader.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/snap-core/dataio/product_i_o.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/snap-core/dataio/product_subset_builder.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/snap-core/dataio/abstract_product_builder.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/date_utils.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/guardian.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/snap-core/datamodel/geo_pos.cc
@@ -76,6 +78,7 @@ list(APPEND SNAP-ENGINE_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/snap-engine-utilities/orbit_vector.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/snap-engine-utilities/gpf/input_product_validator.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/snap-engine-utilities/gpf/operator_utils.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/snap-engine-utilities/gpf/stack_utils.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/snap-engine-utilities/gpf/reader_utils.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/snap-engine-utilities/datamodel/unit.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/ceres-core/i_virtual_dir.cc

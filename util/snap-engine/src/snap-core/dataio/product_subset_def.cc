@@ -24,6 +24,7 @@
 
 #include "guardian.h"
 #include "pixel_subset_region.h"
+#include "custom/dimension.h"
 
 namespace alus::snapengine {
 
@@ -138,6 +139,48 @@ std::shared_ptr<custom::Rectangle> ProductSubsetDef::GetRegion() {
         return std::make_shared<custom::Rectangle>(pixel_subset_region->GetPixelRegion());
     }
     return nullptr;
+}
+
+std::shared_ptr<custom::Dimension> ProductSubsetDef::GetSceneRasterSize(int max_width, int max_height) {
+    return GetSceneRasterSize(max_width, max_height, "");
+}
+
+std::shared_ptr<custom::Dimension> ProductSubsetDef::GetSceneRasterSize(int max_width, int max_height, std::string band_name) {
+    int width = max_width;
+    int height = max_height;
+
+    if (subset_region_ != nullptr && dynamic_cast<PixelSubsetRegion*>(subset_region_.get()) != nullptr) {
+        PixelSubsetRegion *pixelSubsetRegion = dynamic_cast<PixelSubsetRegion*>(subset_region_.get());
+        width = pixelSubsetRegion->GetPixelRegion()->width;
+        height = pixelSubsetRegion->GetPixelRegion()->height;
+    }
+
+    auto the_band = region_map_.find(band_name);
+    if (!band_name.empty() && !region_map_.empty() && the_band != region_map_.end()) {
+        width = region_map_.at(band_name).width;
+        height = region_map_.at(band_name).height;
+    } else if (!region_map_.empty()) {
+        int auxWidth = -1;
+        int auxHeight = -1;
+
+        for (std::string nodeName : node_name_list_) {
+
+            auto rec = region_map_.find(nodeName);
+            if (rec == region_map_.end()) {
+                continue;
+            }
+            if (auxHeight < rec->second.height) {
+                auxHeight = rec->second.height;
+                auxWidth = rec->second.width;
+            }
+        }
+
+        if (auxHeight != -1 && auxWidth != -1) {
+            width = auxWidth;
+            height = auxHeight;
+        }
+    }
+    return std::make_shared<custom::Dimension>((width - 1) / sub_sampling_x_ + 1, (height - 1) / sub_sampling_y_ + 1);
 }
 
 }  // namespace alus::snapengine

@@ -48,7 +48,9 @@ std::shared_ptr<MetadataElement> PugixmlMetaDataReader::Read(std::string_view el
     } else {
         throw std::runtime_error("no source file for metadata provided");
     }
-    this->result_ = this->doc_.load_file(file_name.data(), pugi::parse_default | pugi::parse_declaration);
+    //this->result_ = this->doc_.load_file(file_name.data(), pugi::parse_default | pugi::parse_declaration);
+    std::cout << "Reading from " << file_name_ << std::endl;
+    this->result_ = this->doc_.load_file(file_name_.data(), pugi::parse_default | pugi::parse_declaration);
     if (!this->result_) {
         // todo: add exception handling wrapper or handle directly (use PugixmlErrorException)
         throw std::runtime_error("unable to load file " + file_name);

@@ -22,7 +22,7 @@
 #include <memory>
 #include <vector>
 
-#include "sar_reader.h"
+#include "s1tbx-commons/io/sar_reader.h"
 #include "snap-core/dataio/i_product_reader_plug_in.h"
 
 namespace alus::ceres {

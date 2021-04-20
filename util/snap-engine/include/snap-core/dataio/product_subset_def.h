@@ -26,6 +26,7 @@
 
 // todo:: find a better place for awt replacements (also dimension)
 #include "custom/rectangle.h"
+#include "custom/dimension.h"
 #include "snap-core/subset/abstract_subset_region.h"
 
 namespace alus::snapengine {
@@ -203,56 +204,19 @@ public:
     int GetSubSamplingY() const { return sub_sampling_y_; }
 
     //    todo:support only if needed
-    //    /**
-    //     * Gets the required size for a raster required to hold all pixels for the spatial subset for the given
-    //     maximum
-    //     * raster width and height.
-    //     *
-    //     * @param maxWidth  the maximum raster width
-    //     * @param maxHeight the maximum raster height
-    //     *
-    //     * @return the required raster size, never <code>null</code>
-    //     */
-    //    std::shared_ptr<Dimension> GetSceneRasterSize(int max_width, int max_height) {
-    //        return GetSceneRasterSize(max_width, max_height, nullptr);
-    //    }
+    /**
+     * Gets the required size for a raster required to hold all pixels for the spatial subset for the given
+     maximum
+     * raster width and height.
+     *
+     * @param maxWidth  the maximum raster width
+     * @param maxHeight the maximum raster height
+     *
+     * @return the required raster size, never <code>null</code>
+     */
+    std::shared_ptr<custom::Dimension> GetSceneRasterSize(int max_width, int max_height);
 
-    //    std::shared_ptr<Dimension> GetSceneRasterSize(int max_width, int max_height, std::string_view band_name) {
-    //        int width = max_width;
-    //        int height = max_height;
-    //
-    //        if (subset_region_ != nullptr && this.subsetRegion instanceof PixelSubsetRegion) {
-    //            PixelSubsetRegion pixelSubsetRegion = (PixelSubsetRegion)this.subsetRegion;
-    //            width = pixelSubsetRegion.getPixelRegion().width;
-    //            height = pixelSubsetRegion.getPixelRegion().height;
-    //        }
-    //
-    //        if (bandName != null && regionMap != null && regionMap.containsKey(bandName)) {
-    //            width = regionMap.get(bandName).width;
-    //            height = regionMap.get(bandName).height;
-    //        } else if (regionMap != null) {
-    //            int auxWidth = -1;
-    //            int auxHeight = -1;
-    //
-    //            for (Object nodeName : nodeNameList) {
-    //                String nodeNameString = nodeName.toString();
-    //                custom::Rectangle rec = regionMap.get(nodeNameString);
-    //                if (rec == null) {
-    //                    continue;
-    //                }
-    //                if (auxHeight < rec.height) {
-    //                    auxHeight = rec.height;
-    //                    auxWidth = rec.width;
-    //                }
-    //            }
-    //
-    //            if (auxHeight != -1 && auxWidth != -1) {
-    //                width = auxWidth;
-    //                height = auxHeight;
-    //            }
-    //        }
-    //        return new Dimension((width - 1) / subSamplingX + 1, (height - 1) / subSamplingY + 1);
-    //    }
+    std::shared_ptr<custom::Dimension> GetSceneRasterSize(int max_width, int max_height, std::string band_name);
 
     /**
      * Sets the ignore metadata information

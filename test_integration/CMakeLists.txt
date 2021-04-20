@@ -25,6 +25,13 @@ list(APPEND TEST_SOURCES_BACKGEOCODING
 list(APPEND TEST_SOURCES_BACKGEOCODING_FULL
         src/backgeocoding/backgeocoding_threads_test.cc
         )
+list(APPEND TEST_SOURCES_TOPSAR_SPLIT
+        src/topsar_split_test.cc
+        )
+
+list(APPEND TEST_SOURCES_COREGISTRATION
+        src/coregistration_test.cc
+        )
 
 list(APPEND TEST_INCLUDE
         ${CMAKE_CURRENT_LIST_DIR}/include
@@ -43,6 +50,36 @@ target_link_libraries(backgeocoding-full
         backgeocoding-static
         exotic_operations-static
         app-util-static
+        )
+
+add_executable(topsar-split-test ${TEST_SOURCES_TOPSAR_SPLIT})
+target_link_libraries(topsar-split-test
+        PRIVATE
+        gmock_main
+        cuda_util-static
+        topsar-split-static
+        exotic_operations-static
+        app-util-static
+        apply-orbit-file-op-static
+        )
+
+
+
+add_executable(coregistration-test ${TEST_SOURCES_COREGISTRATION})
+target_include_directories(coregistration-test
+        PUBLIC
+        ${TEST_INCLUDE}
+        )
+target_link_libraries(coregistration-test
+        PRIVATE
+        gmock_main
+        cuda_util-static
+        topsar-split-static
+        exotic_operations-static
+        app-util-static
+        backgeocoding-static
+        apply-orbit-file-op-static
+        coregistration-static
         )
 
 

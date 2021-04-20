@@ -38,10 +38,10 @@ namespace s1tbx {
 
 Sentinel1Utils::Sentinel1Utils(std::string_view metadata_file_name) : num_of_sub_swath_(1) {
     metadata_reader_ = std::make_unique<snapengine::PugixmlMetaDataReader>(metadata_file_name);
-
+    legacy_init_ = true;
     subswath_.push_back(std::make_unique<SubSwathInfo>());
 
-    FillSubswathMetaData(subswath_.at(0).get());
+    FillSubswathMetaData(nullptr, subswath_.at(0).get());
     FillUtilsMetadata();
 }
 
@@ -84,8 +84,13 @@ void Sentinel1Utils::FillUtilsMetadata() {
     near_range_on_left_ = (subswath_.at(0)->incidence_angle_[0][0] < subswath_.at(0)->incidence_angle_[0][1]);
 }
 
-void Sentinel1Utils::FillSubswathMetaData(SubSwathInfo* subswath) {
-    std::shared_ptr<snapengine::MetadataElement> product = metadata_reader_->Read("product");
+void Sentinel1Utils::FillSubswathMetaData(std::shared_ptr<snapengine::MetadataElement> subswath_metadata, SubSwathInfo* subswath) {
+    std::shared_ptr<snapengine::MetadataElement> product;
+    if(legacy_init_){
+        product = metadata_reader_->Read("product");
+    }else{
+        product = subswath_metadata->GetElement("product");
+    }
     std::shared_ptr<snapengine::MetadataElement> image_annotation =
         product->GetElement(alus::snapengine::AbstractMetadata::IMAGE_ANNOTATION);
     std::shared_ptr<snapengine::MetadataElement> image_information =
@@ -118,6 +123,7 @@ void Sentinel1Utils::FillSubswathMetaData(SubSwathInfo* subswath) {
         std::stoi(swath_timing->GetAttributeString(snapengine::AbstractMetadata::SAMPLES_PER_BURST));
     subswath->range_pixel_spacing_ =
         std::stod(image_information->GetAttributeString(snapengine::AbstractMetadata::RANGE_PIXEL_SPACING));
+    subswath->azimuth_pixel_spacing_ = std::stod(image_information->GetAttributeString("azimuthPixelSpacing"));
     subswath->slr_time_to_first_pixel_ = std::stod(image_information->GetAttributeString("slantRangeTime")) / 2.0;
     subswath->slr_time_to_last_pixel_ =
         subswath->slr_time_to_first_pixel_ + static_cast<double>(subswath->num_of_samples_ - 1) *
@@ -386,10 +392,16 @@ double* Sentinel1Utils::ComputeDerampDemodPhase(int subswath_index, int s_burst_
 }
 
 void Sentinel1Utils::GetProductOrbit() {
-    std::shared_ptr<snapengine::MetadataElement> abstract_metadata =
-        metadata_reader_->Read(alus::snapengine::AbstractMetadata::ABSTRACT_METADATA_ROOT);
-    std::vector<snapengine::OrbitStateVector> original_vectors =
-        snapengine::AbstractMetadata::GetOrbitStateVectors(abstract_metadata);
+    std::vector<snapengine::OrbitStateVector> original_vectors;
+    if(legacy_init_) {
+        std::shared_ptr<snapengine::MetadataElement> abstract_metadata =
+            metadata_reader_->Read(alus::snapengine::AbstractMetadata::ABSTRACT_METADATA_ROOT);
+        original_vectors =
+            snapengine::AbstractMetadata::GetOrbitStateVectors(abstract_metadata);
+    }else{
+        original_vectors = snapengine::AbstractMetadata::GetOrbitStateVectors(abs_root_);
+    }
+
 
     orbit_ = std::make_unique<alus::s1tbx::OrbitStateVectors>(original_vectors);
 
@@ -440,10 +452,15 @@ double Sentinel1Utils::GetSlantRangeTime(int x, int subswath_index) {
 }
 
 std::vector<DCPolynomial> Sentinel1Utils::GetDCEstimateList(std::string subswath_name) {
-    std::cout << "We are supposed to select subswath " << subswath_name << " for dc list, but we will use default."
-              << std::endl;
 
-    std::shared_ptr<snapengine::MetadataElement> product = metadata_reader_->Read("product");
+    std::shared_ptr<snapengine::MetadataElement> product;
+    if(legacy_init_){
+        product = metadata_reader_->Read("product");
+    }else{
+        std::shared_ptr<snapengine::MetadataElement> subswath_metadata = GetSubSwathMetadata(subswath_name);
+        product = subswath_metadata->GetElement("product");
+    }
+
     std::shared_ptr<snapengine::MetadataElement> image_annotation = product->GetElement("imageAnnotation");
     std::shared_ptr<snapengine::MetadataElement> processing_information =
         image_annotation->GetElement("processingInformation");
@@ -564,10 +581,16 @@ void Sentinel1Utils::ComputeDopplerCentroid() {
 }
 
 std::vector<AzimuthFmRate> Sentinel1Utils::GetAzimuthFmRateList(std::string subswath_name) {
-    std::cout << "We are supposed to read subswath " << subswath_name
-              << " Azimuth fm rate list, but we will be using default subswath." << std::endl;
 
-    std::shared_ptr<snapengine::MetadataElement> product = metadata_reader_->Read("product");
+
+    std::shared_ptr<snapengine::MetadataElement> product;
+    if(legacy_init_){
+       product = metadata_reader_->Read("product");
+    }else{
+        std::shared_ptr<snapengine::MetadataElement> subswath_metadata = GetSubSwathMetadata(subswath_name);
+        product = subswath_metadata->GetElement("product");
+    }
+
     std::shared_ptr<snapengine::MetadataElement> general_annotation = product->GetElement("generalAnnotation");
     std::shared_ptr<snapengine::MetadataElement> azimuth_fm_rate_list =
         general_annotation->GetElement("azimuthFmRateList");
@@ -875,7 +898,7 @@ int Sentinel1Utils::GetNumOfSubSwath() const { return num_of_sub_swath_; }
 
 Sentinel1Utils::Sentinel1Utils(const std::shared_ptr<snapengine::Product>& product) : source_product_{product} {
     // todo: custom metadata reader for our custom format(DELETE IF WE REMOVE CUSTOM FORMAT FROM OUR CODEBASE)
-    metadata_reader_ = product->GetMetadataReader();
+    //metadata_reader_ = product->GetMetadataReader();
 
     GetMetadataRoot();
 
@@ -887,12 +910,12 @@ Sentinel1Utils::Sentinel1Utils(const std::shared_ptr<snapengine::Product>& produ
 
     GetProductSubSwathNames();
 
-    //    GetSubSwathParameters();
+    GetSubSwathParameters();
     //    todo: using already in place custom code instead of GetSubSwathParameters();
     //    FillSubswathMetaData();
 
-    subswath_.push_back(std::make_unique<SubSwathInfo>());
-    FillSubswathMetaData(subswath_.at(0).get());
+    //subswath_.push_back(std::make_unique<SubSwathInfo>());
+    //FillSubswathMetaData(subswath_.at(0).get());
     // just had issues using utils and try to emulate the other constuctor calling FillUtilsMetadata()
     //    FillUtilsMetadata();
     if (subswath_.empty()) {
@@ -919,6 +942,7 @@ void Sentinel1Utils::GetMetadataRoot() {
     if (orig_prod_root_ == root) {
         throw std::runtime_error("Original_Product_Metadata not found.");
     }
+
 
     std::string mission = abs_root_->GetAttributeString(snapengine::AbstractMetadata::MISSION);
     if (!boost::algorithm::starts_with(mission, "SENTINEL-1")) {
@@ -1036,17 +1060,17 @@ void Sentinel1Utils::GetProductSubSwathNames() {
     num_of_sub_swath_ = static_cast<int>(sub_swath_names_.size());
 }
 
-// CLASHES WITH CUSTOM CODE
-// void Sentinel1Utils::GetSubSwathParameters() {
-//    subswath_.resize(num_of_sub_swath_);
-//    for (int i = 0; i < num_of_sub_swath_; i++) {
-//        subswath_.at(i) = SubSwathInfo{};
-//        subswath_.at(i).subswath_name_ = sub_swath_names_.at(i);
-//        std::shared_ptr<snapengine::MetadataElement> sub_swath_metadata =
-//            GetSubSwathMetadata(subswath_.at(i).subswath_name_);
-//        GetSubSwathParameters(sub_swath_metadata, subswath_.at(i));
-//    }
-//}
+
+ void Sentinel1Utils::GetSubSwathParameters() {
+    subswath_.reserve(num_of_sub_swath_);
+    for (int i = 0; i < num_of_sub_swath_; i++) {
+        subswath_.push_back(std::make_unique<SubSwathInfo>());
+        subswath_.at(i)->subswath_name_ = sub_swath_names_.at(i);
+        std::shared_ptr<snapengine::MetadataElement> sub_swath_metadata =
+            GetSubSwathMetadata(subswath_.at(i)->subswath_name_);
+        FillSubswathMetaData(sub_swath_metadata, subswath_.at(i).get());
+    }
+}
 
 std::shared_ptr<snapengine::MetadataElement> Sentinel1Utils::GetSubSwathMetadata(
     std::string_view sub_swath_name) const {

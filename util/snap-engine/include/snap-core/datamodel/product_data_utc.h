@@ -65,9 +65,10 @@ public:
      *
      * @see java.text.SimpleDateFormat
      */
+private:
     static boost::posix_time::time_facet* CreateDateFormatOut(std::string_view pattern);
     static boost::posix_time::time_input_facet* CreateDateFormatIn(std::string_view pattern);
-
+public:
     /**
      * Gets the MJD 2000 calendar on which this UTC date/time is based. The date is initially set the 1st January
      * 2000, 0:00.
@@ -125,7 +126,7 @@ public:
      * @see #createCalendar
      * @see #createDateFormat
      */
-    static std::shared_ptr<Utc> Parse(std::string_view text, boost::posix_time::time_input_facet*);
+    //static std::shared_ptr<Utc> Parse(std::string_view text, boost::posix_time::time_input_facet*);
 
     /**
      * Creates a new UTC instance based on the given time and microseconds fraction.
@@ -219,6 +220,8 @@ public:
      * @see #createDateFormat
      */
     std::string Format() const;
+    std::string Format(std::string_view format) const;
+
     /**
      * Gets the MJD 2000 calendar on which this UTC date/time is based.
      * The date of the calendar is set to this UTC value.

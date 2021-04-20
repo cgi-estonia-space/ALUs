@@ -143,7 +143,7 @@ boost::filesystem::path SentinelPODOrbitFile::RetrieveOrbitFile(std::string_view
     //    int year = calendar.get(Calendar.YEAR);
     int year = calendar.date().year();
     //    int month = calendar.get(Calendar.MONTH) + 1;  // zero based
-    int month = calendar.date().month().as_enum() + 1;
+    int month = calendar.date().month().as_enum();
     //    int day = calendar.get(Calendar.DAY_OF_MONTH);
     //    todo: remove [[maybe_unused]] below when implementing further
     [[maybe_unused]] int day = calendar.date().day();
