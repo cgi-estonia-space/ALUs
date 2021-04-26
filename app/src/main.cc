@@ -14,9 +14,9 @@ namespace po = boost::program_options;
 
 int main(int argc, char* argv[]) {
     std::string alg_to_run{};
-    std::string input_file{};
+    std::vector<std::string> input_files{};
     std::string output_path{};
-    std::string aux_location{};
+    std::vector<std::string> aux_locations{};
     size_t tile_width{};
     size_t tile_height{};
     std::string alg_params{};
@@ -28,11 +28,11 @@ int main(int argc, char* argv[]) {
     options.add_options()("help,h", "Print help")(
         "alg_name", po::value<std::string>(&alg_to_run), "Specify algorithm to run")(
         "alg_help", "Print algorithm configurable parameters")(
-        "input,i", po::value<std::string>(&input_file), "Input dataset path/name GeoTIFF files only.")(
+        "input,i", po::value<std::vector<std::string>>(&input_files), "Input dataset path/name GeoTIFF files only.")(
         "output,o", po::value<std::string>(&output_path), "Output dataset path/name")(
         "tile_width,x", po::value<size_t>(&tile_width)->default_value(500), "Tile width.")(
         "tile_height,y", po::value<size_t>(&tile_height)->default_value(500), "Tile height.")(
-        "aux", po::value<std::string>(&aux_location), "Auxiliary file locations "
+        "aux", po::value<std::vector<std::string>>(&aux_locations), "Auxiliary/metadata .dim file"
         "(metadata, incident angle, etc).")
         ("parameters,p", po::value<std::string>(&alg_params)->default_value(""),
                         "Algorithm specific configuration. Must be supplied as key=value "
@@ -90,18 +90,17 @@ int main(int argc, char* argv[]) {
         } else {
             std::shared_ptr<alus::app::DemAssistant> dem_assistant{};
             if (!dem_files_param.empty()) {
-                std::cout << "Processing DEM files and moving to GPU." << std::endl;
+                std::cout << "Processing DEM files and creating EGM96." << std::endl;
                 dem_assistant = alus::app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(std::move(dem_files_param));
             }
 
-            alg_guard.GetInstanceHandle()->SetInputFilenames(input_file, aux_location);
+            alg_guard.GetInstanceHandle()->SetInputFilenames(input_files, aux_locations);
             alg_guard.GetInstanceHandle()->SetTileSize(tile_width, tile_height);
             alg_guard.GetInstanceHandle()->SetOutputFilename(output_path);
 
             if (dem_assistant != nullptr) {
-                alg_guard.GetInstanceHandle()->SetSrtm3Buffers(dem_assistant->GetSrtm3ValuesOnGpu(),
-                                                               dem_assistant->GetSrtm3TilesCount());
-                alg_guard.GetInstanceHandle()->SetEgm96Buffers(dem_assistant->GetEgm96ValuesOnGpu());
+                alg_guard.GetInstanceHandle()->SetSrtm3Manager(dem_assistant->GetSrtm3Manager());
+                alg_guard.GetInstanceHandle()->SetEgm96Manager(dem_assistant->GetEgm96Manager());
             }
 
             alg_execute_status = alg_guard.GetInstanceHandle()->Execute();

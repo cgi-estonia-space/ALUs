@@ -59,6 +59,7 @@ target_link_libraries(backgeocoding-static
 add_library(backgeocoding-shared
         SHARED
         $<TARGET_OBJECTS:backgeocoding-obj>
+        ${CMAKE_CURRENT_LIST_DIR}/src/backgeocoding_bond_shared.cc
         )
 target_include_directories(backgeocoding-shared
         PUBLIC

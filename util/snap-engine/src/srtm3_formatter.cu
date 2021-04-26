@@ -48,6 +48,7 @@ __global__ void FormatSRTM3dem(float *target, float *source, Srtm3FormatComputat
 
 cudaError_t LaunchDemFormatter(dim3 grid_size, dim3 block_size, float *target, float *source, Srtm3FormatComputation data){
     FormatSRTM3dem<<<grid_size, block_size>>>(target, source, data);
+    cudaDeviceSynchronize();
     return cudaGetLastError();
 }
 

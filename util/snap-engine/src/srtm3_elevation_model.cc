@@ -90,6 +90,7 @@ void Srtm3ElevationModel::HostToDevice() {
         temp_tiles.at(i).id =
             (((srtm3elevationmodel::MAX_LON_COVERAGE + lon) / srtm3elevationmodel::DEGREE_RES) + 1) * 100 +
             (((srtm3elevationmodel::MAX_LAT_COVERAGE - lat) / srtm3elevationmodel::DEGREE_RES) + 1);
+        std::cout << "Loading SRTM3 tile ID " << temp_tiles.at(i).id << " to GPU" << std::endl;
         temp_tiles.at(i).x = x_size;
         temp_tiles.at(i).y = y_size;
         temp_tiles.at(i).z = 1;
@@ -104,8 +105,12 @@ void Srtm3ElevationModel::HostToDevice() {
 void Srtm3ElevationModel::DeviceToHost() { CHECK_CUDA_ERR(cudaErrorNotYetImplemented); }
 
 void Srtm3ElevationModel::DeviceFree() {
-    REPORT_WHEN_CUDA_ERR(cudaFree(this->device_formated_srtm_buffers_info_));
-    device_formated_srtm_buffers_info_ = nullptr;
+    if (device_formated_srtm_buffers_info_ != nullptr) {
+        std::cout << "Unloading SRTM3 tiles from GPU" << std::endl;
+        REPORT_WHEN_CUDA_ERR(cudaFree(this->device_formated_srtm_buffers_info_));
+        device_formated_srtm_buffers_info_ = nullptr;
+    }
+
     for (auto&& buf : device_formated_srtm_buffers_) {
         REPORT_WHEN_CUDA_ERR(cudaFree(buf));
     }

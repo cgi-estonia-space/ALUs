@@ -27,7 +27,10 @@ TEST(ExtendedAmountTest, ComputeExtendedAmount) {
     std::shared_ptr<alus::app::DemAssistant> dem_assistant = alus::app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(std::move(srtm3_files));
     alus::backgeocoding::Backgeocoding backgeocoding;
 
-    backgeocoding.SetElevationData(dem_assistant->GetEgm96ValuesOnGpu(), {dem_assistant->GetSrtm3ValuesOnGpu(), dem_assistant->GetSrtm3TilesCount()});
+    dem_assistant->GetSrtm3Manager()->HostToDevice();
+    backgeocoding.SetElevationData(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
+                                   {dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo(),
+                                    dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()});
     backgeocoding.PrepareToCompute("./goods/master_metadata.dim", "./goods/slave_metadata.dim");
 
     alus::Rectangle const input{4000, 17000, 100, 100};

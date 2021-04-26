@@ -166,7 +166,10 @@ TEST(backgeocoding, correctness) {
                                      "./goods/backgeocoding/slaveTileICoast.txt");
     coast_tester.ReadTestData();
 
-    backgeocoding.SetElevationData(dem_assistant->GetEgm96ValuesOnGpu(), {dem_assistant->GetSrtm3ValuesOnGpu(), dem_assistant->GetSrtm3TilesCount()});
+    dem_assistant->GetSrtm3Manager()->HostToDevice();
+    backgeocoding.SetElevationData(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
+                                   {dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo(),
+                                    dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()});
     backgeocoding.PrepareToCompute("./goods/master_metadata.dim", "./goods/slave_metadata.dim");
 
     int burst_offset = backgeocoding.GetBurstOffset();

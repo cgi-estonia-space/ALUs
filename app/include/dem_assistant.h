@@ -39,9 +39,8 @@ public:
     static std::shared_ptr<DemAssistant> CreateFormattedSrtm3TilesOnGpuFrom(
         std::vector<std::string> cmd_line_arguments);
 
-    PointerHolder* GetSrtm3ValuesOnGpu() const { return model_.GetSrtmBuffersInfo(); }
-    size_t GetSrtm3TilesCount() {return model_.GetDeviceSrtm3TilesCount();}
-    const float* GetEgm96ValuesOnGpu() const { return egm96_.GetDeviceValues(); }
+    snapengine::Srtm3ElevationModel* GetSrtm3Manager() { return &model_; }
+    const snapengine::EarthGravitationalModel96* GetEgm96Manager() const { return &egm96_; }
 
     ~DemAssistant() = default;
 

@@ -67,6 +67,7 @@ add_library(terrain-correction-shared
         SHARED
         $<TARGET_OBJECTS:terrain-correction-obj>
         $<TARGET_OBJECTS:terrain-correction-obj-cu>
+        ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction_executor_shared.cc
         )
 target_include_directories(terrain-correction-shared
         PUBLIC

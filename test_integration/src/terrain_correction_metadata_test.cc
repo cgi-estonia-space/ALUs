@@ -108,16 +108,10 @@ TEST(TerrainCorrection, ParsesMetadataCorrectlyForSaaremaa1) {
     EXPECT_THAT(metadata_fields.last_far_lat, DoubleEq(58.57649612426758));
     EXPECT_THAT(metadata_fields.last_far_long, DoubleEq(23.571735382080078));
 
-    EXPECT_THAT(metadata_fields.first_valid_line_time, DoubleEq(6.165218838437437E8));
-    EXPECT_THAT(metadata_fields.last_valid_line_time, DoubleEq(6.165218868469114E8));
-
     EXPECT_THAT(metadata_fields.avg_scene_height, DoubleEq(23.65084248584435));
     EXPECT_THAT(metadata_fields.line_time_interval, DoubleEq(0.002055556299999998));
 
     EXPECT_THAT(metadata_fields.slant_range_to_first_pixel, DoubleEq(799303.6132771898));
-
-    EXPECT_THAT(metadata_fields.first_valid_pixel, Eq(1919));
-    EXPECT_THAT(metadata_fields.last_valid_pixel, Eq(22265));
 
     EXPECT_THAT(metadata_fields.radar_frequency, DoubleEq(5405.000454334349));
 

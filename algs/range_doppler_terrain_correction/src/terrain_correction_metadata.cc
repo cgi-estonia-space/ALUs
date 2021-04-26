@@ -92,9 +92,6 @@ void Metadata::FillDimMetadata(std::string_view dim_metadata_file) {
     metadata_fields_.avg_scene_height =
         snapengine::AbstractMetadata::GetAttributeDouble(master_root, snapengine::AbstractMetadata::AVG_SCENE_HEIGHT);
 
-    metadata_fields_.first_valid_pixel = master_root->GetAttributeInt(snapengine::AbstractMetadata::FIRST_VALID_PIXEL);
-    metadata_fields_.last_valid_pixel = master_root->GetAttributeInt(snapengine::AbstractMetadata::LAST_VALID_PIXEL);
-
     metadata_fields_.first_near_lat = master_root->GetAttributeDouble(snapengine::AbstractMetadata::FIRST_NEAR_LAT);
     metadata_fields_.first_near_long = master_root->GetAttributeDouble(snapengine::AbstractMetadata::FIRST_NEAR_LONG);
     metadata_fields_.first_far_lat = master_root->GetAttributeDouble(snapengine::AbstractMetadata::FIRST_FAR_LAT);
@@ -103,10 +100,6 @@ void Metadata::FillDimMetadata(std::string_view dim_metadata_file) {
     metadata_fields_.last_near_long = master_root->GetAttributeDouble(snapengine::AbstractMetadata::LAST_NEAR_LONG);
     metadata_fields_.last_far_lat = master_root->GetAttributeDouble(snapengine::AbstractMetadata::LAST_FAR_LAT);
     metadata_fields_.last_far_long = master_root->GetAttributeDouble(snapengine::AbstractMetadata::LAST_FAR_LONG);
-    metadata_fields_.first_valid_line_time =
-        master_root->GetAttributeDouble(snapengine::AbstractMetadata::FIRST_VALID_LINE_TIME);
-    metadata_fields_.last_valid_line_time =
-        master_root->GetAttributeDouble(snapengine::AbstractMetadata::LAST_VALID_LINE_TIME);
 
     metadata_fields_.azimuth_spacing = master_root->GetAttributeDouble(snapengine::AbstractMetadata::AZIMUTH_SPACING);
 

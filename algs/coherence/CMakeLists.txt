@@ -15,7 +15,7 @@ list(APPEND TENSORFLOW_LIBS
         )
 
 list(APPEND COHERENCE_SOURCES
-        ${CMAKE_CURRENT_LIST_DIR}/src/execute.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/coherence_execute.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/io_tile.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/tf_algorithm_runner.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/gdal_tile_writer.cc
@@ -101,6 +101,7 @@ target_link_libraries(coherence-static
 add_library(coherence-shared
         SHARED
         $<TARGET_OBJECTS:coherence-obj>
+        ${CMAKE_CURRENT_LIST_DIR}/src/coherence_execute_shared.cc
         )
 target_include_directories(coherence-shared
         PUBLIC

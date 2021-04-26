@@ -55,7 +55,6 @@ std::shared_ptr<DemAssistant> DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(
 DemAssistant::DemAssistant(std::vector<std::string> srtm3_files) : model_(std::move(srtm3_files)), egm96_{} {
     egm96_.HostToDevice();
     model_.ReadSrtmTiles(&egm96_);
-    model_.HostToDevice();
 }
 
 }  // namespace alus::app

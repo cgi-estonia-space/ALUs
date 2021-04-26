@@ -11,13 +11,16 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
+#include "coherence_execute.h"
+
+#include <cmath>
+#include <cstddef>
 #include <iostream>
 #include <string_view>
 
 #include <boost/algorithm/string.hpp>
 #include <gdal_priv.h>
 
-#include "alg_bond.h"
 #include "algorithm_parameters.h"
 #include "coh_tiles_generator.h"
 #include "coherence_calc.h"
@@ -36,17 +39,19 @@ constexpr std::string_view PARAMETER_ID_RG_WINDOW{"rg_window"};
 constexpr std::string_view PARAMETER_ID_AZ_WINDOW{"az_window"};
 constexpr std::string_view PARAMETER_ID_ORBIT_DEGREE{"orbit_degree"};
 constexpr std::string_view PARAMETER_FETCH_TRANSFORM{"fetch_geo_transform"};
+constexpr std::string_view PARAMETER_PER_PROCESS_GPU_MEMORY_FRACTION{"per_process_gpu_memory_fraction"};
+constexpr std::string_view PARAMETER_INPUT_BAND_MAP{"in_band_map"};
+constexpr size_t NUMBER_OF_INPUT_BANDS{4};
 }  // namespace
 
 namespace alus {
-class CoherenceExecuter final : public AlgBond {
-public:
-    CoherenceExecuter() { std::cout << __FUNCTION__ << std::endl; };
 
-    [[nodiscard]] int Execute() override {
+    [[nodiscard]] int CoherenceExecuter::Execute() {
         PrintProcessingParameters();
 
-        auto const FILE_NAME_IA = aux_location_ + "/tie_point_grids/incident_angle.img";
+        const auto dimap_dim_file = aux_location_.at(0);
+        const auto dimap_data_folder = dimap_dim_file.substr(0, dimap_dim_file.length() - 4) + ".data";  // Strip ".dim"
+        auto const FILE_NAME_IA = dimap_data_folder + "/tie_point_grids/incident_angle.img";
         std::vector<int> band_map_ia{1};
         int band_count_ia = 1;
         alus::GdalTileReader ia_data_reader{FILE_NAME_IA, band_map_ia, band_count_ia, false};
@@ -54,27 +59,24 @@ public:
         alus::Tile incidence_angle_data_set{ia_data_reader.GetBandXSize() - 1, ia_data_reader.GetBandYSize() - 1,
                                             ia_data_reader.GetBandXMin(), ia_data_reader.GetBandYMin()};
         ia_data_reader.ReadTile(incidence_angle_data_set);
-        const auto metadata_file = aux_location_.substr(0, aux_location_.length() - 5);  // Strip ".data"
-        alus::snapengine::PugixmlMetaDataReader xml_reader{metadata_file + ".dim"};
+        alus::snapengine::PugixmlMetaDataReader xml_reader{dimap_dim_file};
         auto master_root = xml_reader.Read(alus::snapengine::AbstractMetadata::ABSTRACT_METADATA_ROOT);
         auto slave_root = xml_reader.Read(alus::snapengine::AbstractMetadata::SLAVE_METADATA_ROOT)->GetElements().at(0);
 
         alus::MetaData meta_master{&ia_data_reader, master_root, orbit_degree_};
         alus::MetaData meta_slave{&ia_data_reader, slave_root, orbit_degree_};
 
-        // todo:check if bandmap works correctly (e.g if input has 8 bands and we use 1,2,5,6)
         // todo:need some better thought through logic to map inputs from gdal
-        std::vector<int> band_map{1, 2, 3, 4};
         std::vector<int> band_map_out{1};
-        // might want to take count from coherence?
-        int band_count_in = 4;
         int band_count_out = 1;
 
         std::unique_ptr<GdalTileReader> coh_data_reader{};
-        if (input_dataset_ != nullptr) {
-            coh_data_reader = std::make_unique<GdalTileReader>(input_dataset_, band_map, band_count_in, fetch_transform_);
+        if (input_dataset_.size() == 1 && input_dataset_.at(0) != nullptr) {
+            coh_data_reader =
+                std::make_unique<GdalTileReader>(input_dataset_.at(0), band_map_in_, band_map_in_.size(), fetch_transform_);
         } else {
-            coh_data_reader = std::make_unique<GdalTileReader>(input_name_, band_map, band_count_in, fetch_transform_);
+            coh_data_reader =
+                std::make_unique<GdalTileReader>(input_name_.at(0), band_map_in_, band_map_in_.size(), fetch_transform_);
         }
 
         std::unique_ptr<GdalTileWriter> coh_data_writer{};
@@ -116,6 +118,7 @@ public:
         // create session for tensorflow
         tensorflow::Scope root = tensorflow::Scope::NewRootScope();
         auto options = tensorflow::SessionOptions();
+        options.config.mutable_gpu_options()->set_per_process_gpu_memory_fraction(per_process_fpu_memory_fraction_);
         options.config.mutable_gpu_options()->set_allow_growth(true);
         tensorflow::ClientSession session(root, options);
 
@@ -129,25 +132,15 @@ public:
         return 0;
     }
 
-    void SetInputFilenames(const std::string& input_dataset, const std::string& metadata_path) override {
-        input_name_ = input_dataset;
-        aux_location_ = metadata_path;
-    }
-
-    void SetInputDataset(GDALDataset* input, const std::string& metadata_path) override {
-        input_dataset_ = input;
-        aux_location_ = metadata_path;
-    }
-
-    void SetParameters(const app::AlgorithmParameters::Table& param_values) override {
+    void CoherenceExecuter::SetParameters(const app::AlgorithmParameters::Table& param_values) {
         if (param_values.count(std::string(PARAMETER_ID_ORBIT_DEGREE))) {
-            orbit_degree_ = std::stoul(param_values.at(std::string(PARAMETER_ID_ORBIT_DEGREE)));
+            orbit_degree_ = std::stoi(param_values.at(std::string(PARAMETER_ID_ORBIT_DEGREE)));
         }
         if (param_values.count(std::string(PARAMETER_ID_AZ_WINDOW))) {
-            coherence_window_azimuth_ = std::stoul(param_values.at(std::string(PARAMETER_ID_AZ_WINDOW)));
+            coherence_window_azimuth_ = std::stoi(param_values.at(std::string(PARAMETER_ID_AZ_WINDOW)));
         }
         if (param_values.count(std::string(PARAMETER_ID_RG_WINDOW))) {
-            coherence_window_range_ = std::stoul(param_values.at(std::string(PARAMETER_ID_RG_WINDOW)));
+            coherence_window_range_ = std::stoi(param_values.at(std::string(PARAMETER_ID_RG_WINDOW)));
         }
         if (param_values.count(std::string(PARAMETER_ID_SUBTRACT_FLAT_EARTH_PHASE))) {
             const auto& value = param_values.at(std::string(PARAMETER_ID_SUBTRACT_FLAT_EARTH_PHASE));
@@ -156,10 +149,10 @@ public:
             }
         }
         if (param_values.count(std::string(PARAMETER_ID_SRP_POLYNOMIAL_DEGREE))) {
-            srp_polynomial_degree_ = std::stoul(param_values.at(std::string(PARAMETER_ID_SRP_POLYNOMIAL_DEGREE)));
+            srp_polynomial_degree_ = std::stoi(param_values.at(std::string(PARAMETER_ID_SRP_POLYNOMIAL_DEGREE)));
         }
         if (param_values.count(std::string(PARAMETER_ID_SRP_NUMBER_POINTS))) {
-            srp_number_points_ = std::stoul(param_values.at(std::string(PARAMETER_ID_SRP_NUMBER_POINTS)));
+            srp_number_points_ = std::stoi(param_values.at(std::string(PARAMETER_ID_SRP_NUMBER_POINTS)));
         }
         if (param_values.count(std::string(PARAMETER_FETCH_TRANSFORM))) {
             const auto& value = param_values.at(std::string(PARAMETER_FETCH_TRANSFORM));
@@ -167,16 +160,33 @@ public:
                 fetch_transform_ = !fetch_transform_;
             }
         }
+
+        if (const auto mem_fraction = param_values.find(std::string(PARAMETER_PER_PROCESS_GPU_MEMORY_FRACTION));
+            mem_fraction != param_values.end()) {
+            const auto value = std::stod(mem_fraction->second);
+            if (std::isless(value, 0.0) || std::isgreater(value, 1.0) || std::isnan(value)) {
+                std::cerr << PARAMETER_PER_PROCESS_GPU_MEMORY_FRACTION << " value (" << value
+                          << ") out of range [0.0...1.0]" << std::endl;
+            } else {
+                per_process_fpu_memory_fraction_ = value;
+            }
+        }
+
+        const auto band_map_in = param_values.find(std::string(PARAMETER_INPUT_BAND_MAP));
+        if (band_map_in != param_values.end()) {
+            const auto value = band_map_in->second;
+            if (value.length() != 4) {
+                std::cerr << PARAMETER_INPUT_BAND_MAP << " value (" << value
+                          << ") not in correct format - expecting 4 integers." << std::endl;
+            } else {
+                for (size_t i = 0; i < NUMBER_OF_INPUT_BANDS; i++) {
+                    band_map_in_.at(i) = boost::lexical_cast<int>(value.at(i));
+                }
+            }
+        }
     }
 
-    void SetTileSize(size_t width, size_t height) override {
-        tile_width_ = width;
-        tile_height_ = height;
-    }
-
-    void SetOutputFilename(const std::string& output_name) override { output_name_ = output_name; }
-
-    [[nodiscard]] std::string GetArgumentsHelp() const override {
+    [[nodiscard]] std::string CoherenceExecuter::GetArgumentsHelp() const {
         std::stringstream help_stream;
         help_stream << "Coherence configuration options:" << std::endl
                     << PARAMETER_ID_SRP_NUMBER_POINTS << " - unsigned integer (default:" << srp_number_points_ << ")"
@@ -191,23 +201,19 @@ public:
                     << " - azimuth window size in pixels (default:" << coherence_window_azimuth_ << ")" << std::endl
                     << PARAMETER_ID_ORBIT_DEGREE << " - unsigned integer (default:" << orbit_degree_ << ")" << std::endl
                     << PARAMETER_FETCH_TRANSFORM << " - true/false (default:" << (fetch_transform_ ? "true" : "false")
-                    << ")" << std::endl;
+                    << ")" << std::endl
+                    << PARAMETER_INPUT_BAND_MAP
+                    << " - 4 digit band map where each constitutes bands to read from. Example '1367' - to read from "
+                       "band 1, 3, 6 and 7. (default:'1234')"
+                    << std::endl
+                    << PARAMETER_PER_PROCESS_GPU_MEMORY_FRACTION
+                    << " - amount of total GPU memory to use, value between [0.0...1.0] (default:"
+                    << per_process_fpu_memory_fraction_ << ")" << std::endl;
 
         return help_stream.str();
     }
 
-    void SetOutputDriver(GDALDriver* output_driver) override {
-        output_driver_ = output_driver;
-    }
-
-    [[nodiscard]] GDALDataset* GetProcessedDataset() const override {
-        return output_dataset_;
-    }
-
-    ~CoherenceExecuter() override { std::cout << __FUNCTION__ << std::endl; };
-
-private:
-    void PrintProcessingParameters() const override {
+    void CoherenceExecuter::PrintProcessingParameters() const {
         std::cout << "Coherence processing parameters:" << std::endl
                   << PARAMETER_ID_SRP_NUMBER_POINTS << " " << srp_number_points_ << std::endl
                   << PARAMETER_ID_SRP_POLYNOMIAL_DEGREE << " " << srp_polynomial_degree_ << std::endl
@@ -216,31 +222,13 @@ private:
                   << PARAMETER_ID_RG_WINDOW << " " << coherence_window_range_ << std::endl
                   << PARAMETER_ID_AZ_WINDOW << " " << coherence_window_azimuth_ << std::endl
                   << PARAMETER_ID_ORBIT_DEGREE << " " << orbit_degree_ << std::endl
-                  << PARAMETER_FETCH_TRANSFORM << " " << (fetch_transform_ ? "true" : "false") << std::endl;
+                  << PARAMETER_FETCH_TRANSFORM << " " << (fetch_transform_ ? "true" : "false") << std::endl
+                  << PARAMETER_PER_PROCESS_GPU_MEMORY_FRACTION << " " << per_process_fpu_memory_fraction_ << std::endl
+                  << PARAMETER_INPUT_BAND_MAP << " ";
+
+        for (const auto& band : band_map_in_) {
+            std::cout << band << " ";
+        }
+        std::cout << std::endl;
     }
-
-    std::string input_name_{};
-    GDALDataset* input_dataset_{nullptr};
-    std::string output_name_{};
-    GDALDriver* output_driver_{nullptr};
-    GDALDataset* output_dataset_{nullptr};
-    std::string aux_location_{};
-    size_t tile_width_{};
-    size_t tile_height_{};
-    int srp_number_points_{501};
-    int srp_polynomial_degree_{5};
-    bool subtract_flat_earth_phase_{true};
-    int coherence_window_range_{15};
-    int coherence_window_azimuth_{3};
-    // orbit interpolation degree
-    int orbit_degree_{3};
-    bool fetch_transform_{true};
-
-};
 }  // namespace alus
-
-extern "C" {
-alus::AlgBond* CreateAlgorithm() { return new alus::CoherenceExecuter(); }
-
-void DeleteAlgorithm(alus::AlgBond* instance) { delete (alus::CoherenceExecuter*)instance; }
-}

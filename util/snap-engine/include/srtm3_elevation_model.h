@@ -45,8 +45,6 @@ private:
     size_t device_srtm3_tiles_count_;
     std::vector<Srtm3FormatComputation> srtm_format_info_;
 
-    void DeviceFree() override;
-
 public:
     Srtm3ElevationModel(std::vector<std::string> file_names);
     ~Srtm3ElevationModel();
@@ -57,6 +55,7 @@ public:
 
     void HostToDevice() override;
     void DeviceToHost() override;
+    void DeviceFree() override;
 
     static int GetTileWidthInDegrees(){
         return srtm3elevationmodel::DEGREE_RES;

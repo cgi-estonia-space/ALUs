@@ -11,47 +11,53 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
+
 #pragma once
 
-#include <cstddef>
 #include <string>
 #include <vector>
 
+#include <gdal_priv.h>
+
 #include "alg_bond.h"
-#include "algorithm_parameters.h"
-#include "earth_gravitational_model96.h"
-#include "srtm3_elevation_model.h"
 
-namespace alus::backgeocoding {
-
-class BackgeocodingBond : public AlgBond {
+namespace alus::terraincorrection {
+class TerrainCorrectionExecutor : public AlgBond {
 public:
-    BackgeocodingBond() = default;
+    TerrainCorrectionExecutor();
 
-    void SetInputFilenames([[maybe_unused]] const std::vector<std::string>& input_datasets,
-                           [[maybe_unused]] const std::vector<std::string>& metadata_paths) override;
-    void SetParameters(const app::AlgorithmParameters::Table& param_values) override;
-    void SetSrtm3Manager(snapengine::Srtm3ElevationModel* manager) override;
-    void SetEgm96Manager(const snapengine::EarthGravitationalModel96* manager) override;
-    void SetTileSize(size_t width, size_t height) override;
-    void SetOutputFilename([[maybe_unused]] const std::string& output_name) override;
     int Execute() override;
+
+    void SetInputFilenames(const std::vector<std::string>& input_datasets,
+                           const std::vector<std::string>& metadata_paths) override;
+
+    void SetInputDataset(const std::vector<GDALDataset*>& inputs,
+                         const std::vector<std::string>& metadata_paths) override;
+
+    void SetParameters(const app::AlgorithmParameters::Table& param_values) override;
+
+    void SetSrtm3Manager(snapengine::Srtm3ElevationModel* manager) override;
+
+    void SetTileSize(size_t width, size_t height) override;
+
+    void SetOutputFilename(const std::string& output_name) override;
 
     [[nodiscard]] std::string GetArgumentsHelp() const override;
 
-    ~BackgeocodingBond() override = default;
+    ~TerrainCorrectionExecutor() override = default;
 
 private:
-    std::vector<std::string> input_dataset_filenames_{};
-    std::vector<std::string> input_metadata_filenames_{};
-    std::string output_filename_{};
+    void PrintProcessingParameters() const override;
 
-    std::string master_dataset_arg_;
-    std::string master_metadata_arg_;
-
-    bool use_elevation_mask_;
+    std::vector<std::string> input_dataset_names_{};
+    std::vector<GDALDataset*> input_datasets_{};
+    std::string metadata_dimap_data_path_{};
+    std::vector<std::string> metadata_dim_files_{};
+    std::string output_file_name_{};
+    size_t tile_width_{};
+    size_t tile_height_{};
+    uint32_t avg_scene_height_{};
     snapengine::Srtm3ElevationModel* srtm3_manager_{};
-    const snapengine::EarthGravitationalModel96* egm96_manager_{};
 };
 
-}  // namespace alus::backgeocoding
+}

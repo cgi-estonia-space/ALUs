@@ -24,116 +24,156 @@
 #include "algorithm_parameters.h"
 #include "backgeocoding_controller.h"
 #include "dataset.h"
-#include "pointer_holders.h"
-#include "raster_properties.hpp"
+#include "earth_gravitational_model96.h"
+#include "srtm3_elevation_model.h"
 #include "target_dataset.h"
+
+namespace {
+constexpr std::string_view PARAMETER_MASTER_PATH{"master"};
+constexpr std::string_view PARAMETER_MASTER_METADATA{"master_metadata"};
+constexpr std::string_view PARAMETER_MASK_ELEVATION{"mask_elevation"};  // TODO: this will be used some day
+}
 
 namespace alus::backgeocoding {
 
 void BackgeocodingBond::SetParameters(const app::AlgorithmParameters::Table& param_values) {
-    int input_count = 0;
 
-    auto master_input_dataset = param_values.find(std::string(PARAMETER_MASTER_PATH));
-    if (master_input_dataset != param_values.end()) {
-        master_input_dataset_ = std::make_shared<Dataset<double>>(master_input_dataset->second);
-        input_count++;
+    if (auto master_input_dataset = param_values.find(std::string(PARAMETER_MASTER_PATH));
+        master_input_dataset != param_values.end()) {
+        master_dataset_arg_ = master_input_dataset->second;
     }
 
-    auto slave_input_dataset = param_values.find(std::string(PARAMETER_SLAVE_PATH));
-    if (slave_input_dataset != param_values.end()) {
-        slave_input_dataset_ = std::make_shared<Dataset<double>>(slave_input_dataset->second);
-        input_count++;
+    if (auto master_metadata_path = param_values.find(std::string(PARAMETER_MASTER_METADATA));
+        master_metadata_path != param_values.end()) {
+        master_metadata_arg_ = master_metadata_path->second;
     }
-
-    auto output_path = param_values.find(std::string(PARAMETER_OUTPUT_PATH));
-    if (output_path != param_values.end()) {
-        alus::TargetDatasetParams params;
-        params.filename = output_path->second;
-        params.band_count = 4;
-        params.driver = master_input_dataset_->GetGdalDataset()->GetDriver();
-        params.dimension = master_input_dataset_->GetRasterDimensions();
-        params.transform = master_input_dataset_->GetTransform();
-        params.projectionRef = master_input_dataset_->GetGdalDataset()->GetProjectionRef();
-
-        output_dataset_ = std::make_shared<TargetDataset<float>>(params);
-        outputs_set_ = true;
-    }
-
-    auto master_metadata_path = param_values.find(std::string(PARAMETER_MASTER_METADATA));
-    if (master_metadata_path != param_values.end()) {
-        master_metadata_path_ = master_metadata_path->second;
-        input_count++;
-    }
-
-    auto slave_metadata_path = param_values.find(std::string(PARAMETER_SLAVE_METADATA));
-    if (slave_metadata_path != param_values.end()) {
-        slave_metadata_path_ = slave_metadata_path->second;
-        input_count++;
-    }
-    inputs_set_ = input_count == 4;
 }
 
-void BackgeocodingBond::SetSrtm3Buffers(const PointerHolder* buffers, size_t length) {
-    srtm3_tiles_ = {const_cast<PointerHolder*>(buffers), length};
-    srtm3_set_ = true;
+void BackgeocodingBond::SetSrtm3Manager(snapengine::Srtm3ElevationModel* manager) {
+    srtm3_manager_ = manager;
 }
 
-void BackgeocodingBond::SetEgm96Buffers(const float* egm96_device_array) {
-    egm96_device_array_ = egm96_device_array;
-    egm96_set_ = true;
+void BackgeocodingBond::SetEgm96Manager(const snapengine::EarthGravitationalModel96* manager) {
+    egm96_manager_ = manager;
 }
 
 void BackgeocodingBond::SetTileSize(size_t /*width*/, size_t /*height*/) {
     std::cout << "Backgeocoding does not support custom tile sizes at the moment. Ignoring this" << std::endl;
 }
 
-void BackgeocodingBond::SetOutputFilename([[maybe_unused]] const std::string& /*output_name*/) {
-    std::cout << "Backgeocoding is ignoring the SetOutputFilename function." << std::endl;
+void BackgeocodingBond::SetOutputFilename([[maybe_unused]] const std::string& output_name) {
+    output_filename_ = output_name;
 }
 
 int BackgeocodingBond::Execute() {
-    if (inputs_set_ && outputs_set_ && srtm3_set_ && egm96_set_) {
-        controller_ = std::make_unique<BackgeocodingController>(
-            master_input_dataset_, slave_input_dataset_, output_dataset_, master_metadata_path_, slave_metadata_path_);
-        controller_->PrepareToCompute(egm96_device_array_, srtm3_tiles_);
-        controller_->DoWork();
-    } else {
-        std::string message = inputs_set_    ? "Incorrect amount of backgeocoding inputs set."
-                              : outputs_set_ ? "No backgeocoding outputs specified."
-                              : srtm3_set_   ? "Srtm3 tiles not set for backgeocoding."
-                              : egm96_set_   ? "Egm96 not set for backgeocding."
-                                             : "Backgeocoding bond arrived at an impossible error.";
-        throw std::runtime_error(message);
+    try {
+
+        if (input_dataset_filenames_.size() != 2 || input_metadata_filenames_.size() != 2) {
+            std::cerr << "Backgeocoding requires exactly 2 input datasets and 2 metadata files." << std::endl;
+            return 3;
+        }
+
+        if (srtm3_manager_ == nullptr) {
+            std::cerr << "SRTM3 manager not set for backgeocoding." << std::endl;
+            return 3;
+        }
+
+        if (egm96_manager_ == nullptr) {
+            std::cerr << "EGM96 manager not set for backgeocoding." << std::endl;
+            return 3;
+        }
+
+        if (master_dataset_arg_.empty()) {
+            std::cerr << "Master dataset argument is empty." << std::endl;
+            return 3;
+        }
+
+        std::string master_input_dataset_filename{};
+        std::string slave_input_dataset_filename{};
+        for (const auto& ds_name : input_dataset_filenames_) {
+            if (ds_name.find(master_dataset_arg_, 0) != std::string::npos) {
+                master_input_dataset_filename = ds_name;
+            } else {
+                slave_input_dataset_filename = ds_name;
+            }
+        }
+
+        if (master_input_dataset_filename.empty()) {
+            std::cerr << "Cannot determine master dataset path (" << master_dataset_arg_ << " is missing in inputs)."
+                      << std::endl;
+            return 3;
+        }
+
+        if (master_metadata_arg_.empty()) {
+            std::cerr << "Master metadata argument is empty." << std::endl;
+            return 3;
+        }
+
+        std::string master_input_metadata_filename{};
+        std::string slave_input_metadata_filename{};
+        for (const auto& dim_name : input_metadata_filenames_) {
+            if (dim_name.find(master_metadata_arg_, 0) != std::string::npos) {
+                master_input_metadata_filename = dim_name;
+            } else {
+                slave_input_metadata_filename = dim_name;
+            }
+        }
+
+        if (master_input_metadata_filename.empty()) {
+            std::cerr << "Cannot determine master metadata path (" << master_metadata_arg_ << " is missing in inputs)."
+                      << std::endl;
+            return 3;
+        }
+
+        auto master_input_dataset = std::make_shared<Dataset<double>>(master_input_dataset_filename);
+        auto slave_input_dataset = std::make_shared<Dataset<double>>(slave_input_dataset_filename);
+        alus::TargetDatasetParams params;
+        params.filename = output_filename_;
+        params.band_count = 4;
+        params.driver = master_input_dataset->GetGdalDataset()->GetDriver();
+        params.dimension = master_input_dataset->GetRasterDimensions();
+        params.transform = master_input_dataset->GetTransform();
+        params.projectionRef = master_input_dataset->GetGdalDataset()->GetProjectionRef();
+
+        auto output_dataset = std::make_shared<TargetDataset<float>>(params);
+
+        srtm3_manager_->HostToDevice();
+        auto controller =
+            std::make_unique<BackgeocodingController>(master_input_dataset, slave_input_dataset, output_dataset,
+                                                      master_input_metadata_filename, slave_input_metadata_filename);
+        controller->PrepareToCompute(
+            egm96_manager_->GetDeviceValues(),
+            {srtm3_manager_->GetSrtmBuffersInfo(), srtm3_manager_->GetDeviceSrtm3TilesCount()});
+        controller->DoWork();
+
+        srtm3_manager_->DeviceFree();
+    } catch (const std::exception& e) {
+        std::cerr << "Exception caught while running Backgeocoding - " << e.what() << std::endl;
+        return 1;
+    } catch (...) {
+        std::cerr << "Unknown exception caught while running Backgeocoding" << std::endl;
+        return 2;
     }
 
     return 0;
 }
 
-void BackgeocodingBond::SetInputFilenames([[maybe_unused]] const std::string& input_dataset,
-                                          [[maybe_unused]] const std::string& metadata_path) {
-    std::cout << "Backgeocoding will be ignoring the SetInputs function." << std::endl;
+void BackgeocodingBond::SetInputFilenames([[maybe_unused]] const std::vector<std::string>& input_datasets,
+                                          [[maybe_unused]] const std::vector<std::string>& metadata_paths) {
+    input_dataset_filenames_ = input_datasets;
+    input_metadata_filenames_ = metadata_paths;
 }
 
 [[nodiscard]] std::string BackgeocodingBond::GetArgumentsHelp() const {
     boost::program_options::options_description options("Backgeocoding argument list");
-    options.add_options()(std::string(PARAMETER_MASTER_PATH).c_str(), "Master tif file.")(
-        std::string(PARAMETER_SLAVE_PATH).c_str(), "Slave tif file")(std::string(PARAMETER_MASTER_METADATA).c_str(),
-                                                                     "Master metadata file(.dim)")(
-        std::string(PARAMETER_SLAVE_METADATA).c_str(), "Slave metadata file(.dim)")(
-        std::string(PARAMETER_OUTPUT_PATH).c_str(), "End product file name.")(
-        std::string(PARAMETER_MASK_ELEVATION).c_str(), " Use of elevation mask 1 or 0. (Currently not implemented)");
+    options.add_options()(std::string(PARAMETER_MASTER_PATH).c_str(), "Master dataset filename/dataset ID.")(
+        std::string(PARAMETER_MASTER_METADATA).c_str(),
+        "Master metadata file ID (.dim)")(std::string(PARAMETER_MASK_ELEVATION).c_str(),
+                                          "Use of elevation mask 1 or 0. (Currently not implemented)");
 
     std::stringstream result;
     result << options;
     return boost::algorithm::replace_all_copy(result.str(), "--", "");
 }
 
-BackgeocodingBond::~BackgeocodingBond() = default;
-
 }  // namespace alus::backgeocoding
-
-extern "C" {
-alus::AlgBond* CreateAlgorithm() { return new alus::backgeocoding::BackgeocodingBond(); }
-
-void DeleteAlgorithm(alus::AlgBond* instance) { delete (alus::backgeocoding::BackgeocodingBond*)instance; }
-}

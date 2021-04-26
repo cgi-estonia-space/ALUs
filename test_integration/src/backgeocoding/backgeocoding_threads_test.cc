@@ -65,7 +65,10 @@ TEST(DISABLED_backgeocoding, ThreadTest) {
     alus::backgeocoding::BackgeocodingController controller(master_input_dataset, slave_input_dataset, output_dataset,
                                                             "/home/erik/snapDebusTests/georgTestMaster_Orb.dim",
                                                             "/home/erik/snapDebusTests/georgTestSlave_Orb.dim");
-    controller.PrepareToCompute(dem_assistant->GetEgm96ValuesOnGpu(), {dem_assistant->GetSrtm3ValuesOnGpu(), dem_assistant->GetSrtm3TilesCount()});
+    dem_assistant->GetSrtm3Manager()->HostToDevice();
+    controller.PrepareToCompute(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
+                                {dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo(),
+                                 dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()});
     controller.DoWork();
 }
 

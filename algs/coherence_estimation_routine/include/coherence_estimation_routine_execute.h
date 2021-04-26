@@ -19,7 +19,9 @@
 
 #include "alg_bond.h"
 #include "algorithm_parameters.h"
+#include "earth_gravitational_model96.h"
 #include "pointer_holders.h"
+#include "srtm3_elevation_model.h"
 
 namespace alus {
 
@@ -27,9 +29,11 @@ class CoherenceEstimationRoutineExecute final : public AlgBond {
 public:
     CoherenceEstimationRoutineExecute() = default;
 
-    void SetInputFilenames(const std::string& input_dataset, const std::string& metadata_path) override;
+    void SetInputFilenames(const std::vector<std::string>& input_datasets,
+                           const std::vector<std::string>& metadata_paths) override;
     void SetParameters(const app::AlgorithmParameters::Table& param_values) override;
-    void SetSrtm3Buffers(const PointerHolder* buffers, size_t length) override;
+    void SetSrtm3Manager(snapengine::Srtm3ElevationModel* manager) override;
+    void SetEgm96Manager(const snapengine::EarthGravitationalModel96* manager) override;
     void SetTileSize(size_t width, size_t height) override;
     void SetOutputFilename(const std::string& output_name) override;
     int Execute() override;
@@ -49,19 +53,20 @@ private:
     std::string deburst_lib_{"deburst"};
     std::string range_doppler_terrain_correction_lib_{"terrain-correction"};
 
-    std::string input_dataset_{};
-    std::string metadata_path_{};
-    const PointerHolder* srtm3_buffers_{};
-    size_t srtm3_buffers_length_{};
+    std::vector<std::string> input_datasets_{};
+    std::vector<std::string> metadata_paths_{};
+    snapengine::Srtm3ElevationModel* srtm3_manager_{};
+    const snapengine::EarthGravitationalModel96* egm96_manager_{};
     size_t tile_width_{};
     size_t tile_height_{};
     std::string output_name_{};
     app::AlgorithmParameters::Table alg_params_;
+    std::string coherence_terrain_correction_metadata_param_{};
 };
 }
 
 extern "C" {
-alus::AlgBond* CreateAlgorithm() { return new alus::CoherenceEstimationRoutineExecute(); }
+alus::AlgBond* CreateAlgorithm() { return new alus::CoherenceEstimationRoutineExecute(); } //NOSONAR
 
-void DeleteAlgorithm(alus::AlgBond* instance) { delete (alus::CoherenceEstimationRoutineExecute*)instance; }
+void DeleteAlgorithm(alus::AlgBond* instance) { delete (alus::CoherenceEstimationRoutineExecute*)instance; } //NOSONAR
 }
