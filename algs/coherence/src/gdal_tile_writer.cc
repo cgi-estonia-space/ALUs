@@ -11,55 +11,59 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
+#include <cstddef>
+#include <stdexcept>
+#include <string_view>
+#include <vector>
+
 #include "gdal_tile_writer.h"
 
 namespace alus {
 
-GdalTileWriter::GdalTileWriter(const std::string_view file_name, std::vector<int> band_map, int& band_count,
-                               const int& band_x_size, const int& band_y_size, int band_x_min, int band_y_min,
-                               std::vector<double> affine_geo_transform_out, const std::string_view data_projection_out)
-    : IDataTileWriter(file_name, band_map, band_count, band_x_size, band_y_size, band_x_min, band_y_min,
-                      affine_geo_transform_out, data_projection_out), do_close_dataset_{true} {
-    const auto po_driver = GetGDALDriverManager()->GetDriverByName("GTiff");
+GdalTileWriter::GdalTileWriter(std::string_view file_name, const BandParams& band_params,
+                               const std::vector<double>& affine_geo_transform_out,
+                               std::string_view data_projection_out)
+    : IDataTileWriter(file_name, band_params, affine_geo_transform_out, data_projection_out), do_close_dataset_{true} {
+    auto* const po_driver = GetGDALDriverManager()->GetDriverByName("GTiff");
     CHECK_GDAL_PTR(po_driver);
-    InitializeOutputDataset(po_driver, std::move(affine_geo_transform_out), data_projection_out);
+    InitializeOutputDataset(po_driver, GetGeoTransform(), GetDataProjection());
 }
 
-GdalTileWriter::GdalTileWriter(GDALDriver* output_driver, std::vector<int> band_map, int& band_count,
-                               const int& band_x_size, const int& band_y_size, int band_x_min, int band_y_min,
-                               std::vector<double> affine_geo_transform_out, std::string_view data_projection_out)
-    : IDataTileWriter("", band_map, band_count, band_x_size, band_y_size, band_x_min, band_y_min,
-                      affine_geo_transform_out, data_projection_out), do_close_dataset_{false} {
-
+GdalTileWriter::GdalTileWriter(GDALDriver* output_driver, const BandParams& band_params,
+                               const std::vector<double>& affine_geo_transform_out,
+                               std::string_view data_projection_out)
+    : IDataTileWriter("", band_params, affine_geo_transform_out, data_projection_out), do_close_dataset_{false} {
     CHECK_GDAL_PTR(output_driver);
-    InitializeOutputDataset(output_driver, std::move(affine_geo_transform_out), data_projection_out);
+    InitializeOutputDataset(output_driver, GetGeoTransform(), GetDataProjection());
 }
 
-// todo: IDataTileOut
-void GdalTileWriter::WriteTile(const Tile& tile, void* tile_data) {
-    CHECK_GDAL_ERROR(output_dataset_->RasterIO(
-        GF_Write, tile.GetXMin(), tile.GetYMin(), tile.GetXSize(), tile.GetYSize(), tile_data, tile.GetXSize(),
-        tile.GetYSize(), GDALDataType::GDT_Float32, this->band_count_, this->band_map_.data(), 0, 0, 0));
+void GdalTileWriter::WriteTile(const Tile& tile, float* tile_data, std::size_t tile_data_size) {
+    if (tile_data_size > static_cast<std::size_t>(GetBandCount() * tile.GetXSize() * tile.GetYSize())) {
+        throw std::runtime_error("tile data buffer overflow");
+    }
+    CHECK_GDAL_ERROR(output_dataset_->RasterIO(GF_Write, tile.GetXMin(), tile.GetYMin(), tile.GetXSize(),
+                                               tile.GetYSize(), tile_data, tile.GetXSize(), tile.GetYSize(),
+                                               GDALDataType::GDT_Float32, GetBandCount(), GetBandMap(), 0, 0, 0));
 }
 
 void GdalTileWriter::CloseDataSet() {
-    if (this->output_dataset_ && do_close_dataset_) {
-        GDALClose(this->output_dataset_);
-        this->output_dataset_ = nullptr;
+    if (output_dataset_ && do_close_dataset_) {
+        GDALClose(output_dataset_);
+        output_dataset_ = nullptr;
     }
 }
 
-void GdalTileWriter::InitializeOutputDataset(GDALDriver* output_driver, std::vector<double> affine_geo_transform_out,
-                                             const std::string_view data_projection_out) {
-    this->output_dataset_ =
-        output_driver->Create(file_name_.data(), band_x_size_, band_y_size_, 1, GDT_Float32, nullptr);
-    CHECK_GDAL_PTR(this->output_dataset_);
-    if (!affine_geo_transform_.empty()) {
+void GdalTileWriter::InitializeOutputDataset(GDALDriver* output_driver, std::vector<double>& affine_geo_transform_out,
+                                             std::string_view data_projection_out) {
+    output_dataset_ =
+        output_driver->Create(GetFileName().data(), GetBandXSize(), GetBandYSize(), 1, GDT_Float32, nullptr);
+    CHECK_GDAL_PTR(output_dataset_);
+    if (!GetGeoTransform().empty()) {
         CHECK_GDAL_ERROR(output_dataset_->SetGeoTransform(affine_geo_transform_out.data()));
     }
     CHECK_GDAL_ERROR(output_dataset_->SetProjection(data_projection_out.data()));
 }
 
-GdalTileWriter::~GdalTileWriter() { this->CloseDataSet(); }
+GdalTileWriter::~GdalTileWriter() { CloseDataSet(); }
 
 }  // namespace alus

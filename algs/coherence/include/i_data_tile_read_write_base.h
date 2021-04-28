@@ -13,44 +13,50 @@
  */
 #pragma once
 
+#include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
+#include "band_params.h"
 #include "tile.h"
 
 namespace alus {
 
 class IDataTileReadWriteBase {
-protected:
-    std::string_view file_name_;
-    std::vector<int> band_map_;
-    int band_count_{};
-    // following fields get values from data
-    int band_x_size_{};
-    int band_y_size_{};
-    int band_x_min_{};
-    int band_y_min_{};
-    std::string_view data_projection_{};
+private:
+    std::string file_name_;
+    BandParams band_params_;
+    std::string data_projection_;
     std::vector<double> affine_geo_transform_;
 
+public:
+    IDataTileReadWriteBase(std::string_view file_name, const std::vector<int>& band_map, int band_count)
+        : file_name_(file_name), band_params_{band_map, band_count} {}
+    IDataTileReadWriteBase(std::string_view file_name, BandParams band_params, std::string_view data_projection,
+                           std::vector<double> affine_geo_transform)
+        : file_name_{file_name},
+          band_params_(std::move(band_params)),
+          data_projection_{data_projection},
+          affine_geo_transform_{std::move(affine_geo_transform)} {};
     IDataTileReadWriteBase(const IDataTileReadWriteBase&) = delete;
     IDataTileReadWriteBase& operator=(const IDataTileReadWriteBase&) = delete;
-
-public:
-    IDataTileReadWriteBase(const std::string_view& file_name, const std::vector<int>& band_map, int band_count)
-        : file_name_(file_name), band_map_(band_map), band_count_(band_count) {}
-    IDataTileReadWriteBase(const std::string_view& file_name, const std::vector<int>& band_map, int band_count,
-                           int band_x_size, int band_y_size, int band_x_min, int band_y_min,
-                           const std::string_view& data_projection, const std::vector<double>& affine_geo_transform)
-        : file_name_{file_name},
-          band_map_{band_map},
-          band_count_{band_count},
-          band_x_size_{band_x_size},
-          band_y_size_{band_y_size},
-          band_x_min_{band_x_min},
-          band_y_min_{band_y_min},
-          data_projection_{data_projection},
-          affine_geo_transform_{affine_geo_transform} {};
+    [[nodiscard]] int GetBandXSize() const { return band_params_.band_x_size; }
+    [[nodiscard]] int GetBandYSize() const { return band_params_.band_y_size; }
+    [[nodiscard]] int GetBandXMin() const { return band_params_.band_x_min; }
+    [[nodiscard]] int GetBandYMin() const { return band_params_.band_y_min; }
+    [[nodiscard]] std::string GetDataProjection() const { return data_projection_; }
+    [[nodiscard]] const std::vector<double>& GetGeoTransform() const { return affine_geo_transform_; }
+    [[nodiscard]] std::vector<double>& GetGeoTransform() { return affine_geo_transform_; }
+    [[nodiscard]] int GetBandCount() const { return band_params_.band_count; }
+    [[nodiscard]] const std::vector<int>& GetBandMap() const { return band_params_.band_map; }
+    [[nodiscard]] int* GetBandMap() { return band_params_.band_map.data(); }
+    [[nodiscard]] const std::string& GetFileName() const { return file_name_; }
+    void SetBandMap(const std::vector<int>& band_map) { band_params_.band_map = band_map; }
+    void SetBandCount(int band_count) { band_params_.band_count = band_count; }
+    void SetBandXSize(int band_x_size) { band_params_.band_x_size = band_x_size; }
+    void SetBandYSize(int band_y_size) { band_params_.band_y_size = band_y_size; }
+    void SetDataProjection(std::string_view data_projection) { data_projection_ = data_projection; }
 };
 
 }  // namespace alus

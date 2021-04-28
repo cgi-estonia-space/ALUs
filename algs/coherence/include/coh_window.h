@@ -13,25 +13,11 @@
  */
 #pragma once
 
-#include <string_view>
-#include <vector>
-
-#include "i_data_tile_read_write_base.h"
-#include "tile.h"
-
-/**
- * reads I tiles from tiles
- */
 namespace alus {
-class IDataTileReader : public IDataTileReadWriteBase {
-public:
-    IDataTileReader() = delete;
-    // todo:check if this works like expected
-    IDataTileReader(std::string_view file_name, const std::vector<int>& band_map, int band_count)
-        : IDataTileReadWriteBase(file_name, band_map, band_count) {}
-    virtual ~IDataTileReader() = default;
-    virtual void ReadTile(const Tile& tile) = 0;
-    [[nodiscard]] virtual const std::vector<float>& GetData() const = 0;
-    [[nodiscard]] virtual double GetValueAtXy(int x, int y) const = 0;
+
+struct CohWindow {
+    int rg;
+    int az;
 };
+
 }  // namespace alus
