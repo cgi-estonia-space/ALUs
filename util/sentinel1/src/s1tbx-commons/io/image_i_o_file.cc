@@ -97,7 +97,7 @@ std::shared_ptr<snapengine::custom::IImageReader> ImageIOFile::GetReader() {
 }
 void ImageIOFile::InitReader() {
     if (reader_) {
-        reader_->SetInputPath(band_file_path_);
+        reader_->Open(band_file_path_, false, false);
     }
 }
 

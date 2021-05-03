@@ -18,6 +18,8 @@
  */
 #pragma once
 
+#include "snap-core/util/geo_utils.h"
+
 namespace alus {
 namespace snapengine {
 class Constants {

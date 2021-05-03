@@ -2,8 +2,9 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include "metadata_attribute.h"
 #include "parse_exception.h"
+#include "snap-core/datamodel/metadata_attribute.h"
+#include "snap-core/util/string_utils.h"
 
 namespace alus {
 namespace snapengine {
@@ -15,6 +16,7 @@ bool AbstractMetadata::GetAttributeBoolean(const std::shared_ptr<MetadataElement
     }
     return val != 0;
 }
+
 double AbstractMetadata::GetAttributeDouble(const std::shared_ptr<MetadataElement>& element, std::string_view tag) {
     double val = element->GetAttributeDouble(tag);
     if (val == NO_METADATA) {
@@ -22,6 +24,7 @@ double AbstractMetadata::GetAttributeDouble(const std::shared_ptr<MetadataElemen
     }
     return val;
 }
+
 std::shared_ptr<Utc> AbstractMetadata::ParseUtc(std::string_view time_str) {
     try {
         if (time_str == nullptr) return NO_METADATA_UTC;
@@ -42,6 +45,7 @@ std::shared_ptr<Utc> AbstractMetadata::ParseUtc(std::string_view time_str) {
     }
     return NO_METADATA_UTC;
 }
+
 std::vector<OrbitStateVector> AbstractMetadata::GetOrbitStateVectors(const std::shared_ptr<MetadataElement>& abs_root) {
     auto elem_root = abs_root->GetElement(snapengine::AbstractMetadata::ORBIT_STATE_VECTORS);
     if (elem_root == nullptr) {
@@ -63,6 +67,7 @@ std::vector<OrbitStateVector> AbstractMetadata::GetOrbitStateVectors(const std::
     }
     return orbit_state_vectors;
 }
+
 std::shared_ptr<MetadataElement> AbstractMetadata::GetAbstractedMetadata(
     const std::shared_ptr<Product>& source_product) {
     auto root = source_product->GetMetadataRoot();
@@ -84,6 +89,7 @@ std::shared_ptr<MetadataElement> AbstractMetadata::GetAbstractedMetadata(
 
     return abstracted_metadata;
 }
+
 std::shared_ptr<MetadataAttribute> AbstractMetadata::AddAbstractedAttribute(
     const std::shared_ptr<MetadataElement>& dest, std::string_view tag, int data_type, std::string_view unit,
     std::string_view desc) {
@@ -111,6 +117,7 @@ void AbstractMetadata::SetAttribute(const std::shared_ptr<MetadataElement>& dest
         attrib->GetData()->SetElemInt(value);
     }
 }
+
 void AbstractMetadata::SetAttribute(const std::shared_ptr<MetadataElement>& dest, std::string_view tag,
                                     std::optional<std::string> value) {
     if (dest == nullptr) {
@@ -160,6 +167,7 @@ void AbstractMetadata::SetAttribute(const std::shared_ptr<MetadataElement>& dest
         }
     }
 }
+
 std::shared_ptr<MetadataElement> AbstractMetadata::AddAbstractedMetadataHeader(
     const std::shared_ptr<MetadataElement>& root) {
     std::shared_ptr<MetadataElement> abs_root;
@@ -299,6 +307,7 @@ std::shared_ptr<MetadataElement> AbstractMetadata::AddAbstractedMetadataHeader(
 
     return abs_root;
 }
+
 void AbstractMetadata::SetOrbitStateVectors(const std::shared_ptr<MetadataElement>& abs_root,
                                             const std::vector<OrbitStateVector>& orbit_state_vectors) {
     std::shared_ptr<MetadataElement> elem_root = abs_root->GetElement(ORBIT_STATE_VECTORS);
@@ -324,6 +333,7 @@ void AbstractMetadata::SetOrbitStateVectors(const std::shared_ptr<MetadataElemen
         sub_elem_root->SetAttributeDouble(ORBIT_VECTOR_Z_VEL, vector.z_vel_);
     }
 }
+
 void AbstractMetadata::DefaultToProduct(const std::shared_ptr<MetadataElement>& abstracted_metadata,
                                         const std::shared_ptr<Product>& product) {
     SetAttribute(abstracted_metadata, PRODUCT, product->GetName());
@@ -344,6 +354,7 @@ void AbstractMetadata::DefaultToProduct(const std::shared_ptr<MetadataElement>& 
     //                product->GetProductReader().getReaderPlugIn().getFormatNames()[0]);
     //        }
 }
+
 void AbstractMetadata::PatchMissingMetadata(const std::shared_ptr<MetadataElement>& abstracted_metadata) {
     std::string version = abstracted_metadata->GetAttributeString(ABSTRACTED_METADATA_VERSION, "");
     if (version == METADATA_VERSION) {
@@ -360,12 +371,14 @@ void AbstractMetadata::PatchMissingMetadata(const std::shared_ptr<MetadataElemen
         }
     }
 }
+
 void AbstractMetadata::MigrateToCurrentVersion(const std::shared_ptr<MetadataElement>& abstracted_metadata) {
     // check if version has changed
     std::string version = abstracted_metadata->GetAttributeString(ABSTRACTED_METADATA_VERSION, "");
     if (version == METADATA_VERSION) return;
     // todo
 }
+
 std::shared_ptr<Utc> AbstractMetadata::ParseUtc(std::string_view time_str, std::string_view date_format_pattern) {
     try {
         int dot_pos = time_str.find_last_of('.');
@@ -385,6 +398,7 @@ std::shared_ptr<Utc> AbstractMetadata::ParseUtc(std::string_view time_str, std::
         return NO_METADATA_UTC;
     }
 }
+
 std::shared_ptr<MetadataElement> AbstractMetadata::AddOriginalProductMetadata(
     const std::shared_ptr<MetadataElement>& root) {
     std::shared_ptr<MetadataElement> orig_metadata = root->GetElement(ORIGINAL_PRODUCT_METADATA);
@@ -396,14 +410,15 @@ std::shared_ptr<MetadataElement> AbstractMetadata::AddOriginalProductMetadata(
     return orig_metadata;
 }
 
-std::shared_ptr<MetadataElement> AbstractMetadata::GetOriginalProductMetadata(std::shared_ptr<Product> product) {
-    std::shared_ptr<MetadataElement> root = product->GetMetadataRoot();
+std::shared_ptr<MetadataElement> AbstractMetadata::GetOriginalProductMetadata(const std::shared_ptr<Product>& p) {
+    std::shared_ptr<MetadataElement> root = p->GetMetadataRoot();
     std::shared_ptr<MetadataElement> orig_metadata = root->GetElement(ORIGINAL_PRODUCT_METADATA);
     if (orig_metadata == nullptr) {
         return root;
     }
     return orig_metadata;
 }
+
 void AbstractMetadata::AddBandToBandMap(const std::shared_ptr<MetadataElement>& band_abs_root, std::string_view name) {
     std::string band_names = band_abs_root->GetAttributeString(BAND_NAMES);
     if (band_names == NO_METADATA_STRING) {
@@ -446,6 +461,23 @@ std::shared_ptr<MetadataElement> AbstractMetadata::AddBandAbstractedMetadata(
     AddAbstractedAttribute(band_root, CALIBRATION_FACTOR, ProductData::TYPE_FLOAT64, "", "Calibration constant");
 
     return band_root;
+}
+
+std::shared_ptr<MetadataElement> AbstractMetadata::GetBandAbsMetadata(
+    const std::shared_ptr<snapengine::MetadataElement>& abs_root, const std::shared_ptr<snapengine::Band>& band) {
+    std::vector<std::shared_ptr<snapengine::MetadataElement>> children = abs_root->GetElements();
+    for (const auto& child : children) {
+        if (boost::algorithm::starts_with(child->GetName(), BAND_PREFIX)) {
+            std::vector<std::string> band_name_array =
+                snapengine::StringUtils::StringToVectorByDelimiter(child->GetAttributeString(BAND_NAMES), " ");
+            for (const auto& band_name : band_name_array) {
+                if (band_name == band->GetName()) {
+                    return child;
+                }
+            }
+        }
+    }
+    return nullptr;
 }
 
 }  // namespace snapengine

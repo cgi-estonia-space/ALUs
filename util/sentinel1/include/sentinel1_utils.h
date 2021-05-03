@@ -25,10 +25,11 @@
 #include "comparators.h"
 #include "i_meta_data_reader.h"
 #include "metadata_attribute.h"
-#include "metadata_element.h"
 #include "orbit_state_vectors.h"
 #include "product_data_utc.h"
 #include "shapes.h"
+#include "snap-core/datamodel/metadata_element.h"
+#include "snap-core/datamodel/product.h"
 #include "subswath_info.h"
 
 #include "sentinel1_utils.cuh"
@@ -54,9 +55,8 @@ struct DCPolynomial {
  * This class refers to Sentinel1Utils class from s1tbx module.
  */
 class Sentinel1Utils : public cuda::CudaFriendlyObject {
-
-
 public:
+    //    todo: why public?
     std::vector<std::unique_ptr<SubSwathInfo>> subswath_;
 
     double first_line_utc_{0.0};
@@ -75,9 +75,10 @@ public:
     DeviceSentinel1Utils* device_sentinel_1_utils_{nullptr};
 
     explicit Sentinel1Utils(std::string_view metadata_file_name);
-    ~Sentinel1Utils();
-    Sentinel1Utils(const Sentinel1Utils&) = delete; // class does not support copying(and moving)
+    explicit Sentinel1Utils(const std::shared_ptr<snapengine::Product>& product);
+    Sentinel1Utils(const Sentinel1Utils&) = delete;  // class does not support copying(and moving)
     Sentinel1Utils& operator=(const Sentinel1Utils&) = delete;
+    ~Sentinel1Utils();
 
     double* ComputeDerampDemodPhase(int subswath_index, int s_burst_index, Rectangle rectangle);
     Sentinel1Index ComputeIndex(double azimuth_time, double slant_range_time, SubSwathInfo* subswath);
@@ -94,6 +95,8 @@ public:
 
     double GetLatitude(double azimuth_time, double slant_range_time, SubSwathInfo* subswath);
     double GetLongitude(double azimuth_time, double slant_range_time, SubSwathInfo* subswath);
+    double GetSlantRangeTime(double azimuth_time, double slant_range_time, SubSwathInfo* subswath);
+    double GetIncidenceAngle(double azimuth_time, double slant_range_time, SubSwathInfo* subswath);
 
     alus::s1tbx::OrbitStateVectors* GetOrbitStateVectors() {
         if (is_orbit_available_) {
@@ -120,15 +123,45 @@ public:
         const std::shared_ptr<snapengine::MetadataElement>& calibration_vector_list_element, bool output_sigma_band,
         bool output_beta_band, bool output_gamma_band, bool output_dn_band);
 
-private:
-    int num_of_sub_swath_;
+    /**
+     * Get source product subSwath names.
+     *
+     * @return The subSwath name array.
+     */
+    const std::vector<std::string>& GetSubSwathNames() const;
 
+    /**
+     * Get source product polarizations.
+     *
+     * @return The polarization array.
+     */
+    const std::vector<std::string>& GetPolarizations() const;
+    const std::vector<std::unique_ptr<SubSwathInfo>>& GetSubSwath() const;
+    int GetNumOfSubSwath() const;
+
+    std::vector<float> GetCalibrationVector(int sub_swath_index, std::string_view polarization, int vector_index,
+                                            std::string_view vector_name);
+
+    std::vector<int> GetCalibrationPixel(int sub_swath_index, std::string_view polarization, int vector_index);
+
+    static int AddToArray(std::vector<int>& array, int index, std::string_view csv_string, std::string_view delim);
+
+    static int AddToArray(std::vector<float>& array, int index, std::string_view csv_string, std::string_view delim);
+
+private:
+    std::shared_ptr<snapengine::Product> source_product_;
+    std::shared_ptr<snapengine::MetadataElement> abs_root_;
+    std::shared_ptr<snapengine::MetadataElement> orig_prod_root_;
+    int num_of_sub_swath_;
+    std::string acquisition_mode_;
+    std::vector<std::string> polarizations_;
+    std::vector<std::string> sub_swath_names_;
     bool is_doppler_centroid_available_ = false;
     bool is_range_depend_doppler_rate_available_ = false;
     bool is_orbit_available_ = false;
 
     std::unique_ptr<s1tbx::OrbitStateVectors> orbit_;
-    std::unique_ptr<snapengine::IMetaDataReader> metadata_reader_;
+    std::shared_ptr<snapengine::IMetaDataReader> metadata_reader_;
 
     std::vector<DCPolynomial> GetDCEstimateList(std::string subswath_name);
     std::vector<DCPolynomial> ComputeDCForBurstCenters(std::vector<DCPolynomial> dc_estimate_list, int subswath_index);
@@ -139,12 +172,57 @@ private:
 
     double GetLatitudeValue(Sentinel1Index index, SubSwathInfo* subswath);
     double GetLongitudeValue(Sentinel1Index index, SubSwathInfo* subswath);
+    double GetSlantRangeTimeValue(Sentinel1Index index, SubSwathInfo* subswath);
+    double GetIncidenceAngleValue(Sentinel1Index index, SubSwathInfo* subswath);
     void FillSubswathMetaData(SubSwathInfo *subswath);
     void FillUtilsMetadata();
+    void GetMetadataRoot();
+    void GetAbstractedMetadata();
+    /**
+     * Get source product polarizations.
+     */
+    void GetProductPolarizations();
+    /**
+     * Get acquisition mode from abstracted metadata.
+     */
+    void GetProductAcquisitionMode();
 
-    [[nodiscard]] std::vector<int> GetIntVector(std::shared_ptr<snapengine::MetadataAttribute> attribute, std::string_view delimiter) const;
-    [[nodiscard]] std::vector<double> GetDoubleVector(std::shared_ptr<snapengine::MetadataAttribute> attribute,
-                                        std::string_view delimiter) const;
+    /**
+     * Get source product subSwath names.
+     */
+    void GetProductSubSwathNames();
+
+    /**
+     * Get parameters for all sub-swaths.
+     */
+    void GetSubSwathParameters();
+
+    /**
+     * Get root metadata element of given sub-swath.
+     *
+     * @param subSwathName Sub-swath name string.
+     * @return The root metadata element.
+     */
+    std::shared_ptr<snapengine::MetadataElement> GetSubSwathMetadata(std::string_view sub_swath_name) const;
+
+    /**
+     * Get sub-swath parameters and save them in SubSwathInfo object.
+     *
+     * @param subSwathMetadata The root metadata element of a given sub-swath.
+     * @param subSwath         The SubSwathInfo object.
+     */
+    static void GetSubSwathParameters(const std::shared_ptr<snapengine::MetadataElement>& sub_swath_metadata,
+                                      SubSwathInfo& sub_swath);
+
+    [[nodiscard]] std::vector<int> GetIntVector(const std::shared_ptr<snapengine::MetadataAttribute>& attribute,
+                                                std::string_view delimiter) const;
+    [[nodiscard]] std::vector<double> GetDoubleVector(const std::shared_ptr<snapengine::MetadataAttribute>& attribute,
+                                                      std::string_view delimiter) const;
+
+    std::shared_ptr<snapengine::MetadataElement> GetCalibrationVectorList(int sub_swath_index,
+                                                                          std::string_view polarization);
+
+    std::shared_ptr<snapengine::Band> GetSourceBand(std::string_view sub_swath_name, std::string_view polarization) const;
 };
 }  // namespace s1tbx
 }  // namespace alus

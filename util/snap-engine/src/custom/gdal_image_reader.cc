@@ -14,15 +14,63 @@
 #include "custom/gdal_image_reader.h"
 
 #include <cstddef>
+#include <iostream>
 #include <stdexcept>
 
 #include "gdal_util.h"
 
-namespace alus {
-namespace snapengine {
-namespace custom {
+namespace alus::snapengine::custom {
 
 GdalImageReader::GdalImageReader() { GDALAllRegister(); }
+
+void GdalImageReader::ReadSubSampledData(const custom::Rectangle& rectangle, int band_indx) {
+    // todo:    later add support for subsampled data, this will change parameters for this function
+    if (data_.size() != static_cast<std::size_t>(rectangle.width * rectangle.height)) {
+        data_.resize(rectangle.width * rectangle.height);
+    }
+    CHECK_GDAL_ERROR(dataset_->GetRasterBand(band_indx)->RasterIO(GF_Read, rectangle.x, rectangle.y, rectangle.width,
+                                                                  rectangle.height, data_.data(), rectangle.width,
+                                                                  rectangle.height, GDALDataType::GDT_Float32, 0, 0));
+}
+
+void GdalImageReader::Open(std::string_view path_to_file, bool has_transform, bool has_correct_proj) {
+    file_ = path_to_file;
+    dataset_ = static_cast<GDALDataset*>(GDALOpen(file_.c_str(), GA_ReadOnly));
+    CHECK_GDAL_PTR(dataset_);
+    InitializeDatasetProperties(dataset_, has_transform, has_correct_proj);
+}
+
+GdalImageReader::~GdalImageReader() {
+    if (dataset_) {
+        GDALClose(dataset_);
+        dataset_ = nullptr;
+    }
+}
+
+std::string GdalImageReader::GetDataProjection() const { return data_projection_; }
+std::vector<double> GdalImageReader::GetGeoTransform() const { return affine_geo_transform_; }
+
+void GdalImageReader::Close() {
+    if (dataset_) {
+        GDALClose(dataset_);
+        dataset_ = nullptr;
+    }
+}
+
+void GdalImageReader::InitializeDatasetProperties(GDALDataset* dataset, bool has_transform, bool has_correct_proj) {
+    if (has_correct_proj) {
+        data_projection_ = dataset->GetProjectionRef();
+    }
+    if (has_transform) {
+        affine_geo_transform_.resize(6);
+        const auto result = dataset->GetGeoTransform(affine_geo_transform_.data());
+        if (result != CE_None) {
+            // TODO: Use logging system to log this message.
+            std::cout << "Geo transform parameters are missing in input dataset - " << file_ << std::endl;
+            affine_geo_transform_.clear();
+        }
+    }
+}
 
 void GdalImageReader::ReadSubSampledData(const std::shared_ptr<custom::Rectangle>& rectangle,
                                          std::vector<int32_t>& data) {
@@ -36,18 +84,4 @@ void GdalImageReader::ReadSubSampledData(const std::shared_ptr<custom::Rectangle
                                         nullptr, 0, 0, 0));
 }
 
-void GdalImageReader::SetInputPath(std::string_view path_to_band_file) {
-    dataset_ = static_cast<GDALDataset*>(GDALOpen(std::string(path_to_band_file).c_str(), GA_ReadOnly));
-    CHECK_GDAL_PTR(dataset_);
-}
-
-GdalImageReader::~GdalImageReader() {
-    if (dataset_) {
-        GDALClose(dataset_);
-        dataset_ = nullptr;
-    }
-}
-
-}  // namespace custom
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine::custom

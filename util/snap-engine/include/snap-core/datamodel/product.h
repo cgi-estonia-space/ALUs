@@ -19,6 +19,7 @@
 #pragma once
 
 #include <cstdint>
+#include <iostream>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -31,6 +32,8 @@
 #include "../../../../../algs/coherence/include/i_data_tile_writer.h"
 
 #include "custom/dimension.h"
+//#include "custom/i_image_reader.h"
+//#include "custom/i_image_writer.h"
 #include "snap-core/dataio/i_product_reader.h"
 #include "snap-core/datamodel/product_node.h"
 
@@ -53,11 +56,14 @@ namespace snapengine {
 // TEMPORARY// todo: try to move behind IProductReader/IProductWriter interfaces, these are custom relics
 class IMetaDataReader;
 class IMetaDataWriter;
+namespace custom {
+class IImageReader;
+class IImageWriter;
+}  // namespace custom
 
 template <typename T>
 class ProductNodeGroup;
 class MetadataElement;
-class IProductWriter;
 class RasterDataNode;
 class FlagCoding;
 class IndexCoding;
@@ -90,7 +96,9 @@ private:
 
     // TEMPORARY//todo: this is currently placeholder for any reader interface, might want to add different abstractions
     std::shared_ptr<IDataTileReader> reader_old_;
+    std::shared_ptr<custom::IImageReader> image_reader_;
     std::shared_ptr<IDataTileWriter> writer_old_;
+    std::shared_ptr<custom::IImageWriter> image_writer_;
     std::shared_ptr<IMetaDataReader> metadata_reader_;
     std::shared_ptr<IMetaDataWriter> metadata_writer_;
 
@@ -104,7 +112,6 @@ private:
     std::shared_ptr<IProductWriter> writer_;
 
     std::shared_ptr<MetadataElement> metadata_root_;
-
     std::shared_ptr<ProductNodeGroup<std::shared_ptr<Band>>> band_group_;
     std::shared_ptr<ProductNodeGroup<std::shared_ptr<TiePointGrid>>> tie_point_grid_group_;
     //    std::shared_ptr < ProductNodeGroup<std::shared_ptr<VectorDataNode>>> vector_data_group_;
@@ -217,14 +224,20 @@ public:
     static constexpr std::string_view GEOMETRY_FEATURE_TYPE_NAME = "org.esa.snap.Geometry";
     static constexpr std::string_view PIN_GROUP_NAME = "pins";
     static constexpr std::string_view GCP_GROUP_NAME = "ground_control_points";
-
     //    // todo:probably good idea to provide single parent reader/writer which is composition of different
     //    implementations
     //    // e.g pugixml to write metadata and gdal to write geotiff etc.
     const std::shared_ptr<IDataTileReader>& GetReader() const;
+    const std::shared_ptr<custom::IImageReader>& GetImageReader() const;
+    const std::shared_ptr<custom::IImageWriter>& GetImageWriter() const;
     void SetReader(const std::shared_ptr<IDataTileReader>& reader);
+    // todo: another custom writer just to plug holes in our planning (remove if all done)
+    void SetImageReader(const std::shared_ptr<custom::IImageReader>& reader);
+
     const std::shared_ptr<IDataTileWriter>& GetWriter() const;
     void SetWriter(const std::shared_ptr<IDataTileWriter>& writer);
+    // todo: another custom writer just to plug holes in our planning (remove if all done)
+    void SetImageWriter(const std::shared_ptr<custom::IImageWriter>& writer);
 
     const std::shared_ptr<IMetaDataReader>& GetMetadataReader() const;
     void SetMetadataReader(const std::shared_ptr<IMetaDataReader>& metadata_reader);
@@ -277,7 +290,7 @@ public:
      * @see ProductReader
      */
     static std::shared_ptr<Product> CreateProduct(std::string_view name, std::string_view type,
-                                                  const std::shared_ptr<IProductReader>& reader);
+                                                   const std::shared_ptr<IProductReader>& reader);
 
     void SetModified(bool modified) override;
 
@@ -497,6 +510,7 @@ public:
      * @return the product reader, can be {@code null}
      */
     std::shared_ptr<IProductReader> GetProductReader() override { return reader_; }
+    std::shared_ptr<IProductWriter> GetProductWriter() override { return writer_; }
 
     //////////////////////////////////////////////////////////////////////////
     // Group support

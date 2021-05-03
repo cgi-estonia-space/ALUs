@@ -14,22 +14,19 @@
 #pragma once
 
 #include <memory>
+#include <vector>
+
+#include "custom/io_tile.h"
+#include "snap-gpf/i_tile.h"
 
 namespace alus {
 namespace snapengine {
 namespace custom {
-
-struct Rectangle {
-    Rectangle() = default;
-    Rectangle(int x, int y, int width, int height) : x(x), y(y), width(width), height(height) {}
-    explicit Rectangle(const std::shared_ptr<Rectangle>& rectangle)
-        : x(rectangle->x), y(rectangle->y), width(rectangle->width), height(rectangle->height) {}
-    int x;
-    int y;
-    int width;
-    int height;
+class ITileProvider {
+public:
+    [[nodiscard]] virtual std::vector<std::shared_ptr<IoTile>> GetTiles() const = 0;
+    virtual ~ITileProvider() = default;
 };
-
 }  // namespace custom
 }  // namespace snapengine
 }  // namespace alus

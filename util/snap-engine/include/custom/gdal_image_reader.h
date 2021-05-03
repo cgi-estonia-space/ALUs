@@ -30,18 +30,30 @@ namespace custom {
 class GdalImageReader : virtual public IImageReader {
 private:
     GDALDataset* dataset_{};
+    std::string data_projection_;
+    std::vector<double> affine_geo_transform_;
+    std::string file_;
+
+    // todo: might want to avoid internal buffer and attach this to data (more flexibility with types)
+    std::vector<float> data_{};
+
+    void InitializeDatasetProperties(GDALDataset* dataset, bool has_transform, bool has_correct_proj);
 
 public:
     /**
      * avoid tight coupling to data... (swappable sources, targets, types etc..)
      */
     GdalImageReader();
+    GdalImageReader(const GdalImageReader&) = delete;
+    GdalImageReader& operator=(const GdalImageReader&) = delete;
+    ~GdalImageReader() override;
 
     /**
      * set input path for source to read from
      * @param path_to_band_file
      */
-    void SetInputPath(std::string_view path_to_band_file) override;
+    void Open(std::string_view path_to_band_file, bool has_transform, bool has_correct_proj) override;
+
     /**
      * Make sure std::vector data has correct size before using gdal to fill it
      * if it has wrong size it gets resized
@@ -50,7 +62,16 @@ public:
      */
     void ReadSubSampledData(const std::shared_ptr<custom::Rectangle>& rectangle, std::vector<int32_t>& data) override;
 
-    ~GdalImageReader();
+    /**
+     * different use case, might want to generalize at some point
+     * @param rectangle
+     * @param band_indx
+     */
+    void ReadSubSampledData(const custom::Rectangle& rectangle, int band_indx) override;
+    [[nodiscard]] std::string GetDataProjection() const;
+    [[nodiscard]] std::vector<double> GetGeoTransform() const;
+    [[nodiscard]] const std::vector<float>& GetData() const override { return data_; }
+    void Close() override;
 };
 }  // namespace custom
 }  // namespace snapengine

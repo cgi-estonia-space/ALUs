@@ -11,25 +11,18 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
-#pragma once
+#include "io_tile.h"
 
 #include <memory>
 
-namespace alus {
-namespace snapengine {
-namespace custom {
+#include "snap-gpf/i_tile.h"
 
-struct Rectangle {
-    Rectangle() = default;
-    Rectangle(int x, int y, int width, int height) : x(x), y(y), width(width), height(height) {}
-    explicit Rectangle(const std::shared_ptr<Rectangle>& rectangle)
-        : x(rectangle->x), y(rectangle->y), width(rectangle->width), height(rectangle->height) {}
-    int x;
-    int y;
-    int width;
-    int height;
-};
+namespace alus::snapengine::custom {
 
-}  // namespace custom
-}  // namespace snapengine
-}  // namespace alus
+IoTile::IoTile(int tile_x, int tile_y, const std::shared_ptr<snapengine::ITile>& tile_in,
+               const std::shared_ptr<snapengine::ITile>& tile_out)
+    : tile_x_{tile_x}, tile_y_{tile_y}, tile_in_{tile_in}, tile_out_{tile_out} {}
+const std::shared_ptr<snapengine::ITile>& IoTile::GetTileIn() const { return tile_in_; }
+const std::shared_ptr<snapengine::ITile>& IoTile::GetTileOut() const { return tile_out_; }
+
+}  // namespace alus::snapengine::custom

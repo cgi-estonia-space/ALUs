@@ -82,6 +82,13 @@ std::shared_ptr<IProductReader> ProductNode::GetProductReader() {
     return nullptr;
 }
 
+std::shared_ptr<IProductWriter> ProductNode::GetProductWriter() {
+    if (std::shared_ptr<Product> product = GetProduct(); product) {
+        return product->GetProductWriter();
+    }
+    return nullptr;
+}
+
 std::string ProductNode::GetDisplayName() {
     auto prefix = GetProductRefString();
     if (!prefix.has_value()) {

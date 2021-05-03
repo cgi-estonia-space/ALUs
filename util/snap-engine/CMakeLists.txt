@@ -82,6 +82,8 @@ list(APPEND SNAP-ENGINE_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/ceres-core/zip.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/ceres-core/dir.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/custom/gdal_image_reader.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/custom/gdal_image_writer.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/custom/io_tile.cc
         )
 
 list(APPEND SNAP-ENGINE_INCLUDES
@@ -103,12 +105,12 @@ list(APPEND SNAP-ENGINE_INCLUDES
         ${CMAKE_CURRENT_LIST_DIR}/include/snap-engine-utilities/eo
         ${CMAKE_CURRENT_LIST_DIR}/include/snap-engine-utilities/gpf
         sentinel1
-#        ${CMAKE_CURRENT_LIST_DIR}/../sentinel1/include
-#        ${CMAKE_CURRENT_LIST_DIR}/../sentinel1/include/io/orbits/sentinel1
-#        ${CMAKE_CURRENT_LIST_DIR}/../sentinel1/include/jlinda-core
-#        ${CMAKE_CURRENT_LIST_DIR}/../sentinel1/include/s1tbx-io/sentinel1
-#        ${CMAKE_CURRENT_LIST_DIR}/../sentinel1/include/s1tbx-io/geotiffxml
-#        ${CMAKE_CURRENT_LIST_DIR}/../sentinel1/include/s1tbx-commons/io
+        #        ${CMAKE_CURRENT_LIST_DIR}/../sentinel1/include
+        #        ${CMAKE_CURRENT_LIST_DIR}/../sentinel1/include/io/orbits/sentinel1
+        #        ${CMAKE_CURRENT_LIST_DIR}/../sentinel1/include/jlinda-core
+        #        ${CMAKE_CURRENT_LIST_DIR}/../sentinel1/include/s1tbx-io/sentinel1
+        #        ${CMAKE_CURRENT_LIST_DIR}/../sentinel1/include/s1tbx-io/geotiffxml
+        #        ${CMAKE_CURRENT_LIST_DIR}/../sentinel1/include/s1tbx-commons/io
         #other
         ${CMAKE_CURRENT_LIST_DIR}/../cuda/include
         ${CMAKE_CURRENT_LIST_DIR}/../common/include

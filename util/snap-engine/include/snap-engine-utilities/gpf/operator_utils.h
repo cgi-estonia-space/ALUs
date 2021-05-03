@@ -21,6 +21,9 @@
 #include <string>
 #include <string_view>
 
+#include "snap-core/datamodel/product.h"
+#include "snap-core/datamodel/tie_point_grid.h"
+
 namespace alus {
 namespace snapengine {
 
@@ -37,6 +40,16 @@ public:
     static constexpr std::string_view TPG_LONGITUDE = "longitude";
 
     static std::string GetPolarizationFromBandName(std::string_view band_name);
+
+    /**
+     * Get incidence angle tie point grid.
+     *
+     * @param sourceProduct The source product.
+     * @return srcTPG The incidence angle tie point grid.
+     */
+    static std::shared_ptr<TiePointGrid> GetIncidenceAngle(const std::shared_ptr<snapengine::Product>& source_product) {
+        return source_product->GetTiePointGrid(TPG_INCIDENT_ANGLE);
+    }
 };
 
 }  // namespace snapengine
