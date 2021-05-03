@@ -1,17 +1,18 @@
 list(APPEND TENSORFLOW_INCLUDES
-        ${CMAKE_CURRENT_LIST_DIR}/../../tensorflow/ubuntu_1804/include
-        ${CMAKE_CURRENT_LIST_DIR}/../../tensorflow/ubuntu_1804/include/external/com_google_absl
+        ${CMAKE_CURRENT_LIST_DIR}/../../tensorflow/tensorflow_cc/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../tensorflow/tensorflow_cc/include/tensorflow/include/src
+        ${CMAKE_CURRENT_LIST_DIR}/../../tensorflow/tensorflow_cc/include/tensorflow/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../tensorflow/tensorflow_cc/include/external/com_google_absl
         # For error_codes.pb.h etc.
-        ${CMAKE_CURRENT_LIST_DIR}/../../tensorflow/ubuntu_1804/include/bazel-out/host/bin
+        ${CMAKE_CURRENT_LIST_DIR}/../../tensorflow/tensorflow_cc/include/bin
         # For port_def.inc etc.
-        ${CMAKE_CURRENT_LIST_DIR}/../../tensorflow/ubuntu_1804/include/external/com_google_protobuf/src
+        ${CMAKE_CURRENT_LIST_DIR}/../../tensorflow/tensorflow_cc/include/external/com_google_protobuf/src
         # For unsupported/Eigen/CXX11/Tensor
-        ${CMAKE_CURRENT_LIST_DIR}/../../tensorflow/ubuntu_1804/include/external/eigen_archive
+        ${CMAKE_CURRENT_LIST_DIR}/../../tensorflow/tensorflow_cc/include/external/eigen_archive
         )
 
 list(APPEND TENSORFLOW_LIBS
-        ${CMAKE_CURRENT_LIST_DIR}/../../tensorflow/ubuntu_1804/lib/libtensorflow_cc.so
-        ${CMAKE_CURRENT_LIST_DIR}/../../tensorflow/ubuntu_1804/lib/libtensorflow_framework.so
+        ${CMAKE_CURRENT_LIST_DIR}/../../tensorflow/tensorflow_cc/lib/libtensorflow_cc.so
         )
 
 list(APPEND COHERENCE_SOURCES
@@ -73,6 +74,7 @@ target_compile_options(coherence-obj
         -Wno-unused-variable
         -Wno-narrowing
         -Wno-unused-but-set-variable
+        -Wno-unused-but-set-parameter
         )
 
 add_library(coherence-static
@@ -124,5 +126,5 @@ target_link_libraries(coherence-shared
         )
 add_custom_command(TARGET coherence-shared
         POST_BUILD
-        COMMAND cp -P ${CMAKE_CURRENT_LIST_DIR}/../../tensorflow/ubuntu_1804/lib/* ${ALUS_BINARY_OUTPUT_DIR}/.
+        COMMAND cp -P ${CMAKE_CURRENT_LIST_DIR}/../../tensorflow/tensorflow_cc/lib/lib* ${ALUS_BINARY_OUTPUT_DIR}/.
         )

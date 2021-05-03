@@ -95,6 +95,7 @@ target_compile_options(integration-test-coherence
         -Wno-unused-parameter
         -Wno-ignored-qualifiers
         -Wno-unused-variable
+        -Wno-unused-but-set-parameter
         )
 add_custom_command(TARGET integration-test-coherence
         POST_BUILD
