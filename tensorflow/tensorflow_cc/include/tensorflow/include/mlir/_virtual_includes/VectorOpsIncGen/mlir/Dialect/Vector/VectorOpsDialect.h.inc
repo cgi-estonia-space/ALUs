@@ -1,0 +1,32 @@
+/*===- TableGen'erated file -------------------------------------*- C++ -*-===*\
+|*                                                                            *|
+|* Dialect Declarations                                                       *|
+|*                                                                            *|
+|* Automatically generated file, do not edit!                                 *|
+|*                                                                            *|
+\*===----------------------------------------------------------------------===*/
+
+namespace mlir {
+namespace vector {
+
+class VectorDialect : public ::mlir::Dialect {
+  explicit VectorDialect(::mlir::MLIRContext *context)
+    : ::mlir::Dialect(getDialectNamespace(), context,
+      ::mlir::TypeID::get<VectorDialect>()) {
+    
+    initialize();
+  }
+  void initialize();
+  friend class ::mlir::MLIRContext;
+public:
+  static ::llvm::StringRef getDialectNamespace() { return "vector"; }
+
+  /// Materialize a single constant operation from a given attribute value with
+  /// the desired resultant type.
+  ::mlir::Operation *materializeConstant(::mlir::OpBuilder &builder,
+                                         ::mlir::Attribute value,
+                                         ::mlir::Type type,
+                                         ::mlir::Location loc) override;
+};
+} // namespace vector
+} // namespace mlir

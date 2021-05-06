@@ -16,6 +16,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include "tensorflow/cc/ops/math_ops_internal.h"
+
 #include "jlinda-core/constants.h"
 
 namespace alus {
@@ -250,7 +252,7 @@ auto Coh::ComputeFlatEarthPhase(const tensorflow::Scope& root, const CohTile& ti
     auto xx = NormalizeDoubleMatrix3(
         root,
         tensorflow::ops::Cast(root,
-                              tensorflow::ops::LinSpace(
+                              tensorflow::ops::internal::LinSpace(
                                   root, tensorflow::ops::Cast(root, tile.GetCalcXMin(), tensorflow::DT_DOUBLE),
                                   tensorflow::ops::Cast(root, tile.GetCalcXMax(), tensorflow::DT_DOUBLE), tile.GetWw()),
                               tensorflow::DT_DOUBLE),
@@ -259,7 +261,7 @@ auto Coh::ComputeFlatEarthPhase(const tensorflow::Scope& root, const CohTile& ti
     auto yy = NormalizeDoubleMatrix3(
         root,
         tensorflow::ops::Cast(root,
-                              tensorflow::ops::LinSpace(
+                              tensorflow::ops::internal::LinSpace(
                                   root, tensorflow::ops::Cast(root, tile.GetCalcYMin(), tensorflow::DT_DOUBLE),
                                   tensorflow::ops::Cast(root, tile.GetCalcYMax(), tensorflow::DT_DOUBLE), tile.GetHh()),
                               tensorflow::DT_DOUBLE),
