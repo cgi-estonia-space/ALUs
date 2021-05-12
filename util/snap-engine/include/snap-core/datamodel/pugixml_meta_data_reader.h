@@ -67,8 +67,8 @@ private:
 
 public:
     PugixmlMetaDataReader() = default;
-    void SetProduct(const std::shared_ptr<Product>& product) override;
-    explicit PugixmlMetaDataReader(const std::shared_ptr<Product>& product);
+    void SetProduct(Product* product) override;
+    explicit PugixmlMetaDataReader(Product* product);
     explicit PugixmlMetaDataReader(std::string_view file_name);
     [[nodiscard]] std::shared_ptr<MetadataElement> Read(std::string_view name) override;
 

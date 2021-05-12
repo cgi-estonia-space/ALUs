@@ -50,7 +50,7 @@ void MetadataElement::AddElement(std::shared_ptr<MetadataElement> element) {
     }
     if (elements_ == nullptr) {
         elements_ = std::make_shared<ProductNodeGroup<std::shared_ptr<MetadataElement>>>(
-            SharedFromBase<MetadataElement>(), "elements", true);
+            this, "elements", true);
     }
     elements_->Add(element);
 }
@@ -65,8 +65,10 @@ void MetadataElement::AddAttribute(std::shared_ptr<MetadataAttribute> attribute)
         return;
     }
     if (attributes_ == nullptr) {
+
+
         attributes_ = std::make_shared<ProductNodeGroup<std::shared_ptr<MetadataAttribute>>>(
-            SharedFromBase<MetadataElement>(), "attributes", true);
+            this, "attributes", true);
     }
     attributes_->Add(attribute);
 }
@@ -315,7 +317,7 @@ void MetadataElement::AddElementAt(const std::shared_ptr<MetadataElement>& eleme
     }
     if (elements_ == nullptr) {
         elements_ = std::make_shared<ProductNodeGroup<std::shared_ptr<MetadataElement>>>(
-            SharedFromBase<MetadataElement>(), "elements", true);
+            this, "elements", true);
     }
     elements_->Add(index, element);
 }

@@ -130,7 +130,7 @@ std::shared_ptr<Utc> Utc::Parse(const std::string_view text, std::string_view pa
 
     auto dot_pos = text.find_last_of(".");
     std::string_view no_fraction_string = text;
-    long micros = 0;
+    int64_t micros = 0;
 
     if (dot_pos != std::string::npos) {
         no_fraction_string = text.substr(0, dot_pos);

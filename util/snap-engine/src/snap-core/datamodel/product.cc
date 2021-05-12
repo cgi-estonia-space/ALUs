@@ -69,6 +69,11 @@ Product::Product(std::string_view name, std::string_view type,
     metadata_root_ = std::make_shared<MetadataElement>(METADATA_ROOT_NAME);
 }
 
+Product::~Product()
+{
+    Dispose(); //NB! for now leave the virtual function call here
+}
+
 void Product::SetModified(bool modified) {
     bool old_state = IsModified();
     if (old_state != modified) {
@@ -142,8 +147,8 @@ std::shared_ptr<RasterDataNode> Product::GetRasterDataNode(std::string_view name
 }
 
 std::vector<std::shared_ptr<RasterDataNode>> Product::GetRasterDataNodes() {
-    // 32 came from original java version :)
-    std::vector<std::shared_ptr<RasterDataNode>> raster_data_nodes(32);
+    std::vector<std::shared_ptr<RasterDataNode>> raster_data_nodes;
+    raster_data_nodes.reserve(32);
     //    todo:why idea does not ask for cast for band_group and other groups need it!?
     auto band_group = GetBandGroup();
     for (int i = 0; i < band_group->GetNodeCount(); i++) {
@@ -195,7 +200,7 @@ const std::shared_ptr<IMetaDataReader>& Product::GetMetadataReader() const {
 
 void Product::SetMetadataReader(const std::shared_ptr<IMetaDataReader>& metadata_reader) {
     metadata_reader_ = metadata_reader;
-    metadata_reader_->SetProduct(SharedFromBase<Product>());
+    metadata_reader_->SetProduct(this);
 }
 
 bool Product::HasMetaDataReader() const { return metadata_reader_ != nullptr; }
@@ -208,7 +213,7 @@ const std::shared_ptr<IMetaDataWriter>& Product::GetMetadataWriter() const {
 
 void Product::SetMetadataWriter(const std::shared_ptr<IMetaDataWriter>& metadata_writer) {
     metadata_writer_ = metadata_writer;
-    metadata_writer_->SetProduct(SharedFromBase<Product>());
+    metadata_writer_->SetProduct(this);
 }
 
 bool Product::RemoveTiePointGrid(std::shared_ptr<TiePointGrid> tie_point_grid) {
@@ -274,6 +279,7 @@ std::shared_ptr<Quicklook> Product::GetQuicklook(std::string_view name) {
     return quicklook_group_->Get(name);
 }
 
+/*
 std::shared_ptr<Quicklook> Product::GetDefaultQuicklook() {
     if (quicklook_group_->GetNodeCount() == 0) {
         bool was_modified = IsModified();
@@ -284,7 +290,7 @@ std::shared_ptr<Quicklook> Product::GetDefaultQuicklook() {
         }
     }
     return quicklook_group_->Get(0);
-}
+}*/
 void Product::SetProductType(std::string_view product_type) {
     Guardian::AssertNotNullOrEmpty("productType", product_type);
     if (product_type_ != product_type) {
@@ -324,9 +330,9 @@ void Product::AddTiePointGrid(std::shared_ptr<TiePointGrid> tie_point_grid) {
     tie_point_grid_group_->Add(tie_point_grid);
 }
 
-bool Product::IsCompatibleProduct(const std::shared_ptr<Product>& product, float eps) {
+bool Product::IsCompatibleProduct(Product* product, float eps) {
     Guardian::AssertNotNull("product", product);
-    if (SharedFromBase<Product>() == product) {
+    if (this == product) {
         return true;
     }
 
@@ -408,50 +414,55 @@ std::vector<std::shared_ptr<TiePointGrid>> Product::GetTiePointGrids() {
 std::shared_ptr<Product> Product::CreateProduct(std::string_view name, std::string_view type, int scene_raster_width,
                                                 int scene_raster_height) {
     auto product = std::shared_ptr<Product>(new Product(name, type, scene_raster_width, scene_raster_height));
-    return InitProductMembers(product);
+    InitProductMembers(product.get());
+    return product;
 }
 
 std::shared_ptr<Product> Product::CreateProduct(std::string_view name, std::string_view type, int scene_raster_width,
                                                 int scene_raster_height,
                                                 const std::shared_ptr<IProductReader>& reader) {
     auto product = std::shared_ptr<Product>(new Product(name, type, scene_raster_width, scene_raster_height, reader));
-    return InitProductMembers(product);
+    InitProductMembers(product.get());
+    return product;
 }
 
 std::shared_ptr<Product> Product::CreateProduct(std::string_view name, std::string_view type) {
     auto product = std::shared_ptr<Product>(new Product(name, type));
-    return InitProductMembers(product);
+    InitProductMembers(product.get());
+    return product;
 }
 std::shared_ptr<Product> Product::CreateProduct(std::string_view name, std::string_view type,
                                                 const std::shared_ptr<IProductReader>& reader) {
     auto product = std::shared_ptr<Product>(new Product(name, type, reader));
-    return InitProductMembers(product);
+    InitProductMembers(product.get());
+    return product;
 }
 
-std::shared_ptr<Product> Product::InitProductMembers(const std::shared_ptr<Product>& product) {
+void Product::InitProductMembers(Product* product) {
     //    TODO: THIS IS NOT CORRECT CONSTURCTOR!!! SWAP IT LATER
-    product->metadata_root_->SetOwner(product->SharedFromBase<Product>());
+
+    product->metadata_root_->SetOwner(product);
 
     product->band_group_ =
-        std::make_shared<ProductNodeGroup<std::shared_ptr<Band>>>(product->SharedFromBase<Product>(), "bands", true);
+        std::make_shared<ProductNodeGroup<std::shared_ptr<Band>>>(product, "bands", true);
     product->tie_point_grid_group_ = std::make_shared<ProductNodeGroup<std::shared_ptr<TiePointGrid>>>(
-        product->SharedFromBase<Product>(), "tie_point_grids", true);
+        product, "tie_point_grids", true);
     //    vector_data_group_ = new VectorDataNodeProductNodeGroup();
     product->index_coding_group_ = std::make_shared<ProductNodeGroup<std::shared_ptr<IndexCoding>>>(
-        product->SharedFromBase<Product>(), "index_codings", true);
+        product, "index_codings", true);
     product->flag_coding_group_ = std::make_shared<ProductNodeGroup<std::shared_ptr<FlagCoding>>>(
-        product->SharedFromBase<Product>(), "flag_codings", true);
+        product, "flag_codings", true);
     product->mask_group_ =
-        std::make_shared<ProductNodeGroup<std::shared_ptr<Mask>>>(product->SharedFromBase<Product>(), "masks", true);
+        std::make_shared<ProductNodeGroup<std::shared_ptr<Mask>>>(product, "masks", true);
     product->quicklook_group_ = std::make_shared<ProductNodeGroup<std::shared_ptr<Quicklook>>>(
-        product->SharedFromBase<Product>(), "quicklooks", true);
+        product, "quicklooks", true);
 
     //    todo: implement if we use it
     //    pin_group_ = CreatePinGroup();
     //    gcp_group_ = CreateGcpGroup();
 
     product->groups_ = std::make_shared<ProductNodeGroup<std::shared_ptr<ProductNode>>>(
-        product->SharedFromBase<Product>(), "groups", false);
+        product, "groups", false);
 
     product->groups_->Add(product->band_group_);
     product->groups_->Add(product->quicklook_group_);
@@ -464,7 +475,6 @@ std::shared_ptr<Product> Product::InitProductMembers(const std::shared_ptr<Produ
     //    groups_->Add(gcp_group_);
 
     product->SetModified(false);
-    return product;
 }
 
 void Product::SetRefNo(int ref_no) {
@@ -487,7 +497,7 @@ bool Product::IsUsingSingleGeoCoding() {
     }
     std::vector<std::shared_ptr<RasterDataNode>> raster_data_nodes = GetRasterDataNodes();
     for (const auto& raster_data_node : raster_data_nodes) {
-        if (raster_data_node && geo_coding != raster_data_node->GetGeoCoding()) {
+        if (geo_coding != raster_data_node->GetGeoCoding()) {
             return false;
         }
     }

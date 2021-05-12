@@ -33,7 +33,7 @@ namespace alus {
 namespace snapengine {
 
 template <typename T>
-ProductNodeGroup<T>::ProductNodeGroup(const std::shared_ptr<ProductNode>& owner, std::string_view name,
+ProductNodeGroup<T>::ProductNodeGroup(ProductNode* owner, std::string_view name,
                                       bool taking_over_node_ownership)
     : ProductNode(name, "") {
     node_list_ = std::make_shared<ProductNodeList<T>>();
@@ -50,7 +50,7 @@ bool ProductNodeGroup<T>::Add(T node) {
     bool added = node_list_->Add(node);
     if (added) {
         if (taking_over_node_ownership_) {
-            node->SetOwner(SharedFromBase<ProductNodeGroup>());
+            node->SetOwner(this);
         }
         SetModified(true);
     }
@@ -63,7 +63,7 @@ void ProductNodeGroup<T>::Add(int index, T node) {
     node_list_->Add(index, node);
     // notifyadded...
     if (taking_over_node_ownership_) {
-        node->SetOwner(SharedFromBase<ProductNodeGroup>());
+        node->SetOwner(this);
     }
     SetModified(true);
 }
@@ -74,7 +74,7 @@ bool ProductNodeGroup<T>::Remove(T node) {
     bool removed = node_list_->Remove(node);
 
     if (removed) {
-        if (taking_over_node_ownership_ && node->GetOwner() == SharedFromBase<ProductNodeGroup>()) {
+        if (taking_over_node_ownership_ && node->GetOwner() == this) {
             node->SetOwner(nullptr);
         }
         SetModified(true);

@@ -23,7 +23,7 @@ class MetadataElement;
 class Product;
 class IMetaDataReader {
 protected:
-    std::shared_ptr<Product> product_;
+    Product* product_ = nullptr;
     std::string file_name_;
 
 public:
@@ -32,7 +32,7 @@ public:
     IMetaDataReader& operator=(const IMetaDataReader&) = delete;
     virtual ~IMetaDataReader() = default;
 
-    explicit IMetaDataReader(const std::shared_ptr<Product>& product) : product_(product){};
+    explicit IMetaDataReader(Product* product) : product_(product){};
     explicit IMetaDataReader(const std::string_view file_name) : file_name_(file_name){};
     /**
      * Read from file using implementation
@@ -42,7 +42,7 @@ public:
      */
     [[nodiscard]] virtual std::shared_ptr<MetadataElement> Read(std::string_view name) = 0;
     // in case of default constructor user needs to provide source product
-    virtual void SetProduct(const std::shared_ptr<Product>& product) = 0;
+    virtual void SetProduct(Product* product) = 0;
 
 };
 }  // namespace snapengine

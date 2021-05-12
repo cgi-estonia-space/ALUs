@@ -119,6 +119,10 @@ class ComputeBurstOffsetTest : public ::testing::Test {
         geo_location_reader.close();
         master_width_ = num_of_geo_points_per_line;
         master_height_ = num_of_geo_lines;
+
+        Deallocate2DArray(azimuth_time);
+        Deallocate2DArray(slant_range_time);
+        Deallocate2DArray(incidence_angle);
     }
 
     void ReadMasterOrbit() {
@@ -240,6 +244,9 @@ class ComputeBurstOffsetTest : public ::testing::Test {
     }
 
     ~ComputeBurstOffsetTest() override {
+
+        Deallocate2DArray(latitude_);
+        Deallocate2DArray(longitude_);
         cudaFree(d_master_orbit_state_vector_);
         cudaFree(d_slave_orbit_state_vector_);
         cudaFree(master_utils_);

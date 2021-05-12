@@ -58,10 +58,10 @@ class SampleCoding;
  */
 class Band : public AbstractBand {
 private:
-    int spectral_band_index_;
-    float spectral_wavelength_;
-    float spectral_bandwidth_;
-    float solar_flux_;
+    int spectral_band_index_ = 0;
+    float spectral_wavelength_ = 0.0f;
+    float spectral_bandwidth_ = 0.0f;
+    float solar_flux_ = 0.0f;
 
     /**
      * If this band contains flag data, this is the flag coding.
