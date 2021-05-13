@@ -94,7 +94,7 @@ pipelines:
               script:
                 - git submodule update --init --recursive
                 - build_dir="build-nightly"
-                - cmake . -B${build_dir} -DENABLE_UNIT_TESTS=false -DENABLE_INTEGRATION_TESTS=false -DCUDA_ARCH="52;70"
+                - cmake . -B${build_dir} -DENABLE_UNIT_TESTS=false -DENABLE_INTEGRATION_TESTS=false -DCUDA_ARCH="50;60;70;75"
                 - cmake --build $build_dir --target all -- -j 8
                 - cd $build_dir
                 - date_stamp=$(date +"%Y_%m_%d_%H%M")
@@ -107,6 +107,9 @@ pipelines:
                 - tar -czvf ${build_package_name}.tar.gz $build_package_name
               artifacts:
                 - build-nightly/*.tar.gz
+                - build-automation/execute_nightly.sh
+                - build-automation/run_beirut_disaster_test.sh
+                - build-automation/compare_alus_output.py
       - step:
           name: 'End to end tests and publish'
           image: cgialus/alus-ci:latest
@@ -127,10 +130,12 @@ pipelines:
             - ip_address=${ip_address%?}
             - echo $ip_address
             - cd $BITBUCKET_CLONE_DIR
+            - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "mkdir /tmp/nightly_builds"
+            - scp -oStrictHostKeyChecking=no build-automation/execute_nightly.sh build-automation/run_beirut_disaster_test.sh build-automation/compare_alus_output.py ubuntu@$ip_address:/tmp/nightly_builds
             - cd build-nightly
             - build_filename=$(basename *.tar.gz)
             - build_id="${build_filename%%.*}"
-            - scp -r -oStrictHostKeyChecking=no *.tar.gz ubuntu@$ip_address:/home/ubuntu/nightly_builds/
-            - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "/home/ubuntu/nightly_builds/execute_nightly.sh ${build_id}"
+            - scp -r -oStrictHostKeyChecking=no *.tar.gz ubuntu@$ip_address:/tmp/nightly_builds
+            - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "cd /tmp/nightly_builds; ./execute_nightly.sh ${build_id} /home/ubuntu/nightly_datasets/beirut_dimap/ /home/ubuntu/nightly_aux/SRTM3/"
           after-script:
             - aws ec2 stop-instances --instance-ids $P3_2xLARGE_INSTANCE_ID --profile sid_man
