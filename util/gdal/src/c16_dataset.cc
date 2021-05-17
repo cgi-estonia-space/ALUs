@@ -24,7 +24,7 @@ namespace alus {
 
 template <typename BufferType>
 C16Dataset<BufferType>::C16Dataset(std::string_view filename) {
-    dataset_ = std::make_unique<Dataset<Dual16>>(filename);
+    dataset_ = std::make_unique<Dataset<Iq16>>(filename);
 }
 
 template <typename BufferType>
@@ -38,13 +38,13 @@ void C16Dataset<BufferType>::ReadRectangle(Rectangle rectangle, std::map<int, Bu
         throw std::runtime_error("C16 reader only reads C16 products with 2 bands in them.");
     }
 
-    std::vector<Dual16> pairs(rectangle.height * rectangle.width);
+    std::vector<Iq16> pairs(rectangle.height * rectangle.width);
     BufferType* i_band = bands.at(1);
     BufferType* q_band = bands.at(2);
 
     dataset_->ReadRectangle(rectangle, 1, pairs.data());
 
-    for (std::vector<Dual16>::iterator it = pairs.begin(); it != pairs.end(); ++it) {
+    for (std::vector<Iq16>::iterator it = pairs.begin(); it != pairs.end(); ++it) {
         *i_band = (*it).i;
         *q_band = (*it).q;
 

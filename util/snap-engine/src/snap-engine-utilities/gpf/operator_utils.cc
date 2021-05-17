@@ -125,16 +125,11 @@ std::string OperatorUtils::GetSuffixFromBandName(std::string_view band_name) {
 
 std::string OperatorUtils::GetAcquisitionDate(std::shared_ptr<MetadataElement>& root) {
     std::string date_string;
-    // try {
+
     std::shared_ptr<Utc> date = root->GetAttributeUtc(AbstractMetadata::FIRST_LINE_TIME);
-    // DateFormat dateFormat = Utc::CreateDateFormat("ddMMMyyyy");
-    // dateString = dateFormat.format(date->GetAsDate());
     date_string = date->Format("DDmmmYYYY");
     std::cout << "created date: " << date_string << std::endl;
 
-    /*} catch (Exception e) {
-        dateString = "";
-    }*/
     return date_string;
 }
 

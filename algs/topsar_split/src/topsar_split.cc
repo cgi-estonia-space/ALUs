@@ -24,7 +24,6 @@
 #include "s1tbx-io/sentinel1/sentinel1_product_reader_plug_in.h"
 #include "snap-core/dataio/product_subset_def.h"
 #include "snap-core/datamodel/band.h"
-#include "snap-core/datamodel/i_geo_coding.h"
 #include "snap-core/datamodel/metadata_element.h"
 #include "snap-core/datamodel/product_data_utc.h"
 #include "snap-core/datamodel/pugixml_meta_data_reader.h"
@@ -33,7 +32,6 @@
 #include "snap-core/subset/pixel_subset_region.h"
 #include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
 #include "snap-engine-utilities/gpf/input_product_validator.h"
-#include "snap-engine-utilities/gpf/operator_utils.h"
 #include "split_product_subset_builder.h"
 #include "subswath_info.h"
 
@@ -42,12 +40,7 @@ namespace alus::topsarsplit {
 TopsarSplit::TopsarSplit(std::string filename, std::string selected_subswath, std::string selected_polarisation)
     : subswath_(selected_subswath), selected_polarisations_({selected_polarisation}) {
     boost::filesystem::path path = std::string(filename);
-    /*std::cout << "Reading manifest at: " << path.string() + "/manifest.safe" << std::endl;
-    snapengine::PugixmlMetaDataReader xml_reader(path.string() + "/manifest.safe");
-    std::shared_ptr<snapengine::MetadataElement> info_pack = xml_reader.Read("informationPackageMap");
-    for(std::shared_ptr<snapengine::MetadataElement> elem : info_pack->GetElements()){
-        std::cout << elem->GetName() << std::endl;
-    }*/
+
     boost::filesystem::path measurement = path.string() + "/measurement";
     boost::filesystem::directory_iterator end_itr;
     std::string low_subswath = boost::to_lower_copy(selected_subswath);
@@ -66,14 +59,11 @@ TopsarSplit::TopsarSplit(std::string filename, std::string selected_subswath, st
                 current_file.find(low_polarisation) != std::string::npos) {
                 std::cout << "Selecting tif for reading: " << current_file << std::endl;
                 pixel_reader_ = std::make_shared<C16Dataset<double>>(current_file);
-                // xml_reader = std::make_shared<snapengine::PugixmlMetaDataReader>(current_file);
                 found_it = true;
                 break;
             }
         }
     }
-    // source_product_->SetMetadataReader(xml_reader);
-    // xml_reader->SetProduct(source_product_);
 
     if (!found_it) {
         std::stringstream stream;
@@ -103,20 +93,20 @@ void TopsarSplit::initialize() {
     validator.CheckProductType({"SLC"});
     validator.CheckAcquisitionMode({"IW", "EW"});
 
-    std::shared_ptr<snapengine::MetadataElement> absRoot =
+    std::shared_ptr<snapengine::MetadataElement> abs_root =
         snapengine::AbstractMetadata::GetAbstractedMetadata(source_product_);
     if (subswath_.empty()) {
         std::stringstream ss;
-        ss << absRoot->GetAttributeString(snapengine::AbstractMetadata::ACQUISITION_MODE) << "1";
+        ss << abs_root->GetAttributeString(snapengine::AbstractMetadata::ACQUISITION_MODE) << "1";
         subswath_ = ss.str();
     }
 
     // TODO: forget the index, find the pointer.
     s1_utils_ = std::make_unique<s1tbx::Sentinel1Utils>(source_product_);
-    const std::vector<std::unique_ptr<s1tbx::SubSwathInfo>>* subSwathInfo = &s1_utils_->GetSubSwath();
-    for (size_t i = 0; i < subSwathInfo->size(); i++) {
-        if (subSwathInfo->at(i)->subswath_name_.find(subswath_) != std::string::npos) {
-            selected_subswath_info_ = subSwathInfo->at(i).get();
+    const std::vector<std::unique_ptr<s1tbx::SubSwathInfo>>& subswath_info = s1_utils_->GetSubSwath();
+    for (size_t i = 0; i < subswath_info.size(); i++) {
+        if (subswath_info.at(i)->subswath_name_.find(subswath_) != std::string::npos) {
+            selected_subswath_info_ = subswath_info.at(i).get();
             break;
         }
     }
@@ -130,36 +120,36 @@ void TopsarSplit::initialize() {
         selected_polarisations_ = s1_utils_->GetPolarizations();
     }
 
-    std::vector<std::shared_ptr<snapengine::Band>> selectedBands;
+    std::vector<std::shared_ptr<snapengine::Band>> selected_bands;
     std::vector<std::shared_ptr<snapengine::Band>> le_bands = source_product_->GetBands();
-    for (std::shared_ptr<snapengine::Band> srcBand : le_bands) {
-        if (srcBand->GetName().find(subswath_) != std::string::npos) {
+    for (std::shared_ptr<snapengine::Band> src_band : le_bands) {
+        if (src_band->GetName().find(subswath_) != std::string::npos) {
             for (std::string pol : selected_polarisations_) {
-                if (srcBand->GetName().find(pol) != std::string::npos) {
-                    selectedBands.push_back(srcBand);
+                if (src_band->GetName().find(pol) != std::string::npos) {
+                    selected_bands.push_back(src_band);
                 }
             }
         }
     }
     // TODO: Why is this here? Does the first one trigger some init as it goes through?
-    if (selectedBands.size() < 1) {
+    if (selected_bands.size() < 1) {
         // try again
         selected_polarisations_ = s1_utils_->GetPolarizations();
 
-        for (std::shared_ptr<snapengine::Band> srcBand : source_product_->GetBands()) {
-            if (srcBand->GetName().find(subswath_) != std::string::npos) {
+        for (std::shared_ptr<snapengine::Band> src_band : source_product_->GetBands()) {
+            if (src_band->GetName().find(subswath_) != std::string::npos) {
                 for (std::string pol : selected_polarisations_) {
-                    if (srcBand->GetName().find(pol) != std::string::npos) {
-                        selectedBands.push_back(srcBand);
+                    if (src_band->GetName().find(pol) != std::string::npos) {
+                        selected_bands.push_back(src_band);
                     }
                 }
             }
         }
     }
 
-    int maxBursts = selected_subswath_info_->num_of_bursts_;
-    if (last_burst_index_ > maxBursts) {
-        last_burst_index_ = maxBursts;
+    int max_bursts = selected_subswath_info_->num_of_bursts_;
+    if (last_burst_index_ > max_bursts) {
+        last_burst_index_ = max_bursts;
     }
 
     // TODO: switch this on, when using WKT.
@@ -170,26 +160,26 @@ void TopsarSplit::initialize() {
     subset_builder_ = std::make_unique<snapengine::SplitProductSubsetBuilder>();
     std::shared_ptr<snapengine::ProductSubsetDef> subset_def = std::make_shared<snapengine::ProductSubsetDef>();
 
-    std::vector<std::string> selectedTPGList;
-    for (std::shared_ptr<snapengine::TiePointGrid> srcTPG : source_product_->GetTiePointGrids()) {
-        if (srcTPG->GetName().find(subswath_) != std::string::npos) {
-            selectedTPGList.push_back(srcTPG->GetName());
+    std::vector<std::string> selected_tpg_list;
+    for (std::shared_ptr<snapengine::TiePointGrid> src_tpg : source_product_->GetTiePointGrids()) {
+        if (src_tpg->GetName().find(subswath_) != std::string::npos) {
+            selected_tpg_list.push_back(src_tpg->GetName());
         }
     }
-    subset_def->AddNodeNames(selectedTPGList);
+    subset_def->AddNodeNames(selected_tpg_list);
 
     int x = 0;
     int y = (first_burst_index_ - 1) * selected_subswath_info_->lines_per_burst_;
-    int w = selectedBands.at(0)->GetRasterWidth();
+    int w = selected_bands.at(0)->GetRasterWidth();
     int h = (last_burst_index_ - first_burst_index_ + 1) * selected_subswath_info_->lines_per_burst_;
     subset_def->SetSubsetRegion(std::make_shared<snapengine::PixelSubsetRegion>(x, y, w, h, 0));
 
     subset_def->SetSubSampling(1, 1);
     subset_def->SetIgnoreMetadata(false);
 
-    std::vector<std::string> selected_band_names(selectedBands.size());
-    for (size_t i = 0; i < selectedBands.size(); i++) {
-        selected_band_names.at(i) = selectedBands.at(i)->GetName();
+    std::vector<std::string> selected_band_names(selected_bands.size());
+    for (size_t i = 0; i < selected_bands.size(); i++) {
+        selected_band_names.at(i) = selected_bands.at(i)->GetName();
     }
     subset_def->AddNodeNames(selected_band_names);
 
@@ -216,63 +206,63 @@ void TopsarSplit::UpdateTargetProductMetadata() {
 }
 
 void TopsarSplit::UpdateAbstractedMetadata() {
-    std::shared_ptr<snapengine::MetadataElement> absSrc =
+    std::shared_ptr<snapengine::MetadataElement> abs_src =
         snapengine::AbstractMetadata::GetAbstractedMetadata(source_product_);
-    std::shared_ptr<snapengine::MetadataElement> absTgt =
+    std::shared_ptr<snapengine::MetadataElement> abs_tgt =
         snapengine::AbstractMetadata::GetAbstractedMetadata(target_product_);
 
-    absTgt->SetAttributeUtc(
+    abs_tgt->SetAttributeUtc(
         snapengine::AbstractMetadata::FIRST_LINE_TIME,
         std::make_shared<snapengine::Utc>(selected_subswath_info_->burst_first_line_time_[first_burst_index_ - 1] /
                                           snapengine::constants::secondsInDay));
 
-    absTgt->SetAttributeUtc(
+    abs_tgt->SetAttributeUtc(
         snapengine::AbstractMetadata::LAST_LINE_TIME,
         std::make_shared<snapengine::Utc>(selected_subswath_info_->burst_last_line_time_[last_burst_index_ - 1] /
                                           snapengine::constants::secondsInDay));
 
-    absTgt->SetAttributeDouble(snapengine::AbstractMetadata::LINE_TIME_INTERVAL,
+    abs_tgt->SetAttributeDouble(snapengine::AbstractMetadata::LINE_TIME_INTERVAL,
                                selected_subswath_info_->azimuth_time_interval_);
 
-    absTgt->SetAttributeDouble(snapengine::AbstractMetadata::SLANT_RANGE_TO_FIRST_PIXEL,
+    abs_tgt->SetAttributeDouble(snapengine::AbstractMetadata::SLANT_RANGE_TO_FIRST_PIXEL,
                                selected_subswath_info_->slr_time_to_first_pixel_ * snapengine::constants::lightSpeed);
 
-    absTgt->SetAttributeDouble(snapengine::AbstractMetadata::RANGE_SPACING,
+    abs_tgt->SetAttributeDouble(snapengine::AbstractMetadata::RANGE_SPACING,
                                selected_subswath_info_->range_pixel_spacing_);
 
-    absTgt->SetAttributeDouble(snapengine::AbstractMetadata::AZIMUTH_SPACING,
+    abs_tgt->SetAttributeDouble(snapengine::AbstractMetadata::AZIMUTH_SPACING,
                                selected_subswath_info_->azimuth_pixel_spacing_);
 
-    absTgt->SetAttributeInt(snapengine::AbstractMetadata::NUM_OUTPUT_LINES,
+    abs_tgt->SetAttributeInt(snapengine::AbstractMetadata::NUM_OUTPUT_LINES,
                             selected_subswath_info_->lines_per_burst_ * (last_burst_index_ - first_burst_index_ + 1));
 
-    absTgt->SetAttributeInt(snapengine::AbstractMetadata::NUM_SAMPLES_PER_LINE,
+    abs_tgt->SetAttributeInt(snapengine::AbstractMetadata::NUM_SAMPLES_PER_LINE,
                             selected_subswath_info_->num_of_samples_);
 
     int cols = selected_subswath_info_->num_of_geo_points_per_line_;
 
-    snapengine::AbstractMetadata::SetAttribute(absTgt, snapengine::AbstractMetadata::FIRST_NEAR_LAT,
+    snapengine::AbstractMetadata::SetAttribute(abs_tgt, snapengine::AbstractMetadata::FIRST_NEAR_LAT,
                                                selected_subswath_info_->latitude_[first_burst_index_ - 1][0]);
 
-    snapengine::AbstractMetadata::SetAttribute(absTgt, snapengine::AbstractMetadata::FIRST_NEAR_LONG,
+    snapengine::AbstractMetadata::SetAttribute(abs_tgt, snapengine::AbstractMetadata::FIRST_NEAR_LONG,
                                                selected_subswath_info_->longitude_[first_burst_index_ - 1][0]);
 
-    snapengine::AbstractMetadata::SetAttribute(absTgt, snapengine::AbstractMetadata::FIRST_FAR_LAT,
+    snapengine::AbstractMetadata::SetAttribute(abs_tgt, snapengine::AbstractMetadata::FIRST_FAR_LAT,
                                                selected_subswath_info_->latitude_[first_burst_index_ - 1][cols - 1]);
 
-    snapengine::AbstractMetadata::SetAttribute(absTgt, snapengine::AbstractMetadata::FIRST_FAR_LONG,
+    snapengine::AbstractMetadata::SetAttribute(abs_tgt, snapengine::AbstractMetadata::FIRST_FAR_LONG,
                                                selected_subswath_info_->longitude_[first_burst_index_ - 1][cols - 1]);
 
-    snapengine::AbstractMetadata::SetAttribute(absTgt, snapengine::AbstractMetadata::LAST_NEAR_LAT,
+    snapengine::AbstractMetadata::SetAttribute(abs_tgt, snapengine::AbstractMetadata::LAST_NEAR_LAT,
                                                selected_subswath_info_->latitude_[last_burst_index_][0]);
 
-    snapengine::AbstractMetadata::SetAttribute(absTgt, snapengine::AbstractMetadata::LAST_NEAR_LONG,
+    snapengine::AbstractMetadata::SetAttribute(abs_tgt, snapengine::AbstractMetadata::LAST_NEAR_LONG,
                                                selected_subswath_info_->longitude_[last_burst_index_][0]);
 
-    snapengine::AbstractMetadata::SetAttribute(absTgt, snapengine::AbstractMetadata::LAST_FAR_LAT,
+    snapengine::AbstractMetadata::SetAttribute(abs_tgt, snapengine::AbstractMetadata::LAST_FAR_LAT,
                                                selected_subswath_info_->latitude_[last_burst_index_][cols - 1]);
 
-    snapengine::AbstractMetadata::SetAttribute(absTgt, snapengine::AbstractMetadata::LAST_FAR_LONG,
+    snapengine::AbstractMetadata::SetAttribute(abs_tgt, snapengine::AbstractMetadata::LAST_FAR_LONG,
                                                selected_subswath_info_->longitude_[last_burst_index_][cols - 1]);
     // TODO: Tie point grids
     /*double incidenceNear = target_product_->GetTiePointGrid(snapengine::OperatorUtils::TPG_INCIDENT_ANGLE)
@@ -290,27 +280,27 @@ void TopsarSplit::UpdateAbstractedMetadata() {
 
     // snapengine::AbstractMetadata::SetAttribute(absTgt, snapengine::AbstractMetadata::INCIDENCE_FAR, incidenceFar);
 
-    absTgt->SetAttributeString(snapengine::AbstractMetadata::swath, subswath_);
+    abs_tgt->SetAttributeString(snapengine::AbstractMetadata::swath, subswath_);
 
     for (size_t i = 0; i < selected_polarisations_.size(); i++) {
         if (i == 0) {
-            absTgt->SetAttributeString(snapengine::AbstractMetadata::MDS1_TX_RX_POLAR, selected_polarisations_.at(i));
+            abs_tgt->SetAttributeString(snapengine::AbstractMetadata::MDS1_TX_RX_POLAR, selected_polarisations_.at(i));
         } else if (i == 1) {
-            absTgt->SetAttributeString(snapengine::AbstractMetadata::MDS2_TX_RX_POLAR, selected_polarisations_.at(i));
+            abs_tgt->SetAttributeString(snapengine::AbstractMetadata::MDS2_TX_RX_POLAR, selected_polarisations_.at(i));
         } else if (i == 2) {
-            absTgt->SetAttributeString(snapengine::AbstractMetadata::MDS3_TX_RX_POLAR, selected_polarisations_.at(i));
+            abs_tgt->SetAttributeString(snapengine::AbstractMetadata::MDS3_TX_RX_POLAR, selected_polarisations_.at(i));
         } else {
-            absTgt->SetAttributeString(snapengine::AbstractMetadata::MDS4_TX_RX_POLAR, selected_polarisations_.at(i));
+            abs_tgt->SetAttributeString(snapengine::AbstractMetadata::MDS4_TX_RX_POLAR, selected_polarisations_.at(i));
         }
     }
 
-    auto bandMetadataList = snapengine::AbstractMetadata::GetBandAbsMetadataList(absTgt);
-    for (std::shared_ptr<snapengine::MetadataElement> bandMeta : bandMetadataList) {
+    auto band_metadata_list = snapengine::AbstractMetadata::GetBandAbsMetadataList(abs_tgt);
+    for (std::shared_ptr<snapengine::MetadataElement> band_meta : band_metadata_list) {
         bool include = false;
 
-        if (bandMeta->GetName().find(subswath_) != std::string::npos) {
+        if (band_meta->GetName().find(subswath_) != std::string::npos) {
             for (std::string pol : selected_polarisations_) {
-                if (bandMeta->GetName().find(pol) != std::string::npos) {
+                if (band_meta->GetName().find(pol) != std::string::npos) {
                     include = true;
                     break;
                 }
@@ -318,64 +308,64 @@ void TopsarSplit::UpdateAbstractedMetadata() {
         }
         if (!include) {
             // remove band metadata if polarization or subswath is not included
-            absTgt->RemoveElement(bandMeta);
+            abs_tgt->RemoveElement(band_meta);
         }
     }
 
     // Do not delete the following lines because the orbit state vector time in the target product could be wrong.
-    std::shared_ptr<snapengine::MetadataElement> tgtOrbitVectorsElem =
-        absTgt->GetElement(snapengine::AbstractMetadata::ORBIT_STATE_VECTORS);
-    std::shared_ptr<snapengine::MetadataElement> srcOrbitVectorsElem =
-        absSrc->GetElement(snapengine::AbstractMetadata::ORBIT_STATE_VECTORS);
+    std::shared_ptr<snapengine::MetadataElement> tgt_orbit_vectors_elem =
+        abs_tgt->GetElement(snapengine::AbstractMetadata::ORBIT_STATE_VECTORS);
+    std::shared_ptr<snapengine::MetadataElement> src_orbit_vectors_elem =
+        abs_src->GetElement(snapengine::AbstractMetadata::ORBIT_STATE_VECTORS);
 
-    int numOrbitVectors = srcOrbitVectorsElem->GetNumElements();
-    for (int i = 1; i <= numOrbitVectors; ++i) {
+    int num_orbit_vectors = src_orbit_vectors_elem->GetNumElements();
+    for (int i = 1; i <= num_orbit_vectors; ++i) {
         std::stringstream ss;
         ss << snapengine::AbstractMetadata::ORBIT_VECTOR << i;
         std::string elem_name = ss.str();
-        std::shared_ptr<snapengine::MetadataElement> orbElem = srcOrbitVectorsElem->GetElement(elem_name);
+        std::shared_ptr<snapengine::MetadataElement> orb_elem = src_orbit_vectors_elem->GetElement(elem_name);
         std::shared_ptr<snapengine::Utc> time =
-            orbElem->GetAttributeUtc(snapengine::AbstractMetadata::ORBIT_VECTOR_TIME);
-        tgtOrbitVectorsElem->GetElement(elem_name)->SetAttributeUtc(snapengine::AbstractMetadata::ORBIT_VECTOR_TIME,
+            orb_elem->GetAttributeUtc(snapengine::AbstractMetadata::ORBIT_VECTOR_TIME);
+        tgt_orbit_vectors_elem->GetElement(elem_name)->SetAttributeUtc(snapengine::AbstractMetadata::ORBIT_VECTOR_TIME,
                                                                     time);
     }
 }
 
 void TopsarSplit::UpdateOriginalMetadata() {
-    std::shared_ptr<snapengine::MetadataElement> origMeta =
+    std::shared_ptr<snapengine::MetadataElement> orig_meta =
         snapengine::AbstractMetadata::GetOriginalProductMetadata(target_product_);
-    RemoveElements(origMeta, "annotation");
-    RemoveElements(origMeta, "calibration");
-    RemoveElements(origMeta, "noise");
-    RemoveBursts(origMeta);
-    UpdateImageInformation(origMeta);
+    RemoveElements(orig_meta, "annotation");
+    RemoveElements(orig_meta, "calibration");
+    RemoveElements(orig_meta, "noise");
+    RemoveBursts(orig_meta);
+    UpdateImageInformation(orig_meta);
 }
 
-void TopsarSplit::RemoveElements(std::shared_ptr<snapengine::MetadataElement>& origMeta, std::string parent) {
-    std::shared_ptr<snapengine::MetadataElement> parentElem = origMeta->GetElement(parent);
-    if (parentElem != nullptr) {
-        auto elemList = parentElem->GetElements();
-        for (std::shared_ptr<snapengine::MetadataElement> elem : elemList) {
+void TopsarSplit::RemoveElements(std::shared_ptr<snapengine::MetadataElement>& orig_meta, std::string parent) {
+    std::shared_ptr<snapengine::MetadataElement> parent_elem = orig_meta->GetElement(parent);
+    if (parent_elem != nullptr) {
+        auto elem_list = parent_elem->GetElements();
+        for (std::shared_ptr<snapengine::MetadataElement> elem : elem_list) {
             if (boost::to_upper_copy<std::string>(elem->GetName()).find(subswath_) == std::string::npos) {
-                parentElem->RemoveElement(elem);
+                parent_elem->RemoveElement(elem);
             } else {
-                bool isSelected = false;
+                bool is_selected = false;
                 for (std::string pol : selected_polarisations_) {
                     if (boost::to_upper_copy<std::string>(elem->GetName()).find(pol) != std::string::npos) {
-                        isSelected = true;
+                        is_selected = true;
                         break;
                     }
                 }
-                if (!isSelected) {
-                    parentElem->RemoveElement(elem);
+                if (!is_selected) {
+                    parent_elem->RemoveElement(elem);
                 }
             }
         }
     }
 }
 
-void TopsarSplit::RemoveBursts(std::shared_ptr<snapengine::MetadataElement>& origMeta) {
-    std::shared_ptr<snapengine::MetadataElement> annotation = origMeta->GetElement("annotation");
+void TopsarSplit::RemoveBursts(std::shared_ptr<snapengine::MetadataElement>& orig_meta) {
+    std::shared_ptr<snapengine::MetadataElement> annotation = orig_meta->GetElement("annotation");
     if (annotation == nullptr) {
         throw std::runtime_error("Annotation Metadata not found");
     }
@@ -383,21 +373,21 @@ void TopsarSplit::RemoveBursts(std::shared_ptr<snapengine::MetadataElement>& ori
     auto elems = annotation->GetElements();
     for (std::shared_ptr<snapengine::MetadataElement> elem : elems) {
         std::shared_ptr<snapengine::MetadataElement> product = elem->GetElement("product");
-        std::shared_ptr<snapengine::MetadataElement> swathTiming = product->GetElement("swathTiming");
-        std::shared_ptr<snapengine::MetadataElement> burstList = swathTiming->GetElement("burstList");
-        burstList->SetAttributeString("count", std::to_string(last_burst_index_ - first_burst_index_ + 1));
-        auto burstListElem = burstList->GetElements();
-        int size = burstListElem.size();
+        std::shared_ptr<snapengine::MetadataElement> swath_timing = product->GetElement("swathTiming");
+        std::shared_ptr<snapengine::MetadataElement> burst_list = swath_timing->GetElement("burstList");
+        burst_list->SetAttributeString("count", std::to_string(last_burst_index_ - first_burst_index_ + 1));
+        auto burst_list_elem = burst_list->GetElements();
+        int size = burst_list_elem.size();
         for (int i = 0; i < size; i++) {
             if (i < first_burst_index_ - 1 || i > last_burst_index_ - 1) {
-                burstList->RemoveElement(burstListElem[i]);
+                burst_list->RemoveElement(burst_list_elem[i]);
             }
         }
     }
 }
 
-void TopsarSplit::UpdateImageInformation(std::shared_ptr<snapengine::MetadataElement>& origMeta) {
-    std::shared_ptr<snapengine::MetadataElement> annotation = origMeta->GetElement("annotation");
+void TopsarSplit::UpdateImageInformation(std::shared_ptr<snapengine::MetadataElement>& orig_meta) {
+    std::shared_ptr<snapengine::MetadataElement> annotation = orig_meta->GetElement("annotation");
     if (annotation == nullptr) {
         throw std::runtime_error("Annotation Metadata not found");
     }
@@ -405,24 +395,27 @@ void TopsarSplit::UpdateImageInformation(std::shared_ptr<snapengine::MetadataEle
     auto elems = annotation->GetElements();
     for (std::shared_ptr<snapengine::MetadataElement> elem : elems) {
         std::shared_ptr<snapengine::MetadataElement> product = elem->GetElement("product");
-        std::shared_ptr<snapengine::MetadataElement> imageAnnotation = product->GetElement("imageAnnotation");
-        std::shared_ptr<snapengine::MetadataElement> imageInformation = imageAnnotation->GetElement("imageInformation");
+        std::shared_ptr<snapengine::MetadataElement> image_annotation = product->GetElement("imageAnnotation");
+        std::shared_ptr<snapengine::MetadataElement> image_information =
+            image_annotation->GetElement("imageInformation");
 
-        imageInformation->SetAttributeString(
+        image_information->SetAttributeString(
             "numberOfLines",
             std::to_string(selected_subswath_info_->lines_per_burst_ * (last_burst_index_ - first_burst_index_ + 1)));
 
-        std::shared_ptr<snapengine::Utc> firstLineTimeUTC =
+        std::shared_ptr<snapengine::Utc> first_line_time_utc =
             std::make_shared<snapengine::Utc>(selected_subswath_info_->burst_first_line_time_[first_burst_index_ - 1] /
                                               snapengine::constants::secondsInDay);
 
-        imageInformation->SetAttributeString("productFirstLineUtcTime", firstLineTimeUTC->Format("%Y-%m-%d %H:%M:%S"));
+        image_information->SetAttributeString("productFirstLineUtcTime",
+                                              first_line_time_utc->Format("%Y-%m-%d %H:%M:%S"));
 
-        std::shared_ptr<snapengine::Utc> lastLineTimeUTC =
+        std::shared_ptr<snapengine::Utc> last_line_time_utc =
             std::make_shared<snapengine::Utc>(selected_subswath_info_->burst_last_line_time_[last_burst_index_ - 1] /
                                               snapengine::constants::secondsInDay);
 
-        imageInformation->SetAttributeString("productLastLineUtcTime", lastLineTimeUTC->Format("%Y-%m-%d %H:%M:%S"));
+        image_information->SetAttributeString("productLastLineUtcTime",
+                                              last_line_time_utc->Format("%Y-%m-%d %H:%M:%S"));
     }
 }
 

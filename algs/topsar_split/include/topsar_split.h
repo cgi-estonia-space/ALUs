@@ -53,11 +53,11 @@ private:
     s1tbx::SubSwathInfo* selected_subswath_info_ = nullptr;
 
     void UpdateAbstractedMetadata();
-    void RemoveBursts(std::shared_ptr<snapengine::MetadataElement>& origMeta);
-    void UpdateImageInformation(std::shared_ptr<snapengine::MetadataElement>& origMeta);
+    void RemoveBursts(std::shared_ptr<snapengine::MetadataElement>& orig_meta);
+    void UpdateImageInformation(std::shared_ptr<snapengine::MetadataElement>& orig_meta);
     void UpdateOriginalMetadata();
     void UpdateTargetProductMetadata();
-    void RemoveElements(std::shared_ptr<snapengine::MetadataElement>& origMeta, std::string parent);
+    void RemoveElements(std::shared_ptr<snapengine::MetadataElement>& orig_meta, std::string parent);
 };
 
 }  // namespace alus::topsarsplit

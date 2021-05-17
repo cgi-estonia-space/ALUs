@@ -335,15 +335,15 @@ std::shared_ptr<MetadataElement> AbstractMetadata::AddAbstractedMetadataHeader(
 }
 
 std::vector<std::shared_ptr<MetadataElement>> AbstractMetadata::GetBandAbsMetadataList(
-    std::shared_ptr<MetadataElement> absRoot) {
-    std::vector<std::shared_ptr<MetadataElement>> bandMetadataList;
-    std::vector<std::shared_ptr<MetadataElement>> children = absRoot->GetElements();
+    std::shared_ptr<MetadataElement> abs_root) {
+    std::vector<std::shared_ptr<MetadataElement>> band_metadata_list;
+    std::vector<std::shared_ptr<MetadataElement>> children = abs_root->GetElements();
     for (std::shared_ptr<MetadataElement> child : children) {
         if (child->GetName().find(BAND_PREFIX, 0) == 0) {
-            bandMetadataList.push_back(child);
+            band_metadata_list.push_back(child);
         }
     }
-    return bandMetadataList;
+    return band_metadata_list;
 }
 
 void AbstractMetadata::SetOrbitStateVectors(const std::shared_ptr<MetadataElement>& abs_root,

@@ -38,10 +38,10 @@ public:
     long unsigned int GetBufferByteSize() override;
     size_t GetBufferElemCount() override;
 
-    Dataset<Dual16>* GetDataset() { return dataset_.get(); }
+    Dataset<Iq16>* GetDataset() { return dataset_.get(); }
 
 private:
-    std::unique_ptr<Dataset<Dual16>> dataset_;
+    std::unique_ptr<Dataset<Iq16>> dataset_;
 };
 
 }  // namespace alus

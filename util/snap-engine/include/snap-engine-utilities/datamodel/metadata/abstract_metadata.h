@@ -275,7 +275,7 @@ public:
     static constexpr std::string_view ELEVATION_ANGLE = "elevationAngle";
 
     static std::vector<std::shared_ptr<MetadataElement>> GetBandAbsMetadataList(
-        std::shared_ptr<MetadataElement> absRoot);
+        std::shared_ptr<MetadataElement> abs_root);
 
     static bool GetAttributeBoolean(const std::shared_ptr<MetadataElement>& element, std::string_view view);
 

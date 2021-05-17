@@ -150,9 +150,9 @@ std::shared_ptr<custom::Dimension> ProductSubsetDef::GetSceneRasterSize(int max_
     int height = max_height;
 
     if (subset_region_ != nullptr && dynamic_cast<PixelSubsetRegion*>(subset_region_.get()) != nullptr) {
-        PixelSubsetRegion *pixelSubsetRegion = dynamic_cast<PixelSubsetRegion*>(subset_region_.get());
-        width = pixelSubsetRegion->GetPixelRegion()->width;
-        height = pixelSubsetRegion->GetPixelRegion()->height;
+        PixelSubsetRegion* pixel_subset_region = dynamic_cast<PixelSubsetRegion*>(subset_region_.get());
+        width = pixel_subset_region->GetPixelRegion()->width;
+        height = pixel_subset_region->GetPixelRegion()->height;
     }
 
     auto the_band = region_map_.find(band_name);
@@ -160,24 +160,24 @@ std::shared_ptr<custom::Dimension> ProductSubsetDef::GetSceneRasterSize(int max_
         width = region_map_.at(band_name).width;
         height = region_map_.at(band_name).height;
     } else if (!region_map_.empty()) {
-        int auxWidth = -1;
-        int auxHeight = -1;
+        int aux_width = -1;
+        int aux_height = -1;
 
-        for (std::string nodeName : node_name_list_) {
+        for (std::string node_name : node_name_list_) {
 
-            auto rec = region_map_.find(nodeName);
+            auto rec = region_map_.find(node_name);
             if (rec == region_map_.end()) {
                 continue;
             }
-            if (auxHeight < rec->second.height) {
-                auxHeight = rec->second.height;
-                auxWidth = rec->second.width;
+            if (aux_height < rec->second.height) {
+                aux_height = rec->second.height;
+                aux_width = rec->second.width;
             }
         }
 
-        if (auxHeight != -1 && auxWidth != -1) {
-            width = auxWidth;
-            height = auxHeight;
+        if (aux_height != -1 && aux_width != -1) {
+            width = aux_width;
+            height = aux_height;
         }
     }
     return std::make_shared<custom::Dimension>((width - 1) / sub_sampling_x_ + 1, (height - 1) / sub_sampling_y_ + 1);

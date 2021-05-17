@@ -202,5 +202,5 @@ template class Dataset<double>;
 template class Dataset<float>;
 template class Dataset<int16_t>;
 template class Dataset<int>;
-template class Dataset<Dual16>;
+template class Dataset<Iq16>;
 }  // namespace alus

@@ -19,20 +19,20 @@
 #include "snap-core/dataio/product_subset_builder.h"
 
 #include "snap-core/datamodel/band.h"
+#include "snap-core/datamodel/flag_coding.h"
 #include "snap-core/datamodel/geo_pos.h"
+#include "snap-core/datamodel/index_coding.h"
 #include "snap-core/datamodel/metadata_attribute.h"
 #include "snap-core/datamodel/metadata_element.h"
 #include "snap-core/datamodel/pixel_pos.h"
 #include "snap-core/datamodel/product.h"
 #include "snap-core/datamodel/product_data.h"
 #include "snap-core/datamodel/product_data_utc.h"
+#include "snap-core/datamodel/product_node_group.h"
 #include "snap-core/datamodel/raster_data_node.h"
 #include "snap-core/datamodel/tie_point_grid.h"
-#include "snap-core/util/product_utils.h"
 #include "snap-core/datamodel/virtual_band.h"
-#include "snap-core/datamodel/flag_coding.h"
-#include "snap-core/datamodel/index_coding.h"
-#include "snap-core/datamodel/product_node_group.h"
+#include "snap-core/util/product_utils.h"
 
 namespace alus::snapengine {
 
@@ -42,18 +42,19 @@ std::shared_ptr<Product> ProductSubsetBuilder::ReadProductNodesImpl() {
     std::any input = GetInput();
     try {
         source_product_ = std::any_cast<std::shared_ptr<Product>>(input);
-        //Debug.assertNotNull(source_product_);
+        // Debug.assertNotNull(source_product_);
         scene_raster_width_ = source_product_->GetSceneRasterWidth();
         scene_raster_height_ = source_product_->GetSceneRasterHeight();
         if (GetSubsetDef() != nullptr) {
-            std::shared_ptr<custom::Dimension> s = GetSubsetDef()->GetSceneRasterSize(scene_raster_width_, scene_raster_height_);
+            std::shared_ptr<custom::Dimension> s =
+                GetSubsetDef()->GetSceneRasterSize(scene_raster_width_, scene_raster_height_);
             scene_raster_width_ = s->width;
             scene_raster_height_ = s->height;
         }
 
-        std::shared_ptr<Product> targetProduct = CreateProduct();
-        UpdateMetadata(source_product_, targetProduct, GetSubsetDef());
-        return targetProduct;
+        std::shared_ptr<Product> target_product = CreateProduct();
+        UpdateMetadata(source_product_, target_product, GetSubsetDef());
+        return target_product;
     } catch (const std::bad_any_cast& e) {
         std::cerr << e.what() << std::endl;
         throw std::runtime_error(
@@ -85,11 +86,11 @@ void ProductSubsetBuilder::UpdateMetadata(std::shared_ptr<Product> source_produc
     std::shared_ptr<MetadataAttribute> width = trg_abs_root->GetAttribute("num_samples_per_line");
     if (width != nullptr) width->GetData()->SetElemUInt(target_product->GetSceneRasterWidth());
 
-    std::shared_ptr<MetadataAttribute> offsetX = trg_abs_root->GetAttribute("subset_offset_x");
-    if (offsetX != nullptr && region != nullptr) offsetX->GetData()->SetElemUInt(region->x);
+    std::shared_ptr<MetadataAttribute> offset_x = trg_abs_root->GetAttribute("subset_offset_x");
+    if (offset_x != nullptr && region != nullptr) offset_x->GetData()->SetElemUInt(region->x);
 
-    std::shared_ptr<MetadataAttribute> offsetY = trg_abs_root->GetAttribute("subset_offset_y");
-    if (offsetY != nullptr && region != nullptr) offsetY->GetData()->SetElemUInt(region->y);
+    std::shared_ptr<MetadataAttribute> offset_y = trg_abs_root->GetAttribute("subset_offset_y");
+    if (offset_y != nullptr && region != nullptr) offset_y->GetData()->SetElemUInt(region->y);
 
     bool is_sar_product = trg_abs_root->GetAttributeDouble("radar_frequency", 99999) != 99999;
     if (!is_sar_product) return;
@@ -101,7 +102,7 @@ void ProductSubsetBuilder::UpdateMetadata(std::shared_ptr<Product> source_produc
     int source_image_height = source_product->GetSceneRasterHeight();
     double src_first_line_time = Utc::Parse(src_abs_root->GetAttributeString("first_line_time"))->GetMjd();  // in days
     double src_last_line_time = Utc::Parse(src_abs_root->GetAttributeString("last_line_time"))->GetMjd();    // in days
-    double line_time_interval = (src_last_line_time - src_first_line_time) / (source_image_height - 1);           // in days
+    double line_time_interval = (src_last_line_time - src_first_line_time) / (source_image_height - 1);      // in days
     if (region != nullptr) {
         int region_y = region->y;
         double region_height = region->height;
@@ -144,18 +145,18 @@ void ProductSubsetBuilder::UpdateMetadata(std::shared_ptr<Product> source_produc
 
     std::shared_ptr<MetadataAttribute> slant_range = trg_abs_root->GetAttribute("slant_range_to_first_pixel");
     if (slant_range != nullptr) {
-        std::shared_ptr<TiePointGrid> srTPG = target_product->GetTiePointGrid("slant_range_time");
-        if (srTPG != nullptr && region != nullptr) {
+        std::shared_ptr<TiePointGrid> sr_tpg = target_product->GetTiePointGrid("slant_range_time");
+        if (sr_tpg != nullptr && region != nullptr) {
             bool srgr_flag = src_abs_root->GetAttributeInt("srgr_flag") != 0;
             double slant_range_dist;
             if (srgr_flag) {
                 double slant_range_time;
                 if (near_range_on_left) {
-                    slant_range_time = srTPG->GetPixelDouble(region->x, region->y) / 1000000000.0;  // ns to s
+                    slant_range_time = sr_tpg->GetPixelDouble(region->x, region->y) / 1000000000.0;  // ns to s
                 } else {
-                    slant_range_time = srTPG->GetPixelDouble(target_product->GetSceneRasterWidth() - region->x - 1,
-                                                           region->y) /
-                                     1000000000.0;  // ns to s
+                    slant_range_time = sr_tpg->GetPixelDouble(target_product->GetSceneRasterWidth() - region->x - 1,
+                                                              region->y) /
+                                       1000000000.0;  // ns to s
                 }
                 double half_light_speed = 299792458.0 / 2.0;
                 slant_range_dist = slant_range_time * half_light_speed;
@@ -166,8 +167,8 @@ void ProductSubsetBuilder::UpdateMetadata(std::shared_ptr<Product> source_produc
                 if (near_range_on_left) {
                     slant_range_dist = slant_range_to_first_pixel + region->x * range_spacing;
                 } else {
-                    slant_range_dist =
-                        slant_range_to_first_pixel + (target_product->GetSceneRasterWidth() - region->x - 1) * range_spacing;
+                    slant_range_dist = slant_range_to_first_pixel +
+                                       (target_product->GetSceneRasterWidth() - region->x - 1) * range_spacing;
                 }
                 slant_range->GetData()->SetElemDouble(slant_range_dist);
             }
@@ -191,7 +192,8 @@ bool ProductSubsetBuilder::IsNearRangeOnLeft(std::shared_ptr<Product>& product) 
 void ProductSubsetBuilder::SetSubsetSRGRCoefficients(std::shared_ptr<Product>& source_product,
                                                      std::shared_ptr<Product>& target_product,
                                                      std::shared_ptr<ProductSubsetDef>& subset_def,
-                                                     std::shared_ptr<MetadataElement>& abs_root, bool near_range_on_left) {
+                                                     std::shared_ptr<MetadataElement>& abs_root,
+                                                     bool near_range_on_left) {
     std::shared_ptr<MetadataElement> srgr_coefficients_elem = abs_root->GetElement("SRGR_Coefficients");
     if (srgr_coefficients_elem != nullptr) {
         double range_spacing = abs_root->GetAttributeDouble("RANGE_SPACING", 0);
@@ -227,144 +229,149 @@ void ProductSubsetBuilder::SetLatLongMetadata(std::shared_ptr<Product>& product,
 }
 
 std::shared_ptr<Product> ProductSubsetBuilder::CreateProduct() {
-    std::shared_ptr<Product> sourceProduct = getSourceProduct();
-    //Debug.assertNotNull(sourceProduct);
-    //Debug.assertTrue(getSceneRasterWidth() > 0);
-    //Debug.assertTrue(getSceneRasterHeight() > 0);
-    std::string newProductName;
+    std::shared_ptr<Product> source_product = GetSourceProduct();
+    // Debug.assertNotNull(sourceProduct);
+    // Debug.assertTrue(getSceneRasterWidth() > 0);
+    // Debug.assertTrue(getSceneRasterHeight() > 0);
+    std::string new_product_name;
     if (new_product_name_.empty()) {
-        newProductName = sourceProduct->GetName();
+        new_product_name = source_product->GetName();
     } else {
-        newProductName = new_product_name_;
+        new_product_name = new_product_name_;
     }
     std::shared_ptr<ProductSubsetBuilder> this_object(this);
-    std::shared_ptr<Product> product = Product::CreateProduct(newProductName, sourceProduct->GetProductType(),
-                                        GetSceneRasterWidth(),
-                                        GetSceneRasterHeight(),
-                                        this_object);
-    //product->SetPointingFactory(sourceProduct.getPointingFactory());
+    std::shared_ptr<Product> product = Product::CreateProduct(
+        new_product_name, source_product->GetProductType(), GetSceneRasterWidth(), GetSceneRasterHeight(), this_object);
+    // product->SetPointingFactory(sourceProduct.getPointingFactory());
     if (new_product_desc_.empty()) {
-        product->SetDescription(sourceProduct->GetDescription());
+        product->SetDescription(source_product->GetDescription());
     } else {
         product->SetDescription(std::string_view(new_product_desc_));
     }
     if (!IsMetadataIgnored()) {
-        ProductUtils::CopyMetadata(sourceProduct, product);
+        ProductUtils::CopyMetadata(source_product, product);
     }
-    //AddTiePointGridsToProduct(product);
+    // TODO: list of everything missing that perhaps we should have.
+    // AddTiePointGridsToProduct(product);
     AddBandsToProduct(product);
-    //ProductUtils::CopyMasks(sourceProduct, product);
-    //AddFlagCodingsToProduct(product);
-    //AddGeoCodingToProduct(product);
+    // ProductUtils::CopyMasks(sourceProduct, product);
+    // AddFlagCodingsToProduct(product);
+    // AddGeoCodingToProduct(product);
 
     // only copy index codings associated with accepted nodes
-    //copyAcceptedIndexCodings(product);
+    // copyAcceptedIndexCodings(product);
 
-    //ProductUtils::CopyVectorData(sourceProduct, product);
-    //ProductUtils::CopyOverlayMasks(sourceProduct, product);
-    //ProductUtils::CopyPreferredTileSize(sourceProduct, product);
-    //setSceneRasterStartAndStopTime(product);
-    //addSubsetInfoMetadata(product);
-    if (!sourceProduct->GetQuicklookBandName().empty()
-        && product->GetQuicklookBandName().empty()
-        && product->ContainsBand(sourceProduct->GetQuicklookBandName())) {
-        product->SetQuicklookBandName(sourceProduct->GetQuicklookBandName());
+    // ProductUtils::CopyVectorData(sourceProduct, product);
+    // ProductUtils::CopyOverlayMasks(sourceProduct, product);
+    // ProductUtils::CopyPreferredTileSize(sourceProduct, product);
+    // setSceneRasterStartAndStopTime(product);
+    // addSubsetInfoMetadata(product);
+    if (!source_product->GetQuicklookBandName().empty() && product->GetQuicklookBandName().empty() &&
+        product->ContainsBand(source_product->GetQuicklookBandName())) {
+        product->SetQuicklookBandName(source_product->GetQuicklookBandName());
     }
-    //product->SetAutoGrouping(sourceProduct->GetAutoGrouping());
+    // product->SetAutoGrouping(sourceProduct->GetAutoGrouping());
 
     return product;
 }
 
 void ProductSubsetBuilder::AddBandsToProduct(std::shared_ptr<Product> product) {
-    //Debug.assertNotNull(this.getSourceProduct());
-    //Debug.assertNotNull(product);
+    // Debug.assertNotNull(this.getSourceProduct());
+    // Debug.assertNotNull(product);
 
-    for(int i = 0; i < getSourceProduct()->GetNumBands(); ++i) {
-        std::shared_ptr<Band> sourceBand = getSourceProduct()->GetBandAt(i);
-        std::string bandName = sourceBand->GetName();
-        if (IsNodeAccepted(bandName)) {
-            bool treatVirtualBandsAsRealBands = false;
+    for (int i = 0; i < GetSourceProduct()->GetNumBands(); ++i) {
+        std::shared_ptr<Band> source_band = GetSourceProduct()->GetBandAt(i);
+        std::string band_name = source_band->GetName();
+        if (IsNodeAccepted(band_name)) {
+            bool treat_virtual_bands_as_real_bands = false;
             if (GetSubsetDef() != nullptr && GetSubsetDef()->GetTreatVirtualBandsAsRealBands()) {
-                treatVirtualBandsAsRealBands = true;
+                treat_virtual_bands_as_real_bands = true;
             }
 
-            std::shared_ptr<Band> destBand;
-            if (!treatVirtualBandsAsRealBands && dynamic_cast<VirtualBand*>(sourceBand.get()) != nullptr) {
-                std::shared_ptr<VirtualBand> virtualSource = std::dynamic_pointer_cast<VirtualBand>(sourceBand);
+            std::shared_ptr<Band> dest_band;
+            if (!treat_virtual_bands_as_real_bands && dynamic_cast<VirtualBand*>(source_band.get()) != nullptr) {
+                std::shared_ptr<VirtualBand> virtual_source = std::dynamic_pointer_cast<VirtualBand>(source_band);
                 if (GetSubsetDef() == nullptr) {
-                    destBand = std::make_shared<VirtualBand>(bandName, sourceBand->GetDataType(), GetSceneRasterWidth(), GetSceneRasterHeight(), virtualSource->GetExpression());
+                    dest_band =
+                        std::make_shared<VirtualBand>(band_name, source_band->GetDataType(), GetSceneRasterWidth(),
+                                                      GetSceneRasterHeight(), virtual_source->GetExpression());
                 } else {
-                    std::shared_ptr<custom::Dimension> dim = GetSubsetDef()->GetSceneRasterSize(sourceBand->GetRasterWidth(), sourceBand->GetRasterHeight(), sourceBand->GetName());
-                    destBand = std::make_shared<VirtualBand>(bandName, sourceBand->GetDataType(), dim->width, dim->height, virtualSource->GetExpression());
+                    std::shared_ptr<custom::Dimension> dim = GetSubsetDef()->GetSceneRasterSize(
+                        source_band->GetRasterWidth(), source_band->GetRasterHeight(), source_band->GetName());
+                    dest_band = std::make_shared<VirtualBand>(band_name, source_band->GetDataType(), dim->width,
+                                                              dim->height, virtual_source->GetExpression());
                 }
             } else if (GetSubsetDef() == nullptr) {
-                destBand = std::make_shared<Band>(bandName, sourceBand->GetDataType(), GetSceneRasterWidth(), GetSceneRasterHeight());
+                dest_band = std::make_shared<Band>(band_name, source_band->GetDataType(), GetSceneRasterWidth(),
+                                                   GetSceneRasterHeight());
             } else {
-                std::shared_ptr<custom::Dimension> dim = GetSubsetDef()->GetSceneRasterSize(sourceBand->GetRasterWidth(), sourceBand->GetRasterHeight(), sourceBand->GetName());
-                destBand = std::make_shared<Band>(bandName, sourceBand->GetDataType(), dim->width, dim->height);
+                std::shared_ptr<custom::Dimension> dim = GetSubsetDef()->GetSceneRasterSize(
+                    source_band->GetRasterWidth(), source_band->GetRasterHeight(), source_band->GetName());
+                dest_band = std::make_shared<Band>(band_name, source_band->GetDataType(), dim->width, dim->height);
             }
 
-            if (sourceBand->GetUnit().has_value()) {
-                destBand->SetUnit(sourceBand->GetUnit());
+            if (source_band->GetUnit().has_value()) {
+                dest_band->SetUnit(source_band->GetUnit());
             }
 
-            if (sourceBand->GetDescription().has_value()) {
-                destBand->SetDescription(sourceBand->GetDescription());
+            if (source_band->GetDescription().has_value()) {
+                dest_band->SetDescription(source_band->GetDescription());
             }
 
-            destBand->SetScalingFactor(sourceBand->GetScalingFactor());
-            destBand->SetScalingOffset(sourceBand->GetScalingOffset());
-            destBand->SetLog10Scaled(sourceBand->IsLog10Scaled());
-            destBand->SetSpectralBandIndex(sourceBand->GetSpectralBandIndex());
-            destBand->SetSpectralWavelength(sourceBand->GetSpectralWavelength());
-            destBand->SetSpectralBandwidth(sourceBand->GetSpectralBandwidth());
-            destBand->SetSolarFlux(sourceBand->GetSolarFlux());
-            if (sourceBand->IsNoDataValueSet()) {
-                destBand->SetNoDataValue(sourceBand->GetNoDataValue());
+            dest_band->SetScalingFactor(source_band->GetScalingFactor());
+            dest_band->SetScalingOffset(source_band->GetScalingOffset());
+            dest_band->SetLog10Scaled(source_band->IsLog10Scaled());
+            dest_band->SetSpectralBandIndex(source_band->GetSpectralBandIndex());
+            dest_band->SetSpectralWavelength(source_band->GetSpectralWavelength());
+            dest_band->SetSpectralBandwidth(source_band->GetSpectralBandwidth());
+            dest_band->SetSolarFlux(source_band->GetSolarFlux());
+            if (source_band->IsNoDataValueSet()) {
+                dest_band->SetNoDataValue(source_band->GetNoDataValue());
             }
 
-            destBand->SetNoDataValueUsed(sourceBand->IsNoDataValueUsed());
-            destBand->SetValidPixelExpression(sourceBand->GetValidPixelExpression());
-            std::shared_ptr<FlagCoding> sourceFlagCoding = sourceBand->GetFlagCoding();
-            std::shared_ptr<IndexCoding> sourceIndexCoding = sourceBand->GetIndexCoding();
-            std::string indexCodingName;
-            if (sourceFlagCoding != nullptr) {
-                indexCodingName = sourceFlagCoding->GetName();
-                std::shared_ptr<FlagCoding> destFlagCoding = std::dynamic_pointer_cast<FlagCoding>(product->GetFlagCodingGroup()->Get(indexCodingName));
-                if (destFlagCoding == nullptr) {
-                    destFlagCoding = ProductUtils::CopyFlagCoding(sourceFlagCoding, product);
+            dest_band->SetNoDataValueUsed(source_band->IsNoDataValueUsed());
+            dest_band->SetValidPixelExpression(source_band->GetValidPixelExpression());
+            std::shared_ptr<FlagCoding> source_flag_coding = source_band->GetFlagCoding();
+            std::shared_ptr<IndexCoding> source_index_coding = source_band->GetIndexCoding();
+            std::string index_coding_name;
+            if (source_flag_coding != nullptr) {
+                index_coding_name = source_flag_coding->GetName();
+                std::shared_ptr<FlagCoding> dest_flag_coding =
+                    std::dynamic_pointer_cast<FlagCoding>(product->GetFlagCodingGroup()->Get(index_coding_name));
+                if (dest_flag_coding == nullptr) {
+                    dest_flag_coding = ProductUtils::CopyFlagCoding(source_flag_coding, product);
                 }
 
-                destBand->SetSampleCoding(destFlagCoding);
-            } else if (sourceIndexCoding != nullptr) {
-                indexCodingName = sourceIndexCoding->GetName();
-                std::shared_ptr<IndexCoding> destIndexCoding = std::dynamic_pointer_cast<IndexCoding>(product->GetIndexCodingGroup()->Get(indexCodingName));
-                if (destIndexCoding == nullptr) {
-                    destIndexCoding = ProductUtils::CopyIndexCoding(sourceIndexCoding, product);
+                dest_band->SetSampleCoding(dest_flag_coding);
+            } else if (source_index_coding != nullptr) {
+                index_coding_name = source_index_coding->GetName();
+                std::shared_ptr<IndexCoding> dest_index_coding =
+                    std::dynamic_pointer_cast<IndexCoding>(product->GetIndexCodingGroup()->Get(index_coding_name));
+                if (dest_index_coding == nullptr) {
+                    dest_index_coding = ProductUtils::CopyIndexCoding(source_index_coding, product);
                 }
 
-                destBand->SetSampleCoding(destIndexCoding);
+                dest_band->SetSampleCoding(dest_index_coding);
             } else {
-                destBand->SetSampleCoding(nullptr);
+                dest_band->SetSampleCoding(nullptr);
             }
 
-            //TODO: what is even stx?
+            // TODO: what is even stx?
             /*if (IsFullScene(GetSubsetDef(), sourceBand) && sourceBand->IsStxSet()) {
                 CopyStx(sourceBand, std::dynamic_pointer_cast<RasterDataNode>(destBand));
             }*/
 
-            product->AddBand(destBand);
-            band_map_.insert(std::pair<std::shared_ptr<Band>, std::shared_ptr<RasterDataNode>>(destBand, sourceBand));
+            product->AddBand(dest_band);
+            band_map_.insert(std::pair<std::shared_ptr<Band>, std::shared_ptr<RasterDataNode>>(dest_band, source_band));
         }
     }
 
-    //TODO: Image info? You'll know when you need it.
+    // TODO: Image info? You'll know when you need it.
     /*auto var11 = band_map_.begin();
 
     for(var11; var11 != band_map_.end(); ++var11) {
         CopyImageInfo((RasterDataNode)var11->second, (RasterDataNode)var11->first);
     }*/
-
 }
 
 /*void CopyImageInfo(RasterDataNode* sourceRaster, RasterDataNode* targetRaster) {

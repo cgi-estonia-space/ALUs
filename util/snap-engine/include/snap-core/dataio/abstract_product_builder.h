@@ -18,31 +18,25 @@
  */
 #pragma once
 
-#include <memory>
 #include <map>
+#include <memory>
 #include <string>
 
 #include "abstract_product_reader.h"
-#include "snap-core/datamodel/product.h"
 #include "snap-core/datamodel/band.h"
+#include "snap-core/datamodel/product.h"
 #include "snap-core/datamodel/raster_data_node.h"
 
-namespace alus::snapengine{
+namespace alus::snapengine {
 
-class AbstractProductBuilder : public AbstractProductReader{
+class AbstractProductBuilder : public AbstractProductReader {
 public:
     AbstractProductBuilder(bool source_product_owner);
 
-    std::shared_ptr<Product>& getSourceProduct() {
-        return source_product_;
-    }
-    int GetSceneRasterWidth() {
-        return scene_raster_width_;
-    }
+    std::shared_ptr<Product>& GetSourceProduct() { return source_product_; }
+    int GetSceneRasterWidth() { return scene_raster_width_; }
 
-    int GetSceneRasterHeight() {
-        return scene_raster_height_;
-    }
+    int GetSceneRasterHeight() { return scene_raster_height_; }
 
 protected:
     bool source_product_owner_;
@@ -52,8 +46,8 @@ protected:
     std::string new_product_name_;
     std::string new_product_desc_;
     std::map<std::shared_ptr<Band>, std::shared_ptr<RasterDataNode>> band_map_;
-private:
 
+private:
 };
 
-}
+}  // namespace alus::snapengine
