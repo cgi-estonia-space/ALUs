@@ -27,12 +27,12 @@
 #include <vector>
 
 #include "crs_geocoding.h"
-#include "cuda_util.hpp"
-#include "dem.hpp"
+#include "cuda_util.h"
+#include "dem.h"
 #include "gdal_util.h"
 #include "general_constants.h"
 #include "product_old.h"
-#include "raster_properties.hpp"
+#include "raster_properties.h"
 #include "shapes_util.h"
 #include "srtm3_elevation_model_constants.h"
 #include "tc_tile.h"

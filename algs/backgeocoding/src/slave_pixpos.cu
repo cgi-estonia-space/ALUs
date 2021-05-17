@@ -22,7 +22,7 @@
 #include "position_data.h"
 #include "srtm3_elevation_calc.cuh"
 
-#include "cuda_util.hpp"
+#include "cuda_util.h"
 #include "srtm3_elevation_model_constants.h"
 
 /**

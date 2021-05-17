@@ -1,49 +1,38 @@
-# alus
+# ALUS
 
-The go to software for SAR Image GPU processing.
+ALUS means beer in latvian.
+Here it means Acceleration Library Used for Sentinel.
+A software project that targets to utilize Nvidia GPUs for processing earth observation data (faster).
 
-# Build
+Kickstart of this project was funded through ESA's EOEP programme - http://www.esa.int/About_Us/Business_with_ESA/Business_Opportunities/Earth_Observation_Envelope_Programme
+\
+Developed by CGI Estonia.
+
+# Dependencies
+
+[Setup of dependencies](DEPENDENCIES.md)
+
+# Building
 
 ```
-cmake -H. -Bbuild
+cmake . -Bbuild
 cd build
 make -j8
 ```
 
-# Running
+# Executing
 
-Main executable that loads and runs algorithms from shared libraries (.so) is located at
-'build/alus_package'.
+Main executable with algorithm shared libraries(.so) is located at **<build_dir>/alus_package**.\
+In order to load shared library components one should move to directory where binaries are located or\
+``LD_LIBRARY_PATH=$LD_LIBRARY_PATH:...<build_dir>/alus_package; export LD_LIBRARY_PATH``\
+or move/create symlinks to a location that is present in default ``LD_LIBRARY_PATH``.
 
-Coherence example:
-```
-./aluserer --alg_name coherence -i ~/coherence_datasets/4_bands.tif -o /tmp/coherence_test.tif --aux ~/S1A_dimap_product.data
-```
+See ``--help`` for specific arguments how to invoke processing.
 
-Command line arguments:
-```
-Alus options:
-  -h [ --help ]                   Print help
-  --alg_name arg                  Specify algorithm to run
-  --alg_help arg (=0)             Print algorithm configurable parameters
-  -i [ --input ] arg              Input dataset path/name GeoTIFF files only.
-  -o [ --output ] arg             Output dataset path/name
-  -x [ --tile_width ] arg (=500)  Tile width.
-  -y [ --tile_height ] arg (=500) Tile height.
-  --aux arg                       Auxiliary file locations (metadata, incident 
-                                  angle, etc).
-  -p [ --parameters ] arg         Algorithm specific configuration. Must be 
-                                  supplied as key=value pairs separated by 
-                                  comma','.
-                                  Example: 'algorithm1:points=14,height=84;algo
-                                  rithm2:subtract=true;algorithm3:key=value,int
-                                  erpolation=bilinear'
-  -l [ --list_algs ]              Print available algorithms
-```
+# Contributing
 
-# Testing
+[Contribution guidelines](CONTRIBUTING.md)
 
-```
-cd build/test
-./unit_test
-```
+# License
+
+[GNU GPLv3](LICENSE.txt)

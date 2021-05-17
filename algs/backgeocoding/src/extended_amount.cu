@@ -24,7 +24,7 @@
 #include "general_constants.h"
 #include "pointer_holders.h"
 #include "position_data.h"
-#include "raster_properties.hpp"
+#include "raster_properties.h"
 
 #include "backgeocoding_utils.cuh"
 #include "cuda_util.cuh"

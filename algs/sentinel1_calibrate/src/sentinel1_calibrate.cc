@@ -32,7 +32,7 @@
 #include "calibration_info.h"
 #include "calibration_type.h"
 #include "ceres-core/null_progress_monitor.h"
-#include "cuda_util.hpp"
+#include "cuda_util.h"
 #include "dataset.h"
 #include "gdal_util.h"
 #include "general_constants.h"

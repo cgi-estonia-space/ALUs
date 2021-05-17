@@ -16,7 +16,7 @@
 #include <tuple>
 
 #include "geocoding.h"
-#include "raster_properties.hpp"
+#include "raster_properties.h"
 #include "tie_point_grid.h"
 
 namespace alus {

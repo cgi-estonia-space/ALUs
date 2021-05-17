@@ -18,7 +18,7 @@
 #include <gdal_priv.h>
 
 #include "dataset.h"
-#include "raster_properties.hpp"
+#include "raster_properties.h"
 #include "shapes.h"
 #include "alus_file_writer.h"
 

@@ -13,7 +13,7 @@
  */
 #pragma once
 
-#include "cuda_util.hpp"
+#include "cuda_util.h"
 #include "shapes.h"
 
 namespace alus {

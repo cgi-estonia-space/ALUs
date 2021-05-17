@@ -17,9 +17,9 @@
 
 #include "gmock/gmock.h"
 
-#include "CudaFriendlyObject.h"
+#include "cuda_friendly_object.h"
 #include "comparators.h"
-#include "cuda_util.hpp"
+#include "cuda_util.h"
 #include "earth_gravitational_model96.h"
 #include "shapes.h"
 #include "srtm3_elevation_model.h"

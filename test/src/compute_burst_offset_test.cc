@@ -4,7 +4,7 @@
 
 #include "../goods/compute_burst_offset_data.h"
 #include "allocators.h"
-#include "cuda_util.hpp"
+#include "cuda_util.h"
 #include "backgeocoding_constants.h"
 #include "burst_offset_computation.h"
 #include "earth_gravitational_model96.h"

@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 project(aluserer
         LANGUAGES CXX CUDA
         DESCRIPTION "Geospatial algorithms on steroids."
+        VERSION 0.5.0
         )
 
 set(CMAKE_CUDA_STANDARD 14)
@@ -57,6 +58,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_FLAGS "-Wall -Werror -Wextra -pedantic")
 
+set(CMAKE_SKIP_BUILD_RPATH  FALSE)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+set(CMAKE_INSTALL_RPATH $ORIGIN)
+
 if (SONARCLOUD_BUILD)
     # fix build errors with SonarCloud code scanner
     # workaround for parser crash with boost::asio - SonarCFamily CPP-2696
@@ -78,9 +83,6 @@ add_subdirectory(util/snap-engine)
 # Algorithms
 add_subdirectory(algs/algorithm_bond)
 add_subdirectory(algs/coherence)
-add_subdirectory(algs/inverter)
-add_subdirectory(algs/inverter_parallel)
-add_subdirectory(algs/cuda_algorithm)
 add_subdirectory(algs/range_doppler_terrain_correction)
 add_subdirectory(algs/backgeocoding)
 add_subdirectory(algs/apply-orbit-file-op)

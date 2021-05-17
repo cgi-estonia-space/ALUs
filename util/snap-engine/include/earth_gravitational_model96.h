@@ -13,7 +13,7 @@
  */
 #pragma once
 
-#include "CudaFriendlyObject.h"
+#include "cuda_friendly_object.h"
 
 /** EXPLANATION FROM ESA SNAP
  * "WW15MGH.GRD"

@@ -15,7 +15,7 @@
 
 #include <tuple>
 
-#include "raster_properties.hpp"
+#include "raster_properties.h"
 
 namespace alus {
 namespace snapengine {

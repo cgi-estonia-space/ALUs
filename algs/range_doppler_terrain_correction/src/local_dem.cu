@@ -9,7 +9,7 @@
 #include <math_constants.h>
 
 #include "bilinear_interpolation.cuh"
-#include "cuda_util.hpp"
+#include "cuda_util.h"
 #include "local_dem.cuh"
 #include "pointer_holders.h"
 #include "raster_utils.cuh"

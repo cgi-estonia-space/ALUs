@@ -19,7 +19,7 @@
 #include <cuda_runtime.h>
 
 #include "kernel_array.h"
-#include "cuda_util.hpp"
+#include "cuda_util.h"
 
 namespace alus {
 namespace cuda {

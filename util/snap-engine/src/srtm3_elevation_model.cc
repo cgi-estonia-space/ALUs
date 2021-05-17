@@ -15,7 +15,7 @@
 
 #include <cmath>
 
-#include "cuda_util.hpp"
+#include "cuda_util.h"
 #include "earth_gravitational_model96_computation.h"
 #include "srtm3_elevation_model_constants.h"
 

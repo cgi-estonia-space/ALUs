@@ -22,7 +22,7 @@
 #include "../goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_orbit.hpp"
 #include "../goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_rectangles.h"
 #include "crs_geocoding.h"
-#include "cuda_util.hpp"
+#include "cuda_util.h"
 #include "gdal_util.h"
 #include "general_constants.h"
 #include "get_position.h"

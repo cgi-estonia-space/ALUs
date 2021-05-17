@@ -17,7 +17,7 @@
 #include "snap_delaunay_triangulator.h"
 #include "snap_triangle.h"
 
-#include "cuda_util.hpp"
+#include "cuda_util.h"
 
 namespace alus {
 namespace delaunay {

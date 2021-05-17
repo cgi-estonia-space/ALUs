@@ -20,7 +20,7 @@
 
 #include "computation_metadata.h"
 #include "dataset.h"
-#include "dem.hpp"
+#include "dem.h"
 #include "get_position.h"
 #include "pointer_holders.h"
 #include "product_old.h"
