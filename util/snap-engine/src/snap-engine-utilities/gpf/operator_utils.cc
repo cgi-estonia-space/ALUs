@@ -20,7 +20,13 @@
 
 #include <boost/algorithm/string/case_conv.hpp>
 
+#include <memory>
 #include <stdexcept>
+#include <vector>
+
+#include "snap-core/datamodel/band.h"
+#include "snap-core/datamodel/virtual_band.h"
+#include "snap-core/datamodel/product.h"
 
 namespace alus {
 namespace snapengine {
@@ -65,6 +71,50 @@ std::string OperatorUtils::GetPolarizationFromBandName(std::string_view band_nam
     }
     if (pol.length() > 3) {
         throw std::runtime_error("Band name contains multiple polarizations: " + pol);
+    }
+    return "";
+}
+std::vector<std::shared_ptr<Band>> OperatorUtils::GetSourceBands(std::shared_ptr<Product> source_product,
+                                                std::vector<std::string> source_band_names,
+                                                bool include_virtual_bands) {
+    if (source_band_names.empty()) {
+        const auto bands = source_product->GetBands();
+        std::vector<std::string> band_name_list;
+        band_name_list.reserve(source_product->GetNumBands());
+        for (const auto& band : bands) {
+            // This abomination is used as Java's instanceof.
+            if (dynamic_cast<VirtualBand*>(band.get()) == nullptr || include_virtual_bands) {
+                band_name_list.push_back(band->GetName());
+            }
+        }
+        source_band_names = band_name_list;
+    }
+
+    std::vector<std::shared_ptr<Band>> source_band_list;
+    source_band_list.reserve(source_band_names.size());
+    for (const auto& source_band_name : source_band_names) {
+        const auto source_band = source_product->GetBand(source_band_name);
+        if (source_band) {
+            source_band_list.push_back(source_band);
+        }
+    }
+    return source_band_list;
+}
+std::string OperatorUtils::GetSuffixFromBandName(std::string_view band_name) {
+    auto index = band_name.find('_');
+    if (index != std::string::npos) {
+        ++index;
+        return std::string(band_name.substr(index));
+    }
+    index = band_name.find('-');
+    if (index != std::string::npos) {
+        ++index;
+        return std::string(band_name.substr(index));
+    }
+    index = band_name.find('.');
+    if (index != std::string::npos) {
+        ++index;
+        return std::string(band_name.substr(index));
     }
     return "";
 }

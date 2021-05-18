@@ -13,29 +13,18 @@
  */
 #pragma once
 
-#include <cstddef>
-#include <string>
-#include <vector>
+namespace alus {
+namespace s1tbx {
 
-#include "calibration_vector.h"
-#include "kernel_array.h"
-
-namespace alus::sentinel1calibrate {
-
-/**
- * Port of SNAP's CalibrationInfo class.
- *
- * Original implementation found in Sentinel1Calibrator.java
- */
-struct CalibrationInfo {
-    std::string sub_swath;
-    std::string polarisation;
-    double first_line_time;
-    double last_line_time;
-    double line_time_interval;
-    int num_of_lines;
-    int count;
-    std::vector<s1tbx::CalibrationVector> calibration_vectors;
+struct CalibrationVectorComputation {
+    double time_mjd;
+    const int line;
+    int* pixels;
+    float* sigma_nought;
+    float* beta_nought;
+    float* gamma;
+    float* dn;
+    size_t array_size;
 };
-
-}  // namespace alus::sentinel1calibrate
+}  // namespace s1tbx
+}  // namespace alus

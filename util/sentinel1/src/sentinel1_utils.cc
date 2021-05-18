@@ -13,11 +13,13 @@
  */
 #include "sentinel1_utils.h"
 
+#include <algorithm>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <string>
 #include <string_view>
+#include <set>
 
 #include <s1tbx-commons/s_a_r_geocoding.h>
 #include <boost/algorithm/string.hpp>
@@ -1107,7 +1109,6 @@ int Sentinel1Utils::AddToArray(std::vector<float>& array, int index, std::string
     }
     return index;
 }
-
 std::vector<float> Sentinel1Utils::GetCalibrationVector(int sub_swath_index, std::string_view polarization,
                                                         int vector_index, std::string_view vector_name) {
     std::shared_ptr<snapengine::MetadataElement> calibration_vector_list_elem =
@@ -1115,7 +1116,6 @@ std::vector<float> Sentinel1Utils::GetCalibrationVector(int sub_swath_index, std
     std::vector<std::shared_ptr<snapengine::MetadataElement>> list = calibration_vector_list_elem->GetElements();
     std::shared_ptr<snapengine::MetadataElement> vector_elem = list.at(vector_index)->GetElement(vector_name);
     std::string vector_str = vector_elem->GetAttributeString(vector_name);
-    // todo:check if stoi is enough (also might need specific size type)
     int count = std::stoi(vector_elem->GetAttributeString("count"));
     std::vector<float> vector_array(count);
     AddToArray(vector_array, 0, vector_str, " ");
@@ -1141,5 +1141,42 @@ std::vector<int> Sentinel1Utils::GetCalibrationPixel(int sub_swath_index, std::s
 //   todo: implement if needed (currently clashes with custom code)
 //}
 
+void Sentinel1Utils::UpdateBandNames(std::shared_ptr<snapengine::MetadataElement>& abs_root,
+                                     const std::set<std::string_view> selected_pol_list,
+                                     const std::vector<std::string> band_names) {
+    auto starts_with = [](std::string_view string, std::string_view key) -> bool {
+        return string.rfind(key, 0) == 0;
+    };
+    auto string_contains = [](std::string_view string, std::string_view key) -> bool {
+        return string.find(key) != std::string::npos;
+    };
+    auto set_contains = [](const std::set<std::string_view>& set, std::string_view key) {
+        return set.find(key) != set.end();
+    };
+
+    const auto children = abs_root->GetElements();
+    for (auto& child : children) {
+        const auto& child_name = child->GetName();
+        if (starts_with(child_name, snapengine::AbstractMetadata::BAND_PREFIX)) {
+            const auto polarisation = child_name.substr(child_name.rfind('_') + 1);
+            const auto sw_polarisation = child_name.substr(child_name.find('_') + 1);
+            if (set_contains(selected_pol_list, polarisation)) {
+                std::string band_name_array;
+                for (const auto& band_name : band_names) {
+                    if (string_contains(band_name, sw_polarisation)) {
+                        band_name_array += band_name + " ";
+                    } else if (string_contains(band_name, polarisation)) {
+                        band_name_array += band_name + " ";
+                    }
+                }
+                if (!band_name_array.empty()) {
+                    child->SetAttributeString(snapengine::AbstractMetadata::BAND_NAMES, band_name_array);
+                }
+            } else {
+                abs_root->RemoveElement(child);
+            }
+        }
+    }
+}
 }  // namespace s1tbx
 }  // namespace alus

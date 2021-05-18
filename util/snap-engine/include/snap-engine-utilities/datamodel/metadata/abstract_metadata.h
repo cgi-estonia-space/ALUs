@@ -399,6 +399,9 @@ public:
 
     static std::shared_ptr<MetadataElement> GetBandAbsMetadata(
         const std::shared_ptr<snapengine::MetadataElement>& abs_root, const std::shared_ptr<snapengine::Band>& band);
+
+    static std::vector<std::shared_ptr<MetadataElement>> GetBandAbsMetadataList(
+        const std::shared_ptr<MetadataElement> abs_root);
 };
 
 }  // namespace alus::snapengine

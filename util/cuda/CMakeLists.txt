@@ -10,7 +10,7 @@ list(APPEND CUDA_UTIL_INCLUDE_DIRS
 add_library(cuda_util-obj
         OBJECT
         ${CUDA_UTIL_SOURCES}
-        )
+        ../common/include/general_utils.h ../common/include/test_utils.h)
 target_include_directories(cuda_util-obj
         PRIVATE
         ${CUDA_UTIL_INCLUDE_DIRS}

@@ -13,29 +13,17 @@
  */
 #pragma once
 
-#include <cstddef>
+#include <stdexcept>
 #include <string>
-#include <vector>
-
-#include "calibration_vector.h"
-#include "kernel_array.h"
 
 namespace alus::sentinel1calibrate {
+class Sentinel1CalibrateException : public std::runtime_error {
+public:
+    explicit Sentinel1CalibrateException(const char* message)
+        : std::runtime_error(std::string("Error has occurred in Sentinel1 Calibration Operator: ") + message) {}
+    explicit Sentinel1CalibrateException(const std::string& message)
+        : std::runtime_error("Error has occurred in Sentinel1 Calibration Operator: " + message) {}
 
-/**
- * Port of SNAP's CalibrationInfo class.
- *
- * Original implementation found in Sentinel1Calibrator.java
- */
-struct CalibrationInfo {
-    std::string sub_swath;
-    std::string polarisation;
-    double first_line_time;
-    double last_line_time;
-    double line_time_interval;
-    int num_of_lines;
-    int count;
-    std::vector<s1tbx::CalibrationVector> calibration_vectors;
+    Sentinel1CalibrateException() = delete;
 };
-
 }  // namespace alus::sentinel1calibrate

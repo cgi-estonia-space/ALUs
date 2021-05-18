@@ -14,6 +14,11 @@
 #pragma once
 
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <exception>
+
+#include "general_constants.h"
 
 namespace alus {
 namespace mathutils {
@@ -65,6 +70,68 @@ inline __device__ __host__ T Cas(T* old, T compare, T value) {
     *old = (old_value == compare) * value + (old_value != compare) * old_value;
 
     return old_value;
+}
+
+/**
+ * Function for finding the first element greater then the given key in the ordered array by using binary search.
+ *
+ * @tparam T Any numerical type.
+ * @param value Value, larger element of which should be found.
+ * @param size Size of the given array.
+ * @param values Ordered array with the values.
+ * @return Index of the first element which is larger than the given key.
+ */
+template <typename T>
+inline __device__ __host__ int64_t FindFirstGreaterElement(T value, int64_t size, const T* values) {
+    if (values[size - 1] <= value) {
+        return -1;
+    }
+
+    int64_t start{0};
+    int64_t end{size};
+    int64_t found_index{-1};
+
+    while (start <= end) {
+        auto mid = (start + end) / 2;
+        if (values[mid] <= value) {
+            start = mid + 1;
+        } else {
+            found_index = mid;
+            end = mid - 1;
+        }
+    }
+
+    return found_index;
+}
+
+/**
+ * Performs a simple binary search.
+ *
+ * @tparam T Any numerical value.
+ * @param key Value, which position in array should be found.
+ * @param size The size of array.
+ * @param values Array with values which should be searched for the key.
+ * @return Index of the key in array or negative value denoting the lack of the element.
+ */
+template <typename T>
+inline __device__ __host__ int64_t BinarySearch(T key, int64_t size, const T* values) {
+    int64_t low{0};
+    int64_t high{size - 1};
+
+    while (low <= high) {
+        auto mid = (low + high) / 2;
+        auto mid_value = values[mid];
+
+        if (mid_value < key) {
+            low = mid + 1;
+        } else if (mid_value > key) {
+            high = mid - 1;
+        } else {
+            return mid;
+        }
+    }
+
+    return -(low + 1);
 }
 
 /** Utility function that can be used to replace if..else clause by using arithmetics and bool conversion to int

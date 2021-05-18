@@ -38,6 +38,7 @@ list(APPEND TEST_SOURCES
         src/compute_burst_offset_test.cc
         src/multithreading_test.cc
         src/sentinel_1_calibrate_test.cc
+        src/sentinel_1_calibrate_utils_test.cc
         )
 
 add_executable(unit_test ${TEST_SOURCES})

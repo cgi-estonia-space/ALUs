@@ -11,31 +11,11 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
-#pragma once
 
-#include <cstddef>
-#include <string>
-#include <vector>
-
-#include "calibration_vector.h"
-#include "kernel_array.h"
+#include "alg_bond.h"
 
 namespace alus::sentinel1calibrate {
-
-/**
- * Port of SNAP's CalibrationInfo class.
- *
- * Original implementation found in Sentinel1Calibrator.java
- */
-struct CalibrationInfo {
-    std::string sub_swath;
-    std::string polarisation;
-    double first_line_time;
-    double last_line_time;
-    double line_time_interval;
-    int num_of_lines;
-    int count;
-    std::vector<s1tbx::CalibrationVector> calibration_vectors;
+class Sentinel1CalibrateExecutor : public AlgBond {
+// TODO: implement this class (SNAPGPU-253)
 };
-
-}  // namespace alus::sentinel1calibrate
+}
