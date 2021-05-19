@@ -27,6 +27,7 @@ cd ${build_id}
 
 cd ..
 
+aws s3api put-object --bucket alus-builds --key "alus-nightly-latest.tar.gz" --body ${build_id}.tar.gz --acl public-read --storage-class STANDARD_IA --profile tarmo
 aws s3api put-object --bucket alus-builds --key "${build_id}/${build_id}.tar.gz" --body ${build_id}.tar.gz --acl public-read --storage-class STANDARD_IA --profile tarmo
 echo "Uploaded binary package available at https://alus-builds.s3.eu-central-1.amazonaws.com/${build_id}/${build_id}.tar.gz"
 
