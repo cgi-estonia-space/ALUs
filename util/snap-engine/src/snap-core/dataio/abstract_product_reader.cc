@@ -115,7 +115,7 @@ std::shared_ptr<Product> AbstractProductReader::ReadProductNodes(std::any input,
     auto elapsed_seconds = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
     std::cerr << "Finish reading the product from input '" << input.type().name() << "' using the '"
               << typeid(*this).name() << "' reader class. The time elapsed is " << elapsed_seconds.count()
-              << " seconds." << std::endl;
+              << " milliseconds." << std::endl;
 
     return product;
 }
