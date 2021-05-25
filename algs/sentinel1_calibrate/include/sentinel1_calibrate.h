@@ -53,7 +53,7 @@ class Sentinel1Calibrator {
 public:
     Sentinel1Calibrator(
         std::shared_ptr<snapengine::Product> source_product, std::shared_ptr<Dataset<float>> source_dataset,
-        std::vector<std::string> selected_sub_swaths, std::set<std::string_view> selected_polarisations,
+        std::vector<std::string> selected_sub_swaths, std::set<std::string, std::less<>> selected_polarisations,
         SelectedCalibrationBands selected_calibration_bands,
         std::string_view output_path, bool output_image_in_complex = false, int tile_width = 2000, int tile_height = 2000);
 
@@ -74,7 +74,7 @@ private:
     std::map<std::string, CalibrationInfo, std::less<>> target_band_to_calibration_info_;
     std::shared_ptr<Dataset<float>> source_dataset_;
     std::vector<std::string> selected_sub_swaths_;
-    std::set<std::string_view> selected_polarisations_;
+    std::set<std::string, std::less<>> selected_polarisations_;
     SelectedCalibrationBands selected_calibration_bands_;
     std::shared_ptr<snapengine::Product> target_product_;
     bool is_complex_;
@@ -134,7 +134,7 @@ private:
  */
 std::vector<CalibrationInfo> GetCalibrationInfoList(
     const std::shared_ptr<snapengine::MetadataElement>& original_product_metadata,
-    std::set<std::string_view> selected_polarisations, SelectedCalibrationBands selected_calibration_bands);
+    std::set<std::string, std::less<>> selected_polarisations, SelectedCalibrationBands selected_calibration_bands);
 
 int GetNumOfLines(const std::shared_ptr<snapengine::MetadataElement>& original_product_root,
                   std::string_view polarisation, std::string_view swath);

@@ -45,8 +45,7 @@ TEST_F(Sentinel1CalibrateTest, Virumaa) {
     const auto source_dataset = std::make_shared<Dataset<float>>(boost::filesystem::canonical(input_file_).string());
 
     Sentinel1Calibrator calibrator{
-        input_product, source_dataset, {"IW1"}, {"VV"}, {false, true, false, false}, "/tmp/", false, 5000, 5000,
-    };
+        input_product, source_dataset, {"IW1"}, {"VV"}, {false, true, false, false}, "/tmp/", false, 5000, 5000};
     calibrator.Execute();
     const std::string result_file{
         "/tmp/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_Cal_IW1.tif"};

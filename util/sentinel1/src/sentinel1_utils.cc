@@ -1142,16 +1142,16 @@ std::vector<int> Sentinel1Utils::GetCalibrationPixel(int sub_swath_index, std::s
 //}
 
 void Sentinel1Utils::UpdateBandNames(std::shared_ptr<snapengine::MetadataElement>& abs_root,
-                                     const std::set<std::string_view> selected_pol_list,
-                                     const std::vector<std::string> band_names) {
-    auto starts_with = [](std::string_view string, std::string_view key) -> bool {
+                                     const std::set<std::string, std::less<>>& selected_pol_list,
+                                     const std::vector<std::string>& band_names) {
+    auto starts_with = [](std::string_view string, std::string_view key) {
         return string.rfind(key, 0) == 0;
     };
-    auto string_contains = [](std::string_view string, std::string_view key) -> bool {
+    auto string_contains = [](std::string_view string, std::string_view key) {
         return string.find(key) != std::string::npos;
     };
-    auto set_contains = [](const std::set<std::string_view>& set, std::string_view key) {
-        return set.find(key) != set.end();
+    auto set_contains = [](const std::set<std::string, std::less<>>& set, std::string_view key) {
+        return set.find(key.data()) != set.end();
     };
 
     const auto children = abs_root->GetElements();

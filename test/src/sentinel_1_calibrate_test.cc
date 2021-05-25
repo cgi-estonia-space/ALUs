@@ -389,7 +389,7 @@ TEST_F(Sentinel1CalibrateTest, GetCalibrationInfoList) {
     const std::vector<CalibrationInfo> expected_info_list{calibrationdata::FIRST_CALIBRATION_INFO,
                                                           calibrationdata::SECOND_CALIBRATION_INFO};
 
-    const std::set<std::string_view> selected_polarisations{"VV", "VH"};
+    const std::set<std::string, std::less<>> selected_polarisations{"VV", "VH"};
 
     const SelectedCalibrationBands calibration_bands{true, true, true, true};
 
@@ -427,7 +427,7 @@ TEST_F(Sentinel1CalibrateTest, GetNumOfLines) {
  */
 TEST_F(Sentinel1CalibrateTest, GetExceptions) {
     const auto metadata = std::make_shared<MetadataElement>(AbstractMetadata::ORIGINAL_PRODUCT_METADATA);
-    const std::set<std::string_view> selected_polarisations{"VH"};
+    const std::set<std::string, std::less<>> selected_polarisations{"VH"};
     const SelectedCalibrationBands calibration_bands{true, false, false, false};
     EXPECT_THROW(GetCalibrationInfoList(metadata, selected_polarisations, calibration_bands), std::runtime_error);
 
@@ -531,7 +531,7 @@ TEST(Sentinel1CalibrateIntegrationTest, ReadDimTest) {
     PugixmlMetaDataReader xml_reader{calibrationdata::TEST_DIM_FILE};
     const auto original_product_metadata = xml_reader.Read(AbstractMetadata::ORIGINAL_PRODUCT_METADATA);
 
-    const std::set<std::string_view> selected_polarisations{"VV", "VH"};
+    const std::set<std::string, std::less<>> selected_polarisations{"VV", "VH"};
 
     const SelectedCalibrationBands calibration_bands{true, true, true, true};
 
