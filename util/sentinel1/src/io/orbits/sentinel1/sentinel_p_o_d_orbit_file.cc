@@ -25,6 +25,7 @@
 
 #include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
 #include "snap-engine-utilities/util/maths.h"
+#include "snap-core/util/alus_utils.h"
 #include "snap-core/util/string_utils.h"
 #include "snap-core/util/system_utils.h"
 
@@ -230,23 +231,30 @@ std::optional<boost::filesystem::path> SentinelPODOrbitFile::FindOrbitFile(std::
                                                                            std::string_view orbit_type,
                                                                            double state_vector_time, int year,
                                                                            int month) {
-    std::string prefix;
-    if (orbit_type.rfind(RESTITUTED, 0) == 0) {
-        prefix = std::string(mission_prefix) + "_OPER_AUX_RESORB_OPOD_";
-    } else {
-        prefix = std::string(mission_prefix) + "_OPER_AUX_POEORB_OPOD_";
-    }
-    boost::filesystem::path orbit_file_folder = GetDestFolder(mission_prefix, orbit_type, year, month);
 
-    if (!(boost::filesystem::exists(orbit_file_folder) && boost::filesystem::is_directory(orbit_file_folder))) {
-        return std::nullopt;
-    }
-    //    std::vector<boost::filesystem::path> files = orbit_file_folder.listFiles(new S1OrbitFileFilter(prefix));
-    for (boost::filesystem::directory_entry& file : boost::filesystem::directory_iterator(orbit_file_folder)) {
-        if (IsWithinRange(file.path().filename().string(), state_vector_time)) {
-            return std::make_optional<boost::filesystem::path>(file);
+    if (alus::snapengine::AlusUtils::IsOrbitFileAssigned()) {
+        const auto orbit_file_path = alus::snapengine::AlusUtils::GetOrbitFilePath();
+        if (IsWithinRange(orbit_file_path.filename().string(), state_vector_time)) {
+            return orbit_file_path;
+        }
+        else {
+            std::cerr << "Orbit file '" << orbit_file_path
+                      << "' is not correct for given input (start and end time out of range)." << std::endl;
+        }
+    } else {
+        boost::filesystem::path orbit_file_folder = GetDestFolder(mission_prefix, orbit_type, year, month);
+
+        if (!(boost::filesystem::exists(orbit_file_folder) && boost::filesystem::is_directory(orbit_file_folder))) {
+            return std::nullopt;
+        }
+        //    std::vector<boost::filesystem::path> files = orbit_file_folder.listFiles(new S1OrbitFileFilter(prefix));
+        for (boost::filesystem::directory_entry& file : boost::filesystem::directory_iterator(orbit_file_folder)) {
+            if (IsWithinRange(file.path().filename().string(), state_vector_time)) {
+                return file;
+            }
         }
     }
+
     return std::nullopt;
 }
 
