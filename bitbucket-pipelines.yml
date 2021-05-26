@@ -137,7 +137,7 @@ pipelines:
             - build_filename=$(basename *.tar.gz)
             - build_id="${build_filename%%.*}"
             - scp -r -oStrictHostKeyChecking=no *.tar.gz ubuntu@$ip_address:/tmp/nightly_builds
-            - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "cd /tmp/nightly_builds; ./execute_nightly.sh ${build_id} /home/ubuntu/nightly_datasets/beirut_dimap/ /home/ubuntu/nightly_aux/SRTM3/ /home/ubuntu/nightly_datasets/virumaa/"
+            - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "cd /tmp/nightly_builds; ./execute_nightly.sh ${build_id} /home/ubuntu/nightly_datasets/beirut_dimap/ /home/ubuntu/nightly_aux/ /home/ubuntu/nightly_datasets/virumaa/"
           after-script:
             - aws ec2 stop-instances --instance-ids $P3_2xLARGE_INSTANCE_ID --profile sid_man 
     nightly-binary-check: # Duplicate of nightly-build except no CI check
@@ -194,7 +194,7 @@ pipelines:
             - build_filename=$(basename *.tar.gz)
             - build_id="${build_filename%%.*}"
             - scp -r -oStrictHostKeyChecking=no *.tar.gz ubuntu@$ip_address:/tmp/nightly_builds
-            - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "cd /tmp/nightly_builds; ./execute_nightly.sh ${build_id} /home/ubuntu/nightly_datasets/beirut_dimap/ /home/ubuntu/nightly_aux/SRTM3/ /home/ubuntu/nightly_datasets/virumaa/"
+            - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "cd /tmp/nightly_builds; ./execute_nightly.sh ${build_id} /home/ubuntu/nightly_datasets/beirut_dimap/ /home/ubuntu/nightly_aux/ /home/ubuntu/nightly_datasets/virumaa/"
           after-script:
             - aws ec2 stop-instances --instance-ids $P3_2xLARGE_INSTANCE_ID --profile sid_man
 

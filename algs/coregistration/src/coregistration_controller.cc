@@ -17,6 +17,7 @@
 
 #include "apply_orbit_file_op.h"
 #include "backgeocoding_controller.h"
+#include "snap-core/util/alus_utils.h"
 #include "snap-core/util/system_utils.h"
 #include "target_dataset.h"
 #include "topsar_split.h"
@@ -32,11 +33,17 @@ void Coregistration::Initialize(std::string master_file, std::string slave_file,
     split_master_ = std::make_unique<topsarsplit::TopsarSplit>(master_file, subswath_name, polarisation);
     split_master_->initialize();
     std::shared_ptr<C16Dataset<double>> master_reader = split_master_->GetPixelReader();
+    if (!main_orbit_file_.empty()) {
+        snapengine::AlusUtils::SetOrbitFilePath(main_orbit_file_);
+    }
     orbit_file_master_ = std::make_unique<s1tbx::ApplyOrbitFileOp>(split_master_->GetTargetProduct(), true);
     orbit_file_master_->Initialize();
 
     split_slave_ = std::make_unique<topsarsplit::TopsarSplit>(slave_file, subswath_name, polarisation);
     split_slave_->initialize();
+    if (!secondary_orbit_file_.empty()) {
+        snapengine::AlusUtils::SetOrbitFilePath(secondary_orbit_file_);
+    }
     orbit_file_slave_ = std::make_unique<s1tbx::ApplyOrbitFileOp>(split_slave_->GetTargetProduct(), true);
     orbit_file_slave_->Initialize();
 
@@ -55,6 +62,14 @@ void Coregistration::Initialize(std::string master_file, std::string slave_file,
     backgeocoding_ = std::make_unique<backgeocoding::BackgeocodingController>(
         master_reader, split_slave_->GetPixelReader(), output_writer, split_master_->GetTargetProduct(),
         split_slave_->GetTargetProduct());
+}
+
+void Coregistration::Initialize(std::string master_file, std::string slave_file, std::string output_file,
+                                std::string subswath_name, std::string polarisation, const std::string& main_orbit_file,
+                                const std::string& secondary_orbit_file) {
+    main_orbit_file_ = main_orbit_file;
+    secondary_orbit_file_ = secondary_orbit_file;
+    Initialize(master_file, slave_file, output_file, subswath_name, polarisation);
 }
 
 void Coregistration::DoWork(const float* egm96_device_array, PointerArray srtm3_tiles) {

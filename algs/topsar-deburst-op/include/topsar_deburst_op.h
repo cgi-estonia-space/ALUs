@@ -289,12 +289,6 @@ public:
         const snapengine::custom::Rectangle& region, int src_band_indx);
 
     /**
-     * !Temporary! custom function to write operator outputs (exists because of our temporary custom format)
-     * @param metadata_writer
-     */
-    void WriteProductFiles(const std::shared_ptr<snapengine::IMetaDataWriter>& metadata_writer);
-
-    /**
      * Calculates target image
      * @return
      */

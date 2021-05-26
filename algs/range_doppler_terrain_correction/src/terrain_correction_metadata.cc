@@ -20,6 +20,7 @@
 
 #include "dataset.h"
 #include "pugixml_meta_data_reader.h"
+#include "snap-core/datamodel/band.h"
 #include "snap-core/datamodel/tie_point_grid.h"
 #include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
 
@@ -29,11 +30,46 @@ Metadata::Metadata(std::string_view dim_metadata_file, std::string_view lat_tie_
                    std::string_view lon_tie_points_file) {
     FillDimMetadata(dim_metadata_file);
     FetchTiePointGrids(dim_metadata_file, lat_tie_point_grid_, lon_tie_point_grid_);
-    FetchTiePoints(lat_tie_points_file, lat_tie_points_);
-    FetchTiePoints(lon_tie_points_file, lon_tie_points_);
+    snapengine::PugixmlMetaDataReader xml_reader{dim_metadata_file};
+    auto tie_point_grids = xml_reader.ReadTiePointGridsTag();
 
-    lat_tie_point_grid_.tie_points = lat_tie_points_.values.data();
-    lon_tie_point_grid_.tie_points = lon_tie_points_.values.data();
+    lat_tie_point_grid_ = GetTiePointGrid(*tie_point_grids.at(std::string(LATITUDE_TIE_POINT_GRID)));
+    lon_tie_point_grid_ = GetTiePointGrid(*tie_point_grids.at(std::string(LONGITUDE_TIE_POINT_GRID)));
+
+    FetchTiePoints(lat_tie_points_file,lat_tie_point_grid_, lat_tie_points_buffer_);
+    FetchTiePoints(lon_tie_points_file, lon_tie_point_grid_, lon_tie_points_buffer_);
+}
+
+Metadata::Metadata(std::shared_ptr<snapengine::Product> product) {
+
+    auto root = snapengine::AbstractMetadata::GetAbstractedMetadata(product);
+    FillMetadataFrom(root);
+    auto& lat_grid = *product->GetTiePointGrid(LATITUDE_TIE_POINT_GRID);
+    auto& lon_grid = *product->GetTiePointGrid(LONGITUDE_TIE_POINT_GRID);
+    lat_tie_point_grid_ = GetTiePointGrid(lat_grid);
+    lon_tie_point_grid_ = GetTiePointGrid(lon_grid);
+
+    lat_tie_points_buffer_ = lat_grid.GetTiePoints();
+    lon_tie_points_buffer_ = lon_grid.GetTiePoints();
+
+    lat_tie_point_grid_.tie_points = lat_tie_points_buffer_.data();
+    lon_tie_point_grid_.tie_points = lon_tie_points_buffer_.data();
+
+    const int n_bands = product->GetNumBands();
+    for(int i = 0; i < n_bands; i++)
+    {
+        auto band = product->GetBandAt(i);
+        snapengine::SpectralBandInfo band_info = {};
+        band_info.band_index = i;
+        band_info.band_name = band->GetName();
+        band_info.product_data_type = band->GetDataType();
+        band_info.log_10_scaled = band->IsLog10Scaled();
+        band_info.no_data_value_used = band->IsNoDataValueUsed();
+        band_info.no_data_value = band->GetNoDataValue();
+        //todo add optional values?
+
+        metadata_fields_.band_info.push_back(std::move(band_info));
+    }
 }
 
 void Metadata::FetchTiePointGrids(std::string_view dim_metadata_file,
@@ -46,21 +82,29 @@ void Metadata::FetchTiePointGrids(std::string_view dim_metadata_file,
     lon_tie_point_grid = GetTiePointGrid(*tie_point_grids.at(std::string(LONGITUDE_TIE_POINT_GRID)));
 }
 
-void Metadata::FetchTiePoints(std::string_view tie_points_file, TiePoints& tie_points) {
-    Dataset<double> ds(tie_points_file);
+void Metadata::FetchTiePoints(std::string_view tie_points_file, snapengine::tiepointgrid::TiePointGrid& tie_points,
+                              std::vector<float>& tie_points_buffer) {
+    Dataset<float> ds(tie_points_file); // *.img is of type float
     ds.LoadRasterBand(1);
-    tie_points.grid_width = ds.GetRasterSizeX();
-    tie_points.grid_height = ds.GetRasterSizeY();
-    const auto& db = ds.GetHostDataBuffer();
-    std::transform(db.cbegin(), db.cend(), std::back_inserter(tie_points.values),
-                   [](double v) { return static_cast<float>(v); });
+    const bool width_ok = static_cast<size_t>(ds.GetXSize()) == tie_points.grid_width;
+    const bool height_ok = static_cast<size_t>(ds.GetYSize()) == tie_points.grid_height;
+    if(!width_ok || !height_ok)
+    {
+        throw std::runtime_error(std::string(tie_points_file) + " dimensions mismatch!\n");
+    }
+    tie_points_buffer = ds.GetHostDataBuffer();
+    tie_points.tie_points = tie_points_buffer.data();
 }
 
 void Metadata::FillDimMetadata(std::string_view dim_metadata_file) {
     alus::snapengine::PugixmlMetaDataReader xml_reader{dim_metadata_file};
     auto master_root = xml_reader.Read(alus::snapengine::AbstractMetadata::ABSTRACT_METADATA_ROOT);
+    FillMetadataFrom(master_root);
+    metadata_fields_.band_info = xml_reader.ReadImageInterpretationTag();
+}
+
+void Metadata::FillMetadataFrom(std::shared_ptr<snapengine::MetadataElement> master_root) {
     metadata_fields_.mission = master_root->GetAttributeString(snapengine::AbstractMetadata::MISSION);
-    ;
     metadata_fields_.radar_frequency = master_root->GetAttributeDouble(snapengine::AbstractMetadata::RADAR_FREQUENCY);
     metadata_fields_.range_spacing =
         snapengine::AbstractMetadata::GetAttributeDouble(master_root, snapengine::AbstractMetadata::RANGE_SPACING);
@@ -102,10 +146,9 @@ void Metadata::FillDimMetadata(std::string_view dim_metadata_file) {
     metadata_fields_.last_far_long = master_root->GetAttributeDouble(snapengine::AbstractMetadata::LAST_FAR_LONG);
 
     metadata_fields_.azimuth_spacing = master_root->GetAttributeDouble(snapengine::AbstractMetadata::AZIMUTH_SPACING);
-
-    metadata_fields_.band_info = xml_reader.ReadImageInterpretationTag();
 }
-snapengine::tiepointgrid::TiePointGrid Metadata::GetTiePointGrid(const snapengine::TiePointGrid& grid) {
+
+snapengine::tiepointgrid::TiePointGrid Metadata::GetTiePointGrid(snapengine::TiePointGrid& grid) {
     return {grid.GetOffsetX(),
             grid.GetOffsetY(),
             grid.GetSubSamplingX(),
