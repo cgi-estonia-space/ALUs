@@ -26,6 +26,7 @@ cd ../test_integration
 is_error_then_quit
 cp ../../test_integration/integration_tests_run_all.sh .
 is_error_then_quit
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/../../tensorflow/tensorflow_cc/lib
 ./integration_tests_run_all.sh --gtest_output=xml:test-results/
 integration_test_success=$?
 

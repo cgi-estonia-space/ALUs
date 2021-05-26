@@ -25,7 +25,7 @@
 #include "backgeocoding_constants.h"
 #include "bilinear_computation.h"
 #include "burst_offset_computation.h"
-#include "cuda_util.hpp"
+#include "cuda_util.h"
 #include "delaunay_triangulator.h"
 #include "deramp_demod_computation.h"
 #include "earth_gravitational_model96_computation.h"

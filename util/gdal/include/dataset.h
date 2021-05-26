@@ -21,7 +21,7 @@
 
 #include <gdal_priv.h>
 
-#include "raster_properties.hpp"
+#include "raster_properties.h"
 #include "alus_file_reader.h"
 #include "transform_constants.h"
 

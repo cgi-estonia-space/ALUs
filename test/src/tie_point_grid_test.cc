@@ -14,8 +14,8 @@
 #include "gmock/gmock.h"
 #include "tests_common.hpp"
 
-#include "CudaFriendlyObject.h"
-#include "cuda_util.hpp"
+#include "cuda_friendly_object.h"
+#include "cuda_util.h"
 #include "kernel_array.h"
 #include "tie_point_grid.h"
 #include "tie_point_grid_test.cuh"

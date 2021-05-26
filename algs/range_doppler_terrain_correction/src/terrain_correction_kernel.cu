@@ -23,9 +23,9 @@
 #include "sar_geocoding.cuh"
 #include "srtm3_elevation_calc.cuh"
 
-#include "cuda_util.hpp"
+#include "cuda_util.h"
 #include "position_data.h"
-#include "raster_properties.hpp"
+#include "raster_properties.h"
 #include "tc_tile.h"
 #include "terrain_correction_constants.h"
 #include "terrain_correction_kernel.h"

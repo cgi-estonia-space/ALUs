@@ -16,16 +16,12 @@
 
 #include "gmock/gmock.h"
 
-#include "CudaFriendlyObject.h"
+#include "cuda_friendly_object.h"
 #include "comparators.h"
-#include "cuda_util.hpp"
 #include "delaunay_triangle2D.h"
-#include "delaunay_triangulator.cuh"
 #include "delaunay_triangulator.h"
-#include "tests_common.hpp"
 #include "backgeocoding_constants.h"
 
-using namespace alus::tests;
 
 namespace {
 

@@ -18,7 +18,7 @@
 #include <string_view>
 #include <vector>
 
-#include "cuda_util.hpp"
+#include "cuda_util.h"
 #include "metadata_enums.h"
 #include "orbit_state_vector.h"
 #include "snap-core/datamodel/tie_point_grid.h"

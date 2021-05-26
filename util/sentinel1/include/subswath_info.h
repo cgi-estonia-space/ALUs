@@ -17,8 +17,8 @@
 #include <iostream>
 #include <vector>
 
-#include "CudaFriendlyObject.h"
-#include "cuda_util.hpp"
+#include "cuda_friendly_object.h"
+#include "cuda_util.h"
 
 #include "subswath_info_computation.h"
 

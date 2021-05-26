@@ -12,7 +12,7 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 #include "backgeocoding_constants.h"
-#include "cuda_util.hpp"
+#include "cuda_util.h"
 #include "elevation_mask_computation.h"
 #include "srtm3_elevation_calc.cuh"
 #include "srtm3_elevation_model_constants.h"

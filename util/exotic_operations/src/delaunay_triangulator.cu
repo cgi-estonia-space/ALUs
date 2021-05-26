@@ -14,7 +14,7 @@
 #include "delaunay_triangulator.cuh"
 
 #include "delaunay_triangle2D.h"
-#include "cuda_util.hpp"
+#include "cuda_util.h"
 
 namespace alus{
 namespace delaunay{

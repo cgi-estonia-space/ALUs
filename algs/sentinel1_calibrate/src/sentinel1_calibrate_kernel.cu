@@ -18,7 +18,7 @@
 #include <thrust/host_vector.h>
 
 #include "calibration_type.h"
-#include "cuda_util.hpp"
+#include "cuda_util.h"
 #include "kernel_array.h"
 
 #include "cuda_manager.cuh"

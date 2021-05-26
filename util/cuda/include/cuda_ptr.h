@@ -15,7 +15,7 @@
 
 #include <cuda_runtime.h>
 
-#include "cuda_util.hpp"
+#include "cuda_util.h"
 
 namespace alus {
 namespace cuda {

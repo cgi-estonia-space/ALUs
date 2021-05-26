@@ -1,4 +1,4 @@
-#include "dem.hpp"
+#include "dem.h"
 
 #include <algorithm>
 #include <optional>

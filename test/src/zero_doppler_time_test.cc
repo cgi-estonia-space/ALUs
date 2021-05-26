@@ -16,9 +16,9 @@
 
 #include "gmock/gmock.h"
 
-#include "CudaFriendlyObject.h"
+#include "cuda_friendly_object.h"
 #include "comparators.h"
-#include "cuda_util.hpp"
+#include "cuda_util.h"
 #include "pos_vector.h"
 #include "sar_geocoding_test.cuh"
 #include "sentinel1_utils.h"

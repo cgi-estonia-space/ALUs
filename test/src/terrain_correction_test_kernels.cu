@@ -12,7 +12,7 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 #include "cuda_util.cuh"
-#include "cuda_util.hpp"
+#include "cuda_util.h"
 #include "get_position.cuh"
 #include "get_position.h"
 

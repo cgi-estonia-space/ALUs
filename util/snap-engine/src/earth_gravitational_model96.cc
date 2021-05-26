@@ -16,7 +16,7 @@
 #include <sstream>
 
 #include "allocators.h"
-#include "cuda_util.hpp"
+#include "cuda_util.h"
 #include "earth_gravitational_model96_computation.h"
 #include "ww15mgh_b_grd.h"
 

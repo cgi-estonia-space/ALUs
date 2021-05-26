@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-#include "CudaFriendlyObject.h"
+#include "cuda_friendly_object.h"
 #include "dataset.h"
 #include "shapes.h"
 #include "earth_gravitational_model96.h"

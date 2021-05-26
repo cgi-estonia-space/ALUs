@@ -19,7 +19,7 @@
 #include "get_position.h"
 #include "kernel_array.h"
 #include "pointer_holders.h"
-#include "raster_properties.hpp"
+#include "raster_properties.h"
 #include "resampling.h"
 
 namespace alus {

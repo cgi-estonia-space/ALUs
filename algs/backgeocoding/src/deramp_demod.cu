@@ -13,7 +13,7 @@
  */
 #include "deramp_demod_computation.h"
 
-#include "cuda_util.hpp"
+#include "cuda_util.h"
 
 /**
  * The contents of this file refer to BackGeocodingOp.performDerampDemod method
