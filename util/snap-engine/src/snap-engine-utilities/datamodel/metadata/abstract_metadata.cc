@@ -15,7 +15,6 @@
 
 #include <string>
 
-
 #include <boost/algorithm/string.hpp>
 
 #include "metadata_attribute.h"
@@ -61,6 +60,16 @@ std::shared_ptr<Utc> AbstractMetadata::ParseUtc(std::string_view time_str) {
         }
     }
     return NO_METADATA_UTC;
+}
+
+std::shared_ptr<MetadataElement> AbstractMetadata::GetSlaveMetadata(std::shared_ptr<MetadataElement> target_root) {
+    std::shared_ptr<MetadataElement> target_slave_metadata_root = target_root->GetElement("Slave_Metadata");
+    if (target_slave_metadata_root == nullptr) {
+        target_slave_metadata_root = std::make_shared<MetadataElement>("Slave_Metadata");
+        target_root->AddElement(target_slave_metadata_root);
+    }
+
+    return target_slave_metadata_root;
 }
 
 std::vector<OrbitStateVector> AbstractMetadata::GetOrbitStateVectors(const std::shared_ptr<MetadataElement>& abs_root) {
@@ -325,6 +334,18 @@ std::shared_ptr<MetadataElement> AbstractMetadata::AddAbstractedMetadataHeader(
     return abs_root;
 }
 
+std::vector<std::shared_ptr<MetadataElement>> AbstractMetadata::GetBandAbsMetadataList(
+    std::shared_ptr<MetadataElement> abs_root) {
+    std::vector<std::shared_ptr<MetadataElement>> band_metadata_list;
+    std::vector<std::shared_ptr<MetadataElement>> children = abs_root->GetElements();
+    for (std::shared_ptr<MetadataElement> child : children) {
+        if (child->GetName().find(BAND_PREFIX, 0) == 0) {
+            band_metadata_list.push_back(child);
+        }
+    }
+    return band_metadata_list;
+}
+
 void AbstractMetadata::SetOrbitStateVectors(const std::shared_ptr<MetadataElement>& abs_root,
                                             const std::vector<OrbitStateVector>& orbit_state_vectors) {
     std::shared_ptr<MetadataElement> elem_root = abs_root->GetElement(ORBIT_STATE_VECTORS);
@@ -352,16 +373,16 @@ void AbstractMetadata::SetOrbitStateVectors(const std::shared_ptr<MetadataElemen
 }
 
 void AbstractMetadata::DefaultToProduct(const std::shared_ptr<MetadataElement>& abstracted_metadata,
-                                        const std::shared_ptr<Product>& product) {
-    SetAttribute(abstracted_metadata, PRODUCT, product->GetName());
-    SetAttribute(abstracted_metadata, PRODUCT_TYPE, product->GetProductType());
-    SetAttribute(abstracted_metadata, SPH_DESCRIPTOR, product->GetDescription());
+                                        const std::shared_ptr<Product>& the_product) {
+    SetAttribute(abstracted_metadata, PRODUCT, the_product->GetName());
+    SetAttribute(abstracted_metadata, PRODUCT_TYPE, the_product->GetProductType());
+    SetAttribute(abstracted_metadata, SPH_DESCRIPTOR, the_product->GetDescription());
 
-    SetAttribute(abstracted_metadata, NUM_OUTPUT_LINES, product->GetSceneRasterHeight());
-    SetAttribute(abstracted_metadata, NUM_SAMPLES_PER_LINE, product->GetSceneRasterWidth());
+    SetAttribute(abstracted_metadata, NUM_OUTPUT_LINES, the_product->GetSceneRasterHeight());
+    SetAttribute(abstracted_metadata, NUM_SAMPLES_PER_LINE, the_product->GetSceneRasterWidth());
 
-    SetAttribute(abstracted_metadata, FIRST_LINE_TIME, product->GetStartTime());
-    SetAttribute(abstracted_metadata, LAST_LINE_TIME, product->GetEndTime());
+    SetAttribute(abstracted_metadata, FIRST_LINE_TIME, the_product->GetStartTime());
+    SetAttribute(abstracted_metadata, LAST_LINE_TIME, the_product->GetEndTime());
 
     //        todo:add support
     //        if (product->GetProductReader() != nullptr && product->GetProductReader().getReaderPlugIn() !=
@@ -478,22 +499,6 @@ std::shared_ptr<MetadataElement> AbstractMetadata::AddBandAbstractedMetadata(
     AddAbstractedAttribute(band_root, CALIBRATION_FACTOR, ProductData::TYPE_FLOAT64, "", "Calibration constant");
 
     return band_root;
-}
-std::vector<std::shared_ptr<MetadataElement>> AbstractMetadata::GetBandAbsMetadataList(
-    const std::shared_ptr<MetadataElement> abs_root) {
-    auto starts_with = [](std::string_view string, std::string_view key) {
-      return string.rfind(key, 0) == 0;
-    };
-
-    std::vector<std::shared_ptr<MetadataElement>> band_metadata_list;
-    const auto children = abs_root->GetElements();
-    for (const auto& child : children) {
-        if (starts_with(child->GetName(), BAND_PREFIX)) {
-            band_metadata_list.push_back(child);
-        }
-    }
-
-    return band_metadata_list;
 }
 
 std::shared_ptr<MetadataElement> AbstractMetadata::GetBandAbsMetadata(

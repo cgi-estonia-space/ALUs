@@ -24,7 +24,7 @@
 
 #include "i_product_reader.h"
 #include "i_product_reader_plug_in.h"
-#include "product.h"
+#include "snap-core/datamodel/product.h"
 #include "product_subset_def.h"
 #include "tie_point_grid.h"
 

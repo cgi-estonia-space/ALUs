@@ -354,7 +354,7 @@ void Sentinel1Calibrator::UpdateTargetProductMetadata() const {
     const auto target_band_names = target_product_->GetBandNames();
     s1tbx::Sentinel1Utils::UpdateBandNames(abstract_root, selected_polarisations_, target_band_names);
 
-    const auto band_metadata_list = snapengine::AbstractMetadata::GetBandAbsMetadataList(abstract_root);
+    std::vector<std::shared_ptr<snapengine::MetadataElement>> band_metadata_list = snapengine::AbstractMetadata::GetBandAbsMetadataList(abstract_root);
     for (const auto& band_metadata : band_metadata_list) {
         bool pol_found{false};
         for (const auto& polarisation : selected_polarisations_) {

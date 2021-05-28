@@ -26,6 +26,7 @@
 #include "alus_file_writer.h"
 #include "backgeocoding.h"
 #include "pointer_holders.h"
+#include "snap-core/datamodel/product.h"
 
 namespace alus::backgeocoding {
 
@@ -36,6 +37,7 @@ struct PositionComputeResults {
 
 /**
  * A helper class to manage the data intputs and threading to Backgeocoding class.
+ * IMPORTANT: input products can only have 1 subswath!
  */
 class BackgeocodingController {
 public:
@@ -48,6 +50,13 @@ public:
                             std::shared_ptr<AlusFileReader<double>> slave_input_dataset,
                             std::shared_ptr<AlusFileWriter<float>> output_dataset,
                             std::string_view master_metadata_file, std::string_view slave_metadata_file);
+
+    BackgeocodingController(std::shared_ptr<AlusFileReader<double>> master_input_dataset,
+                            std::shared_ptr<AlusFileReader<double>> slave_input_dataset,
+                            std::shared_ptr<AlusFileWriter<float>> output_dataset,
+                            std::shared_ptr<snapengine::Product> master_product,
+                            std::shared_ptr<snapengine::Product> slave_product);
+
     ~BackgeocodingController();
     BackgeocodingController(const BackgeocodingController&) = delete;  // class does not support copying(and moving)
     BackgeocodingController& operator=(const BackgeocodingController&) = delete;
@@ -62,6 +71,7 @@ public:
     void CoreCompute(CoreComputeParams params);
     void WriteOutputs(Rectangle output_area, float* i_master_results, float* q_master_results, float* i_slave_results, float* q_slave_results);
     void DoWork();
+    void Initialize();
 
     std::condition_variable* GetThreadSync() { return &thread_sync_; }
 
@@ -72,10 +82,14 @@ private:
     int lines_per_burst_;
     int samples_per_burst_;
     int recommended_tile_area_ = 4000000;
+    bool beam_dimap_mode_ = false;
 
     std::shared_ptr<AlusFileReader<double>> master_input_dataset_;
     std::shared_ptr<AlusFileReader<double>> slave_input_dataset_;
     std::shared_ptr<AlusFileWriter<float>> output_dataset_;
+    std::shared_ptr<snapengine::Product> master_product_;
+    std::shared_ptr<snapengine::Product> slave_product_;
+    std::shared_ptr<snapengine::Product> target_product_;
 
     std::mutex register_mutex_;
     std::mutex master_read_mutex_;
@@ -92,6 +106,12 @@ private:
 
     std::string_view master_metadata_file_;
     std::string_view slave_metadata_file_;
+    std::string swath_index_str_;
+    std::string mst_suffix_;
+
+
+    void CopySlaveMetadata(std::shared_ptr<snapengine::Product>& slaveProduct);
+    void UpdateTargetProductMetadata();
 
     struct WorkerParams {
         int index;

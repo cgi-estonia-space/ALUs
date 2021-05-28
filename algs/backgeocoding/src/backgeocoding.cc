@@ -52,24 +52,34 @@ Backgeocoding::~Backgeocoding() {
     }
 }
 
+void Backgeocoding::PrepareToCompute(std::shared_ptr<snapengine::Product> master_product, std::shared_ptr<snapengine::Product> slave_product){
+    slave_utils_ = std::make_unique<s1tbx::Sentinel1Utils>(slave_product);
+    master_utils_ = std::make_unique<s1tbx::Sentinel1Utils>(master_product);
+    PrepareToComputeBody();
+}
+
 void Backgeocoding::PrepareToCompute(std::string_view master_metadata_file, std::string_view slave_metadata_file) {
 
+    slave_utils_ = std::make_unique<s1tbx::Sentinel1Utils>(slave_metadata_file);
+    master_utils_ = std::make_unique<s1tbx::Sentinel1Utils>(master_metadata_file);
+    PrepareToComputeBody();
+}
+
+void Backgeocoding::PrepareToComputeBody(){
     //TODO: Exclusively supporting srtm3 atm
     dem_sampling_lat_ = static_cast<double>(snapengine::Srtm3ElevationModel::GetTileWidthInDegrees()) /
                         static_cast<double>(snapengine::Srtm3ElevationModel::GetTileWidth());
     dem_sampling_lon_ = dem_sampling_lat_;
 
-    this->slave_utils_ = std::make_unique<s1tbx::Sentinel1Utils>(slave_metadata_file);
-    this->slave_utils_->ComputeDopplerRate();
-    this->slave_utils_->ComputeReferenceTime();
-    this->slave_utils_->subswath_.at(0)->HostToDevice();
-    this->slave_utils_->HostToDevice();
+    slave_utils_->ComputeDopplerRate();
+    slave_utils_->ComputeReferenceTime();
+    slave_utils_->subswath_.at(0)->HostToDevice();
+    slave_utils_->HostToDevice();
 
-    this->master_utils_ = std::make_unique<s1tbx::Sentinel1Utils>(master_metadata_file);
-    this->master_utils_->ComputeDopplerRate();
-    this->master_utils_->ComputeReferenceTime();
-    this->master_utils_->subswath_.at(0)->HostToDevice();
-    this->master_utils_->HostToDevice();
+    master_utils_->ComputeDopplerRate();
+    master_utils_->ComputeReferenceTime();
+    master_utils_->subswath_.at(0)->HostToDevice();
+    master_utils_->HostToDevice();
 
     const std::vector<snapengine::OrbitStateVectorComputation> &master_orbit_vectors_computation =
         this->master_utils_->GetOrbitStateVectors()->orbit_state_vectors_computation_;

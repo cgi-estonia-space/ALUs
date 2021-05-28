@@ -78,6 +78,23 @@ public:
     static void CopyMetadata(const std::shared_ptr<MetadataElement>& source,
                              const std::shared_ptr<MetadataElement>& target);
 
+    //TODO: not now, later
+//    /**
+//     * Copies the source product's preferred tile size (if any) to the target product.
+//     *
+//     * @param sourceProduct The source product.
+//     * @param targetProduct The target product.
+//     */
+//    static void CopyPreferredTileSize(std::shared_ptr<Product> sourceProduct, std::shared_ptr<Product> targetProduct) {
+//        std::shared_ptr<custom::Dimension> preferredTileSize = sourceProduct->GetPreferredTileSize();
+//        if (preferredTileSize != nullptr) {
+//            custom::Rectangle targetRect = new Rectangle(targetProduct.getSceneRasterWidth(),
+//                                                       targetProduct.getSceneRasterHeight());
+//            custom::Rectangle tileRect = new Rectangle(preferredTileSize).intersection(targetRect);
+//            targetProduct.setPreferredTileSize(tileRect.width, tileRect.height);
+//        }
+//    }
+
     /**
      * Copies all tie point grids from one product to another.
      *

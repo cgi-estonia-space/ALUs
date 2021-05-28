@@ -43,16 +43,24 @@ class GdalErrorException final : public std::runtime_error {
     int const line;
 };
 
+struct Iq16 {
+    int16_t i;
+    int16_t q;
+};
+static_assert(sizeof(Iq16) == 4, "Do no alter the memory layout of this structure!");
+
 template <typename BufferType>
 GDALDataType FindGdalDataType() {
     if(std::is_same_v<BufferType, double>){
         return GDALDataType::GDT_Float64;
     }else if(std::is_same_v<BufferType, float>) {
         return GDALDataType::GDT_Float32;
-    }else if(std::is_same_v<BufferType, int16_t>) {
+    }else if(std::is_same_v<BufferType, int16_t>){
         return GDALDataType::GDT_Int16;
     }else if(std::is_same_v<BufferType, int32_t>){
         return GDALDataType::GDT_Int32;
+    }else if(std::is_same_v<BufferType, Iq16>){
+        return GDALDataType::GDT_CInt16;
     }else{
         //todo this function and error can be compile time, but requires refactoring in other places
         throw std::invalid_argument(std::string(typeid(BufferType).name()) + " is not an implemented type for this dataset.");

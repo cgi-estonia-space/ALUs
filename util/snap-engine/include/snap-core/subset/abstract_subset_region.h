@@ -21,7 +21,7 @@
 #include <string_view>
 
 #include "custom/rectangle.h"
-#include "i_geo_coding.h"
+#include "snap-core/datamodel/i_geo_coding.h"
 
 namespace alus {
 namespace snapengine {

@@ -51,6 +51,17 @@ public:
      * @throws std::invalid_argument if the given Object is not an <code>array</code> or <code>null</code>.
      */
     static std::string ArrayToString(std::vector<std::string>, std::string_view delimiter);
+
+    /**
+     * Creates a valid name for the given source name. The method returns a string which is the given name where each
+     * occurence of a character which is not a letter, a digit or one of the given valid characters is replaced by the
+     * given replace character. The returned string always has the same length as the source name.
+     *
+     * @param name        the source name, must not be  <code>null</code>
+     * @param valid_chars  the array of valid characters
+     * @param replace_char the replace character
+     */
+    static std::string CreateValidName(std::string name, std::string valid_chars, char replace_char);
 };
 
 }  // namespace snapengine

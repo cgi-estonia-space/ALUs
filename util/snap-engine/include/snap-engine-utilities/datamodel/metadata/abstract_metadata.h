@@ -44,7 +44,7 @@ private:
     static void PatchMissingMetadata(const std::shared_ptr<MetadataElement>& abstracted_metadata);
 
     static void DefaultToProduct(const std::shared_ptr<MetadataElement>& abstracted_metadata,
-                                 const std::shared_ptr<Product>& product);
+                                 const std::shared_ptr<Product>& the_product);
 
 public:
     /**
@@ -274,12 +274,16 @@ public:
     static constexpr std::string_view INCIDENCE_ANGLE = "incidenceAngle";
     static constexpr std::string_view ELEVATION_ANGLE = "elevationAngle";
 
+    static std::vector<std::shared_ptr<MetadataElement>> GetBandAbsMetadataList(
+        std::shared_ptr<MetadataElement> abs_root);
+
     static bool GetAttributeBoolean(const std::shared_ptr<MetadataElement>& element, std::string_view view);
 
     static double GetAttributeDouble(const std::shared_ptr<MetadataElement>& element, std::string_view view);
 
     static std::shared_ptr<Utc> ParseUtc(std::string_view time_str);
 
+    static std::shared_ptr<MetadataElement> GetSlaveMetadata(std::shared_ptr<MetadataElement> target_root);
     /**
      * Get orbit state vectors.
      *
@@ -399,9 +403,6 @@ public:
 
     static std::shared_ptr<MetadataElement> GetBandAbsMetadata(
         const std::shared_ptr<snapengine::MetadataElement>& abs_root, const std::shared_ptr<snapengine::Band>& band);
-
-    static std::vector<std::shared_ptr<MetadataElement>> GetBandAbsMetadataList(
-        const std::shared_ptr<MetadataElement> abs_root);
 };
 
 }  // namespace alus::snapengine

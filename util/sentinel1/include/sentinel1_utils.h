@@ -24,10 +24,10 @@
 #include "allocators.h"
 #include "calibration_vector.h"
 #include "comparators.h"
-#include "i_meta_data_reader.h"
-#include "metadata_attribute.h"
+#include "snap-core/datamodel/i_meta_data_reader.h"
+#include "snap-core/datamodel/metadata_attribute.h"
 #include "orbit_state_vectors.h"
-#include "product_data_utc.h"
+#include "snap-core/datamodel/product_data_utc.h"
 #include "shapes.h"
 #include "snap-core/datamodel/metadata_element.h"
 #include "snap-core/datamodel/product.h"
@@ -164,6 +164,7 @@ private:
     bool is_doppler_centroid_available_ = false;
     bool is_range_depend_doppler_rate_available_ = false;
     bool is_orbit_available_ = false;
+    bool legacy_init_ = false;
 
     std::unique_ptr<s1tbx::OrbitStateVectors> orbit_;
     std::shared_ptr<snapengine::IMetaDataReader> metadata_reader_;
@@ -179,7 +180,7 @@ private:
     double GetLongitudeValue(Sentinel1Index index, SubSwathInfo* subswath);
     double GetSlantRangeTimeValue(Sentinel1Index index, SubSwathInfo* subswath);
     double GetIncidenceAngleValue(Sentinel1Index index, SubSwathInfo* subswath);
-    void FillSubswathMetaData(SubSwathInfo *subswath);
+    void FillSubswathMetaData(std::shared_ptr<snapengine::MetadataElement> subswath_metadata, SubSwathInfo *subswath);
     void FillUtilsMetadata();
     void GetMetadataRoot();
     void GetAbstractedMetadata();

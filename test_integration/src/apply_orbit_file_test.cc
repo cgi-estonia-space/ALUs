@@ -239,7 +239,7 @@ TEST_F(ApplyOrbitFileOpIntegrationTest, modify_source_only_test) {
         ASSERT_TRUE(boost::filesystem::exists(file_location_in_));
         ASSERT_FALSE(boost::filesystem::exists(file_location_out_));
         alus::snapengine::AlusUtils::SetOrbitFilePath(
-            "./goods/apply_orbit_file_op/orbit-files/S1A/2018/09/"
+            "./goods/apply_orbit_file_op/orbit-files/S1A/2018/08/"
             "S1A_OPER_AUX_POEORB_OPOD_20180904T120748_V20180814T225942_20180816T005942.EOF");
 
         const std::string product_type{"SLC"};
@@ -270,7 +270,7 @@ TEST_F(ApplyOrbitFileOpIntegrationTest, modify_safe_test) {
     boost::filesystem::path input_path =
         "./goods/sentinel1_product_reader/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563.SAFE";
     alus::snapengine::AlusUtils::SetOrbitFilePath(
-        "./goods/apply_orbit_file_op/orbit-files/S1A/2018/09/"
+        "./goods/apply_orbit_file_op/orbit-files/S1A/2018/08/"
         "S1A_OPER_AUX_POEORB_OPOD_20180904T120748_V20180814T225942_20180816T005942.EOF");
 
     auto reader_plug_in = std::make_shared<alus::s1tbx::Sentinel1ProductReaderPlugIn>();

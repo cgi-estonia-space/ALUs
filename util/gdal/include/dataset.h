@@ -18,6 +18,7 @@
 #include <string_view>
 #include <tuple>
 #include <vector>
+#include <map>
 
 #include <gdal_priv.h>
 
@@ -37,7 +38,6 @@ class DatasetError : public std::runtime_error {
     std::string m_fileName;
     int m_errorCode;
 };
-
 
 /**
  * This enum enables to force georeferencing source for GDAL driver as specified here:
@@ -119,12 +119,13 @@ class Dataset: public AlusFileReader<BufferType> {
     int GetXSize() const { return x_size_; }
     int GetYSize() const { return y_size_; }
     std::vector<BufferType> const& GetHostDataBuffer() const override { return data_buffer_; }
-    BufferType GetNoDataValue(int band_nr) { return dataset_->GetRasterBand(band_nr)->GetNoDataValue(); }
+    double GetNoDataValue(int band_nr) { return dataset_->GetRasterBand(band_nr)->GetNoDataValue(); }
     long unsigned int GetBufferByteSize() override { return data_buffer_.size() * sizeof(BufferType);};
     size_t GetBufferElemCount() override { return data_buffer_.size();};
     BufferType* GetDeviceDataBuffer() override ;
     void ReadRectangle(Rectangle rectangle, int band_nr, BufferType*data_buffer) override ;
     [[nodiscard]] std::string_view GetFilePath();
+    void ReadRectangle(Rectangle rectangle, std::map<int, BufferType*>& bands) override;
 
     ~Dataset();
 

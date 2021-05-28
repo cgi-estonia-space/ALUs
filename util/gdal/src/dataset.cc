@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <cstring>
 #include <iostream>
+#include <map>
 
 #include "gdal.h"
 #include "gdal_util.h"
@@ -135,7 +136,15 @@ BufferType* Dataset<BufferType>::GetDeviceDataBuffer() {
 }
 
 template <typename BufferType>
-void Dataset<BufferType>::ReadRectangle(Rectangle rectangle, int band_nr, BufferType* data_buffer) {
+void Dataset<BufferType>::ReadRectangle(Rectangle rectangle, std::map<int, BufferType*>& bands){
+    for (auto it = bands.begin(); it != bands.end(); ++it) {
+        std::cout << it->first << ", " << it->second << '\n';
+        ReadRectangle(rectangle, it->first, it->second);
+    }
+}
+
+template <typename BufferType>
+void Dataset<BufferType>::ReadRectangle(Rectangle rectangle, int band_nr, BufferType *data_buffer) {
     auto const bandCount = this->dataset_->GetRasterCount();
     if (bandCount == 0) {
         throw DatasetError("Does not support rasters with no bands.", this->dataset_->GetFileList()[0], 0);
@@ -193,4 +202,5 @@ template class Dataset<double>;
 template class Dataset<float>;
 template class Dataset<int16_t>;
 template class Dataset<int>;
+template class Dataset<Iq16>;
 }  // namespace alus
