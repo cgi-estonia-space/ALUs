@@ -33,7 +33,7 @@ public:
     TopsarSplit(std::string filename, std::string selected_subswath, std::string selected_polarisation);
     void initialize();
 
-    std::shared_ptr<snapengine::Product>& GetTargetProduct() { return target_product_; }
+    std::shared_ptr<snapengine::Product> GetTargetProduct() { return target_product_; }
     [[nodiscard]] const std::shared_ptr<C16Dataset<double>>& GetPixelReader() const { return pixel_reader_; }
 
 private:

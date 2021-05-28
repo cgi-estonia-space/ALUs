@@ -14,7 +14,6 @@ target_include_directories(alus PUBLIC ${APP_INCLUDE_DIRS})
 target_link_libraries(alus
         PUBLIC
         dl
-        Boost::program_options
         alg-bond-static
         app-util-static
         snap-engine-static
@@ -32,6 +31,7 @@ add_custom_command(TARGET alus
 list(APPEND APP_UTIL_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/algorithm_parameters.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/dem_assistant.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/command_line_options.cc
         )
 add_library(app-util-static STATIC ${APP_UTIL_SOURCES})
 target_include_directories(app-util-static
@@ -40,6 +40,7 @@ target_include_directories(app-util-static
         )
 target_link_libraries(app-util-static
         PUBLIC
+        Boost::program_options
         snap-engine-static
         )
 set_target_properties(app-util-static

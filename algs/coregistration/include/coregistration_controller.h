@@ -23,14 +23,20 @@ namespace alus::coregistration {
 
 class Coregistration {
 public:
+    Coregistration(std::string aux_data_path);
+    Coregistration() = default;
+
     void Initialize(std::string master_file, std::string slave_file, std::string output_file, std::string subswath_name,
                     std::string polarisation);
+    void Initialize(std::string master_file, std::string slave_file, std::string output_file, std::string subswath_name,
+                    std::string polarisation, const std::string& main_orbit_file,
+                    const std::string& secondary_orbit_file);
     void DoWork(const float* egm96_device_array, PointerArray srtm3_tiles);
 
-    std::shared_ptr<snapengine::Product>& GetMasterProduct() { return split_master_->GetTargetProduct(); }
-    std::shared_ptr<snapengine::Product>& GetSlaveProduct() { return split_slave_->GetTargetProduct(); }
+    std::shared_ptr<snapengine::Product> GetMasterProduct() { return split_master_->GetTargetProduct(); }
+    std::shared_ptr<snapengine::Product> GetSlaveProduct() { return split_slave_->GetTargetProduct(); }
 
-    Coregistration(std::string aux_data_path);
+    ~Coregistration() = default;
 
 private:
     std::unique_ptr<backgeocoding::BackgeocodingController> backgeocoding_;
@@ -38,6 +44,8 @@ private:
     std::unique_ptr<topsarsplit::TopsarSplit> split_slave_;
     std::unique_ptr<s1tbx::ApplyOrbitFileOp> orbit_file_master_;
     std::unique_ptr<s1tbx::ApplyOrbitFileOp> orbit_file_slave_;
+    std::string main_orbit_file_{};
+    std::string secondary_orbit_file_{};
 };
 
 }  // namespace alus::coregistration

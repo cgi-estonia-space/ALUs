@@ -45,13 +45,10 @@ public:
 private:
     void PrintProcessingParameters() const override;
 
-    // TODO: These default values could be assigned via CMake generated header file by using the operations' shared
-    // library target name.
-    std::string apply_orbit_file_lib_{"apply-orbit-file"};
-    std::string backgeocoding_lib_{"backgeocoding"};
-    std::string coherence_lib_{"coherence"};
-    std::string deburst_lib_{"deburst"};
-    std::string range_doppler_terrain_correction_lib_{"terrain-correction"};
+    bool IsSafeInput() const;
+    int ExecuteSafe();
+    int ExecuteGeoTiffAndBeamDimap();
+
 
     std::vector<std::string> input_datasets_{};
     std::vector<std::string> metadata_paths_{};
@@ -61,12 +58,14 @@ private:
     size_t tile_height_{};
     std::string output_name_{};
     app::AlgorithmParameters::Table alg_params_;
+    std::string main_scene_file_id_{};
+    std::string main_scene_orbit_file_{};
+    std::string secondary_scene_orbit_file_{};
+    std::string orbit_file_dir_{};
+    std::string subswath_{};
+    std::string polarization_{};
     std::string coherence_terrain_correction_metadata_param_{};
+    std::string main_scene_file_path_{};
+    std::string secondary_scene_file_path_{};
 };
-}
-
-extern "C" {
-alus::AlgBond* CreateAlgorithm() { return new alus::CoherenceEstimationRoutineExecute(); } //NOSONAR
-
-void DeleteAlgorithm(alus::AlgBond* instance) { delete (alus::CoherenceEstimationRoutineExecute*)instance; } //NOSONAR
 }

@@ -31,10 +31,12 @@ private:
     bool near_range_on_left_;
     std::shared_ptr<s1tbx::Orbit> orbit_;
 
-    bool IsNearRangeOnLeft(IDataTileReader* incidence_angle_reader);
+    static bool IsNearRangeOnLeft(IDataTileReader* incidence_angle_reader);
 
 public:
     MetaData(IDataTileReader* incidence_angle_reader, std::shared_ptr<snapengine::MetadataElement> root_element,
+             int orbit_degree);
+    MetaData(bool is_near_range_on_left, std::shared_ptr<snapengine::MetadataElement> root_element,
              int orbit_degree);
     // Convert pixel number to range time (1 is first pixel)
     [[nodiscard]] double PixelToTimeRange(double pixel) const;

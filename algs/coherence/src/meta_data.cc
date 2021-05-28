@@ -22,13 +22,12 @@
 namespace alus {
 
 MetaData::MetaData(IDataTileReader* incidence_angle_reader, std::shared_ptr<snapengine::MetadataElement> element,
-                   int orbit_degree) {
-    // get angle for first and last to understand if this is ok (need to calculate from input product...
+                   int orbit_degree) : MetaData(IsNearRangeOnLeft(incidence_angle_reader), element, orbit_degree){
+}
 
-    //    todo:check slave vs master on this  if they use the same input files we should not read these again
+MetaData::MetaData(bool is_near_range_on_left, std::shared_ptr<snapengine::MetadataElement> element, int orbit_degree) {
 
-    this->near_range_on_left_ = IsNearRangeOnLeft(incidence_angle_reader);
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    this->near_range_on_left_ = is_near_range_on_left;
 
     // todo: check what snap uses! this is custom solution
     band_x_size_ = element->GetAttributeInt(snapengine::AbstractMetadata::NUM_SAMPLES_PER_LINE);
@@ -50,12 +49,8 @@ MetaData::MetaData(IDataTileReader* incidence_angle_reader, std::shared_ptr<snap
                  jlinda::LIGHT_SPEED;
     rsr_2_x_ = element->GetAttributeDouble(alus::snapengine::AbstractMetadata::RANGE_SAMPLING_RATE) * jlinda::MEGA * 2;
 
-    approx_radar_centre_original_.SetX(
-        element->GetAttributeDouble(alus::snapengine::AbstractMetadata::NUM_SAMPLES_PER_LINE) /
-        2.0);  // x direction is range!
-    approx_radar_centre_original_.SetY(
-        element->GetAttributeDouble(alus::snapengine::AbstractMetadata::NUM_OUTPUT_LINES) /
-        2.0);  // y direction is azimuth
+    approx_radar_centre_original_.SetX(static_cast<double>(band_x_size_) / 2.0);  // x direction is range!
+    approx_radar_centre_original_.SetY(static_cast<double>(band_y_size_) / 2.0);  // y direction is azimuth
     approx_radar_centre_original_.SetZ(0.0);
 
     jlinda::GeoPoint approx_geo_centre_original_{};
@@ -79,6 +74,7 @@ MetaData::MetaData(IDataTileReader* incidence_angle_reader, std::shared_ptr<snap
     approx_xyz_centre_original_ = s1tbx::Point(xyz.at(0), xyz.at(1), xyz.at(2));
 
     orbit_ = std::make_shared<s1tbx::Orbit>(element, orbit_degree);
+
 }
 
 // todo: how should we tie this to specific product in our logic?

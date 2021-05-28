@@ -32,6 +32,8 @@
 #include "pugixml_meta_data_reader.h"
 #include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
 #include "tf_algorithm_runner.h"
+#include "s1tbx-commons/s_a_r_geocoding.h"
+
 
 namespace {
 constexpr std::string_view PARAMETER_ID_SRP_NUMBER_POINTS{"srp_number_points"};
@@ -49,8 +51,26 @@ constexpr size_t NUMBER_OF_INPUT_BANDS{4};
 namespace alus {
 
     [[nodiscard]] int CoherenceExecuter::Execute() {
-        PrintProcessingParameters();
+        try {
+            PrintProcessingParameters();
 
+            if (aux_location_.empty()) {
+                ExecuteSafe();
+            } else {
+                ExecuteBeamDimap();
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "Caught exception while running coherence operation - " << e.what() << std::endl;
+            return 3;
+        } catch (...) {
+            std::cerr << "Caught unknown exception while running coherence operation." << std::endl;
+            return 2;
+        }
+
+        return 0;
+    }
+
+    void CoherenceExecuter::ExecuteBeamDimap() {
         const auto dimap_dim_file = aux_location_.at(0);
         const auto dimap_data_folder = dimap_dim_file.substr(0, dimap_dim_file.length() - 4) + ".data";  // Strip ".dim"
         auto const FILE_NAME_IA = dimap_data_folder + "/tie_point_grids/incident_angle.img";
@@ -95,6 +115,7 @@ namespace alus {
             coh_data_writer = std::make_unique<GdalTileWriter>(
                 output_name_, band_params, coh_data_reader->GetGeoTransform(), coh_data_reader->GetDataProjection());
         }
+
         alus::CohTilesGenerator tiles_generator{
             coh_data_reader->GetBandXSize(), coh_data_reader->GetBandYSize(), static_cast<int>(tile_width_), static_cast<int>(tile_height_),
             coherence_window_range_,         coherence_window_azimuth_};
@@ -116,8 +137,53 @@ namespace alus {
         tf_algo_runner.Run();
 
         output_dataset_ = coh_data_writer->GetGdalDataset();
+    }
 
-        return 0;
+    void CoherenceExecuter::ExecuteSafe() {
+        const auto near_range_on_left = s1tbx::SARGeocoding::IsNearRangeOnLeft(
+            main_product_->GetTiePointGrid("incident_angle"), main_product_->GetSceneRasterWidth());
+        alus::MetaData meta_master{near_range_on_left,
+                                   snapengine::AbstractMetadata::GetAbstractedMetadata(main_product_), orbit_degree_};
+        alus::MetaData meta_slave{
+            near_range_on_left, snapengine::AbstractMetadata::GetAbstractedMetadata(secondary_product_), orbit_degree_};
+
+        // todo:need some better thought through logic to map inputs from gdal
+        std::vector<int> band_map_out{1};
+        int band_count_out = 1;
+
+        std::unique_ptr<GdalTileReader> coh_data_reader =
+            std::make_unique<GdalTileReader>(input_name_.at(0), band_map_in_, band_map_in_.size(), fetch_transform_);
+
+        std::unique_ptr<GdalTileWriter> coh_data_writer{};
+        BandParams band_params{band_map_out,
+                               band_count_out,
+                               coh_data_reader->GetBandXSize(),
+                               coh_data_reader->GetBandYSize(),
+                               coh_data_reader->GetBandXMin(),
+                               coh_data_reader->GetBandYMin()};
+        coh_data_writer = std::make_unique<GdalTileWriter>(
+            output_name_, band_params, coh_data_reader->GetGeoTransform(), coh_data_reader->GetDataProjection());
+
+        alus::CohTilesGenerator tiles_generator{coh_data_reader->GetBandXSize(), coh_data_reader->GetBandYSize(),
+                                                static_cast<int>(tile_width_),   static_cast<int>(tile_height_),
+                                                coherence_window_range_,         coherence_window_azimuth_};
+        CohWindow coh_window{coherence_window_range_, coherence_window_azimuth_};
+        alus::Coh coherence{srp_number_points_, srp_polynomial_degree_, subtract_flat_earth_phase_,
+                            coh_window,         orbit_degree_,          meta_master,
+                            meta_slave};
+
+        // create session for tensorflow
+        tensorflow::Scope root = tensorflow::Scope::NewRootScope();
+        auto options = tensorflow::SessionOptions();
+        options.config.mutable_gpu_options()->set_per_process_gpu_memory_fraction(per_process_fpu_memory_fraction_);
+        options.config.mutable_gpu_options()->set_allow_growth(true);
+        tensorflow::ClientSession session(root, options);
+
+        // run the algorithm
+        alus::TFAlgorithmRunner tf_algo_runner{
+            coh_data_reader.get(), coh_data_writer.get(), &tiles_generator, &coherence, &session, &root};
+        tf_algo_runner.Run();
+
     }
 
     void CoherenceExecuter::SetParameters(const app::AlgorithmParameters::Table& param_values) {

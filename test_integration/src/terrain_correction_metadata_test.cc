@@ -86,16 +86,22 @@ TEST(TerrainCorrection, ParsesMetadataCorrectlyForSaaremaa1) {
 
     const auto metadata = Metadata(MAIN_METADATA_FILE, LAT_TIE_POINTS_FILE, LON_TIE_POINTS_FILE);
 
-    const auto& lat_tie_points = metadata.GetLatTiePoints();
-    const auto& lon_tie_points = metadata.GetLonTiePoints();
+    const auto& lat_tie_points = metadata.GetLatTiePointGrid();
+    const auto& lon_tie_points = metadata.GetLonTiePointGrid();
     const size_t EXPECTED_WIDTH{21};
     const size_t EXPECTED_HEIGHT{6};
     EXPECT_THAT(lat_tie_points.grid_width, Eq(EXPECTED_WIDTH));
     EXPECT_THAT(lat_tie_points.grid_height, Eq(EXPECTED_HEIGHT));
     EXPECT_THAT(lon_tie_points.grid_width, Eq(EXPECTED_WIDTH));
     EXPECT_THAT(lon_tie_points.grid_height, Eq(EXPECTED_HEIGHT));
-    EXPECT_THAT(lat_tie_points.values, Pointwise(FloatEq(), EXPECTED_LAT_TIE_POINTS));
-    EXPECT_THAT(lon_tie_points.values, Pointwise(FloatEq(), EXPECTED_LON_TIE_POINTS));
+
+    for(size_t i = 0; i < EXPECTED_LAT_TIE_POINTS.size(); i++) {
+        EXPECT_THAT(lat_tie_points.tie_points[i], FloatEq(EXPECTED_LAT_TIE_POINTS[i]));
+    }
+
+    for(size_t i = 0; i < EXPECTED_LON_TIE_POINTS.size(); i++){
+        EXPECT_THAT(lon_tie_points.tie_points[i], FloatEq(EXPECTED_LON_TIE_POINTS[i]));
+    }
 
     const auto metadata_fields = metadata.GetMetadata();
     EXPECT_THAT(metadata_fields.range_spacing, DoubleEq(2.329562));

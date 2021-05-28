@@ -12,6 +12,7 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -19,6 +20,7 @@
 
 #include "alg_bond.h"
 #include "algorithm_parameters.h"
+#include "product.h"
 
 namespace alus {
 class CoherenceExecuter final : public AlgBond {
@@ -46,6 +48,12 @@ public:
         tile_height_ = height;
     }
 
+    void SetInputProducts(std::shared_ptr<snapengine::Product> main,
+                     std::shared_ptr<snapengine::Product> secondary) {
+        main_product_ = main;
+        secondary_product_ = secondary;
+    }
+
     void SetOutputFilename(const std::string& output_name) override { output_name_ = output_name; }
 
     [[nodiscard]] std::string GetArgumentsHelp() const override;
@@ -58,6 +66,8 @@ public:
 
 private:
     void PrintProcessingParameters() const override;
+    void ExecuteBeamDimap();
+    void ExecuteSafe();
 
     std::vector<std::string> input_name_{};
     std::vector<GDALDataset*> input_dataset_{};
@@ -77,5 +87,7 @@ private:
     bool fetch_transform_{true};
     double per_process_fpu_memory_fraction_{1.0};
     std::vector<int> band_map_in_{1, 2, 3, 4};
+    std::shared_ptr<snapengine::Product> main_product_{};
+    std::shared_ptr<snapengine::Product> secondary_product_{};
 };
 }  // namespace alus

@@ -272,7 +272,7 @@ void TOPSARDeburstOp::CreateTiePointGrids() {
     int k = 0;
     for (int i = 0; i <= grid_height; i++) {
         int y = i * sub_sampling_y;
-        double az_time = target_first_line_time_ + y * target_last_line_time_;
+        double az_time = target_first_line_time_ + y * target_line_time_interval_;
         for (int j = 0; j <= grid_width; j++) {
             int x = j * sub_sampling_x;
             double slr_time = target_slant_range_time_to_first_pixel_ + x * target_delta_slant_range_time_;
@@ -1045,25 +1045,6 @@ std::shared_ptr<snapengine::ITile> TOPSARDeburstOp::GetSourceTile(
     source_product_->GetImageReader()->ReadSubSampledData(region, band_indx);
     buffer = source_product_->GetImageReader()->GetData();
     return tile;
-}
-
-void TOPSARDeburstOp::WriteProductFiles(const std::shared_ptr<snapengine::IMetaDataWriter>& metadata_writer) {
-    boost::filesystem::create_directories(target_product_->GetFileLocation().parent_path().generic_path());
-    // temporary workaround to forward tie_point_grids directory...
-    boost::filesystem::copy(source_product_->GetFileLocation().parent_path().generic_path().string() +
-                                boost::filesystem::path::preferred_separator + "tie_point_grids",
-                            target_product_->GetFileLocation().parent_path().generic_path().string() +
-                                boost::filesystem::path::preferred_separator + "tie_point_grids",
-                            boost::filesystem::copy_options::recursive);
-    // temporary workaround to forward vector directory...
-    boost::filesystem::copy(source_product_->GetFileLocation().parent_path().generic_path().string() +
-                                boost::filesystem::path::preferred_separator + "vector_data",
-                            target_product_->GetFileLocation().parent_path().generic_path().string() +
-                                boost::filesystem::path::preferred_separator + "vector_data",
-                            boost::filesystem::copy_options::recursive);
-    // write metadata file
-    target_product_->SetMetadataWriter(metadata_writer);
-    target_product_->GetMetadataWriter()->Write();
 }
 
 void TOPSARDeburstOp::Compute() {

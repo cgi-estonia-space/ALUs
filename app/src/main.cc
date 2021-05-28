@@ -1,4 +1,17 @@
-#include <dlfcn.h>
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
+
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -8,6 +21,7 @@
 
 #include "alg_load.h"
 #include "algorithm_parameters.h"
+#include "command_line_options.h"
 #include "dem_assistant.h"
 
 #include "../../VERSION"
@@ -15,7 +29,7 @@
 namespace po = boost::program_options;
 
 namespace {
-void PrintHelp(const po::options_description& options_help) {
+void PrintHelp(const std::string& options_help) {
     std::cout << "ALUS - EO processing on steroids" << std::endl;
     std::cout << "Version " << VERSION_MAJOR << "." << VERSION_MINOR << "." << VERSION_PATCH << std::endl;
     std::cout << std::endl;
@@ -25,70 +39,34 @@ void PrintHelp(const po::options_description& options_help) {
 }
 }  // namespace
 
-int main(int argc, char* argv[]) {
-    std::string alg_to_run{};
-    std::vector<std::string> input_files{};
-    std::string output_path{};
-    std::vector<std::string> aux_locations{};
-    size_t tile_width{};
-    size_t tile_height{};
-    std::string alg_params{};
-    std::string params_file_path{};
-    std::vector<std::string> dem_files_param{};
+int main(int argc, const char* argv[]) {
 
-    po::options_description visible_options("Arguments");
-    po::options_description hidden_options("Hidden arguments");
-    // clang-format off
-    visible_options.add_options()("help,h", "Print help")(
-        "alg_name", po::value<std::string>(&alg_to_run), "Specify algorithm to run")(
-        "alg_help", "Print algorithm configurable parameters")(
-        "input,i", po::value<std::vector<std::string>>(&input_files), "Input dataset path.")(
-        "output,o", po::value<std::string>(&output_path), "Output dataset location")(
-        "tile_width,x", po::value<size_t>(&tile_width)->default_value(1000), "Tile width.")(
-        "tile_height,y", po::value<size_t>(&tile_height)->default_value(1000), "Tile height.")
-        ("parameters,p", po::value<std::string>(&alg_params)->default_value(""),
-                        "Algorithm specific configuration. Must be supplied as key=value "
-                        "pairs "
-                        "separated by comma','.\n"
-                        "Example 1: 'orbit_degree=3,rg_window=15'\n"
-                        "Example 2: 'coherence:az_window=3;backgeocoding:master=...'\nParameters specified "
-         "here will overrule ones in the configuration file supplied as '--parameters_file' option.")
-        ("parameters_file", po::value<std::string>(&params_file_path)->default_value(""), "Algorithm specific "
-             "configurations file path. File contents shall follow same syntax as '--parameters' option.")(
-        "dem", po::value<std::vector<std::string>>(&dem_files_param), "Dem files with full path. Can be specified "
-                "multiple times for multiple DEM files or a space separated files in a single argument. Only SRTM3 is "
-                "supported.")(
-        "list_algs,l", "Print available algorithms");
-
-    hidden_options.add_options()(
-        "aux", po::value<std::vector<std::string>>(&aux_locations), "Auxiliary/metadata .dim file"
-                                                                    "(metadata, incident angle, etc).");
-    // clang-format on
-    po::options_description all_options("All arguments");
-    all_options.add(visible_options).add(hidden_options);
-
+    std::string help_string{};
     int alg_execute_status{};
     try {
-        po::variables_map vm;
-        po::store(po::parse_command_line(argc, argv, all_options), vm);
-        po::notify(vm);
+        alus::app::CommandLineOptions options{};
+        help_string = options.GetHelp();
+        options.ParseArgs(argc, argv);
 
-        if (vm.count("help") || argc == 1 || vm.count("alg_name") == 0) {
-            PrintHelp(visible_options);
+        if (options.DoRequireHelp()) {
+            PrintHelp(help_string);
             return 0;
         }
 
+        const auto alg_to_run = options.GetSelectedAlgorithm();
         std::cout << "Algorithm to run: " << alg_to_run << std::endl;
         const alus::AlgorithmLoadGuard alg_guard{alg_to_run};
 
         alus::app::AlgorithmParameters::AlgParamTables command_line_parameters;
+        const auto alg_params = options.GetAlgorithmParameters();
         if (!alg_params.empty()) {
             command_line_parameters = alus::app::AlgorithmParameters::TryCreateFrom(alg_params);
         }
 
         alus::app::AlgorithmParameters::AlgParamTables file_conf_parameters;
-        if (!params_file_path.empty()) {
-            file_conf_parameters = alus::app::AlgorithmParameters::TryCreateFromFile(params_file_path);
+        const auto alg_params_file = options.GetAlgorithmParametersFile();
+        if (!alg_params_file.empty()) {
+            file_conf_parameters = alus::app::AlgorithmParameters::TryCreateFromFile(alg_params_file);
         }
 
         std::string warnings{};
@@ -103,18 +81,19 @@ int main(int argc, char* argv[]) {
             alg_guard.GetInstanceHandle()->SetParameters(merged_parameters.at(""));
         }
 
-        if (vm.count("alg_help")) {
+        if (options.DoRequireAlgorithmHelp()) {
             std::cout << alg_guard.GetInstanceHandle()->GetArgumentsHelp();
         } else {
             std::shared_ptr<alus::app::DemAssistant> dem_assistant{};
+            const auto dem_files_param = options.GetDemFiles();
             if (!dem_files_param.empty()) {
                 std::cout << "Processing DEM files and creating EGM96." << std::endl;
                 dem_assistant = alus::app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(std::move(dem_files_param));
             }
 
-            alg_guard.GetInstanceHandle()->SetInputFilenames(input_files, aux_locations);
-            alg_guard.GetInstanceHandle()->SetTileSize(tile_width, tile_height);
-            alg_guard.GetInstanceHandle()->SetOutputFilename(output_path);
+            alg_guard.GetInstanceHandle()->SetInputFilenames(options.GetInputDatasets(), options.GetAux());
+            alg_guard.GetInstanceHandle()->SetTileSize(options.GetTileWidth(), options.GetTileHeight());
+            alg_guard.GetInstanceHandle()->SetOutputFilename(options.GetOutputStem());
 
             if (dem_assistant != nullptr) {
                 alg_guard.GetInstanceHandle()->SetSrtm3Manager(dem_assistant->GetSrtm3Manager());
@@ -125,7 +104,7 @@ int main(int argc, char* argv[]) {
         }
     } catch (const po::error& e) {
         std::cerr << e.what() << std::endl;
-        PrintHelp(visible_options);
+        PrintHelp(help_string);
         return 1;  // TODO: Create constants for exit codes.
     } catch (const std::fstream::failure& e) {
         std::cerr << "Exception opening/reading file - " << e.what() << std::endl;
