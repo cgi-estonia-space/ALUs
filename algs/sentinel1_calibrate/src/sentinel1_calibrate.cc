@@ -57,14 +57,13 @@
 
 namespace alus::sentinel1calibrate {
 Sentinel1Calibrator::Sentinel1Calibrator(std::shared_ptr<snapengine::Product> source_product,
-                                         std::shared_ptr<Dataset<float>> source_dataset,
+                                         const std::string& src_path,
                                          std::vector<std::string> selected_sub_swaths,
                                          std::set<std::string, std::less<>> selected_polarisations,
                                          SelectedCalibrationBands selected_calibration_bands,
                                          std::string_view output_path, bool output_image_in_complex, int tile_width,
                                          int tile_height)
     : source_product_(source_product),
-      source_dataset_(source_dataset),
       selected_sub_swaths_(std::move(selected_sub_swaths)),
       selected_polarisations_(std::move(selected_polarisations)),
       selected_calibration_bands_(selected_calibration_bands),
@@ -72,7 +71,7 @@ Sentinel1Calibrator::Sentinel1Calibrator(std::shared_ptr<snapengine::Product> so
       tile_width_(tile_width),
       tile_height_(tile_height),
       output_path_(output_path),
-      safe_helper_(source_dataset->GetFilePath()) {
+      safe_helper_(src_path) {
     Initialise();
 }
 
@@ -245,7 +244,6 @@ void Sentinel1Calibrator::CreateTargetProduct() {
         source_product_->GetSceneRasterWidth(), source_product_->GetSceneRasterHeight());
     AddSelectedBands(source_band_names_);
     snapengine::ProductUtils::CopyProductNodes(source_product_, target_product_);
-    target_product_->SetMetadataReader(std::make_shared<alus::snapengine::PugixmlMetaDataReader>());
 }
 void Sentinel1Calibrator::GetSampleType() {
     const auto sample_type = abstract_metadata_root_->GetAttributeString(snapengine::AbstractMetadata::SAMPLE_TYPE);
@@ -319,7 +317,6 @@ void Sentinel1Calibrator::Validate() {
     is_multi_swath_ = validator.IsMultiSwath();
 }
 void Sentinel1Calibrator::Initialise() {
-    GDALSetCacheMax64(5e9);
     // General Calibrator initialisation
     snapengine::InputProductValidator input_product_validator(source_product_);
     input_product_validator.CheckIfSARProduct();
@@ -594,6 +591,7 @@ void Sentinel1Calibrator::CreateDatasetsFromProduct(std::shared_ptr<snapengine::
             gdal_dataset->SetGeoTransform(geo_transform.data());
 
             target_datasets_.try_emplace(sub_swath, std::make_shared<Dataset<float>>(*gdal_dataset));
+            target_paths_.try_emplace(sub_swath, output_file);
         }
     }
 }
