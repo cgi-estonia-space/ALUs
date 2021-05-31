@@ -1,6 +1,7 @@
 # CUDA support
 
-All of the platforms listed below either for development/building or running require CUDA SDK version 10.2.\
+All of the platforms listed below either for development/building or running require CUDA SDK version 10.2.
+
 Possible compatibility with newer versions, but not tested/supported.
 
 Nvidia driver version at least 440.33.
@@ -14,9 +15,11 @@ GDAL version 3.x is required for development/building or running.
 # Development
 
 In order to build or develop code platforms' dependency installation manual is provided below.
-Officially Ubuntu 18.04 is supported.\
+
+Officially Ubuntu 18.04 is supported.
+
 Compatible docker image is available on [dockerhub](https://hub.docker.com/repository/docker/cgialus/alus-infra) - one should separately install Nvidia cuDNN runtime library.
-\
+
 Development team has used also other flavor of Ubuntu which setup is also listed, but is not officially supported.
 
 ## Ubuntu 18.04
