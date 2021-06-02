@@ -82,6 +82,15 @@ target_link_libraries(coregistration-test
         coregistration-static
         )
 
+add_custom_command(TARGET coregistration-test
+        POST_BUILD
+        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/test_integration/goods/beirut_images
+        COMMAND rm -f ${CMAKE_BINARY_DIR}/test_integration/goods/beirut_images/coregistration_test.tif
+        COMMAND test -d ${CMAKE_BINARY_DIR}/test_integration/goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.SAFE || unzip -qn ${CMAKE_CURRENT_LIST_DIR}/goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.SAFE.zip -d ${CMAKE_BINARY_DIR}/test_integration/goods/beirut_images
+        COMMAND test -d ${CMAKE_BINARY_DIR}/test_integration/goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD.SAFE || unzip -qn ${CMAKE_CURRENT_LIST_DIR}/goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD.SAFE.zip -d ${CMAKE_BINARY_DIR}/test_integration/goods/beirut_images
+        )
+
+#----------------------------Snap engine integration test----------------------------------
 
 add_executable(integration-test-snap-engine ${TEST_SOURCES_SNAP_ENGINE})
 target_include_directories(integration-test-snap-engine
@@ -292,9 +301,9 @@ target_link_libraries(integration-sentinel1_product_reader
 add_custom_command(TARGET integration-sentinel1_product_reader
         POST_BUILD
         COMMAND mkdir -p ${CMAKE_BINARY_DIR}/test_integration/goods
-        COMMAND rm -rf ${CMAKE_BINARY_DIR}/test_integration/goods/sentinel1_product_reader
-        COMMAND cp -al ${CMAKE_CURRENT_LIST_DIR}/goods/sentinel1_product_reader ${CMAKE_BINARY_DIR}/test_integration/goods/sentinel1_product_reader
-        COMMAND cd ${CMAKE_BINARY_DIR}/test_integration/goods/sentinel1_product_reader && unzip -qn ${CMAKE_BINARY_DIR}/test_integration/goods/sentinel1_product_reader/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563.zip
+        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/test_integration/goods/sentinel1_product_reader
+        COMMAND test -f ${CMAKE_BINARY_DIR}/test_integration/goods/sentinel1_product_reader/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563.zip || cp ${CMAKE_CURRENT_LIST_DIR}/goods/sentinel1_product_reader/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563.zip ${CMAKE_BINARY_DIR}/test_integration/goods/sentinel1_product_reader
+        COMMAND test -d ${CMAKE_BINARY_DIR}/test_integration/goods/sentinel1_product_reader/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563.SAFE || unzip -qn ${CMAKE_CURRENT_LIST_DIR}/goods/sentinel1_product_reader/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563.zip -d ${CMAKE_BINARY_DIR}/test_integration/goods/sentinel1_product_reader
         )
 
 #--------------------------sentinel1 calibrate integration test-----------------------
