@@ -29,6 +29,7 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/tokenizer.hpp>
 
+#include "alus_log.h"
 #include "general_constants.h"
 #include "s1tbx-commons/io/image_i_o_file.h"
 #include "s1tbx-commons/io/sar_reader.h"
@@ -487,7 +488,7 @@ void Sentinel1Level1Directory::AddImageFile(std::string_view img_path,
             band_image_file_map_.emplace(img->GetName(), img);
             //            }
         } catch (const std::exception& e) {
-            std::cerr << img_path << " not found" << std::endl;
+            LOGE << img_path << " not found";
         }
     }
 }
@@ -609,7 +610,7 @@ void Sentinel1Level1Directory::AddGeoCoding(const std::shared_ptr<snapengine::Pr
                 product->SetSceneGeoCoding(tp_geo_coding);
             }
         } catch (const std::exception& e) {
-            std::cerr << "Unable to add tpg geocoding " << e.what() << std::endl;
+            LOGE << "Unable to add tpg geocoding " << e.what();
         }
     }
 }
@@ -841,7 +842,7 @@ void Sentinel1Level1Directory::AddProductInfoJSON(const std::shared_ptr<snapengi
             //            }
         } catch (const std::exception& e) {
             //            todo: not sure why snap had throw commented out, I will just log atm
-            std::cerr << "Unable to read productInfo " << e.what() << std::endl;
+            LOGE << "Unable to read productInfo " << e.what();
         }
     }
 }

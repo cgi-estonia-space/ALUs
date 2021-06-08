@@ -14,10 +14,9 @@
 #include "dataset.h"
 
 #include <cstdint>
-#include <cstring>
-#include <iostream>
 #include <map>
 
+#include "alus_log.h"
 #include "gdal.h"
 #include "gdal_util.h"
 
@@ -138,7 +137,7 @@ BufferType* Dataset<BufferType>::GetDeviceDataBuffer() {
 template <typename BufferType>
 void Dataset<BufferType>::ReadRectangle(Rectangle rectangle, std::map<int, BufferType*>& bands){
     for (auto it = bands.begin(); it != bands.end(); ++it) {
-        std::cout << it->first << ", " << it->second << '\n';
+        LOGV << it->first << ", " << it->second;
         ReadRectangle(rectangle, it->first, it->second);
     }
 }

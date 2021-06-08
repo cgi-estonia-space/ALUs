@@ -15,7 +15,6 @@
 
 #include <cstddef>
 #include <memory>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -27,6 +26,7 @@
 
 #include "alg_bond.h"
 #include "algorithm_parameters.h"
+#include "alus_log.h"
 #include "dataset.h"
 #include "s1tbx-io/sentinel1/sentinel1_product_reader_plug_in.h"
 #include "sentinel1_calibrate.h"
@@ -92,10 +92,10 @@ int Sentinel1CalibrateExecutor::Execute() {
                                        static_cast<int>(tile_height_)};
         calibrator.Execute();
     } catch (const std::exception& e) {
-        std::cerr << "Exception caught while running Sentinel-1 Calibration - " << e.what() << std::endl;
+        LOGE << "Exception caught while running Sentinel-1 Calibration - " << e.what();
         return 1;
     } catch (...) {
-        std::cerr << "Unknown exception caught while running Sentinel-1 Calibration." << std::endl;
+        LOGE << "Unknown exception caught while running Sentinel-1 Calibration.";
         return 2;
     }
 

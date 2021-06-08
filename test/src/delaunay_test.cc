@@ -16,7 +16,6 @@
 
 #include "gmock/gmock.h"
 
-#include "cuda_friendly_object.h"
 #include "comparators.h"
 #include "delaunay_triangle2D.h"
 #include "delaunay_triangulator.h"

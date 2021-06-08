@@ -22,11 +22,10 @@ cudaError_t CudaDeviceReset();
 // An overload for calling "cudaDeviceSynchronize()" from CUDA API in host code.
 cudaError_t CudaDeviceSynchronize();
 
-}//namespace cuda
-
+}  // namespace cuda
 
 class CudaErrorException final : public std::runtime_error {
-   public:
+public:
     CudaErrorException(cudaError_t cudaError, std::string file, int line)
         : std::runtime_error("CUDA error (" + std::to_string(static_cast<int>(cudaError)) + ")-'" +
                              std::string{cudaGetErrorString(cudaError)} + "' at " + file + ":" + std::to_string(line)),
@@ -34,13 +33,11 @@ class CudaErrorException final : public std::runtime_error {
           m_file{file},
           m_line{line} {}
 
-   private:
+private:
     cudaError_t const m_cudaError;
     std::string m_file;
     int const m_line;
 };
-
-
 
 inline void checkCudaError(cudaError_t const cudaErr, const char* file, int const line) {
     if (cudaErr != cudaSuccess) {
@@ -51,7 +48,7 @@ inline void checkCudaError(cudaError_t const cudaErr, const char* file, int cons
 inline void ReportIfCudaError(const cudaError_t cuda_err, const char* file, const int line) {
     if (cuda_err != cudaSuccess) {
         std::cerr << "CUDA error (" << cuda_err << ")-'" << cudaGetErrorString(cuda_err) << "' at " << file << ":"
-                  << line << std::endl;
+                  << line;
     }
 }
 
@@ -59,3 +56,5 @@ inline void ReportIfCudaError(const cudaError_t cuda_err, const char* file, cons
 
 #define CHECK_CUDA_ERR(x) alus::checkCudaError(x, __FILE__, __LINE__)
 #define REPORT_WHEN_CUDA_ERR(x) alus::ReportIfCudaError(x, __FILE__, __LINE__)
+#define PRINT_DEVICE_FUNC_OCCUPANCY(dev_func, block_size) \
+    std::cout << #dev_func << " occupancy " << alus::cuda::GetOccupancyPercentageFor(dev_func, block_size) << "%";

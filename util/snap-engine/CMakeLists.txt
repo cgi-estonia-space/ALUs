@@ -120,50 +120,13 @@ list(APPEND SNAP-ENGINE_INCLUDES
         ${CMAKE_CURRENT_LIST_DIR}/../../external/pugixml/include
         )
 
-add_library(snapengine-obj-cu
-        OBJECT
-        ${SNAP-ENGINE_SOURCES_CU}
-        )
-target_include_directories(snapengine-obj-cu
-        PRIVATE
-        ${SNAP-ENGINE_INCLUDES}
-        )
-
-add_library(snapengine-obj
-        OBJECT
-        ${SNAP-ENGINE_SOURCES}
-        )
-target_include_directories(snapengine-obj
-        PRIVATE
-        ${SNAP-ENGINE_INCLUDES}
-        )
-
-target_link_libraries(snapengine-obj-cu
-        PUBLIC
-        exotic_operations-static
-        gdal-util-static
-        pugixml-static
-        )
-target_link_libraries(snapengine-obj
-        PUBLIC
-        Boost::filesystem
-        Boost::iostreams
-        exotic_operations-static
-        gdal-util-static
-        pugixml-static
-        staticZipper
-        )
 
 add_library(snap-engine-static
         STATIC
-        $<TARGET_OBJECTS:snapengine-obj>
-        $<TARGET_OBJECTS:snapengine-obj-cu>
+        ${SNAP-ENGINE_SOURCES}
+        ${SNAP-ENGINE_SOURCES_CU}
         )
 
-target_compile_options(snapengine-obj
-        PRIVATE
-        -Wno-cpp
-        )
 
 target_include_directories(snap-engine-static
         PUBLIC
@@ -183,4 +146,5 @@ target_link_libraries(snap-engine-static
         gdal-util-static
         pugixml-static
         staticZipper
+        common-util-static
         )

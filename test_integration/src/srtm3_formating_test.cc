@@ -22,7 +22,6 @@
 #include "cuda_util.h"
 #include "earth_gravitational_model96.h"
 #include "pointer_holders.h"
-#include "shapes.h"
 #include "srtm3_elevation_model.h"
 
 namespace {
@@ -90,7 +89,6 @@ TEST(SRTM3, tileFormating) {
         end_results.at(i) = end_tile.at(tester.xs_.at(i) + tile_x_size * tester.ys_.at(i));
     }
 
-    std::cout<<"tester size: " << tester.size_ << std::endl;
     size_t count = alus::EqualsArrays(end_results.data(), tester.results_.data(), tester.size_, 0.0000001);
     EXPECT_EQ(count,0) << "SRTM3 tiling test results do not match. Mismatches: " <<count << '\n';
 

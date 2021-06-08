@@ -31,8 +31,6 @@
 #include "subswath_info.h"
 #include "tests_common.hpp"
 
-using namespace alus::tests;
-
 namespace {
 
 /**
@@ -49,7 +47,6 @@ TEST(sentinel1, utils) {
     utils.ComputeDopplerRate();
     utils.ComputeReferenceTime();
 
-    std::cout << "starting comparisons." << '\n';
     ASSERT_TRUE(utils.subswath_.at(0)->doppler_centroid_ != nullptr);
     ASSERT_TRUE(tester.doppler_centroid_2_ != nullptr);
 

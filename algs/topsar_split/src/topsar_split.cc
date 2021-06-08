@@ -14,11 +14,11 @@
 #include "topsar_split.h"
 
 #include <memory>
-#include <string_view>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 
+#include "alus_log.h"
 #include "c16_dataset.h"
 #include "general_constants.h"
 #include "s1tbx-io/sentinel1/sentinel1_product_reader_plug_in.h"
@@ -56,7 +56,7 @@ TopsarSplit::TopsarSplit(std::string filename, std::string selected_subswath, st
             std::string current_file = itr->path().string();
             if (current_file.find(low_subswath) != std::string::npos &&
                 current_file.find(low_polarisation) != std::string::npos) {
-                std::cout << "Selecting tif for reading: " << current_file << std::endl;
+                LOGV << "Selecting tif for reading: " << current_file;
                 pixel_reader_ = std::make_shared<C16Dataset<double>>(current_file);
                 found_it = true;
                 break;
@@ -65,10 +65,8 @@ TopsarSplit::TopsarSplit(std::string filename, std::string selected_subswath, st
     }
 
     if (!found_it) {
-        std::stringstream stream;
-        stream << "SAFE file does not contain a tif file for subswath " << selected_subswath << " and polarisation "
-               << selected_polarisation << std::endl;
-        throw std::runtime_error(stream.str());
+        throw std::runtime_error("SAFE file does not contain GeoTIFF file for subswath '" + selected_subswath +
+                                 "' and polarisation '" + selected_polarisation + "'");
     }
 }
 
@@ -95,9 +93,7 @@ void TopsarSplit::initialize() {
     std::shared_ptr<snapengine::MetadataElement> abs_root =
         snapengine::AbstractMetadata::GetAbstractedMetadata(source_product_);
     if (subswath_.empty()) {
-        std::stringstream ss;
-        ss << abs_root->GetAttributeString(snapengine::AbstractMetadata::ACQUISITION_MODE) << "1";
-        subswath_ = ss.str();
+        subswath_ = abs_root->GetAttributeString(snapengine::AbstractMetadata::ACQUISITION_MODE) + "1";
     }
 
     // TODO: forget the index, find the pointer.
@@ -110,9 +106,7 @@ void TopsarSplit::initialize() {
         }
     }
     if (selected_subswath_info_ == nullptr) {
-        std::stringstream ss;
-        ss << "Topsar split did not find your subswath named " << subswath_ << std::endl;
-        throw std::runtime_error(ss.str());
+        throw std::runtime_error("Topsar split did not find subswath named " + subswath_);
     }
 
     if (selected_polarisations_.empty()) {
@@ -319,9 +313,7 @@ void TopsarSplit::UpdateAbstractedMetadata() {
 
     int num_orbit_vectors = src_orbit_vectors_elem->GetNumElements();
     for (int i = 1; i <= num_orbit_vectors; ++i) {
-        std::stringstream ss;
-        ss << snapengine::AbstractMetadata::ORBIT_VECTOR << i;
-        std::string elem_name = ss.str();
+        const auto elem_name = std::string(snapengine::AbstractMetadata::ORBIT_VECTOR) + std::to_string(i);
         std::shared_ptr<snapengine::MetadataElement> orb_elem = src_orbit_vectors_elem->GetElement(elem_name);
         std::shared_ptr<snapengine::Utc> time =
             orb_elem->GetAttributeUtc(snapengine::AbstractMetadata::ORBIT_VECTOR_TIME);

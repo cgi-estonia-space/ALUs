@@ -28,6 +28,7 @@
 #include <gdal_priv.h>
 #include <boost/algorithm/string.hpp>
 
+#include "alus_log.h"
 #include "abstract_metadata.h"
 #include "calibration_info.h"
 #include "calibration_type.h"
@@ -374,12 +375,11 @@ void Sentinel1Calibrator::SetTargetImages() {
     int sub_dataset_id{1};  // TODO: currently this is unimplemented (SNAPGPU-250)
     for (const auto& band : target_bands) {
         if (string_contains(band->GetName(), selected_sub_swaths_.at(0))) {
-            std::cout << "Processing band " << band->GetName() << std::endl;
+            LOGV << "Processing band " << band->GetName();
             const auto tiles = CalculateTiles(band);
             for (const auto& tile : tiles) {
                 ComputeTile(band, tile, sub_dataset_id);
             }
-            std::cout << std::endl;
         }
         sub_dataset_id++;
     }

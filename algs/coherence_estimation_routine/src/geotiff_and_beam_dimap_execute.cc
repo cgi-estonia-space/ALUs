@@ -15,10 +15,10 @@
 #include "coherence_estimation_routine_execute.h"
 
 #include <exception>
-#include <iostream>
 
 #include <boost/filesystem.hpp>
 
+#include "alus_log.h"
 #include "backgeocoding_bond.h"
 #include "coherence_execute.h"
 #include "terrain_correction_executor.h"
@@ -37,8 +37,8 @@ int CoherenceEstimationRoutineExecute::ExecuteGeoTiffAndBeamDimap() {
         }
 
         if (coh_tc_metadata_file.size() != 1) {
-            std::cerr << "Expecting single dim metadata file for coherence and terrain correction operators ("
-                      << coherence_terrain_correction_metadata_param_ << ") not found" << std::endl;
+            LOGE << "Expecting single dim metadata file for coherence and terrain correction operators ("
+                 << coherence_terrain_correction_metadata_param_ << ") not found";
             return 3;
         }
 
@@ -54,8 +54,7 @@ int CoherenceEstimationRoutineExecute::ExecuteGeoTiffAndBeamDimap() {
             const auto res = alg.Execute();
 
             if (res != 0) {
-                std::cout << "Running S-1 Backgeocoding resulted in non success execution - " << res << std::endl
-                          << "Aborting." << std::endl;
+                LOGE << "Running S-1 Backgeocoding resulted in non success execution - " << res << " - aborting.";
                 return res;
             }
         }
@@ -71,8 +70,7 @@ int CoherenceEstimationRoutineExecute::ExecuteGeoTiffAndBeamDimap() {
             const auto res = alg.Execute();
 
             if (res != 0) {
-                std::cout << "Running Coherence operation resulted in non success execution - " << res << std::endl
-                          << "Aborting." << std::endl;
+                LOGE << "Running Coherence operation resulted in non success execution - " << res << " - aborting.";
                 return res;
             }
         }
@@ -90,19 +88,18 @@ int CoherenceEstimationRoutineExecute::ExecuteGeoTiffAndBeamDimap() {
             const auto res = alg.Execute();
 
             if (res != 0) {
-                std::cout << "Running Terrain correciton operation resulted in non success execution - " << res
-                          << std::endl
-                          << "Aborting." << std::endl;
+                LOGE << "Running Terrain correciton operation resulted in non success execution - " << res
+                     << " - aborting.";
                 return res;
             }
         }
 
     } catch (const std::exception& e) {
-        std::cout << "Operation resulted in error:" << e.what() << std::endl << "Aborting." << std::endl;
+        LOGE << "Operation resulted in error:" << e.what() << "Aborting.";
         return 2;
     }
 
     return 0;
 }
 
-}
+}  // namespace alus

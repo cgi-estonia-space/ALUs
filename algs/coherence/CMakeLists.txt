@@ -98,6 +98,7 @@ target_link_libraries(coherence-static
         sentinel1-util-static
         pugixml-static
         ${TENSORFLOW_LIBS}
+        common-util-static
         )
 
 add_library(coherence-shared
@@ -123,6 +124,7 @@ target_link_libraries(coherence-shared
         sentinel1-util-static
         pugixml-static
         ${TENSORFLOW_LIBS}
+        common-util-static
         )
 add_custom_command(TARGET coherence-shared
         POST_BUILD

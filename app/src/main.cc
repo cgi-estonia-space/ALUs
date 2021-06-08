@@ -21,6 +21,7 @@
 
 #include "alg_load.h"
 #include "algorithm_parameters.h"
+#include "alus_log.h"
 #include "command_line_options.h"
 #include "dem_assistant.h"
 
@@ -40,10 +41,11 @@ void PrintHelp(const std::string& options_help) {
 }  // namespace
 
 int main(int argc, const char* argv[]) {
-
     std::string help_string{};
     int alg_execute_status{};
     try {
+        alus::common::log::Initialize();
+
         alus::app::CommandLineOptions options{};
         help_string = options.GetHelp();
         options.ParseArgs(argc, argv);
@@ -53,19 +55,17 @@ int main(int argc, const char* argv[]) {
             return 0;
         }
 
-        const auto alg_to_run = options.GetSelectedAlgorithm();
-        std::cout << "Algorithm to run: " << alg_to_run << std::endl;
+        const auto& alg_to_run = options.GetSelectedAlgorithm();
+        LOGI << "Algorithm to run: " << alg_to_run;
         const alus::AlgorithmLoadGuard alg_guard{alg_to_run};
 
         alus::app::AlgorithmParameters::AlgParamTables command_line_parameters;
-        const auto alg_params = options.GetAlgorithmParameters();
-        if (!alg_params.empty()) {
+        if (const auto& alg_params = options.GetAlgorithmParameters(); !alg_params.empty()) {
             command_line_parameters = alus::app::AlgorithmParameters::TryCreateFrom(alg_params);
         }
 
         alus::app::AlgorithmParameters::AlgParamTables file_conf_parameters;
-        const auto alg_params_file = options.GetAlgorithmParametersFile();
-        if (!alg_params_file.empty()) {
+        if (const auto& alg_params_file = options.GetAlgorithmParametersFile(); !alg_params_file.empty()) {
             file_conf_parameters = alus::app::AlgorithmParameters::TryCreateFromFile(alg_params_file);
         }
 
@@ -73,7 +73,7 @@ int main(int argc, const char* argv[]) {
         const auto& merged_parameters =
             alus::app::AlgorithmParameters::MergeAndWarn(file_conf_parameters, command_line_parameters, warnings);
 
-        std::cout << warnings << std::endl;
+        LOGW << warnings;
         if (merged_parameters.count(alg_to_run)) {
             alg_guard.GetInstanceHandle()->SetParameters(merged_parameters.at(alg_to_run));
         } else if (!merged_parameters.empty() &&
@@ -82,13 +82,12 @@ int main(int argc, const char* argv[]) {
         }
 
         if (options.DoRequireAlgorithmHelp()) {
-            std::cout << alg_guard.GetInstanceHandle()->GetArgumentsHelp();
+            LOGI << alg_guard.GetInstanceHandle()->GetArgumentsHelp();
         } else {
             std::shared_ptr<alus::app::DemAssistant> dem_assistant{};
-            const auto dem_files_param = options.GetDemFiles();
-            if (!dem_files_param.empty()) {
-                std::cout << "Processing DEM files and creating EGM96." << std::endl;
-                dem_assistant = alus::app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(std::move(dem_files_param));
+            if (const auto& dem_files_param = options.GetDemFiles(); !dem_files_param.empty()) {
+                LOGI << "Processing DEM files and creating EGM96.";
+                dem_assistant = alus::app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(dem_files_param);
             }
 
             alg_guard.GetInstanceHandle()->SetInputFilenames(options.GetInputDatasets(), options.GetAux());
@@ -103,19 +102,18 @@ int main(int argc, const char* argv[]) {
             alg_execute_status = alg_guard.GetInstanceHandle()->Execute();
         }
     } catch (const po::error& e) {
-        std::cerr << e.what() << std::endl;
+        LOGE << e.what();
         PrintHelp(help_string);
         return 1;  // TODO: Create constants for exit codes.
     } catch (const std::fstream::failure& e) {
-        std::cerr << "Exception opening/reading file - " << e.what() << std::endl;
+        LOGE << "Exception opening/reading file - " << e.what();
         return 2;
     } catch (const std::exception& e) {
-        std::cerr << "An exception was caught - " << e.what() << std::endl << "Exciting" << std::endl;
+        LOGE << "An exception was caught - " << e.what() << "Exciting";
         return 3;
     } catch (...) {
-        std::cerr << "Exception of unknown type was caught." << std::endl
-                  << "ERRNO:" << std::endl
-                  << strerror(errno) << std::endl;
+        LOGE << "Exception of unknown type was caught."
+             << "ERRNO:" << strerror(errno);
         return 4;
     }
 

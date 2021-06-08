@@ -18,6 +18,7 @@
  */
 #include "snap-core/dataio/product_subset_builder.h"
 
+#include "alus_log.h"
 #include "snap-core/datamodel/band.h"
 #include "snap-core/datamodel/flag_coding.h"
 #include "snap-core/datamodel/geo_pos.h"
@@ -56,7 +57,7 @@ std::shared_ptr<Product> ProductSubsetBuilder::ReadProductNodesImpl() {
         UpdateMetadata(source_product_, target_product, GetSubsetDef());
         return target_product;
     } catch (const std::bad_any_cast& e) {
-        std::cerr << e.what() << std::endl;
+        LOGE << e.what();
         throw std::runtime_error(
             "ProductSubsetBuilder at ReadProductNodesImpl had an issue with input not being a Product class");
     }

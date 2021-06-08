@@ -23,6 +23,7 @@
 
 #include <boost/algorithm/string/replace.hpp>
 
+#include "alus_log.h"
 #include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
 #include "snap-engine-utilities/util/maths.h"
 #include "snap-core/util/alus_utils.h"
@@ -238,8 +239,8 @@ std::optional<boost::filesystem::path> SentinelPODOrbitFile::FindOrbitFile(std::
             return orbit_file_path;
         }
         else {
-            std::cerr << "Orbit file '" << orbit_file_path
-                      << "' is not correct for given input (start and end time out of range)." << std::endl;
+            LOGE << "Orbit file '" << orbit_file_path
+                      << "' is not correct for given input (start and end time out of range).";
         }
     } else {
         boost::filesystem::path orbit_file_folder = GetDestFolder(mission_prefix, orbit_type, year, month);
@@ -452,8 +453,8 @@ std::vector<std::shared_ptr<snapengine::OrbitVector>> SentinelPODOrbitFile::Read
     std::sort(osv_list.begin(), osv_list.end(), snapengine::OrbitVector::Compare);
 
     if (count != osv_cnt) {
-        std::cerr << "SentinelPODOrbitFile::ReadOSVList: WARNING List_of_OSVs count = " << count << " but found only "
-                  << osv_cnt << " OSV" << std::endl;
+        LOGE << "SentinelPODOrbitFile::ReadOSVList: WARNING List_of_OSVs count = " << count << " but found only "
+                  << osv_cnt << " OSV";
     }
     return osv_list;
 }

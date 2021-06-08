@@ -74,12 +74,12 @@ TEST(AlgorithmParametersTest, parsesCorrectlyMultipleAlgorithmParametersFromFile
     std::ofstream param_file_contents;
     param_file_contents.exceptions(std::ifstream::badbit);
     param_file_contents.open(temp_file_path, std::ios_base::out);
-    param_file_contents << "terrain-correction:" << std::endl
-                        << "useAvgSceneHeight=true," << std::endl
-                        << "points=10;" << std::endl
+    param_file_contents << "terrain-correction:"
+                        << "useAvgSceneHeight=true,"
+                        << "points=10;"
                         << "coherence:subtract_flat_earth_phase=false,rg=65.90,az=140;"
-                        << "backgeocoding:" << std::endl
-                        << "interpolation=bilinear" << std::endl;
+                        << "backgeocoding:"
+                        << "interpolation=bilinear";
     param_file_contents.close();
 
     const auto& results = AlgorithmParameters::TryCreateFromFile(temp_file_path);
@@ -102,13 +102,13 @@ TEST(AlgorithmParametersTest, mergesDuplicateParametersWithWarnings) {
     std::ofstream param_file_contents;
     param_file_contents.exceptions(std::ifstream::badbit);
     param_file_contents.open(temp_file_path, std::ios_base::out);
-    param_file_contents << "terrain-correction:" << std::endl
-                        << "useAvgSceneHeight=true," << std::endl
-                        << "points=10;" << std::endl
-                        << "TOPSAR-SPLIT:burst_start=0,burst_end=2;" << std::endl
+    param_file_contents << "terrain-correction:"
+                        << "useAvgSceneHeight=true,"
+                        << "points=10;"
+                        << "TOPSAR-SPLIT:burst_start=0,burst_end=2;"
                         << "coherence:subtract_flat_earth_phase=false,rg=65.90,az=140;"
-                        << "backgeocoding:" << std::endl
-                        << "interpolation=bilinear,altitude=yes" << std::endl;
+                        << "backgeocoding:"
+                        << "interpolation=bilinear,altitude=yes";
     param_file_contents.close();
 
     const auto& file_params = AlgorithmParameters::TryCreateFromFile(temp_file_path);
@@ -154,13 +154,13 @@ TEST(AlgorithmParametersTest, mergesParametersWithoutWarnings) {
     std::ofstream param_file_contents;
     param_file_contents.exceptions(std::ifstream::badbit);
     param_file_contents.open(temp_file_path, std::ios_base::out);
-    param_file_contents << "terrain-correction:" << std::endl
-                        << "useAvgSceneHeight=true," << std::endl
-                        << "points=10;" << std::endl
-                        << "TOPSAR-SPLIT:burst_start=0,burst_end=2;" << std::endl
+    param_file_contents << "terrain-correction:"
+                        << "useAvgSceneHeight=true,"
+                        << "points=10;"
+                        << "TOPSAR-SPLIT:burst_start=0,burst_end=2;"
                         << "coherence:subtract_flat_earth_phase=false,rg=65.90,az=140;"
-                        << "backgeocoding:" << std::endl
-                        << "interpolation=bilinear,altitude=yes" << std::endl;
+                        << "backgeocoding:"
+                        << "interpolation=bilinear,altitude=yes";
     param_file_contents.close();
 
     const auto& file_params = AlgorithmParameters::TryCreateFromFile(temp_file_path);

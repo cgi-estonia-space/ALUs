@@ -14,12 +14,12 @@
 
 #include "coherence_estimation_routine_execute.h"
 
-#include <iostream>
 #include <string_view>
 #include <sstream>
 
 #include <boost/filesystem.hpp>
 
+#include "alus_log.h"
 #include "backgeocoding_bond.h"
 #include "coherence_execute.h"
 #include "terrain_correction_executor.h"
@@ -40,8 +40,8 @@ namespace alus {
 int CoherenceEstimationRoutineExecute::Execute() {
 
     if (input_datasets_.size() != 2) {
-        std::cerr << "Coherence estimation expects 2 scenes - main and secondary, currently supplied - "
-                  << input_datasets_.size() << std::endl;
+        LOGE << "Coherence estimation expects 2 scenes - main and secondary, currently supplied - "
+                  << input_datasets_.size();
         return 3;
     }
 
@@ -112,36 +112,36 @@ void CoherenceEstimationRoutineExecute::SetOutputFilename(const std::string& out
 
 std::string CoherenceEstimationRoutineExecute::GetArgumentsHelp() const {
     std::stringstream help_stream;
-    help_stream << EXECUTOR_NAME << " parameters:" << std::endl
+    help_stream << EXECUTOR_NAME << " parameters:"
                 << PARAMETER_ID_MAIN_SCENE << " - string Full or partial identifier of main scene of input datasets"
-                << std::endl
+               
                 << PARAMETER_ID_MAIN_SCENE_ORBIT_FILE << " - string Full path of the main scene's orbit file"
-                << std::endl
+               
                 << PARAMETER_ID_SECONDARY_SCENE_ORBIT_FILE << " - string Full path of the secondary scene's orbit file"
-                << std::endl
+               
                 << PARAMETER_ID_ORBIT_FILE_DIR << " - string ESA SNAP compatible root folder or orbit files. "
                                                   "For example: /home/user/.snap/auxData/Orbits/Sentinel-1/POEORB/"
-                << std::endl
-                << PARAMETER_ID_SUBSWATH << " - string Subswath to process - valid values: IW1, IW2, IW3" << std::endl
-                << PARAMETER_ID_POLARIZATION << " - string Polarization to process - valid value: VV, VH" << std::endl;
+               
+                << PARAMETER_ID_SUBSWATH << " - string Subswath to process - valid values: IW1, IW2, IW3"
+                << PARAMETER_ID_POLARIZATION << " - string Polarization to process - valid value: VV, VH";
 
-    help_stream << backgeocoding::BackgeocodingBond().GetArgumentsHelp() << std::endl;
-    help_stream << CoherenceExecuter().GetArgumentsHelp() << std::endl;
-    help_stream << terraincorrection::TerrainCorrectionExecutor().GetArgumentsHelp() << std::endl;
+    help_stream << backgeocoding::BackgeocodingBond().GetArgumentsHelp();
+    help_stream << CoherenceExecuter().GetArgumentsHelp();
+    help_stream << terraincorrection::TerrainCorrectionExecutor().GetArgumentsHelp();
 
     return help_stream.str();
 }
 
 void CoherenceEstimationRoutineExecute::PrintProcessingParameters() const {
-    std::cout << EXECUTOR_NAME << " processing parameters:" << std::endl
-              << PARAMETER_ID_MAIN_SCENE << " " << main_scene_file_id_ << std::endl
-              << PARAMETER_ID_MAIN_SCENE_ORBIT_FILE << " " << main_scene_orbit_file_ << std::endl
-              << PARAMETER_ID_SECONDARY_SCENE_ORBIT_FILE << " " << secondary_scene_orbit_file_ << std::endl
-              << PARAMETER_ID_ORBIT_FILE_DIR << " " << orbit_file_dir_ << std::endl
-              << PARAMETER_ID_SUBSWATH << " " << subswath_ << std::endl
-              << PARAMETER_ID_POLARIZATION << " " << polarization_ << std::endl
-              << "Main scene - " << main_scene_file_path_ << std::endl
-              << "Secondary scene - " << secondary_scene_file_path_ << std::endl;
+    LOGI << EXECUTOR_NAME << " processing parameters:"
+              << PARAMETER_ID_MAIN_SCENE << " " << main_scene_file_id_
+              << PARAMETER_ID_MAIN_SCENE_ORBIT_FILE << " " << main_scene_orbit_file_
+              << PARAMETER_ID_SECONDARY_SCENE_ORBIT_FILE << " " << secondary_scene_orbit_file_
+              << PARAMETER_ID_ORBIT_FILE_DIR << " " << orbit_file_dir_
+              << PARAMETER_ID_SUBSWATH << " " << subswath_
+              << PARAMETER_ID_POLARIZATION << " " << polarization_
+              << "Main scene - " << main_scene_file_path_
+              << "Secondary scene - " << secondary_scene_file_path_;
 }
 
 bool CoherenceEstimationRoutineExecute::IsSafeInput() const {

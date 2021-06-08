@@ -13,8 +13,9 @@
  */
 #include "tf_algorithm_runner.h"
 
-#include <iostream>
 #include <vector>
+
+#include "alus_log.h"
 
 namespace alus {
 
@@ -34,7 +35,7 @@ void TFAlgorithmRunner::Run() {
                                   std::vector<tensorflow::Output>{algo_->TileCalc(*scope_, tile)}, &outputs_101));
         tile_writer_->WriteTile(tile.GetTileOut(), static_cast<float*>(outputs_101.at(0).data()), outputs_101.size());
         ++i;
-        std::cout << '\r' << "Tile " << i << "/" << tiles.size() << " processed" << std::endl;
+        LOGV << "Tile " << i << "/" << tiles.size() << " processed";
         if (i >= tiles_to_process) {
             break;
         }

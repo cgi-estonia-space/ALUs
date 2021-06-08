@@ -24,6 +24,7 @@
 
 #include <boost/algorithm/string/case_conv.hpp>
 
+#include "alus_log.h"
 #include "snap-core/datamodel/band.h"
 #include "snap-core/datamodel/metadata_element.h"
 #include "snap-core/datamodel/product.h"
@@ -128,7 +129,7 @@ std::string OperatorUtils::GetAcquisitionDate(std::shared_ptr<MetadataElement>& 
 
     std::shared_ptr<Utc> date = root->GetAttributeUtc(AbstractMetadata::FIRST_LINE_TIME);
     date_string = date->Format("DDmmmYYYY");
-    std::cout << "created date: " << date_string << std::endl;
+    LOGV << "created date: " << date_string;
 
     return date_string;
 }

@@ -19,8 +19,8 @@
 #include "sentinel1_product_reader.h"
 
 #include <algorithm>
-#include <iostream>
 
+#include "alus_log.h"
 #include "abstract_product_reader.h"
 #include "custom/i_image_reader.h"
 #include "s1tbx-io/sentinel1/i_sentinel1_directory.h"
@@ -93,7 +93,7 @@ boost::filesystem::path Sentinel1ProductReader::GetQuicklookFile() {
                 return level1_directory->GetFile(level1_directory->GetRootFolder() + "preview/quick-look.png");
             }
         } catch (const std::exception& e) {
-            std::cerr << "Unable to load quicklook " << level1_directory->GetProductName() << std::endl;
+            LOGW << "Unable to load quicklook " << level1_directory->GetProductName();
         }
     }
     return "";

@@ -18,12 +18,12 @@
  */
 #include "snap-engine-utilities/util/test_utils.h"
 
-#include <iostream>
 #include <stdexcept>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/math/special_functions/relative_difference.hpp>
 
+#include "alus_log.h"
 #include "ceres-core/i_progress_monitor.h"
 #include "snap-core/dataio/product_i_o.h"
 #include "snap-core/datamodel/band.h"
@@ -51,7 +51,7 @@ void TestUtils::InitTestEnvironment() {
         //        SystemUtils.init3rdPartyLibs(GPT.class);
         test_environment_initialized_ = true;
     } catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
+        LOGE << e.what();
     }
 }
 
@@ -79,7 +79,7 @@ void TestUtils::VerifyProduct(const std::shared_ptr<Product>& product, bool veri
     }
 
     if (verify_geo_coding && product->GetSceneGeoCoding() == nullptr) {
-        std::cerr << "Geocoding is null for " << boost::filesystem::canonical(product->GetFileLocation()) << std::endl;
+        LOGW << "Geocoding is null for " << boost::filesystem::canonical(product->GetFileLocation());
     }
 
     if (product->GetMetadataRoot() == nullptr) {
@@ -315,13 +315,13 @@ void TestUtils::ComparePixels(const std::shared_ptr<Product>& target_product, st
             for (float an_actual : actual) {
                 msg += std::to_string(an_actual) + ", ";
             }
-            std::cerr << msg << std::endl;
+            LOGE << msg;
             msg = "expected:";
 
             for (float an_expected : expected) {
                 msg += std::to_string(an_expected) + ", ";
             }
-            std::cerr << msg << std::endl;
+            LOGE << msg;
             throw std::runtime_error("Mismatch [" + std::to_string(i) + "] " + std::to_string(actual.at(i)) +
                                      " is not " + std::to_string(expected.at(i)) + " for " + target_product->GetName() +
                                      " band:" + std::string(band_name));
@@ -373,13 +373,13 @@ void TestUtils::CompareArrays(std::vector<float> actual, std::vector<float> expe
             for (float an_actual : actual) {
                 msg += std::to_string(an_actual) + ", ";
             }
-            std::cerr << msg << std::endl;
+            LOGE << msg;
 
             msg = "expected:";
             for (float an_expected : expected) {
                 msg += std::to_string(an_expected) + ", ";
             }
-            std::cerr << msg << std::endl;
+            LOGE << msg;
 
             throw std::runtime_error("Mismatch [" + std::to_string(i) + "] " + std::to_string(actual.at(i)) +
                                      " is not " + std::to_string(expected.at(i)));
@@ -399,7 +399,7 @@ bool TestUtils::ContainsProductType(std::vector<std::string> product_type_exempt
 }
 
 bool TestUtils::SkipTest(const std::any& obj, std::string_view msg) {
-    std::cerr << obj.type().name() << " skipped " << msg << std::endl;
+    LOGW << obj.type().name() << " skipped " << msg;
     if (FAIL_ON_SKIP) {
         throw std::runtime_error(std::string(obj.type().name()) + " skipped " + std::string(msg));
     }

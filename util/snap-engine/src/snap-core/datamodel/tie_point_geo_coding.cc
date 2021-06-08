@@ -20,10 +20,10 @@
 
 #include <cmath>
 #include <cstddef>
-#include <iostream>
 #include <limits>
 #include <stdexcept>
 
+#include "alus_log.h"
 #include "snap-core/dataio/product_subset_def.h"
 #include "snap-core/datamodel/i_scene.h"
 #include "snap-core/datamodel/tie_point_grid.h"
@@ -147,10 +147,10 @@ std::shared_ptr<TiePointGrid> TiePointGeoCoding::InitNormalizedLonGrid() {
         normalized_lon_grid = lon_grid_;
     }
 
-    std::cerr << "TiePointGeoCoding.westNormalized = " << west_normalized << std::endl;
-    std::cerr << "TiePointGeoCoding.eastNormalized = " << east_normalized << std::endl;
-    std::cerr << "TiePointGeoCoding.normalized = " << normalized_ << std::endl;
-    std::cerr << "TiePointGeoCoding.lonDeltaMax = " << lon_delta_max << std::endl;
+    LOGV << "TiePointGeoCoding.westNormalized = " << west_normalized;
+    LOGV << "TiePointGeoCoding.eastNormalized = " << east_normalized;
+    LOGV << "TiePointGeoCoding.normalized = " << normalized_;
+    LOGV << "TiePointGeoCoding.lonDeltaMax = " << lon_delta_max;
 
     return normalized_lon_grid;
 }
@@ -179,11 +179,11 @@ void TiePointGeoCoding::InitLatLonMinMax(const std::shared_ptr<TiePointGrid>& no
         overlap_end_ -= 360;
     }
 
-    std::cerr << "TiePointGeoCoding.normalizedLonMin = " << normalized_lon_min_ << std::endl;
-    std::cerr << "TiePointGeoCoding.normalizedLonMax = " << normalized_lon_max_ << std::endl;
-    std::cerr << "TiePointGeoCoding.latMin = " << lat_min_ << std::endl;
-    std::cerr << "TiePointGeoCoding.latMax = " << lat_max_ << std::endl;
-    std::cerr << "TiePointGeoCoding.overlapRange = " << overlap_start_ << " - " << overlap_end_ << std::endl;
+    LOGV << "TiePointGeoCoding.normalizedLonMin = " << normalized_lon_min_;
+    LOGV << "TiePointGeoCoding.normalizedLonMax = " << normalized_lon_max_;
+    LOGV << "TiePointGeoCoding.latMin = " << lat_min_;
+    LOGV << "TiePointGeoCoding.latMax = " << lat_max_;
+    LOGV << "TiePointGeoCoding.overlapRange = " << overlap_start_ << " - " << overlap_end_;
 }
 
 std::vector<std::shared_ptr<Approximation>> TiePointGeoCoding::InitApproximations(
@@ -216,9 +216,9 @@ std::vector<std::shared_ptr<Approximation>> TiePointGeoCoding::InitApproximation
         num_tiles--;
     }
 
-    std::cerr << "TiePointGeoCoding.numTiles =  " << num_tiles << std::endl;
-    std::cerr << "TiePointGeoCoding.numTilesI = " << num_tiles_i << std::endl;
-    std::cerr << "TiePointGeoCoding.numTilesJ = " << num_tiles_j << std::endl;
+    LOGV << "TiePointGeoCoding.numTiles =  " << num_tiles;
+    LOGV << "TiePointGeoCoding.numTilesI = " << num_tiles_i;
+    LOGV << "TiePointGeoCoding.numTilesJ = " << num_tiles_j;
 
     // Compute actual approximations for all tiles
     std::vector<std::shared_ptr<Approximation>> approximations(num_tiles);
@@ -275,8 +275,8 @@ std::shared_ptr<FXYSum> TiePointGeoCoding::GetBestPolynomial(std::vector<std::ve
                     break;
                 }
             } catch (const std::exception& e) {
-                std::cerr << "Polynomial cannot be constructed due to a numerically singular or degenerate matrix:"
-                          << e.what() << std::endl;
+                LOGW << "Polynomial cannot be constructed due to a numerically singular or degenerate matrix:"
+                     << e.what();
             }
         }
     }
@@ -294,10 +294,10 @@ std::vector<std::vector<double>> TiePointGeoCoding::CreateWarpPoints(
     const int j1 = subset_rect->y;
     const int j2 = j1 + sh - 1;
 
-    std::cerr << "Selecting warp points for X/Y approximations" << std::endl;
-    std::cerr << "  subset rectangle (in tie point coordinates): " << subset_rect << std::endl;
-    std::cerr << "  index i: " << i1 << " to " << i2 << std::endl;
-    std::cerr << "  index j: " << j1 << " to " << j2 << std::endl;
+    LOGV << "Selecting warp points for X/Y approximations";
+    LOGV << "  subset rectangle (in tie point coordinates): " << subset_rect;
+    LOGV << "  index i: " << i1 << " to " << i2;
+    LOGV << "  index j: " << j1 << " to " << j2;
 
     std::vector<int> warp_parameters = DetermineWarpParameters(sw, sh);
     int num_u = warp_parameters.at(0);
@@ -341,8 +341,8 @@ std::vector<std::vector<double>> TiePointGeoCoding::CreateWarpPoints(
 
     //        todo: think this "assertrue" through (currently ignore)
     //        Debug::AssertTrue(k == m);
-    std::cerr << "TiePointGeoCoding: numU=" << num_u << ", stepI=" << step_i << std::endl;
-    std::cerr << "TiePointGeoCoding: numV=" << num_v << ", stepJ=" << step_j << std::endl;
+    LOGV << "TiePointGeoCoding: numU=" << num_u << ", stepI=" << step_i;
+    LOGV << "TiePointGeoCoding: numV=" << num_v << ", stepJ=" << step_j;
 
     return data;
 }
@@ -412,14 +412,12 @@ std::shared_ptr<Approximation> TiePointGeoCoding::CreateApproximation(
     const double max_error_x = f_x->GetMaxError();
     const double max_error_y = f_y->GetMaxError();
 
-    std::cerr << "TiePointGeoCoding: RMSE X      = " << rmse_x << ", "
-              << (rmse_x < ABS_ERROR_LIMIT ? "OK" : "too large") << std::endl;
-    std::cerr << "TiePointGeoCoding: RMSE Y      = " << rmse_y << ", "
-              << (rmse_y < ABS_ERROR_LIMIT ? "OK" : "too large") << std::endl;
-    std::cerr << "TiePointGeoCoding: Max.error X = " << max_error_x << ", "
-              << (max_error_x < ABS_ERROR_LIMIT ? "OK" : "too large") << std::endl;
-    std::cerr << "TiePointGeoCoding: Max.error Y = " << max_error_y << ", "
-              << (max_error_y < ABS_ERROR_LIMIT ? "OK" : "too large") << std::endl;
+    LOGV << "TiePointGeoCoding: RMSE X      = " << rmse_x << ", " << (rmse_x < ABS_ERROR_LIMIT ? "OK" : "too large");
+    LOGV << "TiePointGeoCoding: RMSE Y      = " << rmse_y << ", " << (rmse_y < ABS_ERROR_LIMIT ? "OK" : "too large");
+    LOGV << "TiePointGeoCoding: Max.error X = " << max_error_x << ", "
+         << (max_error_x < ABS_ERROR_LIMIT ? "OK" : "too large");
+    LOGV << "TiePointGeoCoding: Max.error Y = " << max_error_y << ", "
+         << (max_error_y < ABS_ERROR_LIMIT ? "OK" : "too large");
 
     return std::make_shared<Approximation>(f_x, f_y, center_lat, center_lon, max_square_distance * 1.1);
 }

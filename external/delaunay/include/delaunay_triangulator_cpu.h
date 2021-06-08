@@ -5,7 +5,6 @@
  */
 #pragma once
 
-#include <iostream>
 #include <cstdlib> // for C qsort
 #include <cmath>
 

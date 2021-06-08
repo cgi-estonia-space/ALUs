@@ -26,6 +26,7 @@
 #include "i_meta_data_reader.h"
 #include "i_meta_data_writer.h"
 
+#include "alus_log.h"
 #include "ceres-core/ceres_assert.h"
 #include "snap-core/dataio/product_subset_def.h"
 #include "snap-core/datamodel/band.h"
@@ -45,8 +46,7 @@
 #include "snap-core/util/guardian.h"
 #include "snap-core/util/math/math_utils.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 Product::Product(std::string_view name, std::string_view type, int scene_raster_width, int scene_raster_height)
     : Product(name, type, scene_raster_width, scene_raster_height, nullptr) {}
@@ -293,9 +293,7 @@ void Product::SetProductType(std::string_view product_type) {
     }
 }
 
-uint64_t Product::GetRawStorageSize() {
-    return GetRawStorageSize(nullptr);
-}
+uint64_t Product::GetRawStorageSize() { return GetRawStorageSize(nullptr); }
 
 uint64_t Product::GetRawStorageSize(const std::shared_ptr<ProductSubsetDef>& subset_def) {
     uint64_t size = 0;
@@ -333,22 +331,20 @@ bool Product::IsCompatibleProduct(const std::shared_ptr<Product>& product, float
     }
 
     if (GetSceneRasterWidth() != product->GetSceneRasterWidth()) {
-        std::cerr << "raster width " << product->GetSceneRasterWidth() << " not equal to " << GetSceneRasterWidth()
-                  << std::endl;
+        LOGW << "raster width " << product->GetSceneRasterWidth() << " not equal to " << GetSceneRasterWidth();
         return false;
     }
     if (GetSceneRasterHeight() != product->GetSceneRasterHeight()) {
-        std::cerr << "raster height " << product->GetSceneRasterHeight() << " not equal to " << GetSceneRasterHeight()
-                  << std::endl;
+        LOGW << "raster height " << product->GetSceneRasterHeight() << " not equal to " << GetSceneRasterHeight();
         return false;
     }
     if (GetSceneGeoCoding() == nullptr && product->GetSceneGeoCoding() != nullptr) {
-        std::cerr << "no geocoding in master but in source" << std::endl;
+        LOGW << "no geocoding in master but in source";
         return false;
     }
     if (GetSceneGeoCoding() != nullptr) {
         if (product->GetSceneGeoCoding() == nullptr) {
-            std::cerr << "no geocoding in source but in master" << std::endl;
+            LOGW << "no geocoding in source but in master";
             return false;
         }
 
@@ -362,7 +358,7 @@ bool Product::IsCompatibleProduct(const std::shared_ptr<Product>& product, float
         product->GetSceneGeoCoding()->GetGeoPos(pixel_pos, geo_pos2);
         if (!EqualsLatLon(geo_pos1, geo_pos2, eps)) {
             //            todo: probably needs override operator or toString method when run
-            std::cerr << "first scan line left corner " << geo_pos2 << " not equal to " << geo_pos1 << std::endl;
+            LOGW << "first scan line left corner " << geo_pos2 << " not equal to " << geo_pos1;
             return false;
         }
 
@@ -371,7 +367,7 @@ bool Product::IsCompatibleProduct(const std::shared_ptr<Product>& product, float
         GetSceneGeoCoding()->GetGeoPos(pixel_pos, geo_pos1);
         product->GetSceneGeoCoding()->GetGeoPos(pixel_pos, geo_pos2);
         if (!EqualsLatLon(geo_pos1, geo_pos2, eps)) {
-            std::cerr << "first scan line right corner " << geo_pos2 << " not equal to " << geo_pos1 << std::endl;
+            LOGW << "first scan line right corner " << geo_pos2 << " not equal to " << geo_pos1;
             return false;
         }
 
@@ -380,7 +376,7 @@ bool Product::IsCompatibleProduct(const std::shared_ptr<Product>& product, float
         GetSceneGeoCoding()->GetGeoPos(pixel_pos, geo_pos1);
         product->GetSceneGeoCoding()->GetGeoPos(pixel_pos, geo_pos2);
         if (!EqualsLatLon(geo_pos1, geo_pos2, eps)) {
-            std::cerr << "last scan line left corner " << geo_pos2 << " not equal to " << geo_pos1 << std::endl;
+            LOGW << "last scan line left corner " << geo_pos2 << " not equal to " << geo_pos1;
             return false;
         }
 
@@ -389,7 +385,7 @@ bool Product::IsCompatibleProduct(const std::shared_ptr<Product>& product, float
         GetSceneGeoCoding()->GetGeoPos(pixel_pos, geo_pos1);
         product->GetSceneGeoCoding()->GetGeoPos(pixel_pos, geo_pos2);
         if (!EqualsLatLon(geo_pos1, geo_pos2, eps)) {
-            std::cerr << "last scan line right corner " << geo_pos2 << " not equal to " << geo_pos1 << std::endl;
+            LOGW << "last scan line right corner " << geo_pos2 << " not equal to " << geo_pos1;
             return false;
         }
     }
@@ -582,5 +578,4 @@ void Product::Dispose() {
 //    }
 //}
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

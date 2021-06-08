@@ -12,18 +12,9 @@ list(APPEND GDAL_UTIL_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/../cuda/include
         )
 
-add_library(gdal-util-obj
-        OBJECT
-        ${GDAL_UTIL_SOURCES}
-        include/transform_constants.h)
-target_include_directories(gdal-util-obj
-        PRIVATE
-        ${GDAL_UTIL_INCLUDE_DIRS}
-        )
-
 add_library(gdal-util-static
         STATIC
-        $<TARGET_OBJECTS:gdal-util-obj>
+        ${GDAL_UTIL_SOURCES}
         )
 target_include_directories(gdal-util-static
         PUBLIC
@@ -37,5 +28,6 @@ target_link_libraries(gdal-util-static
         PUBLIC
         gdal
         cuda_util-static
+        common-util-static
         Boost::filesystem
         )

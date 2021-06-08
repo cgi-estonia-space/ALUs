@@ -13,10 +13,10 @@
  */
 #include "gdal_tile_reader.h"
 
-#include <iostream>
 #include <string_view>
 #include <vector>
 
+#include "alus_log.h"
 #include "gdal_util.h"
 #include "i_data_tile_read_write_base.h"
 
@@ -64,8 +64,7 @@ void GdalTileReader::InitializeDatasetProperties(GDALDataset* dataset, bool has_
         const auto result = dataset->GetGeoTransform(GetGeoTransform().data());
         // Fetching transform has been requested, but dataset's transform is invalid.
         if (result != CE_None) {
-            // TODO: Use logging system to log this message.
-            std::cout << "Geo transform parameters are missing in input dataset - " << GetFileName() << std::endl;
+            LOGI << "Geo transform parameters are missing in input dataset - " << GetFileName();
             GetGeoTransform().clear();
         }
     }

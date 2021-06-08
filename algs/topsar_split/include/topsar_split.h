@@ -16,7 +16,6 @@
 #include <sentinel1_utils.h>
 #include <memory>
 #include <string>
-#include <string_view>
 
 #include "c16_dataset.h"
 #include "s1tbx-io/sentinel1/sentinel1_product_reader.h"

@@ -133,7 +133,6 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
     const auto end{std::chrono::steady_clock::now()};
     const auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     (void)duration;
-    //std::cout << "Orbit state vectors computation took: " << duration << std::endl;
 
     GetPositionMetadata d_get_position_metadata{};
     FillGetPositionMetadata(d_get_position_metadata, kernel_sensor_positions, kernel_sensor_velocities,
@@ -162,8 +161,6 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
     });
 
     thread_pool.wait();
-
-    // printf("Tile processing finished\n");
 }
 
 std::vector<double> TerrainCorrection::ComputeImageBoundary(const snapengine::geocoding::Geocoding* geocoding,

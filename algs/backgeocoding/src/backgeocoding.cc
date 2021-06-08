@@ -15,13 +15,12 @@
 
 #include <cuda_runtime.h>
 #include <cmath>
-#include <iostream>
-#include <string>
 #include <memory>
 #include <string_view>
 
 #include <boost/numeric/conversion/cast.hpp>
 
+#include "alus_log.h"
 #include "backgeocoding_constants.h"
 #include "bilinear_computation.h"
 #include "burst_offset_computation.h"
@@ -185,7 +184,7 @@ void Backgeocoding::CoreCompute(CoreComputeParams params) {
                                                params.device_i_results,
                                                params.device_q_results));
 
-    std::cout << "all computations ended." << '\n';
+    LOGV << "all computations ended.";
 }
 
 bool Backgeocoding::ComputeSlavePixPos(int m_burst_index,

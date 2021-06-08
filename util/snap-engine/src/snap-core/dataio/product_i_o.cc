@@ -18,8 +18,7 @@
  */
 #include "snap-core/dataio/product_i_o.h"
 
-#include <iostream>
-
+#include "alus_log.h"
 #include "snap-core/dataio/i_product_reader.h"
 #include "snap-core/dataio/i_product_reader_plug_in.h"
 #include "snap-core/dataio/product_i_o_plug_in_manager.h"
@@ -30,7 +29,7 @@
 namespace alus::snapengine {
 
 std::shared_ptr<IProductReader> ProductIO::GetProductReaderForInput(const std::any& input) {
-    std::cerr << "Searching reader plugin for '" << input.type().name() << "'" << std::endl;
+    LOGV << "Searching reader plugin for '" << input.type().name() << "'";
 
     std::vector<std::shared_ptr<IProductReaderPlugIn>> plugins =
         ProductIOPlugInManager::GetInstance().GetAllReaderPlugIns();
@@ -46,15 +45,15 @@ std::shared_ptr<IProductReader> ProductIO::GetProductReaderForInput(const std::a
                 selected_plug_in = plug_in;
             }
         } catch (const std::exception& e) {
-            std::cerr << "Error attempting to read " << input.type().name() << " with plugin reader "
-                      << typeid(plug_in).name() << ": " << e.what() << std::endl;
+            LOGW << "Error attempting to read " << input.type().name() << " with plugin reader "
+                      << typeid(plug_in).name() << ": " << e.what();
         }
     }
     if (selected_plug_in) {
-        std::cerr << "Selected " << typeid(selected_plug_in).name() << std::endl;
+        LOGV << "Selected " << typeid(selected_plug_in).name();
         return selected_plug_in->CreateReaderInstance();
     }
-    std::cerr << "No suitable reader plugin found" << std::endl;
+    LOGV << "No suitable reader plugin found";
     return nullptr;
 }
 

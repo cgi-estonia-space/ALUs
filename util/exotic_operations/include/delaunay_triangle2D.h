@@ -13,7 +13,6 @@
  */
 #pragma once
 
-#include <iostream>
 
 namespace alus{
 namespace delaunay{
