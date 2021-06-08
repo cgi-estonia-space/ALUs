@@ -28,12 +28,12 @@
 #include "dataset.h"
 #include "metadata_element.h"
 #include "sentinel1_calibrate_kernel.h"
+#include "sentinel1_calibrate_safe_helper.h"
 #include "shapes.h"
 #include "snap-core/datamodel/band.h"
 #include "snap-core/datamodel/product.h"
 #include "snap-core/datamodel/product_data.h"
 #include "snap-core/datamodel/raster_data_node.h"
-#include "sentinel1_calibrate_safe_helper.h"
 
 namespace alus::sentinel1calibrate {
 
@@ -44,18 +44,13 @@ struct SelectedCalibrationBands {
     bool get_dn_lut{false};
 };
 
-struct CInt16 {
-    int16_t i;
-    int16_t q;
-};
-
 class Sentinel1Calibrator {
 public:
-    Sentinel1Calibrator(
-        std::shared_ptr<snapengine::Product> source_product, const std::string& src_path,
-        std::vector<std::string> selected_sub_swaths, std::set<std::string, std::less<>> selected_polarisations,
-        SelectedCalibrationBands selected_calibration_bands,
-        std::string_view output_path, bool output_image_in_complex = false, int tile_width = 2000, int tile_height = 2000);
+    Sentinel1Calibrator(std::shared_ptr<snapengine::Product> source_product, const std::string& src_path,
+                        std::vector<std::string> selected_sub_swaths,
+                        std::set<std::string, std::less<>> selected_polarisations,
+                        SelectedCalibrationBands selected_calibration_bands, std::string_view output_path,
+                        bool output_image_in_complex = false, int tile_width = 2000, int tile_height = 2000);
 
     Sentinel1Calibrator(const Sentinel1Calibrator&) = delete;
     Sentinel1Calibrator(Sentinel1Calibrator&&) = delete;
@@ -67,7 +62,6 @@ public:
     std::shared_ptr<snapengine::Product> GetTargetProduct() { return target_product_; }
     std::string GetTargetPath(const std::string& swath) { return target_paths_.at(swath); }
     void Execute();
-
 
 private:
     std::shared_ptr<snapengine::Product> source_product_;
@@ -97,7 +91,6 @@ private:
     // Device variables
     std::map<std::string, CalibrationInfoComputation, std::less<>> target_band_to_d_calibration_info_;
 
-    void ComputeTile(std::shared_ptr<snapengine::Band> target_band, Rectangle target_rectangle, int band_index);
     void CreateTargetProduct();
     void GetSampleType();
     void GetSubsetOffset();

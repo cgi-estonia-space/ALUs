@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <array>
+#include <exception>
 #include <map>
 #include <memory>
 #include <optional>
@@ -22,6 +23,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <vector>
 
 #include <cuda_runtime.h>
@@ -33,6 +35,7 @@
 #include "calibration_info.h"
 #include "calibration_type.h"
 #include "ceres-core/null_progress_monitor.h"
+#include "cuda_mem_arena.h"
 #include "cuda_util.h"
 #include "dataset.h"
 #include "gdal_util.h"
@@ -41,6 +44,7 @@
 #include "metadata_attribute.h"
 #include "metadata_element.h"
 #include "sentinel1_calibrate_kernel.h"
+#include "sentinel1_calibrate_safe_helper.h"
 #include "sentinel1_utils.h"
 #include "sentinrel1_calibrate_exception.h"
 #include "shapes.h"
@@ -54,12 +58,151 @@
 #include "snap-engine-utilities/gpf/input_product_validator.h"
 #include "snap-engine-utilities/gpf/operator_utils.h"
 #include "snap-engine-utilities/gpf/reader_utils.h"
-#include "sentinel1_calibrate_safe_helper.h"
+
+namespace {
+namespace cal = alus::sentinel1calibrate;
+struct SharedData {
+    std::mutex src_mutex;
+    GDALRasterBand* src_band;
+    std::mutex dst_mutex;
+    GDALRasterBand* dst_band;
+
+    std::exception_ptr exception;
+    std::mutex exception_mutex;
+
+    // read-only data, not modified during algorithm during raster calculations
+    size_t max_width;
+    size_t max_height;
+    cal::CalibrationInfoComputation calibration_info;
+    int subset_offset_x;
+    int subset_offset_y;
+    cal::CAL_TYPE calibration_type;
+};
+
+// for coordinating rectangle sharing between threads
+struct TileQueue {
+    std::mutex rectangles_mutex;
+    std::vector<alus::Rectangle> rect_vec;
+    size_t used_rect_count;
+};
+
+// per thread stream + host memory buffer + device memory buffer
+struct ThreadData {
+    void* pinned_tile_buffer = nullptr;  // may need multiple pinned buffers, for things other than CInt16 -> Float
+    alus::cuda::MemArena dev_mem_arena;
+    cudaStream_t stream = nullptr;
+    bool init_done = false;
+};
+
+void FreeContexts(std::vector<ThreadData>& thread_contexts) {
+    for (auto& ctx : thread_contexts) {
+        cudaFreeHost(ctx.pinned_tile_buffer);
+        cudaStreamDestroy(ctx.stream);
+        ctx.init_done = false;
+        // mem arena memory freed by the destructor
+    }
+}
+
+void InitThreadContext(ThreadData* context, const SharedData* cal_data) {
+    if (context->init_done) {
+        return;
+    }
+
+    const size_t tile_sz = cal_data->max_width * cal_data->max_height;
+
+    CHECK_CUDA_ERR(cudaStreamCreate(&context->stream));
+    CHECK_CUDA_ERR(cudaMallocHost(&context->pinned_tile_buffer, sizeof(cal::ComplexIntensityData) * tile_sz));
+    size_t dev_mem_bytes = 0;
+    dev_mem_bytes += sizeof(cal::ComplexIntensityData) * tile_sz;                    // pixel buffer
+    dev_mem_bytes += sizeof(cal::CalibrationLineParameters) * cal_data->max_height;  // line parameters
+    dev_mem_bytes += dev_mem_bytes / 20;                                             // extra for alignment paddings
+    context->dev_mem_arena.ReserveMemory(dev_mem_bytes);
+    context->init_done = true;
+}
+
+void ComputeComplexIntensityTile(alus::Rectangle target_rectangle, SharedData* cal_data, ThreadData* context) {
+    try {
+        InitThreadContext(context, cal_data);
+        {
+            std::unique_lock lock(cal_data->src_mutex);
+            CHECK_GDAL_ERROR(cal_data->src_band->RasterIO(
+                GF_Read, target_rectangle.x, target_rectangle.y, target_rectangle.width, target_rectangle.height,
+                context->pinned_tile_buffer, target_rectangle.width, target_rectangle.height, GDT_CInt16, 0, 0));
+        }
+
+        const size_t tile_size = target_rectangle.height * target_rectangle.width;
+        alus::cuda::KernelArray<cal::ComplexIntensityData> d_pixel_buffer{nullptr, tile_size};
+        d_pixel_buffer.array = context->dev_mem_arena.AllocArray<cal::ComplexIntensityData>(tile_size);
+
+        CHECK_CUDA_ERR(cudaMemcpyAsync(d_pixel_buffer.array, context->pinned_tile_buffer, d_pixel_buffer.ByteSize(),
+                                       cudaMemcpyHostToDevice, context->stream));
+
+        cal::CalibrationKernelArgs kernel_args{
+            cal_data->calibration_info, {}, target_rectangle, cal_data->subset_offset_x, cal_data->subset_offset_y};
+
+        kernel_args.line_parameters_array.array =
+            context->dev_mem_arena.AllocArray<cal::CalibrationLineParameters>(target_rectangle.height);
+        kernel_args.line_parameters_array.size = target_rectangle.height;
+
+        LaunchSetupTileLinesKernel(kernel_args, context->stream);
+
+        PopulateLUTs(kernel_args.line_parameters_array, cal_data->calibration_type, cal::CAL_TYPE::NONE,
+                     context->stream);
+
+        LaunchComplexIntensityKernel(kernel_args, d_pixel_buffer, context->stream);
+        CHECK_CUDA_ERR(cudaMemcpyAsync(context->pinned_tile_buffer, d_pixel_buffer.array, d_pixel_buffer.ByteSize(),
+                                       cudaMemcpyDeviceToHost, context->stream));
+
+        CHECK_CUDA_ERR(cudaStreamSynchronize(context->stream));
+        CHECK_CUDA_ERR(cudaGetLastError());
+
+        context->dev_mem_arena.Reset();
+
+        {
+            std::unique_lock lock(cal_data->dst_mutex);
+            CHECK_GDAL_ERROR(cal_data->dst_band->RasterIO(
+                GF_Write, target_rectangle.x, target_rectangle.y, target_rectangle.width, target_rectangle.height,
+                context->pinned_tile_buffer, target_rectangle.width, target_rectangle.height, GDT_Float32, 0, 0));
+        }
+    } catch (const std::exception&) {
+        {
+            std::unique_lock lock(cal_data->exception_mutex);
+            if (cal_data->exception == nullptr) {
+                cal_data->exception = std::current_exception();
+            } else {
+                // TODO print out with new logger
+            }
+        }
+    }
+}
+
+void GrabTileAndCalculate(TileQueue* tiles, SharedData* cal_data, ThreadData* context) {
+    while (true) {
+        {
+            // check if another tile has failed
+            std::unique_lock lock(cal_data->exception_mutex);
+            if (cal_data->exception != nullptr) return;
+        }
+        alus::Rectangle rect;
+        {
+            // take a tile from the queue/vector
+            std::unique_lock l(tiles->rectangles_mutex);
+            auto& vec = tiles->rect_vec;
+            if (tiles->used_rect_count == vec.size()) {
+                return;
+            }
+            rect = vec[tiles->used_rect_count];
+            tiles->used_rect_count++;
+        }
+
+        ComputeComplexIntensityTile(rect, cal_data, context);
+    }
+}
+}  // namespace
 
 namespace alus::sentinel1calibrate {
 Sentinel1Calibrator::Sentinel1Calibrator(std::shared_ptr<snapengine::Product> source_product,
-                                         const std::string& src_path,
-                                         std::vector<std::string> selected_sub_swaths,
+                                         const std::string& src_path, std::vector<std::string> selected_sub_swaths,
                                          std::set<std::string, std::less<>> selected_polarisations,
                                          SelectedCalibrationBands selected_calibration_bands,
                                          std::string_view output_path, bool output_image_in_complex, int tile_width,
@@ -78,153 +221,6 @@ Sentinel1Calibrator::Sentinel1Calibrator(std::shared_ptr<snapengine::Product> so
 
 void Sentinel1Calibrator::Execute() { SetTargetImages(); }
 
-void Sentinel1Calibrator::ComputeTile([[maybe_unused]] std::shared_ptr<snapengine::Band> target_band,
-                                      [[maybe_unused]] Rectangle target_rectangle, int band_index) {
-    (void)band_index;  // TODO: it has to be somehow computed in order to differentiate single and multiband output
-                       // (SNAPGPU-250)
-    auto get_polarisation_and_sub_swath = [](std::string_view band_name) {
-        if (std::count(band_name.begin(), band_name.end(), '_') == 1) {
-            return std::string(band_name);  // Band is not complex, or there is no need to remove anything from its name
-        }
-        const auto first_separator_position = band_name.find('_');
-        return std::string(band_name.substr(first_separator_position + 1));
-    };
-    auto get_sub_swath = [get_polarisation_and_sub_swath](std::string_view band_name) {
-        const auto polarisation_and_sub_swath = get_polarisation_and_sub_swath(band_name);
-        const auto first_separator_position = polarisation_and_sub_swath.find('_');
-        return std::string(polarisation_and_sub_swath.substr(0, first_separator_position));
-    };
-
-    std::vector<void*> tile_device_vectors;
-    const auto source_band_names = target_band_name_to_source_band_name_.at(target_band->GetName());
-    const auto source_band_1 = source_product_->GetBand(source_band_names.at(0));
-    const auto target_dataset = target_datasets_.at(get_sub_swath(target_band->GetName()));
-
-    std::vector<float> source_data_1(0);
-    source_data_1.reserve(target_rectangle.width * target_rectangle.height);
-    std::vector<float> source_data_2(0);
-
-    if (source_band_names.size() == 1) {
-        const auto band_polarisation_and_sub_swath = get_polarisation_and_sub_swath(source_band_1->GetName());
-        auto sub_dataset = safe_helper_.GetSubDatasetByPolarisationAndSubSwath(band_polarisation_and_sub_swath);
-
-        CHECK_GDAL_ERROR(sub_dataset->GetRasterBand(1)->RasterIO(
-            GF_Read, target_rectangle.x, target_rectangle.y, target_rectangle.width, target_rectangle.height,
-            source_data_1.data(), target_rectangle.width, target_rectangle.height, GDT_Float32, 0, 0));
-    }
-
-    // If source_band_names contains several bands, then it is a complex band
-    if (source_band_names.size() > 1) {
-        const auto band_polarisation_and_sub_swath = get_polarisation_and_sub_swath(source_band_1->GetName());
-        const auto& sub_dataset = safe_helper_.GetSubDatasetByPolarisationAndSubSwath(band_polarisation_and_sub_swath);
-
-        source_data_2.reserve(target_rectangle.width * target_rectangle.height);
-
-        std::vector<CInt16> complex_data(target_rectangle.width * target_rectangle.height);
-        CHECK_GDAL_ERROR(sub_dataset->GetRasterBand(1)->RasterIO(
-            GF_Read, target_rectangle.x, target_rectangle.y, target_rectangle.width, target_rectangle.height,
-            complex_data.data(), target_rectangle.width, target_rectangle.height, GDT_CInt16, 0, 0));
-
-        for (const auto value : complex_data) {
-            source_data_1.push_back(static_cast<float>(value.i));
-            source_data_2.push_back(value.q);
-        }
-    }
-
-    const auto source_band_unit = snapengine::Unit::GetUnitType(source_band_1);
-    const auto target_band_unit = snapengine::Unit::GetUnitType(target_band);
-
-    const auto calibration_info = target_band_to_d_calibration_info_.at(target_band->GetName());
-    const auto calibration_type = GetCalibrationType(target_band->GetName());
-
-    // Copy source data to device
-    cuda::KernelArray<float> d_source_data_1{nullptr, source_data_1.size()};
-    CHECK_CUDA_ERR(cudaMalloc(&d_source_data_1.array, sizeof(float) * d_source_data_1.size));
-    CHECK_CUDA_ERR(cudaMemcpy(d_source_data_1.array, source_data_1.data(), sizeof(float) * d_source_data_1.size,
-                              cudaMemcpyHostToDevice));
-    cuda_arrays_to_clean_.push_back(d_source_data_1.array);
-    tile_device_vectors.push_back(d_source_data_1.array);
-
-    cuda::KernelArray<float> d_source_data_2{nullptr, source_data_2.size()};
-    CHECK_CUDA_ERR(cudaMalloc(&d_source_data_2.array, sizeof(float) * d_source_data_2.size));
-    CHECK_CUDA_ERR(cudaMemcpy(d_source_data_2.array, source_data_2.data(), sizeof(float) * d_source_data_2.size,
-                              cudaMemcpyHostToDevice));
-    cuda_arrays_to_clean_.push_back(d_source_data_2.array);
-    tile_device_vectors.push_back(d_source_data_2.array);
-
-    CalibrationKernelArgs kernel_args{
-        calibration_info, {}, target_rectangle, calibration_type, subset_offset_x_, subset_offset_y_, d_source_data_1,
-        d_source_data_2};
-
-    // Calculate parameters for each line. This kernel is synonymous with "for (int y = y0; y < maxY; ++y)" part of
-    // SNAP's ComputeTile()
-    CHECK_CUDA_ERR(cudaMalloc(&kernel_args.line_parameters_array.array,
-                              sizeof(CalibrationLineParameters) * target_rectangle.height));
-    kernel_args.line_parameters_array.size = target_rectangle.height;
-    cuda_arrays_to_clean_.push_back(kernel_args.line_parameters_array.array);
-    tile_device_vectors.push_back(kernel_args.line_parameters_array.array);
-
-    LaunchSetupTileLinesKernel(kernel_args);
-
-    PopulateLUTs(kernel_args.line_parameters_array, calibration_type, data_type_);
-
-    // Calculate parameters for every tile pixel
-    cuda::KernelArray<CalibrationPixelParameters> pixel_parameters{
-        nullptr, static_cast<size_t>(target_rectangle.width * target_rectangle.height)};
-    CHECK_CUDA_ERR(cudaMalloc(&pixel_parameters.array, pixel_parameters.size * sizeof(CalibrationPixelParameters)));
-    cuda_arrays_to_clean_.push_back(pixel_parameters.array);
-    tile_device_vectors.push_back(pixel_parameters.array);
-
-    cuda::KernelArray<double> calibration_values{nullptr,
-                                                 static_cast<size_t>(target_rectangle.width * target_rectangle.height)};
-    CHECK_CUDA_ERR(cudaMalloc(&calibration_values.array, sizeof(double) * calibration_values.size));
-    cuda_arrays_to_clean_.push_back(calibration_values.array);
-    tile_device_vectors.push_back(calibration_values.array);
-
-    LaunchCalculatePixelParamsKernel(kernel_args, pixel_parameters);
-
-    const auto is_unit_amplitude = source_band_unit == snapengine::UnitType::AMPLITUDE;
-    const auto is_unit_intensity = source_band_unit == snapengine::UnitType::INTENSITY;
-    const auto is_unit_real = source_band_unit == snapengine::UnitType::REAL;
-    const auto is_unit_intensity_db = source_band_unit == snapengine::UnitType::INTENSITY_DB;
-
-    if (is_unit_amplitude) {
-        LaunchAmplitudeKernel(kernel_args, pixel_parameters, calibration_values);
-    } else if (is_unit_intensity) {
-        if (data_type_ != CAL_TYPE::NONE) {
-            LaunchIntensityWithRetroKernel(kernel_args, pixel_parameters, calibration_values);
-        } else {
-            LaunchIntensityWithoutRetroKernel(kernel_args, pixel_parameters, calibration_values);
-        }
-    } else if (is_unit_real) {
-        if (target_band_unit == snapengine::UnitType::REAL) {
-            LaunchRealKernel(kernel_args, pixel_parameters, calibration_values);
-        } else if (target_band_unit == snapengine::UnitType::IMAGINARY) {
-            LaunchImaginaryKernel(kernel_args, pixel_parameters, calibration_values);
-        } else {
-            LaunchComplexIntensityKernel(kernel_args, pixel_parameters, calibration_values);
-        }
-    } else if (is_unit_intensity_db) {
-        LaunchIntensityDBKernel(kernel_args, pixel_parameters, calibration_values);
-    } else {
-        throw Sentinel1CalibrateException("unhandled unit.");
-    }
-    if (is_complex_ && output_image_in_complex_) {
-        LaunchAdjustForCompexOutputKernel(kernel_args, pixel_parameters, calibration_values);
-    }
-    std::vector<double> h_calibration_values(calibration_values.size);
-    CHECK_CUDA_ERR(cudaMemcpy(h_calibration_values.data(), calibration_values.array,
-                              sizeof(double) * calibration_values.size, cudaMemcpyDeviceToHost));
-
-    CHECK_GDAL_ERROR(target_dataset->GetGdalDataset()->GetRasterBand(1)->RasterIO(
-        GF_Write, target_rectangle.x, target_rectangle.y, target_rectangle.width, target_rectangle.height,
-        h_calibration_values.data(), target_rectangle.width, target_rectangle.height, GDT_Float64, 0, 0));
-    auto tile_d_vectors_iterator = tile_device_vectors.begin();
-    while (tile_d_vectors_iterator != tile_device_vectors.end()) {
-        CHECK_CUDA_ERR(cudaFree(*tile_d_vectors_iterator));
-        tile_d_vectors_iterator = tile_device_vectors.erase(tile_d_vectors_iterator);
-    }
-}
 CAL_TYPE Sentinel1Calibrator::GetCalibrationType(std::string_view band_name) {
     auto name_contains = [&band_name](std::string_view text) { return band_name.find(text) != std::string::npos; };
 
@@ -352,7 +348,8 @@ void Sentinel1Calibrator::UpdateTargetProductMetadata() const {
     const auto target_band_names = target_product_->GetBandNames();
     s1tbx::Sentinel1Utils::UpdateBandNames(abstract_root, selected_polarisations_, target_band_names);
 
-    std::vector<std::shared_ptr<snapengine::MetadataElement>> band_metadata_list = snapengine::AbstractMetadata::GetBandAbsMetadataList(abstract_root);
+    std::vector<std::shared_ptr<snapengine::MetadataElement>> band_metadata_list =
+        snapengine::AbstractMetadata::GetBandAbsMetadataList(abstract_root);
     for (const auto& band_metadata : band_metadata_list) {
         bool pol_found{false};
         for (const auto& polarisation : selected_polarisations_) {
@@ -366,23 +363,68 @@ void Sentinel1Calibrator::UpdateTargetProductMetadata() const {
         }
     }
 }
+
 void Sentinel1Calibrator::SetTargetImages() {
     auto string_contains = [](std::string_view string, std::string_view key) {
         return string.find(key) != std::string::npos;
     };
 
-    const auto target_bands = target_product_->GetBands();
-    int sub_dataset_id{1};  // TODO: currently this is unimplemented (SNAPGPU-250)
-    for (const auto& band : target_bands) {
-        if (string_contains(band->GetName(), selected_sub_swaths_.at(0))) {
-            LOGV << "Processing band " << band->GetName();
-            const auto tiles = CalculateTiles(band);
-            for (const auto& tile : tiles) {
-                ComputeTile(band, tile, sub_dataset_id);
+    // algorithm will operate on N + 1 threads, as the last context slot is reserved for the main thread,
+    // this this constant can be zero for a better debugging experience
+    constexpr size_t N_EXTRA_THREADS = 4;
+    std::vector<ThreadData> thread_contexts(N_EXTRA_THREADS + 1);
+
+    TileQueue tiles = {};
+    SharedData cal_data = {};
+
+    cal_data.subset_offset_x = subset_offset_x_;
+    cal_data.subset_offset_y = subset_offset_y_;
+    cal_data.max_height = tile_height_;
+    cal_data.max_width = tile_width_;
+
+    try {
+        const auto target_bands = target_product_->GetBands();
+        int sub_dataset_id{1};  // TODO: currently this is unimplemented (SNAPGPU-250)
+        for (const auto& band : target_bands) {
+            if (string_contains(band->GetName(), selected_sub_swaths_.at(0))) {
+                LOGI << "Processing band " << band->GetName() << std::endl;
+                cal_data.calibration_type = GetCalibrationType(band->GetName());
+                cal_data.calibration_info = target_band_to_d_calibration_info_.at(band->GetName());
+                cal_data.dst_band = target_datasets_.at(selected_sub_swaths_.at(0))->GetGdalDataset()->GetRasterBand(1);
+                target_band_name_to_source_band_name_.at(band->GetName());
+                auto src_band = target_band_name_to_source_band_name_.at(band->GetName()).at(0);
+                cal_data.src_band = safe_helper_.GetSubDatasetByPolarisationAndSubSwath(src_band)->GetRasterBand(1);
+
+                tiles.rect_vec = CalculateTiles(band);
+                tiles.used_rect_count = 0;
+
+                std::vector<std::thread> threads;
+                for (size_t i = 0; i < N_EXTRA_THREADS; i++) {
+                    threads.emplace_back(GrabTileAndCalculate, &tiles, &cal_data, &thread_contexts[i]);
+                }
+
+                GrabTileAndCalculate(&tiles, &cal_data, &thread_contexts.back());
+
+                // main thread done, wait for others
+                for (auto& t : threads) {
+                    t.join();
+                }
+                if (cal_data.exception != nullptr) {
+                    std::rethrow_exception(cal_data.exception);
+                }
             }
+            sub_dataset_id++;
         }
-        sub_dataset_id++;
+    } catch (const std::exception&) {
+        // error path frees
+        FreeContexts(thread_contexts);
+        throw;
     }
+
+    // no error frees
+    FreeContexts(thread_contexts);
+
+    LOGI << "Calibration done!\n";
 }
 
 void Sentinel1Calibrator::AddSelectedBands(std::vector<std::string>& source_band_names) {
@@ -577,7 +619,7 @@ void Sentinel1Calibrator::CreateDatasetsFromProduct(std::shared_ptr<snapengine::
             // Create dataset
             const auto output_file = output_path.data() + product->GetName() + "_" + sub_swath + ".tif";
 
-            auto *const source_sub_dataset =
+            auto* const source_sub_dataset =
                 safe_helper_.GetSubDatasetByPolarisationAndSubSwath(get_polarisation_and_sub_swath(band->GetName()));
 
             const auto band_count = GetCalibrationCount();
@@ -604,8 +646,8 @@ std::vector<Rectangle> Sentinel1Calibrator::CalculateTiles(std::shared_ptr<snape
     int x_count = x_max / tile_width_ + 1;
     int y_count = y_max / tile_height_ + 1;
 
-    for (int x_index = 0; x_index < x_count; ++x_index) {
-        for (int y_index = 0; y_index < y_count; ++y_index) {
+    for (int y_index = 0; y_index < y_count; ++y_index) {
+        for (int x_index = 0; x_index < x_count; ++x_index) {
             Rectangle rectangle{x_index * tile_width_, y_index * tile_height_, tile_width_, tile_height_};
             if (rectangle.x > x_max || rectangle.y > y_max) {
                 continue;

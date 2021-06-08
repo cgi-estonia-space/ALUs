@@ -27,6 +27,8 @@ template <typename T>
 struct KernelArray {
     T *array;
     size_t size;
+
+    size_t ByteSize() const { return sizeof(T) * size; }
 };
 
 }  // namespace cuda

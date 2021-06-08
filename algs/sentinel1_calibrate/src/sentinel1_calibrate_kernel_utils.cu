@@ -19,44 +19,5 @@ namespace sentinel1calibrate {
 size_t GetCalibrationVectorIndex(int y, int count, const int* line_values) {
     return GetCalibrationVectorIndexImpl(y, count, line_values);
 }
-void SetupTileLine(int y, CalibrationKernelArgs& args, CalibrationLineParameters& line_parameters) {
-    SetupTileLineImpl(y, args, line_parameters);
-}
-int64_t GetPixelIndex(int x, const s1tbx::CalibrationVectorComputation* calibration_vector) {
-    return GetPixelIndexImpl(x, calibration_vector);
-}
-double CalculateLutVal(CalibrationLineParameters& line_parameters, CalibrationPixelParameters& pixel_parameters) {
-    return CalculateLutValImpl(line_parameters, pixel_parameters);
-}
-void CalculatePixelParams(int x, int y, CalibrationKernelArgs& args, CalibrationLineParameters& line_parameters,
-                          CalibrationPixelParameters& pixel_parameters) {
-    CalculatePixelParamsImpl(x, y, args, line_parameters, pixel_parameters);
-}
-void AdjustDn(double dn, double& calibration_value, double calibration_factor) {
-    AdjustDnImpl(dn, calibration_value, calibration_factor);
-}
-void CalculateAmplitude(CalibrationPixelParameters& parameters, double& calibration_value) {
-    CalculateAmplitudeImpl(parameters, calibration_value);
-}
-void CalculateIntensityWithRetro(CalibrationLineParameters& line_parameters,
-                                 CalibrationPixelParameters& pixel_parameters, double& calibration_value) {
-    CalculateIntensityWithRetroImpl(line_parameters, pixel_parameters, calibration_value);
-}
-void CalculateIntensityWithoutRetro(CalibrationPixelParameters& pixel_parameters, double& calibration_value) {
-    CalculateIntensityWithoutRetroImpl(pixel_parameters, calibration_value);
-}
-void CalculateReal(CalibrationKernelArgs args, CalibrationPixelParameters& parameters, double& calibration_value) {
-    CalculateRealImpl(args, parameters, calibration_value);
-}
-void CalculateImaginary(CalibrationKernelArgs args, CalibrationPixelParameters& parameters, double& calibration_value) {
-    CalculateImaginaryImpl(args, parameters, calibration_value);
-}
-void CalculateComplexIntensity(CalibrationKernelArgs args, CalibrationPixelParameters& parameters,
-                               double& calibration_value) {
-    CalculateComplexIntensityImpl(args, parameters, calibration_value);
-}
-void CalculateIntensityDB(CalibrationPixelParameters& parameters, double& calibration_value) {
-    CalculateIntensityDBImpl(parameters, calibration_value);
-}
 }  // namespace sentinel1calibrate
 }  // namespace alus
