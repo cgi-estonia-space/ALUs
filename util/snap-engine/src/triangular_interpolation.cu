@@ -72,12 +72,16 @@ inline __device__ long CoordToIndex(const double coord,
     return (long)floor((((coord - coord0) / (deltaCoord)) - offset) + 0.5);
 }
 
-__global__ void Interpolate(delaunay::DelaunayTriangle2D *triangles,
-                            Zdata *zdata,
-                            Zdataabc *abc,
-                            InterpolationParams params) {
-    const unsigned int idx = threadIdx.x + (blockDim.x * blockIdx.x);
-    const size_t abc_index = idx * params.z_data_count;
+__global__ void FindValidTriangles(delaunay::DelaunayTriangle2D *triangles, TriangleInterpolationParams params,
+                                   Zdata *zdata,
+                                   Zdataabc *abc,
+                                   TriangleDto* dtos,
+                                   int *selected_triangles,
+                                   unsigned int *amount_of_triangles){
+    const size_t idx = threadIdx.x + (blockDim.x * blockIdx.x);
+    size_t accepted_index;
+    size_t abc_index;
+    TriangleDto dto;
 
     if (idx >= params.triangle_count) {
         return;
@@ -86,14 +90,10 @@ __global__ void Interpolate(delaunay::DelaunayTriangle2D *triangles,
     const double x_min = params.window.linelo;
     const double y_min = params.window.pixlo;
 
-    long i_min, i_max, j_min, j_max;  // minimas/maximas
-    double xp, yp;
     double xkj, ykj, xlj, ylj;
     double f;  // function
     delaunay::DelaunayTriangle2D triangle;
 
-    double vx[3];
-    double vy[3];
     double vz[3];
 
     const int nx = params.window.lines;
@@ -102,52 +102,56 @@ __global__ void Interpolate(delaunay::DelaunayTriangle2D *triangles,
     triangle = triangles[idx];
 
     // store triangle coordinates in local variables
-    vx[0] = triangle.ax;
-    vy[0] = triangle.ay / params.xy_ratio;
+    dto.vx[0] = triangle.ax;
+    dto.vy[0] = triangle.ay / params.xy_ratio;
 
-    vx[1] = triangle.bx;
-    vy[1] = triangle.by / params.xy_ratio;
+    dto.vx[1] = triangle.bx;
+    dto.vy[1] = triangle.by / params.xy_ratio;
 
-    vx[2] = triangle.cx;
-    vy[2] = triangle.cy / params.xy_ratio;
+    dto.vx[2] = triangle.cx;
+    dto.vy[2] = triangle.cy / params.xy_ratio;
 
     // skip invalid indices
-    if (vx[0] == params.invalid_index || vx[1] == params.invalid_index || vx[2] == params.invalid_index ||
-        vy[0] == params.invalid_index || vy[1] == params.invalid_index || vy[2] == params.invalid_index) {
+    if (dto.vx[0] == params.invalid_index || dto.vx[1] == params.invalid_index || dto.vx[2] == params.invalid_index ||
+        dto.vy[0] == params.invalid_index || dto.vy[1] == params.invalid_index || dto.vy[2] == params.invalid_index) {
         return;
     }
 
     // Compute grid indices the current triangle may cover
-    xp = min(min(vx[0], vx[1]), vx[2]);
-    i_min = CoordToIndex(xp, x_min, params.x_scale, params.offset);
+    dto.xp = min(min(dto.vx[0], dto.vx[1]), dto.vx[2]);
+    dto.i_min = CoordToIndex(dto.xp, x_min, params.x_scale, params.offset);
 
-    xp = max(max(vx[0], vx[1]), vx[2]);
-    i_max = CoordToIndex(xp, x_min, params.x_scale, params.offset);
+    dto.xp = max(max(dto.vx[0], dto.vx[1]), dto.vx[2]);
+    dto.i_max = CoordToIndex(dto.xp, x_min, params.x_scale, params.offset);
 
-    yp = min(min(vy[0], vy[1]), vy[2]);
-    j_min = CoordToIndex(yp, y_min, params.y_scale, params.offset);
+    dto.yp = min(min(dto.vy[0], dto.vy[1]), dto.vy[2]);
+    dto.j_min = CoordToIndex(dto.yp, y_min, params.y_scale, params.offset);
 
-    yp = max(max(vy[0], vy[1]), vy[2]);
-    j_max = CoordToIndex(yp, y_min, params.y_scale, params.offset);
-    // printf("imax %ld imin %ld nx %d -- jmax %ld jmin %ld ny %d\n", i_max, i_min, nx, j_max, j_min, ny);
+    dto.yp = max(max(dto.vy[0], dto.vy[1]), dto.vy[2]);
+    dto.j_max = CoordToIndex(dto.yp, y_min, params.y_scale, params.offset);
+
     // skip triangle that is above, below, left or right of the region
-    if ((i_max < 0) || (i_min >= nx) || (j_max < 0) || (j_min >= ny)) {
+    if ((dto.i_max < 0) || (dto.i_min >= nx) || (dto.j_max < 0) || (dto.j_min >= ny)) {
         return;
     }
 
     // triangle covers the upper or lower boundary
-    i_min = i_min * (i_min >= 0);
-    i_max = (i_max >= nx) * (nx - 1) + (i_max < nx) * i_max;
+    dto.i_min = dto.i_min * (dto.i_min >= 0);
+    dto.i_max = (dto.i_max >= nx) * (nx - 1) + (dto.i_max < nx) * dto.i_max;
 
     // triangle covers left or right boundary
-    j_min = j_min * (j_min >= 0);
-    j_max = (j_max >= ny) * (ny - 1) + (j_max < ny) * j_max;
+    dto.j_min = dto.j_min * (dto.j_min >= 0);
+    dto.j_max = (dto.j_max >= ny) * (ny - 1) + (dto.j_max < ny) * dto.j_max;
+
+    accepted_index = atomicInc(amount_of_triangles, params.triangle_count);
+    selected_triangles[accepted_index] = idx;
+    abc_index = accepted_index * params.z_data_count;
 
     // compute plane defined by the three vertices of the triangle: z = ax + by + c
-    xkj = vx[1] - vx[0];
-    ykj = vy[1] - vy[0];
-    xlj = vx[2] - vx[0];
-    ylj = vy[2] - vy[0];
+    xkj = dto.vx[1] - dto.vx[0];
+    ykj = dto.vy[1] - dto.vy[0];
+    xlj = dto.vx[2] - dto.vx[0];
+    ylj = dto.vy[2] - dto.vy[0];
 
     f = 1.0 / (xkj * ylj - ykj * xlj);
 
@@ -156,28 +160,43 @@ __global__ void Interpolate(delaunay::DelaunayTriangle2D *triangles,
     vz[2] = triangle.c_index;
 
     for (size_t i = 0; i < params.z_data_count; i++) {
-        abc[abc_index + i] = GetABC(vx, vy, vz, zdata[i], abc[abc_index + i], f, xkj, ykj, xlj, ylj);
+        abc[abc_index + i] = GetABC(dto.vx, dto.vy, vz, zdata[i], abc[abc_index + i], f, xkj, ykj, xlj, ylj);
     }
 
-    PointInTriangle point_in_triangle;
-    point_in_triangle.xtd0 = vx[2] - vx[0];
-    point_in_triangle.xtd1 = vx[0] - vx[1];
-    point_in_triangle.xtd2 = vx[1] - vx[2];
-    point_in_triangle.ytd0 = vy[2] - vy[0];
-    point_in_triangle.ytd1 = vy[0] - vy[1];
-    point_in_triangle.ytd2 = vy[1] - vy[2];
 
-    for (int i = (int)i_min; i <= i_max; i++) {
-        xp = x_min + i * params.x_scale + params.offset;
-        for (int j = (int)j_min; j <= j_max; j++) {
-            yp = y_min + j * params.y_scale + params.offset;
+    dto.point_in_triangle.xtd0 = dto.vx[2] - dto.vx[0];
+    dto.point_in_triangle.xtd1 = dto.vx[0] - dto.vx[1];
+    dto.point_in_triangle.xtd2 = dto.vx[1] - dto.vx[2];
+    dto.point_in_triangle.ytd0 = dto.vy[2] - dto.vy[0];
+    dto.point_in_triangle.ytd1 = dto.vy[0] - dto.vy[1];
+    dto.point_in_triangle.ytd2 = dto.vy[1] - dto.vy[2];
 
-            if (!test(xp, yp, vx, vy, point_in_triangle)) {
+    dtos[accepted_index] = dto;
+}
+
+__global__ void Interpolate(Zdata *zdata, Zdataabc *abc, TriangleDto* dtos, InterpolationParams params){
+    const unsigned int index = blockIdx.x + (blockIdx.y * gridDim.x);
+    const size_t abc_index = index * params.z_data_count;
+    TriangleDto dto;
+    const double x_min = params.window.linelo;
+    const double y_min = params.window.pixlo;
+
+    if (index >= params.accepted_triangles) {
+        return;
+    }
+    dto = dtos[index];
+
+    for (int i = (int)dto.i_min + threadIdx.x; i <= dto.i_max; i+=blockDim.x) {
+        dto.xp = x_min + i * params.x_scale + params.offset;
+        for (int j = (int)dto.j_min + threadIdx.y; j <= dto.j_max; j+= blockDim.y) {
+            dto.yp = y_min + j * params.y_scale + params.offset;
+
+            if (!test(dto.xp, dto.yp, dto.vx, dto.vy, dto.point_in_triangle)) {
                 continue;
             }
-            // printf("printing results at %d\n", idx);
+
             for (size_t d = 0; d < params.z_data_count; d++) {
-                double result = abc[abc_index + d].a * xp + abc[abc_index + d].b * yp + abc[abc_index + d].c;
+                double result = abc[abc_index + d].a * dto.xp + abc[abc_index + d].b * dto.yp + abc[abc_index + d].c;
                 zdata[d].output_arr[i * zdata[d].output_height + j] = result;
                 int int_result = (int)floor(result);
                 atomicMin(&zdata[d].min_int, int_result);
@@ -188,17 +207,47 @@ __global__ void Interpolate(delaunay::DelaunayTriangle2D *triangles,
     }
 }
 
-cudaError_t LaunchInterpolation(delaunay::DelaunayTriangle2D *triangles, Zdata *zdata, InterpolationParams params) {
-    dim3 block_size(400);
-    dim3 grid_size(cuda::GetGridDim(400, params.triangle_count));
+cudaError_t LaunchInterpolation(delaunay::DelaunayTriangle2D *triangles, Zdata* zdata,
+                                TriangleInterpolationParams params){
+    dim3 block_size(512);
+    dim3 grid_size(cuda::GetGridDim(512, params.triangle_count));
     Zdataabc *device_abc;
+    TriangleDto* device_dtos;
+    int *selected_triangles;
+    unsigned int *amount_of_triangles;
+    unsigned int accepted_triangles;
 
+    CHECK_CUDA_ERR(cudaMalloc((void **)&selected_triangles, params.triangle_count * sizeof(int)));
+    CHECK_CUDA_ERR(cudaMalloc((void **)&amount_of_triangles, sizeof(unsigned int)));
     CHECK_CUDA_ERR(cudaMalloc((void **)&device_abc, params.triangle_count * params.z_data_count * sizeof(Zdataabc)));
+    CHECK_CUDA_ERR(cudaMalloc((void **)&device_dtos, params.triangle_count * sizeof(TriangleDto)));
 
-    Interpolate<<<grid_size, block_size>>>(triangles, zdata, device_abc, params);
+    CHECK_CUDA_ERR(cudaMemset(amount_of_triangles, 0, sizeof(unsigned int)));
+
+    FindValidTriangles<<<grid_size, block_size>>>(triangles, params, zdata, device_abc, device_dtos, selected_triangles, amount_of_triangles);
     cudaError_t result = cudaGetLastError();
 
+    CHECK_CUDA_ERR(cudaMemcpy(&accepted_triangles, amount_of_triangles, sizeof(unsigned int), cudaMemcpyDeviceToHost));
+
+    InterpolationParams params2;
+    params2.z_data_count = params.z_data_count;
+    params2.x_scale = params.x_scale;
+    params2.y_scale = params.y_scale;
+    params2.offset = params.offset;
+    params2.accepted_triangles = accepted_triangles;
+    params2.window = params.window;
+
+    int grid_dim = (int)sqrt(accepted_triangles);
+    grid_dim++;
+
+    dim3 interpolation_grid_size(grid_dim, grid_dim);
+    dim3 interpolation_block_size(16, 16);
+    Interpolate<<<interpolation_grid_size, interpolation_block_size>>>(zdata, device_abc, device_dtos, params2);
+
     CHECK_CUDA_ERR(cudaFree(device_abc));
+    CHECK_CUDA_ERR(cudaFree(selected_triangles));
+    CHECK_CUDA_ERR(cudaFree(amount_of_triangles));
+    CHECK_CUDA_ERR(cudaFree(device_dtos));
     return result;
 }
 

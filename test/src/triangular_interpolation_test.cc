@@ -258,7 +258,7 @@ const std::string TriangularInterpolationTester::triangles_data_file_ =
     "./goods/backgeocoding/masterTrianglesTestData.txt";
 
 void PrepareParams(TriangularInterpolationTester *tester,
-                   alus::snapengine::triangularinterpolation::InterpolationParams *params,
+                   alus::snapengine::triangularinterpolation::TriangleInterpolationParams*params,
                    alus::snapengine::triangularinterpolation::Window *window,
                    alus::snapengine::triangularinterpolation::Zdata *zdata) {
     window->linelo = 17000;
@@ -317,7 +317,7 @@ TEST(TriangularInterpolation, InterpolationTest) {
     TriangularInterpolationTester tester;
     tester.HostToDevice();
 
-    alus::snapengine::triangularinterpolation::InterpolationParams params;
+    alus::snapengine::triangularinterpolation::TriangleInterpolationParams params;
     alus::snapengine::triangularinterpolation::Window window;
     alus::snapengine::triangularinterpolation::Zdata zdata[alus::backgeocoding::Z_DATA_SIZE];
     alus::snapengine::triangularinterpolation::Zdata *device_zdata;
@@ -380,7 +380,7 @@ TEST(TriangularInterpolation, InterpolationAndTriangulation) {
 
     alus::delaunay::DelaunayTriangulator triangulator;
 
-    alus::snapengine::triangularinterpolation::InterpolationParams params;
+    alus::snapengine::triangularinterpolation::TriangleInterpolationParams params;
     alus::snapengine::triangularinterpolation::Window window;
     alus::snapengine::triangularinterpolation::Zdata zdata[alus::backgeocoding::Z_DATA_SIZE];
     alus::snapengine::triangularinterpolation::Zdata *device_zdata;

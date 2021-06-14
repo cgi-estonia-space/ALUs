@@ -33,15 +33,15 @@ namespace {
 
 TEST(DISABLED_topsar_split, subswaths){
 
-    alus::topsarsplit::TopsarSplit splitter("/home/erik/snapDebusTests/S1A_IW_SLC__1SDV_20210413T043427_20210413T043455_037427_046960_3797.SAFE", "IW1", "VV");
+    alus::topsarsplit::TopsarSplit splitter("./goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.SAFE", "IW1", "VV");
     splitter.initialize();
 }
 
 TEST(topsar_split, s1utils_slave){
-    alus::snapengine::SystemUtils::SetAuxDataPath("/home/erik/orbitFiles/POEORB/");
+    alus::snapengine::SystemUtils::SetAuxDataPath("./goods/apply_orbit_file_op/orbit-files/");
     std::string subswath_name = "IW1";
     std::string polarisation = "VV";
-    std::string slave_file = "/home/erik/snapDebusTests/BEIRUT/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.SAFE";
+    std::string slave_file = "./goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.SAFE";
     alus::topsarsplit::TopsarSplit split_slave(slave_file, subswath_name, polarisation);
     split_slave.initialize();
     std::shared_ptr<alus::C16Dataset<double>> master_reader = split_slave.GetPixelReader();
@@ -155,10 +155,10 @@ TEST(topsar_split, s1utils_slave){
 }
 
 TEST(topsar_split, s1utils_master){
-    alus::snapengine::SystemUtils::SetAuxDataPath("/home/erik/orbitFiles/POEORB/");
+    alus::snapengine::SystemUtils::SetAuxDataPath("./goods/apply_orbit_file_op/orbit-files/");
     std::string subswath_name = "IW1";
     std::string polarisation = "VV";
-    std::string master_file = "/home/erik/snapDebusTests/BEIRUT/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD.SAFE";
+    std::string master_file = "./goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD.SAFE";
     alus::topsarsplit::TopsarSplit split_master(master_file, subswath_name, polarisation);
     split_master.initialize();
     std::shared_ptr<alus::C16Dataset<double>> master_reader = split_master.GetPixelReader();
