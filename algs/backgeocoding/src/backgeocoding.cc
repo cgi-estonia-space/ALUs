@@ -112,6 +112,11 @@ Rectangle Backgeocoding::PositionCompute(int m_burst_index,
                                          double *device_x_points,
                                          double *device_y_points) {
     CoordMinMax coord_min_max;
+
+    if(s_burst_index < 0 || s_burst_index >= slave_utils_->subswath_.at(0)->num_of_bursts_){
+        return {0, 0, 0, 0};
+    }
+
     AzimuthAndRangeBounds az_rg_bounds = ComputeExtendedAmount(master_area.x, master_area.y, master_area.width, master_area.height);
 
     bool result = ComputeSlavePixPos(m_burst_index,
