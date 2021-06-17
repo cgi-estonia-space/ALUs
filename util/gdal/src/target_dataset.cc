@@ -13,7 +13,6 @@
  */
 #include "target_dataset.h"
 
-#include <iostream>
 #include <cstdint>
 
 #include "gdal_util.h"

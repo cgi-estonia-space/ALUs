@@ -20,6 +20,7 @@
 
 #include <stdexcept>
 
+#include "alus_log.h"
 #include "guardian.h"
 #include "product_node_group.h"
 #include "snap-core/dataio/product_subset_def.h"
@@ -200,7 +201,7 @@ std::shared_ptr<Utc> MetadataElement::GetAttributeUtc(std::string_view name, std
             return Utc::Parse(attribute->GetData()->GetElemString());
         }
     } catch (const std::exception& e) {
-        std::cerr << e.what();
+        LOGW << e.what();
         // continue
     }
     return default_value;

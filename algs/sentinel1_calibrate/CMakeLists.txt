@@ -54,6 +54,7 @@ target_link_libraries(sentinel1-calibrate-static
         snap-engine-static
         gdal-util-static
         cuda_util-static
+        common-util-static
         )
 
 add_library(sentinel1-calibrate-shared
@@ -81,4 +82,5 @@ target_link_libraries(sentinel1-calibrate-shared
         snap-engine-static
         gdal-util-static
         cuda_util-static
+        common-util-static
         )

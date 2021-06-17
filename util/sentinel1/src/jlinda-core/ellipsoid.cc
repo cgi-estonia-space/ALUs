@@ -1,9 +1,22 @@
+/*
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #include "jlinda-core/ellipsoid.h"
 
 #include <cmath>
-#include <iostream>
 #include <stdexcept>
 
+#include "alus_log.h"
 #include "jlinda-core/constants.h"
 
 namespace alus {
@@ -47,11 +60,11 @@ Ellipsoid::Ellipsoid(const Ellipsoid& ell) {
 }
 
 void Ellipsoid::ShowData() {
-    std::cerr << "ELLIPSOID: \tEllipsoid used (orbit, output): " << name_ << "." << std::endl;
-    std::cerr << "ELLIPSOID: a   = " << std::to_string(a_) << std::endl;
-    std::cerr << "ELLIPSOID: b   = " << std::to_string(b_) << std::endl;
-    std::cerr << "ELLIPSOID: e2  = " << std::to_string(e2_) << std::endl;
-    std::cerr << "ELLIPSOID: e2' = " << std::to_string(e2b_) << std::endl;
+    LOGV << "ELLIPSOID: \tEllipsoid used (orbit, output): " << name_ << ".";
+    LOGV << "ELLIPSOID: a   = " << std::to_string(a_);
+    LOGV << "ELLIPSOID: b   = " << std::to_string(b_);
+    LOGV << "ELLIPSOID: e2  = " << std::to_string(e2_);
+    LOGV << "ELLIPSOID: e2' = " << std::to_string(e2b_);
 }
 
 std::vector<double> Ellipsoid::Xyz2Ell(const s1tbx::Point& xyz) {

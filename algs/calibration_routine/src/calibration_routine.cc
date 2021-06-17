@@ -26,6 +26,7 @@
 #include <boost/program_options.hpp>
 
 #include "alg_bond.h"
+#include "alus_log.h"
 #include "algorithm_parameters.h"
 #include "custom/gdal_image_reader.h"
 #include "custom/gdal_image_writer.h"
@@ -158,13 +159,13 @@ int CalibrationRoutine::Execute() {
                                      : final_path;
         tc.ExecuteTerrainCorrection(tc_output_file, tile_width_, tile_height_);
 
-        std::cout << "Algorithm completed, output file @ " << tc_output_file << "\n";
+        LOGI << "Algorithm completed, output file @ " << tc_output_file;
 
     } catch (const std::exception& e) {
-        std::cerr << "Exception caught while running Sentinel-1 Calibration - " << e.what() << std::endl;
+        LOGE << "Exception caught while running Sentinel-1 Calibration - " << e.what();
         return 1;
     } catch (...) {
-        std::cerr << "Unknown exception caught while running Sentinel-1 Calibration." << std::endl;
+        LOGE << "Unknown exception caught while running Sentinel-1 Calibration.";
         return 2;
     }
 

@@ -15,7 +15,6 @@
 #include "terrain_correction_executor.h"
 
 #include <exception>
-#include <iostream>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -24,6 +23,7 @@
 #include <vector>
 
 #include "alg_bond.h"
+#include "alus_log.h"
 #include "srtm3_elevation_model.h"
 #include "terrain_correction.h"
 #include "terrain_correction_metadata.h"
@@ -41,9 +41,8 @@ int TerrainCorrectionExecutor::Execute() {
         PrintProcessingParameters();
 
         if (srtm3_manager_ == nullptr /*&& avg_scene_height_ == AVG_SCENE_HEIGHT_NOT_USED_VALUE*/) {
-            std::cerr << "SRTM3 manager is not supplied, for running Range Doppler Terrain Correction with DEM it must "
-                         "be supplied"
-                      << std::endl;
+            LOGE << "SRTM3 manager is not supplied, for running Range Doppler Terrain Correction with DEM it must "
+                    "be supplied";
             return 1;
         }
 
@@ -73,10 +72,10 @@ int TerrainCorrectionExecutor::Execute() {
         srtm3_manager_->DeviceFree();
 
     } catch (const std::exception& e) {
-        std::cerr << "Exception caught while running Range Doppler Terrain Correction - " << e.what() << std::endl;
+        LOGE << "Exception caught while running Range Doppler Terrain Correction - " << e.what();
         return 1;
     } catch (...) {
-        std::cerr << "Unknown exception caught while running Range Doppler Terrain Correction" << std::endl;
+        LOGE << "Unknown exception caught while running Range Doppler Terrain Correction";
         return 2;
     }
 
@@ -110,19 +109,19 @@ void TerrainCorrectionExecutor::SetOutputFilename(const std::string& output_name
 
 std::string TerrainCorrectionExecutor::GetArgumentsHelp() const {
     std::stringstream help_stream;
-    help_stream << "Range Doppler Terrain Correction configurable parameters:" << std::endl
+    help_stream << "Range Doppler Terrain Correction configurable parameters:"
                 << PARAMETER_ID_AVG_SCENE_HEIGHT
                 << " - average scene height to be used instead SRTM3 DEM values (default:"
-                << AVG_SCENE_HEIGHT_NOT_USED_VALUE << " - not used)" << std::endl;
+                << AVG_SCENE_HEIGHT_NOT_USED_VALUE << " - not used)";
     return help_stream.str();
 }
 
 void TerrainCorrectionExecutor::PrintProcessingParameters() const {
-    std::cout << "Range Doppler Terrain Correction parameters:" << std::endl << PARAMETER_ID_AVG_SCENE_HEIGHT << " ";
+    LOGI << "Range Doppler Terrain Correction parameters:" << PARAMETER_ID_AVG_SCENE_HEIGHT << " ";
     if (avg_scene_height_ == AVG_SCENE_HEIGHT_NOT_USED_VALUE) {
-        std::cout << "not used" << std::endl;
+        LOGI << "not used";
     } else {
-        std::cout << avg_scene_height_ << std::endl;
+        LOGI << avg_scene_height_;
     }
 }
 

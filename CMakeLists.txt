@@ -35,7 +35,7 @@ else (CUDA_FOUND)
     message(FATAL_ERROR "No CUDA toolchain found. Exiting.")
 endif ()
 
-find_package(Boost 1.74.0 REQUIRED COMPONENTS program_options date_time filesystem iostreams)
+find_package(Boost 1.74.0 REQUIRED COMPONENTS program_options date_time filesystem iostreams log log_setup)
 
 find_package(GDAL REQUIRED)
 include_directories(${GDAL_INCLUDE_DIRS})
@@ -56,7 +56,7 @@ add_subdirectory(external/zipper)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_CXX_FLAGS "-Wall -Werror -Wextra -pedantic")
+set(CMAKE_CXX_FLAGS "-Wall -Werror -Wextra -pedantic -DBOOST_LOG_DYN_LINK")
 
 set(CMAKE_SKIP_BUILD_RPATH  FALSE)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)

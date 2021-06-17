@@ -15,6 +15,8 @@
 
 #include <iomanip>
 
+#include "alus_log.h"
+
 namespace {
     constexpr double ERROR_RANGE{0.0000001};
 }
@@ -29,8 +31,7 @@ size_t EqualsArrays(const float *a, const float *b, int elems, float delta){
     for(i=0; i<elems; i++){
         temp = (a[i]>b[i])*(a[i]-b[i]) + (a[i]<=b[i])*(b[i]-a[i]);
         if(temp > delta){
-            std::cerr << std::fixed << std::setprecision(8);
-            std::cerr << "elements do not match - " <<i<<")"<< a[i] << ":"<<b[i] << '\n';
+            LOGE << std::fixed << std::setprecision(8) << "elements do not match - " << i << ")" << a[i] << ":" << b[i];
             count++;
             if(count > 50){
                 return count;
@@ -58,8 +59,7 @@ size_t EqualsArraysd(const double *a, const double *b, int elems, double delta){
     for(i=0; i<elems; i++){
         temp = (a[i]>b[i])*(a[i]-b[i]) + (a[i]<=b[i])*(b[i]-a[i]);
         if(temp > delta){
-            std::cerr << std::fixed << std::setprecision(8);
-            std::cerr << "elements do not match - " <<i<<")"<< a[i] << ":"<<b[i] << '\n';
+            LOGE << std::fixed << std::setprecision(8) << "elements do not match - " << i << ")" << a[i] << ":" << b[i];
             count++;
             if(count > 50){
                 return count;
@@ -78,7 +78,7 @@ size_t EqualsArrays2Dd(const double *const *a, const double *const *b, int x, in
         for(j=0; j<y; j++){
             temp = (a[i][j]>b[i][j])*(a[i][j]-b[i][j]) + (a[i][j]<=b[i][j])*(b[i][j]-a[i][j]);
             if(temp > ERROR_RANGE){
-                std::cerr << "elements do not match - " <<i<<","<<j<<")"<< a[i][j] << ":"<<b[i][j] << '\n';
+                LOGE << "elements do not match - " << i << "," << j << ")" << a[i][j] << ":" << b[i][j];
                 count++;
                 if(count > 50){
                     return count;
@@ -141,9 +141,9 @@ int EqualsTrianglesByPoints(delaunay::DelaunayTriangle2D a, delaunay::DelaunayTr
 }
 
 void printTriangle(delaunay::DelaunayTriangle2D tri){
-    std::cout<< tri.a_index << " (" << tri.ax << ";"<<tri.ay << ") " ;
-    std::cout<< tri.b_index << " (" << tri.bx << ";"<<tri.by << ") " ;
-    std::cout<< tri.c_index << " (" << tri.cx << ";"<<tri.cy << ") " << std::endl;
+    LOGV << tri.a_index << " (" << tri.ax << ";" << tri.ay << ") ";
+    LOGV << tri.b_index << " (" << tri.bx << ";" << tri.by << ") ";
+    LOGV << tri.c_index << " (" << tri.cx << ";" << tri.cy << ") ";
 }
 
 /**
@@ -166,9 +166,9 @@ size_t EqualsTriangles(delaunay::DelaunayTriangle2D *a, delaunay::DelaunayTriang
 
             if(EqualsTrianglesByIndices(a[i], b[j])){
                 if(!EqualsTrianglesByPoints(a[i], b[j], delta)){
-                    std::cout<<"Triangles are equal by indicies but not by points. Triangle a: "<<std::endl;
+                    LOGD << "Triangles are equal by indicies but not by points. Triangle a: ";
                     printTriangle(a[i]);
-                    std::cout<<"Triangle b: "<< std::endl;
+                    LOGD << "Triangle b: ";
                     printTriangle(b[j]);
                 }else{
                     was_it_found = 1;
@@ -177,7 +177,7 @@ size_t EqualsTriangles(delaunay::DelaunayTriangle2D *a, delaunay::DelaunayTriang
             }
         }//inner loop
         if(!was_it_found){
-            std::cout<< "Can not find a match for triangle: " << i << std::endl;
+            LOGD << "Can not find a match for triangle: " << i;
             printTriangle(a[i]);
             count++;
         }

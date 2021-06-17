@@ -18,7 +18,6 @@
  */
 #include "ceres-core/dir.h"
 
-#include <iostream>
 #include <string>
 
 namespace alus {

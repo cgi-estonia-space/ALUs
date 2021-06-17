@@ -13,18 +13,9 @@ list(APPEND EXOTIC_OPERATIONS_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/../../external/delaunay/include
         )
 
-add_library(exotic_operations-obj
-        OBJECT
-        ${EXOTIC_OPERATIONS_SOURCES}
-        )
-target_include_directories(exotic_operations-obj
-        PRIVATE
-        ${EXOTIC_OPERATIONS_INCLUDE_DIRS}
-        )
-
 add_library(exotic_operations-static
         STATIC
-        $<TARGET_OBJECTS:exotic_operations-obj>
+        ${EXOTIC_OPERATIONS_SOURCES}
         )
 target_include_directories(exotic_operations-static
         PUBLIC
@@ -38,4 +29,5 @@ target_link_libraries(exotic_operations-static
         PUBLIC
         gdal
         cuda_util-static
+        common-util-static
         )

@@ -16,10 +16,10 @@
 
 #include <chrono>
 #include <exception>
-#include <iostream>
 
 #include <boost/filesystem.hpp>
 
+#include "alus_log.h"
 #include "coherence_execute.h"
 #include "coregistration_controller.h"
 #include "custom/gdal_image_reader.h"
@@ -63,11 +63,9 @@ int CoherenceEstimationRoutineExecute::ExecuteSafe() {
                          {srtm3_manager_->GetSrtmBuffersInfo(), srtm3_manager_->GetDeviceSrtm3TilesCount()});
             main_product = coreg.GetMasterProduct();
             secondary_product = coreg.GetSlaveProduct();
-            std::cout << "S-1 TOPS Coregistration done - "
-                      << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() -
-                                                                               coreg_start)
-                             .count()
-                      << "ms" << std::endl;
+            LOGI << "S-1 TOPS Coregistration done - "
+                 << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() -
+                                                                          coreg_start).count() << "ms";
         }
         srtm3_manager_->DeviceFree();
 
@@ -82,15 +80,12 @@ int CoherenceEstimationRoutineExecute::ExecuteSafe() {
             alg.SetOutputFilename(coh_output_file);
             const auto res = alg.Execute();
             if (res != 0) {
-                std::cout << "Running Coherence operation resulted in non success execution - " << res << std::endl
-                          << "Aborting." << std::endl;
+                LOGE << "Running Coherence operation resulted in non success execution - " << res << " -aborting.";
                 return res;
             }
-            std::cout << "Coherence done - "
+            LOGI << "Coherence done - "
                       << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() -
-                                                                               coh_start)
-                             .count()
-                      << "ms" << std::endl;
+                                                                               coh_start).count() << "ms";
         }
 
         // deburst
@@ -116,10 +111,9 @@ int CoherenceEstimationRoutineExecute::ExecuteSafe() {
                           data_reader->GetDataProjection());
         debursted_product->SetImageWriter(data_writer);
         deburst_op->Compute();
-        std::cout << "TOPSAR Deburst done - "
+        LOGI << "TOPSAR Deburst done - "
                   << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - deb_start)
-                         .count()
-                  << "ms" << std::endl;
+                    .count() << "ms";
 
         // TC
         const auto tc_start = std::chrono::system_clock::now();
@@ -137,16 +131,15 @@ int CoherenceEstimationRoutineExecute::ExecuteSafe() {
                                          : predefined_end_result_name;
         tc.ExecuteTerrainCorrection(tc_output_file, tile_width_, tile_height_);
         srtm3_manager_->DeviceFree();
-        std::cout << "Terrain correction done - "
+        LOGI << "Terrain correction done - "
                   << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - tc_start)
-                         .count()
-                  << "ms" << std::endl;
+                    .count() << "ms";
 
     } catch (const std::exception& e) {
-        std::cout << "Operation resulted in error:" << e.what() << std::endl << "Aborting." << std::endl;
+        LOGE << "Operation resulted in error:" << e.what() << " - aborting.";
         return 2;
     } catch (...) {
-        std::cout << "Operation resulted in error. Aborting." << std::endl;
+        LOGE << "Operation resulted in error. Aborting.";
         return 2;
     }
 

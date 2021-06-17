@@ -7,18 +7,9 @@ list(APPEND CUDA_UTIL_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/include
         )
 
-add_library(cuda_util-obj
-        OBJECT
-        ${CUDA_UTIL_SOURCES}
-        ../common/include/general_utils.h ../common/include/test_utils.h)
-target_include_directories(cuda_util-obj
-        PRIVATE
-        ${CUDA_UTIL_INCLUDE_DIRS}
-        )
-
 add_library(cuda_util-static
         STATIC
-        $<TARGET_OBJECTS:cuda_util-obj>
+        ${CUDA_UTIL_SOURCES}
         )
 target_include_directories(cuda_util-static
         PUBLIC
@@ -30,5 +21,4 @@ set_target_properties(cuda_util-static
         )
 target_link_libraries(cuda_util-static
         PUBLIC
-
         )

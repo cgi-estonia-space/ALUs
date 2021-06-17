@@ -19,7 +19,6 @@
 #include "s1tbx-commons/io/x_m_l_product_directory.h"
 
 #include <fstream>
-#include <iostream>
 
 #include "snap-core/datamodel/metadata_element.h"
 #include "snap-core/datamodel/product.h"

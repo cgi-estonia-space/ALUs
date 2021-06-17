@@ -17,9 +17,9 @@
 
 #include <boost/algorithm/string.hpp>
 
+#include "alus_log.h"
 #include "metadata_attribute.h"
 #include "parse_exception.h"
-#include "snap-core/datamodel/metadata_attribute.h"
 #include "snap-core/util/string_utils.h"
 
 namespace alus {
@@ -138,7 +138,7 @@ void AbstractMetadata::SetAttribute(const std::shared_ptr<MetadataElement>& dest
     if (dest == nullptr) return;
     std::shared_ptr<MetadataAttribute> attrib = dest->GetAttribute(tag);
     if (attrib == nullptr) {
-        std::cerr << tag << " not found in metadata";
+        LOGW << tag << " not found in metadata";
     } else {
         attrib->GetData()->SetElemInt(value);
     }
@@ -186,10 +186,10 @@ void AbstractMetadata::SetAttribute(const std::shared_ptr<MetadataElement>& dest
         attrib->GetData()->SetElems(value->GetArray());
     } else {
         if (attrib == nullptr) {
-            std::cerr << tag << " not found in metadata";
+            LOGW << tag << " not found in metadata";
         }
         if (value == nullptr) {
-            std::cerr << tag << " metadata value is nullptr";
+            LOGW << tag << " metadata value is nullptr";
         }
     }
 }
@@ -432,7 +432,7 @@ std::shared_ptr<Utc> AbstractMetadata::ParseUtc(std::string_view time_str, std::
         }
         return Utc::Parse(time_str, date_format_pattern);
     } catch (const std::exception& e) {
-        std::cerr << "UTC parse error:" << time_str << ":" << e.what();
+        LOGW << "UTC parse error:" << time_str << ":" << e.what();
         return NO_METADATA_UTC;
     }
 }

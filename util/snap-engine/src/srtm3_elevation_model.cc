@@ -15,6 +15,7 @@
 
 #include <cmath>
 
+#include "alus_log.h"
 #include "cuda_util.h"
 #include "earth_gravitational_model96_computation.h"
 #include "srtm3_elevation_model_constants.h"
@@ -90,7 +91,7 @@ void Srtm3ElevationModel::HostToDevice() {
         temp_tiles.at(i).id =
             (((srtm3elevationmodel::MAX_LON_COVERAGE + lon) / srtm3elevationmodel::DEGREE_RES) + 1) * 100 +
             (((srtm3elevationmodel::MAX_LAT_COVERAGE - lat) / srtm3elevationmodel::DEGREE_RES) + 1);
-        std::cout << "Loading SRTM3 tile ID " << temp_tiles.at(i).id << " to GPU" << std::endl;
+        LOGI << "Loading SRTM3 tile ID " << temp_tiles.at(i).id << " to GPU";
         temp_tiles.at(i).x = x_size;
         temp_tiles.at(i).y = y_size;
         temp_tiles.at(i).z = 1;
@@ -106,7 +107,7 @@ void Srtm3ElevationModel::DeviceToHost() { CHECK_CUDA_ERR(cudaErrorNotYetImpleme
 
 void Srtm3ElevationModel::DeviceFree() {
     if (device_formated_srtm_buffers_info_ != nullptr) {
-        std::cout << "Unloading SRTM3 tiles from GPU" << std::endl;
+        LOGI << "Unloading SRTM3 tiles from GPU";
         REPORT_WHEN_CUDA_ERR(cudaFree(this->device_formated_srtm_buffers_info_));
         device_formated_srtm_buffers_info_ = nullptr;
     }

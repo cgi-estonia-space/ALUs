@@ -18,10 +18,10 @@
  */
 #include "snap-engine-utilities/datamodel/metadata/abstract_metadata_i_o.h"
 
-#include <iostream>
 #include <iterator>
 #include <stdexcept>
 
+#include "alus_log.h"
 #include "snap-core/datamodel/metadata_attribute.h"
 #include "snap-core/datamodel/metadata_element.h"
 #include "snap-core/datamodel/product_data.h"
@@ -72,7 +72,7 @@ void AbstractMetadataIO::AddAttribute(const std::shared_ptr<MetadataElement>& me
         attribute->GetData()->SetElems(value);
         meta->AddAttribute(attribute);
     } catch (const std::exception& e) {
-        std::cerr << e.what() << " " << name << " " << value << std::endl;
+        LOGW << e.what() << " " << name << " " << value;
     }
 }
 

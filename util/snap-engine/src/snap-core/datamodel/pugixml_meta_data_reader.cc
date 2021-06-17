@@ -14,7 +14,6 @@
 #include "pugixml_meta_data_reader.h"
 
 #include <ios>
-#include <iostream>
 #include <optional>
 #include <sstream>
 #include <stdexcept>
@@ -23,6 +22,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 
+#include "alus_log.h"
 #include "dimap_product_constants.h"
 #include "metadata_attribute.h"
 #include "metadata_element.h"
@@ -260,7 +260,7 @@ std::shared_ptr<MetadataElement> PugixmlMetaDataReader::ImplToModel(std::string_
                         try {
                             utc = Utc::Parse(att_value);
                         } catch (const std::exception& e) {
-                            std::cerr << e.what();
+                            LOGW << e.what();
                         }
                         data = utc;
                     }

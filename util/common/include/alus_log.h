@@ -11,23 +11,29 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
+
 #pragma once
 
-#include "raster_properties.h"
+#include <boost/log/trivial.hpp>
 
-struct LocalDemKernelArgs {
-    double dem_x_0;
-    double dem_y_0;
-    int dem_tile_width;
-    int dem_tile_height;
-    double target_x_0;
-    double target_y_0;
-    int target_width;
-    int target_height;
-    double dem_no_data_value;
-    alus::GeoTransformParameters dem_geo_transform;
-    alus::GeoTransformParameters target_geo_transform;
+namespace alus::common::log {
+
+enum class Level{
+    VERBOSE,
+    DEBUG,
+    INFO,
+    WARNING,
+    ERROR,
+    SILENT
 };
 
-void RunElevationKernel(double const* dem, double* target_elevations,
-                        LocalDemKernelArgs const args);
+void Initialize();
+void SetLevel(Level level);
+
+}
+
+#define LOGV  BOOST_LOG_TRIVIAL(trace)
+#define LOGD  BOOST_LOG_TRIVIAL(debug)
+#define LOGI  BOOST_LOG_TRIVIAL(info)
+#define LOGW  BOOST_LOG_TRIVIAL(warning)
+#define LOGE  BOOST_LOG_TRIVIAL(error)

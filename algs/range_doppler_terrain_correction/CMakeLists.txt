@@ -1,7 +1,6 @@
 
 list(APPEND TERRAIN_CORRECTION_SOURCES_CU
         ${CMAKE_CURRENT_LIST_DIR}/src/get_position.cu
-        ${CMAKE_CURRENT_LIST_DIR}/src/local_dem.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction_kernel.cu
         )
 list(APPEND TERRAIN_CORRECTION_SOURCES
@@ -61,6 +60,7 @@ target_link_libraries(terrain-correction-static
         snap-engine-static
         sentinel1-util-static
         pugixml-static
+        common-util-static
         )
 
 add_library(terrain-correction-shared
@@ -85,5 +85,6 @@ target_link_libraries(terrain-correction-shared
         snap-engine-static
         sentinel1-util-static
         pugixml-static
+        common-util-static
         )
 

@@ -14,7 +14,6 @@
 #pragma once
 
 #include <custom/rectangle.h>
-#include <iostream>
 #include <memory>
 
 #include "snap-core/datamodel/product_data.h"

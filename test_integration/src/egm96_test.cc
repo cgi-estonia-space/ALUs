@@ -12,7 +12,6 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 #include <fstream>
-#include <iostream>
 #include <vector>
 
 #include "gmock/gmock.h"

@@ -14,9 +14,9 @@
 #include "custom/gdal_image_reader.h"
 
 #include <cstddef>
-#include <iostream>
 #include <stdexcept>
 
+#include "alus_log.h"
 #include "gdal_util.h"
 
 namespace alus::snapengine::custom {
@@ -66,7 +66,7 @@ void GdalImageReader::InitializeDatasetProperties(GDALDataset* dataset, bool has
         const auto result = dataset->GetGeoTransform(affine_geo_transform_.data());
         if (result != CE_None) {
             // TODO: Use logging system to log this message.
-            std::cout << "Geo transform parameters are missing in input dataset - " << file_ << std::endl;
+            LOGW << "Geo transform parameters are missing in input dataset - " << file_;
             affine_geo_transform_.clear();
         }
     }

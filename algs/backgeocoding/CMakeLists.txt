@@ -23,6 +23,7 @@ list(APPEND BACKGEOCODING_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/../../util/cuda/include
         ${CMAKE_CURRENT_LIST_DIR}/../algorithm_bond/include
         ${CMAKE_CURRENT_LIST_DIR}/../../app/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/common/include
         )
 
 add_library(backgeocoding-obj
@@ -48,6 +49,7 @@ set_target_properties(backgeocoding-static
         )
 target_link_libraries(backgeocoding-static
         PUBLIC
+        common-util-static
         gdal-util-static
         exotic_operations-static
         sentinel1-util-static
@@ -73,6 +75,7 @@ set_target_properties(backgeocoding-shared
 
 target_link_libraries(backgeocoding-shared
         PUBLIC
+        common-util-static
         gdal-util-static
         exotic_operations-static
         sentinel1-util-static

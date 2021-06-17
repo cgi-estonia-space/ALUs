@@ -56,48 +56,10 @@ list(APPEND SENTINEL1_UTIL_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/../common/include
         )
 #/*********************************************/
-add_library(sentinel1-util-obj-cuda
-        OBJECT
-        ${SENTINEL1_UTIL_SOURCES-GPU}
-        )
-
-target_include_directories(sentinel1-util-obj-cuda
-        PRIVATE
-        ${SENTINEL1_UTIL_INCLUDE_DIRS}
-        )
-
-target_link_libraries(sentinel1-util-obj-cuda
-        PUBLIC
-        gdal
-        snap-engine-static
-        exotic_operations-static
-        Eigen3::Eigen
-        staticZipper
-        )
-
-add_library(sentinel1-util-obj
-        OBJECT
-        ${SENTINEL1_UTIL_SOURCES}
-        )
-
-target_include_directories(sentinel1-util-obj
-        PRIVATE
-        ${SENTINEL1_UTIL_INCLUDE_DIRS}
-        )
-
-target_link_libraries(sentinel1-util-obj
-        PUBLIC
-        gdal
-        snap-engine-static
-        exotic_operations-static
-        Eigen3::Eigen
-        staticZipper
-        )
-
 add_library(sentinel1-util-static
         STATIC
-        $<TARGET_OBJECTS:sentinel1-util-obj>
-        $<TARGET_OBJECTS:sentinel1-util-obj-cuda>
+        ${SENTINEL1_UTIL_SOURCES}
+        ${SENTINEL1_UTIL_SOURCES-GPU}
         )
 
 target_include_directories(sentinel1-util-static
@@ -117,5 +79,6 @@ target_link_libraries(sentinel1-util-static
         exotic_operations-static
         Eigen3::Eigen
         staticZipper
+        common-util-static
         )
 

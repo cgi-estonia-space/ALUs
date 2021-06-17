@@ -13,21 +13,19 @@
  */
 #include "terrain_correction.h"
 
-#include <openssl/md5.h>
-
-#include <boost/container_hash/hash.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/iostreams/device/mapped_file.hpp>
-
 #include <array>
-#include <chrono>
 #include <cstddef>
 #include <memory>
 #include <numeric>
 #include <string_view>
 #include <vector>
 
-#include "gdal.h"
+#include <boost/container_hash/hash.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/iostreams/device/mapped_file.hpp>
+#include <gdal.h>
+#include <openssl/md5.h>
+
 #include "gmock/gmock.h"
 
 #include "gdal_util.h"
@@ -120,16 +118,10 @@ TEST_F(TerrainCorrectionIntegrationTest, Saaremaa1) {
     const size_t srtm_3_tiles_length{2};
 
     const std::string output_path{"/tmp/tc_test.tif"};
-    auto const main_alg_start = std::chrono::steady_clock::now();
 
     TerrainCorrection tc(std::move(input), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
                          metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length, selected_band);
     tc.ExecuteTerrainCorrection(output_path, 420, 416);
-
-    auto const main_alg_stop = std::chrono::steady_clock::now();
-    std::cout << "ALG spent "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(main_alg_stop - main_alg_start).count() << "ms"
-              << std::endl;
 
     ASSERT_THAT(boost::filesystem::exists(output_path), IsTrue());
     const std::string expected_md5{"67458d461c814e4b00f894956c08285a"};
@@ -166,16 +158,10 @@ TEST_F(TerrainCorrectionIntegrationTest, BeirutExplosion) {
     const size_t srtm_3_tiles_length{2};
 
     const std::string output_path{"/tmp/tc_beirut_test.tif"};
-    auto const main_alg_start = std::chrono::steady_clock::now();
 
     TerrainCorrection tc(std::move(input), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
                          metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length, selected_band);
     tc.ExecuteTerrainCorrection(output_path, 420, 416);
-
-    auto const main_alg_stop = std::chrono::steady_clock::now();
-    std::cout << "ALG spent "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(main_alg_stop - main_alg_start).count() << "ms"
-              << std::endl;
 
     ASSERT_THAT(boost::filesystem::exists(output_path), IsTrue());
     CompareGeocoding(

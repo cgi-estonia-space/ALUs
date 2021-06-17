@@ -25,6 +25,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
+#include "alus_log.h"
 #include "snap-core/datamodel/band.h"
 #include "snap-core/datamodel/metadata_element.h"
 #include "snap-core/datamodel/product.h"
@@ -234,7 +235,7 @@ std::optional<boost::filesystem::path> ReaderUtils::GetPathFromInput(const std::
         auto str = std::string(std::any_cast<std::string_view>(input));
         return std::make_optional<boost::filesystem::path>(boost::filesystem::path(str));
     }
-    std::cerr << "Unable to convert std::any to path. input typeid:" << input.type().name() << std::endl;
+    LOGE << "Unable to convert std::any to path. input typeid:" << input.type().name();
     return std::nullopt;
 }
 

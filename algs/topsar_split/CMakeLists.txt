@@ -44,6 +44,7 @@ target_link_libraries(topsar-split-static
         sentinel1-util-static
         snap-engine-static
         Boost::program_options
+        common-util-static
         )
 
 add_library(topsar-split-shared
@@ -66,4 +67,5 @@ target_link_libraries(topsar-split-shared
         sentinel1-util-static
         snap-engine-static
         Boost::program_options
+        common-util-static
         )

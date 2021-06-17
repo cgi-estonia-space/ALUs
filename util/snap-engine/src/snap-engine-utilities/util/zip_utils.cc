@@ -19,7 +19,6 @@
 #include "snap-engine-utilities/util/zip_utils.h"
 
 #include <algorithm>
-#include <iostream>
 #include <stdexcept>
 #include <vector>
 
@@ -28,6 +27,8 @@
 
 #include "zipper/unzipper.h"
 #include "zipper/zipper.h"
+
+#include "alus_log.h"
 
 namespace alus {
 namespace snapengine {
@@ -95,7 +96,7 @@ bool ZipUtils::FindInZip(const boost::filesystem::path& file, std::string_view p
             return true;
         }
     } catch (const std::exception& e) {
-        std::cerr << "unable to read zip file " << file.filename().string() << ": " << e.what() << std::endl;
+        LOGE << "unable to read zip file " << file.filename().string() << ": " << e.what();
     }
     return false;
 }

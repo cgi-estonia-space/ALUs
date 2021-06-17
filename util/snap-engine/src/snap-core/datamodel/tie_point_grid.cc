@@ -20,8 +20,8 @@
 
 #include <algorithm>
 #include <cmath>
-#include <iostream>
 
+#include "alus_log.h"
 #include "ceres-core/ceres_assert.h"
 #include "snap-core/dataio/product_subset_def.h"
 #include "snap-core/datamodel/product_data.h"
@@ -83,9 +83,7 @@ std::shared_ptr<ProductData> TiePointGrid::GetGridData() {
         try {
             SetData(ReadGridData());
         } catch (std::exception& e) {
-            //                    todo:decide if LOG(INFO) or not
-            //                    LOG(ERROR) << "Unable to load TPG: " << e.what();
-            std::cerr << "Unable to load TPG: " << e.what() << std::endl;
+            LOGW << "Unable to load TPG: " << e.what();
         }
     }
     return GetData();

@@ -14,7 +14,6 @@
 #include "sentinel1_utils.h"
 
 #include <algorithm>
-#include <iostream>
 #include <map>
 #include <memory>
 #include <string>
@@ -26,6 +25,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
 
+#include "alus_log.h"
 #include "abstract_metadata.h"
 #include "general_constants.h"
 #include "operator_utils.h"
@@ -535,7 +535,7 @@ std::vector<DCPolynomial> Sentinel1Utils::ComputeDCForBurstCenters(std::vector<D
                                                                    int subswath_index) {
     double center_time;
     if ((int)dc_estimate_list.size() >= subswath_.at(subswath_index - 1)->num_of_bursts_) {
-        std::cout << "used the fast lane" << '\n';
+        LOGV << "used the fast lane";
         return dc_estimate_list;
     }
 
@@ -543,9 +543,9 @@ std::vector<DCPolynomial> Sentinel1Utils::ComputeDCForBurstCenters(std::vector<D
     for (int b = 0; b < subswath_.at(subswath_index - 1)->num_of_bursts_; b++) {
         if (b < (int)dc_estimate_list.size()) {
             dcBurstList[b] = dc_estimate_list[b];
-            std::cout << "using less list" << '\n';
+            LOGV << "using less list";
         } else {
-            std::cout << "using more list" << '\n';
+            LOGV << "using more list";
             center_time = 0.5 * (subswath_.at(subswath_index - 1)->burst_first_line_time_[b] +
                                  subswath_.at(subswath_index - 1)->burst_last_line_time_[b]);
 

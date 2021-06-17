@@ -17,6 +17,7 @@ target_link_libraries(alus
         alg-bond-static
         app-util-static
         snap-engine-static
+        common-util-static
         )
 
 set_target_properties(alus

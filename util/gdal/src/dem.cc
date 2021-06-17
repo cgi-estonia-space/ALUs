@@ -13,7 +13,6 @@
  */
 #include "dem.h"
 
-#include <iostream>
 
 namespace alus {
 
