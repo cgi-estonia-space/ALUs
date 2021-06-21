@@ -52,8 +52,8 @@ target_link_libraries(backgeocoding-full
         app-util-static
         )
 
-add_executable(topsar-split-test ${TEST_SOURCES_TOPSAR_SPLIT})
-target_link_libraries(topsar-split-test
+add_executable(integration-test-topsar-split ${TEST_SOURCES_TOPSAR_SPLIT})
+target_link_libraries(integration-test-topsar-split
         PRIVATE
         gmock_main
         cuda_util-static
@@ -65,12 +65,12 @@ target_link_libraries(topsar-split-test
 
 
 
-add_executable(coregistration-test ${TEST_SOURCES_COREGISTRATION})
-target_include_directories(coregistration-test
+add_executable(integration-test-coregistration ${TEST_SOURCES_COREGISTRATION})
+target_include_directories(integration-test-coregistration
         PUBLIC
         ${TEST_INCLUDE}
         )
-target_link_libraries(coregistration-test
+target_link_libraries(integration-test-coregistration
         PRIVATE
         gmock_main
         cuda_util-static
@@ -82,12 +82,13 @@ target_link_libraries(coregistration-test
         coregistration-static
         )
 
-add_custom_command(TARGET coregistration-test
+add_custom_command(TARGET integration-test-coregistration
         POST_BUILD
         COMMAND mkdir -p ${CMAKE_BINARY_DIR}/test_integration/goods/beirut_images
         COMMAND rm -f ${CMAKE_BINARY_DIR}/test_integration/goods/beirut_images/coregistration_test.tif
         COMMAND test -d ${CMAKE_BINARY_DIR}/test_integration/goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.SAFE || unzip -qn ${CMAKE_CURRENT_LIST_DIR}/goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.SAFE.zip -d ${CMAKE_BINARY_DIR}/test_integration/goods/beirut_images
         COMMAND test -d ${CMAKE_BINARY_DIR}/test_integration/goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD.SAFE || unzip -qn ${CMAKE_CURRENT_LIST_DIR}/goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD.SAFE.zip -d ${CMAKE_BINARY_DIR}/test_integration/goods/beirut_images
+        COMMAND test -f ${CMAKE_BINARY_DIR}/test_integration/goods/coregistration_strips.txt || cp ${CMAKE_CURRENT_LIST_DIR}/goods/coregistration_strips.txt ${CMAKE_BINARY_DIR}/test_integration/goods/coregistration_strips.txt
         )
 
 #----------------------------Snap engine integration test----------------------------------

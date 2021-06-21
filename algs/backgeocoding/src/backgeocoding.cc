@@ -288,7 +288,7 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index,
         window.lines = window.linehi - window.linelo + 1;
         window.pixels = window.pixhi - window.pixlo + 1;
 
-        snapengine::triangularinterpolation::InterpolationParams params;
+        snapengine::triangularinterpolation::TriangleInterpolationParams params;
         alus::snapengine::triangularinterpolation::Zdata zdata[Z_DATA_SIZE];
         alus::snapengine::triangularinterpolation::Zdata *device_zdata;
 
