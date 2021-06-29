@@ -13,6 +13,7 @@
  */
 #pragma once
 
+#include <cuda_runtime_api.h>
 #include <cstdint>
 
 #include "calibration_info_computation.h"
@@ -35,17 +36,6 @@ struct CalibrationLineParameters {
     float* retor_vector_1_lut;
 };
 
-struct CalibrationPixelParameters {
-    double dn;
-    int64_t pixel_index;
-    double mu_x;
-    double lut_val;
-    double retro_lut_val{1.0};
-    double calibration_factor;
-    int source_index;
-    double phase_term;
-};
-
 /**
  * Kernel arguments shared by most calibration kernels
  */
@@ -53,54 +43,41 @@ struct CalibrationKernelArgs {
     sentinel1calibrate::CalibrationInfoComputation calibration_info;
     cuda::KernelArray<CalibrationLineParameters> line_parameters_array{nullptr, 0};
     Rectangle target_rectangle;
-    CAL_TYPE data_type;
     int subset_offset_y;
     int subset_offset_x;
-    cuda::KernelArray<float> source_data_1;
-    cuda::KernelArray<float> source_data_2;
+};
+
+// alignas(4) gives us 1x ld.global.v2.u16 vs 2 x ld.global.u16 at PTX level
+struct alignas(4) CInt16 {
+    int16_t i;
+    int16_t q;
+};
+
+// 2x int16_t -> 1 float calibration can reuse the same buffer for both input and output
+union ComplexIntensityData {
+    CInt16 input;
+    float output;
+};
+
+static_assert(sizeof(ComplexIntensityData) == 4, "Do not change the layout!");
+
+struct ComplexIntensityKernelArgs {
+    sentinel1calibrate::CalibrationInfoComputation calibration_info;
+    cuda::KernelArray<CalibrationLineParameters> line_parameters_array{nullptr, 0};
+    Rectangle target_rectangle;
+    int subset_offset_y;
+    cuda::KernelArray<ComplexIntensityData> d_data_array;
 };
 
 /**
  * Calculates parameters required for calibration for each line.
  */
-void LaunchSetupTileLinesKernel(CalibrationKernelArgs args);
+void LaunchSetupTileLinesKernel(CalibrationKernelArgs args, cudaStream_t stream);
 
-void LaunchCalculatePixelParamsKernel(CalibrationKernelArgs args,
-                                             cuda::KernelArray<CalibrationPixelParameters> pixel_parameters);
-
-void LaunchAmplitudeKernel(CalibrationKernelArgs args,
-                                  cuda::KernelArray<CalibrationPixelParameters> pixel_parameters,
-                                  cuda::KernelArray<double> calibration_values);
-
-void LaunchIntensityWithoutRetroKernel(CalibrationKernelArgs args,
-                                              cuda::KernelArray<CalibrationPixelParameters> pixel_parameters,
-                                              cuda::KernelArray<double> calibration_values);
-
-void LaunchIntensityWithRetroKernel(CalibrationKernelArgs args,
-                                           cuda::KernelArray<CalibrationPixelParameters> pixel_parameters,
-                                           cuda::KernelArray<double> calibration_values);
-
-void LaunchImaginaryKernel(CalibrationKernelArgs args,
-                                  cuda::KernelArray<CalibrationPixelParameters> pixel_parameters,
-                                  cuda::KernelArray<double> calibration_values);
-
-void LaunchComplexIntensityKernel(CalibrationKernelArgs args,
-                                  cuda::KernelArray<CalibrationPixelParameters> pixel_parameters,
-                                  cuda::KernelArray<double> calibration_values);
-
-void LaunchRealKernel(CalibrationKernelArgs args,
-                             cuda::KernelArray<CalibrationPixelParameters> pixel_parameters,
-                             cuda::KernelArray<double> calibration_values);
-
-void LaunchIntensityDBKernel(CalibrationKernelArgs args,
-                                    cuda::KernelArray<CalibrationPixelParameters> pixel_parameters,
-                                    cuda::KernelArray<double> calibration_values);
-
-void LaunchAdjustForCompexOutputKernel(CalibrationKernelArgs args,
-                                              cuda::KernelArray<CalibrationPixelParameters> pixel_parameters,
-                                              cuda::KernelArray<double> calibration_values);
+void LaunchComplexIntensityKernel(CalibrationKernelArgs args, cuda::KernelArray<ComplexIntensityData> pixels,
+                                  cudaStream_t stream);
 
 void PopulateLUTs(cuda::KernelArray<CalibrationLineParameters> d_line_parameters, CAL_TYPE calibration_type,
-                  CAL_TYPE data_type);
+                  CAL_TYPE data_type, cudaStream_t stream);
 }  // namespace sentinel1calibrate
 }  // namespace alus

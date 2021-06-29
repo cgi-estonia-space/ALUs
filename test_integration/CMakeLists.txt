@@ -334,5 +334,5 @@ add_custom_command(TARGET integration-test-sentinel1-calibrate
         ${CMAKE_BINARY_DIR}/test_integration/goods/sentinel1_calibrate/.
 
         COMMAND cd ${CMAKE_BINARY_DIR}/test_integration/goods/sentinel1_calibrate &&
-        unzip -oq S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563.zip
+        unzip -qn S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563.zip
         )
