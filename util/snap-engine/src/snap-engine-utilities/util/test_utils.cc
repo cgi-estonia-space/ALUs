@@ -258,7 +258,7 @@ void TestUtils::CompareProducts(const std::shared_ptr<Product>& target_product,
         throw std::runtime_error("Different number of bands");
     }
 
-    if (!target_product->IsCompatibleProduct(expected_product, 0)) throw std::runtime_error("Geocoding is different");
+    if (!target_product->IsCompatibleProduct(expected_product.get(), 0)) throw std::runtime_error("Geocoding is different");
 
     for (const auto& expected_t_p_g : expected_product->GetTiePointGrids()) {
         const std::shared_ptr<TiePointGrid> trg_t_p_g = target_product->GetTiePointGrid(expected_t_p_g->GetName());

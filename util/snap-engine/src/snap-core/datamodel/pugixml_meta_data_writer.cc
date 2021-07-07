@@ -94,9 +94,9 @@ void PugixmlMetaDataWriter::ModelToImpl() {
     ModelElementsToPugixmlNodes(product_->GetMetadataRoot(), node);
 }
 
-void PugixmlMetaDataWriter::SetProduct(const std::shared_ptr<Product>& product) { product_ = product; }
+void PugixmlMetaDataWriter::SetProduct(Product* product) { product_ = product; }
 
-PugixmlMetaDataWriter::PugixmlMetaDataWriter(const std::shared_ptr<Product>& product) : IMetaDataWriter(product) {}
+PugixmlMetaDataWriter::PugixmlMetaDataWriter(Product* product) : IMetaDataWriter(product) {}
 
 }  // namespace snapengine
 }  // namespace alus

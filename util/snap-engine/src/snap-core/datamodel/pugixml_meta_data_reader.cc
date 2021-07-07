@@ -35,7 +35,7 @@
 namespace alus {
 namespace snapengine {
 
-PugixmlMetaDataReader::PugixmlMetaDataReader(const std::shared_ptr<Product>& product) : IMetaDataReader(product) {}
+PugixmlMetaDataReader::PugixmlMetaDataReader(Product* product) : IMetaDataReader(product) {}
 PugixmlMetaDataReader::PugixmlMetaDataReader(const std::string_view file_name) : IMetaDataReader(file_name) {}
 
 std::shared_ptr<MetadataElement> PugixmlMetaDataReader::Read(std::string_view element_name) {
@@ -301,7 +301,7 @@ std::shared_ptr<MetadataElement> PugixmlMetaDataReader::ImplToModel(std::string_
     return start_element;
 }
 
-void PugixmlMetaDataReader::SetProduct(const std::shared_ptr<Product>& product) { product_ = product; }
+void PugixmlMetaDataReader::SetProduct(Product* product) { product_ = product; }
 
 PugixmlMetaDataReader::~PugixmlMetaDataReader() = default;
 }  // namespace snapengine

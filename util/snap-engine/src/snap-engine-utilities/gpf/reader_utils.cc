@@ -96,7 +96,7 @@ std::shared_ptr<Band> ReaderUtils::CreateVirtualIntensityBand(const std::shared_
     virt_band->SetDescription(std::make_optional<std::string>("Intensity from complex data"));
     virt_band->SetNoDataValueUsed(true);
     virt_band->SetNoDataValue(nodatavalue_i);
-    virt_band->SetOwner(product);
+    virt_band->SetOwner(product.get());
     product->AddBand(virt_band);
 
     if (band_i->GetGeoCoding() != product->GetSceneGeoCoding()) {
@@ -253,7 +253,7 @@ std::shared_ptr<Band> ReaderUtils::CreateVirtualPhaseBand(const std::shared_ptr<
         virt_band->SetNoDataValueUsed(true);
         virt_band->SetNoDataValue(band_i->GetNoDataValue());
     }
-    virt_band->SetOwner(product);
+    virt_band->SetOwner(product.get());
     product->AddBand(virt_band);
     return virt_band;
 }

@@ -240,9 +240,9 @@ std::shared_ptr<Product> ProductSubsetBuilder::CreateProduct() {
     } else {
         new_product_name = new_product_name_;
     }
-    std::shared_ptr<ProductSubsetBuilder> this_object(this);
+
     std::shared_ptr<Product> product = Product::CreateProduct(
-        new_product_name, source_product->GetProductType(), GetSceneRasterWidth(), GetSceneRasterHeight(), this_object);
+        new_product_name, source_product->GetProductType(), GetSceneRasterWidth(), GetSceneRasterHeight(), shared_from_this());
     // product->SetPointingFactory(sourceProduct.getPointingFactory());
     if (new_product_desc_.empty()) {
         product->SetDescription(source_product->GetDescription());

@@ -41,20 +41,19 @@ ProductNode::ProductNode(std::string_view name, const std::optional<std::string_
     name_ = name;
     description_ = description;
 }
-void ProductNode::SetOwner(const std::shared_ptr<ProductNode>& owner) {
+void ProductNode::SetOwner(ProductNode* owner) {
     if (owner != owner_) {
         owner_ = owner;
     }
 }
-std::shared_ptr<Product> ProductNode::GetProduct() {
+Product* ProductNode::GetProduct() {
     //            todo:add support for thread safty (java had synchronized)
     // todo: also check if instanceof logic from java has been replaced like needed
     if (product_ == nullptr) {
-        std::shared_ptr<ProductNode> owner = shared_from_this();
+        auto* owner = this;
         do {
-            //            todo:this might need to check if !check_type.empty()
-            auto check_type = std::dynamic_pointer_cast<Product>(owner);
-            if (check_type != nullptr) {
+            auto check_type = dynamic_cast<Product*>(owner);
+            if(check_type != nullptr) {
                 product_ = check_type;
                 break;
             }
@@ -68,14 +67,15 @@ void ProductNode::SetModified(bool modified) {
     bool old_state = modified_;
     if (old_state != modified) {
         modified_ = modified;
-        if (modified_ && GetOwner()) {
-            GetOwner()->SetModified(true);
+        auto owner = GetOwner();
+        if (modified_ && owner) {
+            owner->SetModified(true);
         }
     }
 }
 
 std::shared_ptr<IProductReader> ProductNode::GetProductReader() {
-    std::shared_ptr<Product> product = GetProduct();
+    auto product = GetProduct();
     if (product) {
         return product->GetProductReader();
     }
@@ -83,7 +83,7 @@ std::shared_ptr<IProductReader> ProductNode::GetProductReader() {
 }
 
 std::shared_ptr<IProductWriter> ProductNode::GetProductWriter() {
-    if (std::shared_ptr<Product> product = GetProduct(); product) {
+    if (auto product = GetProduct(); product) {
         return product->GetProductWriter();
     }
     return nullptr;
@@ -98,7 +98,7 @@ std::string ProductNode::GetDisplayName() {
 }
 
 std::optional<std::string> ProductNode::GetProductRefString() {
-    std::shared_ptr<Product> product = GetProduct();
+    auto product = GetProduct();
     if (product) {
         return std::make_optional(product->GetRefStr());
     }
@@ -114,7 +114,7 @@ void ProductNode::SetName(std::string_view name) {
 void ProductNode::SetNodeName(std::string_view trimmed_name, bool silent) {
     Guardian::AssertNotNullOrEmpty("name contains only spaces", trimmed_name);
     if (name_ != trimmed_name) {
-        std::shared_ptr<Product> product = GetProduct();
+        auto product = GetProduct();
         if (product) {
             Assert::Argument(!product->ContainsRasterDataNode(trimmed_name),
                              "The Product '" + product->GetName() + "' already contains " +
