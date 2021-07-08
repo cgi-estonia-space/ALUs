@@ -13,11 +13,11 @@
  */
 #include "terrain_correction.h"
 
-#include <boost/asio/post.hpp>
-#include <boost/asio/thread_pool.hpp>
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
 #include <thrust/host_vector.h>
+#include <boost/asio/post.hpp>
+#include <boost/asio/thread_pool.hpp>
 
 #include <algorithm>
 #include <chrono>
@@ -83,14 +83,15 @@ TerrainCorrection::TerrainCorrection(Dataset<double> coh_ds, const RangeDopplerT
                                      const snapengine::tiepointgrid::TiePointGrid& lat_tie_point_grid,
                                      const snapengine::tiepointgrid::TiePointGrid& lon_tie_point_grid,
                                      const PointerHolder* srtm_3_tiles, size_t srtm_3_tiles_length,
-                                     int selected_band_id)
+                                     int selected_band_id, bool use_average_scene_height)
     : coh_ds_{std::move(coh_ds)},
       metadata_{metadata},
       d_srtm_3_tiles_(srtm_3_tiles),
       d_srtm_3_tiles_length_(srtm_3_tiles_length),
       selected_band_id_(selected_band_id),
       lat_tie_point_grid_{lat_tie_point_grid},
-      lon_tie_point_grid_{lon_tie_point_grid} {}
+      lon_tie_point_grid_{lon_tie_point_grid},
+      use_average_scene_height_{use_average_scene_height} {}
 
 void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_name, size_t tile_width,
                                                  size_t tile_height) {
@@ -98,8 +99,7 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
     auto const coh_ds_y_size{static_cast<size_t>(coh_ds_.GetYSize())};
 
     snapengine::geocoding::TiePointGeocoding source_geocoding(lat_tie_point_grid_, lon_tie_point_grid_);
-    snapengine::old::Product target_product =
-        CreateTargetProduct(&source_geocoding, output_file_name);
+    snapengine::old::Product target_product = CreateTargetProduct(&source_geocoding, output_file_name);
     auto const target_x_size{target_product.dataset_.GetXSize()};
     auto const target_y_size{target_product.dataset_.GetYSize()};
 
@@ -127,9 +127,9 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
 
     const auto computation_metadata = CreateComputationMetadata();
     const auto start{std::chrono::steady_clock::now()};
-    CalculateVelocitiesAndPositions(static_cast<int>(coh_ds_y_size), metadata_.first_line_time->GetMjd(), line_time_interval_in_days,
-                                    computation_metadata.orbit_state_vectors, kernel_sensor_velocities,
-                                    kernel_sensor_positions);
+    CalculateVelocitiesAndPositions(static_cast<int>(coh_ds_y_size), metadata_.first_line_time->GetMjd(),
+                                    line_time_interval_in_days, computation_metadata.orbit_state_vectors,
+                                    kernel_sensor_velocities, kernel_sensor_positions);
     const auto end{std::chrono::steady_clock::now()};
     const auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     (void)duration;
@@ -155,9 +155,9 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
 
     boost::asio::thread_pool thread_pool;
     std::for_each(tiles.begin(), tiles.end(), [&](auto&& tile) {
-
-        boost::asio::post(thread_pool, TileProcessor(tile, this, h_get_position_metadata, d_get_position_metadata,
-            target_geo_transform, diff_lat, computation_metadata, target_product));
+        boost::asio::post(thread_pool,
+                          TileProcessor(tile, this, h_get_position_metadata, d_get_position_metadata,
+                                        target_geo_transform, diff_lat, computation_metadata, target_product));
     });
 
     thread_pool.wait();
@@ -262,7 +262,6 @@ snapengine::old::Product TerrainCorrection::CreateTargetProduct(
                                       image_boundary[1] < image_boundary[0] ? image_boundary[1] : image_boundary[0],
                                       std::abs(image_boundary[3] - image_boundary[2]),
                                       std::abs(image_boundary[1] - image_boundary[0])};
-
 
     if (OGRErr error = target_crs.Validate() != OGRERR_NONE) {
         printf("ERROR: %d\n", error);  // TODO: implement some real error (SNAPGPU-163)
@@ -381,7 +380,7 @@ void TerrainCorrection::TileProcessor::Execute() {
         target_product_.dataset_.GetNoDataValue(1),
         terrain_correction_->metadata_.avg_scene_height,
         target_geo_transform_,
-        false,  // TODO: should come from arguments (SNAPGPU-193)
+        terrain_correction_->use_average_scene_height_,
         diff_lat_,
         comp_metadata_,
         {},

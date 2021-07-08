@@ -56,7 +56,7 @@ private:
     std::string output_file_name_{};
     size_t tile_width_{};
     size_t tile_height_{};
-    uint32_t avg_scene_height_{};
+    bool use_avg_scene_height_{false};
     snapengine::Srtm3ElevationModel* srtm3_manager_{};
 };
 

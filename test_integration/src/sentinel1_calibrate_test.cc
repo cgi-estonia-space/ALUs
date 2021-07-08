@@ -38,7 +38,8 @@ protected:
 };
 
 TEST_F(Sentinel1CalibrateTest, Virumaa) {
-    { // Scope for forcing destruction of Sentinel1Calibrator
+    // Scope for forcing destruction of Sentinel1Calibrator
+    {
         GDALSetCacheMax64(4e9);  // GDAL Cache 4GB, enough for for whole swath input + output
         ASSERT_THAT(boost::filesystem::exists(input_file_), ::testing::IsTrue());
         const std::shared_ptr<snapengine::IProductReader> product_reader = reader_plug_in_->CreateReaderInstance();
@@ -47,7 +48,7 @@ TEST_F(Sentinel1CalibrateTest, Virumaa) {
         const auto source_path = boost::filesystem::canonical(input_file_).string();
 
         Sentinel1Calibrator calibrator{input_product, source_path, {"IW1"}, {"VH"}, {true, false, false, false},
-                                       "/tmp/",       false,       2000,     2000};
+                                       "/tmp/",       false,       2000,    2000};
         calibrator.Execute();
     }
 

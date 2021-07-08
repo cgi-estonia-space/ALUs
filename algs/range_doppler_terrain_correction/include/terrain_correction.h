@@ -37,7 +37,7 @@ public:
                                const snapengine::tiepointgrid::TiePointGrid& lat_tie_point_grid,
                                const snapengine::tiepointgrid::TiePointGrid& lon_tie_point_grid,
                                const PointerHolder* srtm_3_tiles, size_t srtm_3_tiles_length_,
-                               int selected_band_id = 1);
+                               int selected_band_id = 1, bool use_average_scene_height = false);
 
     snapengine::old::Product CreateTargetProduct(const snapengine::geocoding::Geocoding* geocoding,
                                                  std::string_view output_filename);
@@ -61,6 +61,7 @@ private:
     const int selected_band_id_;
     const snapengine::tiepointgrid::TiePointGrid& lat_tie_point_grid_;
     const snapengine::tiepointgrid::TiePointGrid& lon_tie_point_grid_;
+    const bool use_average_scene_height_{false};
 
     /**
      * Computes target image boundary by creating a rectangle around the source image. The source image should be
