@@ -16,22 +16,23 @@
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <string_view>
-#include <set>
 
 #include <s1tbx-commons/s_a_r_geocoding.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
 
-#include "alus_log.h"
 #include "abstract_metadata.h"
+#include "alus_log.h"
 #include "general_constants.h"
 #include "operator_utils.h"
 #include "product_data_utc.h"
 #include "pugixml_meta_data_reader.h"
 #include "s1tbx-commons/sar_utils.h"
+#include "snap-engine-utilities/eo/constants.h"
 
 namespace alus {
 namespace s1tbx {
@@ -61,7 +62,7 @@ void Sentinel1Utils::FillUtilsMetadata() {
     first_line_utc_ = abstract_metadata->GetAttributeUtc(snapengine::AbstractMetadata::FIRST_LINE_TIME)->GetMjd();
     last_line_utc_ = abstract_metadata->GetAttributeUtc(snapengine::AbstractMetadata::LAST_LINE_TIME)->GetMjd();
     line_time_interval_ = abstract_metadata->GetAttributeDouble(snapengine::AbstractMetadata::LINE_TIME_INTERVAL) /
-                          snapengine::constants::secondsInDay;
+                          snapengine::eo::constants::SECONDS_IN_DAY;
 
     std::shared_ptr<snapengine::MetadataElement> size_info =
         metadata_reader_->Read("product")
@@ -84,11 +85,12 @@ void Sentinel1Utils::FillUtilsMetadata() {
     near_range_on_left_ = (subswath_.at(0)->incidence_angle_[0][0] < subswath_.at(0)->incidence_angle_[0][1]);
 }
 
-void Sentinel1Utils::FillSubswathMetaData(std::shared_ptr<snapengine::MetadataElement> subswath_metadata, SubSwathInfo* subswath) {
+void Sentinel1Utils::FillSubswathMetaData(std::shared_ptr<snapengine::MetadataElement> subswath_metadata,
+                                          SubSwathInfo* subswath) {
     std::shared_ptr<snapengine::MetadataElement> product;
-    if(legacy_init_){
+    if (legacy_init_) {
         product = metadata_reader_->Read("product");
-    }else{
+    } else {
         product = subswath_metadata->GetElement("product");
     }
     std::shared_ptr<snapengine::MetadataElement> image_annotation =
@@ -125,17 +127,17 @@ void Sentinel1Utils::FillSubswathMetaData(std::shared_ptr<snapengine::MetadataEl
         std::stod(image_information->GetAttributeString(snapengine::AbstractMetadata::RANGE_PIXEL_SPACING));
     subswath->azimuth_pixel_spacing_ = std::stod(image_information->GetAttributeString("azimuthPixelSpacing"));
     subswath->slr_time_to_first_pixel_ = std::stod(image_information->GetAttributeString("slantRangeTime")) / 2.0;
-    subswath->slr_time_to_last_pixel_ =
-        subswath->slr_time_to_first_pixel_ + static_cast<double>(subswath->num_of_samples_ - 1) *
-                                                 subswath->range_pixel_spacing_ / snapengine::constants::lightSpeed;
+    subswath->slr_time_to_last_pixel_ = subswath->slr_time_to_first_pixel_ +
+                                        static_cast<double>(subswath->num_of_samples_ - 1) *
+                                            subswath->range_pixel_spacing_ / snapengine::eo::constants::LIGHT_SPEED;
 
     subswath->first_line_time_ =
         GetTime(image_information, snapengine::AbstractMetadata::PRODUCT_FIRST_LINE_UTC_TIME)->GetMjd() *
-        snapengine::constants::secondsInDay;
+        snapengine::eo::constants::SECONDS_IN_DAY;
 
     subswath->last_line_time_ =
         GetTime(image_information, snapengine::AbstractMetadata::PRODUCT_LAST_LINE_UTC_TIME)->GetMjd() *
-        snapengine::constants::secondsInDay;
+        snapengine::eo::constants::SECONDS_IN_DAY;
 
     subswath->radar_frequency_ = std::stod(product_information->GetAttributeString("radarFrequency"));
     subswath->azimuth_steering_rate_ =
@@ -152,7 +154,7 @@ void Sentinel1Utils::FillSubswathMetaData(std::shared_ptr<snapengine::MetadataEl
         for (const auto& list_elem : burst_list_elem) {
             subswath->burst_first_line_time_.push_back(
                 GetTime(list_elem, snapengine::AbstractMetadata::AZIMUTH_TIME)->GetMjd() *
-                snapengine::constants::secondsInDay);
+                snapengine::eo::constants::SECONDS_IN_DAY);
 
             subswath->burst_last_line_time_.push_back(subswath->burst_first_line_time_.at(k) +
                                                       (subswath->lines_per_burst_ - 1) *
@@ -210,11 +212,11 @@ void Sentinel1Utils::FillSubswathMetaData(std::shared_ptr<snapengine::MetadataEl
 
     subswath->slr_time_to_first_valid_pixel_ =
         subswath->slr_time_to_first_pixel_ +
-        subswath->first_valid_pixel_ * subswath->range_pixel_spacing_ / snapengine::constants::lightSpeed;
+        subswath->first_valid_pixel_ * subswath->range_pixel_spacing_ / snapengine::eo::constants::LIGHT_SPEED;
 
     subswath->slr_time_to_last_valid_pixel_ =
         subswath->slr_time_to_first_pixel_ +
-        subswath->last_valid_pixel_ * subswath->range_pixel_spacing_ / snapengine::constants::lightSpeed;
+        subswath->last_valid_pixel_ * subswath->range_pixel_spacing_ / snapengine::eo::constants::LIGHT_SPEED;
 
     // get geolocation grid points
     std::shared_ptr<snapengine::MetadataElement> geolocation_grid =
@@ -266,7 +268,7 @@ void Sentinel1Utils::FillSubswathMetaData(std::shared_ptr<snapengine::MetadataEl
         int i = k / num_of_geo_points_per_line;
         int j = k - i * num_of_geo_points_per_line;
         subswath->azimuth_time_[i][j] = GetTime(list_elem, snapengine::AbstractMetadata::AZIMUTH_TIME)->GetMjd() *
-                                        snapengine::constants::secondsInDay;
+                                        snapengine::eo::constants::SECONDS_IN_DAY;
         subswath->slant_range_time_[i][j] = std::stod(list_elem->GetAttributeString("slantRangeTime")) / 2.0;
         subswath->latitude_[i][j] = std::stod(list_elem->GetAttributeString(snapengine::AbstractMetadata::LATITUDE));
         subswath->longitude_[i][j] = std::stod(list_elem->GetAttributeString(snapengine::AbstractMetadata::LONGITUDE));
@@ -382,8 +384,8 @@ double* Sentinel1Utils::ComputeDerampDemodPhase(int subswath_index, int s_burst_
             xx = x - x0;
             kt = subswath_.at(s)->doppler_rate_[s_burst_index][x];
             deramp =
-                -alus::snapengine::constants::PI * kt * pow(ta - subswath_.at(s)->reference_time_[s_burst_index][x], 2);
-            demod = -alus::snapengine::constants::TWO_PI * subswath_.at(s)->doppler_centroid_[s_burst_index][x] * ta;
+                -alus::snapengine::eo::constants::PI * kt * pow(ta - subswath_.at(s)->reference_time_[s_burst_index][x], 2);
+            demod = -alus::snapengine::eo::constants::TWO_PI * subswath_.at(s)->doppler_centroid_[s_burst_index][x] * ta;
             result[yy * w + xx] = deramp + demod;
         }
     }
@@ -393,15 +395,13 @@ double* Sentinel1Utils::ComputeDerampDemodPhase(int subswath_index, int s_burst_
 
 void Sentinel1Utils::GetProductOrbit() {
     std::vector<snapengine::OrbitStateVector> original_vectors;
-    if(legacy_init_) {
+    if (legacy_init_) {
         std::shared_ptr<snapengine::MetadataElement> abstract_metadata =
             metadata_reader_->Read(alus::snapengine::AbstractMetadata::ABSTRACT_METADATA_ROOT);
-        original_vectors =
-            snapengine::AbstractMetadata::GetOrbitStateVectors(abstract_metadata);
-    }else{
+        original_vectors = snapengine::AbstractMetadata::GetOrbitStateVectors(abstract_metadata);
+    } else {
         original_vectors = snapengine::AbstractMetadata::GetOrbitStateVectors(abs_root_);
     }
-
 
     orbit_ = std::make_unique<alus::s1tbx::OrbitStateVectors>(original_vectors);
 
@@ -428,13 +428,13 @@ void Sentinel1Utils::ComputeDopplerRate() {
         ComputeRangeDependentDopplerRate();
     }
 
-    wave_length = alus::snapengine::constants::lightSpeed / subswath_.at(0)->radar_frequency_;
+    wave_length = snapengine::eo::constants::LIGHT_SPEED / subswath_.at(0)->radar_frequency_;
     for (int s = 0; s < num_of_sub_swath_; s++) {
         az_time = (subswath_.at(s)->first_line_time_ + subswath_.at(s)->last_line_time_) / 2.0;
         subswath_.at(s)->doppler_rate_ =
             Allocate2DArray<double>(subswath_.at(s)->num_of_bursts_, subswath_.at(s)->samples_per_burst_);
-        v = GetVelocity(az_time / alus::snapengine::constants::secondsInDay);  // DLR: 7594.0232
-        steering_rate = subswath_.at(s)->azimuth_steering_rate_ * alus::snapengine::constants::DTOR;
+        v = GetVelocity(az_time / snapengine::eo::constants::SECONDS_IN_DAY);  // DLR: 7594.0232
+        steering_rate = subswath_.at(s)->azimuth_steering_rate_ * snapengine::eo::constants::DTOR;
         krot = 2 * v * steering_rate / wave_length;  // doppler rate by antenna steering
 
         for (int b = 0; b < subswath_.at(s)->num_of_bursts_; b++) {
@@ -448,15 +448,14 @@ void Sentinel1Utils::ComputeDopplerRate() {
 
 double Sentinel1Utils::GetSlantRangeTime(int x, int subswath_index) {
     return subswath_.at(subswath_index - 1)->slr_time_to_first_pixel_ +
-           x * subswath_.at(subswath_index - 1)->range_pixel_spacing_ / alus::snapengine::constants::lightSpeed;
+           x * subswath_.at(subswath_index - 1)->range_pixel_spacing_ / snapengine::eo::constants::LIGHT_SPEED;
 }
 
 std::vector<DCPolynomial> Sentinel1Utils::GetDCEstimateList(std::string subswath_name) {
-
     std::shared_ptr<snapengine::MetadataElement> product;
-    if(legacy_init_){
+    if (legacy_init_) {
         product = metadata_reader_->Read("product");
-    }else{
+    } else {
         std::shared_ptr<snapengine::MetadataElement> subswath_metadata = GetSubSwathMetadata(subswath_name);
         product = subswath_metadata->GetElement("product");
     }
@@ -478,7 +477,8 @@ std::vector<DCPolynomial> Sentinel1Utils::GetDCEstimateList(std::string subswath
             std::shared_ptr<snapengine::MetadataElement> list_elem = dc_estimate_list_elem.at(i);
             results.emplace_back();
 
-            results.at(i).time = GetTime(list_elem, "azimuthTime")->GetMjd() * snapengine::constants::secondsInDay;
+            results.at(i).time =
+                GetTime(list_elem, "azimuthTime")->GetMjd() * snapengine::eo::constants::SECONDS_IN_DAY;
             results.at(i).t0 = list_elem->GetAttributeDouble("t0");
 
             if (dc_method.find("Data Analysis") != std::string::npos) {
@@ -581,12 +581,10 @@ void Sentinel1Utils::ComputeDopplerCentroid() {
 }
 
 std::vector<AzimuthFmRate> Sentinel1Utils::GetAzimuthFmRateList(std::string subswath_name) {
-
-
     std::shared_ptr<snapengine::MetadataElement> product;
-    if(legacy_init_){
-       product = metadata_reader_->Read("product");
-    }else{
+    if (legacy_init_) {
+        product = metadata_reader_->Read("product");
+    } else {
         std::shared_ptr<snapengine::MetadataElement> subswath_metadata = GetSubSwathMetadata(subswath_name);
         product = subswath_metadata->GetElement("product");
     }
@@ -605,7 +603,7 @@ std::vector<AzimuthFmRate> Sentinel1Utils::GetAzimuthFmRateList(std::string subs
             az_fm_rate_list.emplace_back();
 
             az_fm_rate_list.at(i).time =
-                GetTime(list_elem, "azimuthTime")->GetMjd() * snapengine::constants::secondsInDay;
+                GetTime(list_elem, "azimuthTime")->GetMjd() * snapengine::eo::constants::SECONDS_IN_DAY;
             az_fm_rate_list.at(i).t0 = std::stod(list_elem->GetAttributeString("t0"));
 
             std::shared_ptr<snapengine::MetadataElement> azimuth_fm_rate_polynomial_elem =
@@ -898,7 +896,7 @@ int Sentinel1Utils::GetNumOfSubSwath() const { return num_of_sub_swath_; }
 
 Sentinel1Utils::Sentinel1Utils(const std::shared_ptr<snapengine::Product>& product) : source_product_{product} {
     // todo: custom metadata reader for our custom format(DELETE IF WE REMOVE CUSTOM FORMAT FROM OUR CODEBASE)
-    //metadata_reader_ = product->GetMetadataReader();
+    // metadata_reader_ = product->GetMetadataReader();
 
     GetMetadataRoot();
 
@@ -914,10 +912,10 @@ Sentinel1Utils::Sentinel1Utils(const std::shared_ptr<snapengine::Product>& produ
     //    todo: using already in place custom code instead of GetSubSwathParameters();
     //    FillSubswathMetaData();
 
-    //subswath_.push_back(std::make_unique<SubSwathInfo>());
-    //FillSubswathMetaData(subswath_.at(0).get());
-    // just had issues using utils and try to emulate the other constuctor calling FillUtilsMetadata()
-    //    FillUtilsMetadata();
+    // subswath_.push_back(std::make_unique<SubSwathInfo>());
+    // FillSubswathMetaData(subswath_.at(0).get());
+    //  just had issues using utils and try to emulate the other constuctor calling FillUtilsMetadata()
+    //     FillUtilsMetadata();
     if (subswath_.empty()) {
         std::shared_ptr<snapengine::TiePointGrid> incidence_angle =
             snapengine::OperatorUtils::GetIncidenceAngle(source_product_);
@@ -943,7 +941,6 @@ void Sentinel1Utils::GetMetadataRoot() {
         throw std::runtime_error("Original_Product_Metadata not found.");
     }
 
-
     std::string mission = abs_root_->GetAttributeString(snapengine::AbstractMetadata::MISSION);
     if (!boost::algorithm::starts_with(mission, "SENTINEL-1")) {
         throw std::runtime_error(mission + " is not a valid mission for Sentinel1 product.");
@@ -963,7 +960,7 @@ void Sentinel1Utils::GetAbstractedMetadata() {
     first_line_utc_ = abs_root_->GetAttributeUtc(snapengine::AbstractMetadata::FIRST_LINE_TIME)->GetMjd();  // in days
     last_line_utc_ = abs_root_->GetAttributeUtc(snapengine::AbstractMetadata::LAST_LINE_TIME)->GetMjd();    // in days
     line_time_interval_ = abs_root_->GetAttributeDouble(snapengine::AbstractMetadata::LINE_TIME_INTERVAL) /
-                          snapengine::constants::secondsInDay;  // s to day
+                          snapengine::eo::constants::SECONDS_IN_DAY;  // s to day
     // this.prf = AbstractMetadata.getAttributeDouble(absRoot, AbstractMetadata.pulse_repetition_frequency); //Hz
     // this.samplingRate = AbstractMetadata.getAttributeDouble(absRoot, AbstractMetadata.range_sampling_rate)*
     //        1000000; // MHz to Hz
@@ -1060,8 +1057,7 @@ void Sentinel1Utils::GetProductSubSwathNames() {
     num_of_sub_swath_ = static_cast<int>(sub_swath_names_.size());
 }
 
-
- void Sentinel1Utils::GetSubSwathParameters() {
+void Sentinel1Utils::GetSubSwathParameters() {
     subswath_.reserve(num_of_sub_swath_);
     for (int i = 0; i < num_of_sub_swath_; i++) {
         subswath_.push_back(std::make_unique<SubSwathInfo>());
@@ -1168,9 +1164,7 @@ std::vector<int> Sentinel1Utils::GetCalibrationPixel(int sub_swath_index, std::s
 void Sentinel1Utils::UpdateBandNames(std::shared_ptr<snapengine::MetadataElement>& abs_root,
                                      const std::set<std::string, std::less<>>& selected_pol_list,
                                      const std::vector<std::string>& band_names) {
-    auto starts_with = [](std::string_view string, std::string_view key) {
-        return string.rfind(key, 0) == 0;
-    };
+    auto starts_with = [](std::string_view string, std::string_view key) { return string.rfind(key, 0) == 0; };
     auto string_contains = [](std::string_view string, std::string_view key) {
         return string.find(key) != std::string::npos;
     };

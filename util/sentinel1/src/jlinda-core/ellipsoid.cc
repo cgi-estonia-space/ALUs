@@ -18,6 +18,8 @@
 
 #include "alus_log.h"
 #include "jlinda-core/constants.h"
+#include "snap-engine-utilities/eo/constants.h"
+#include "snap-core/util/geo_utils.h"
 
 namespace alus {
 namespace jlinda {
@@ -25,8 +27,8 @@ namespace jlinda {
 double Ellipsoid::e2_ = 0.00669438003551279091;
 double Ellipsoid::e2b_ = 0.00673949678826153145;
 
-double Ellipsoid::a_ = WGS84_A;
-double Ellipsoid::b_ = WGS84_A;
+double Ellipsoid::a_ = snapengine::WGS84::A;
+double Ellipsoid::b_ = snapengine::WGS84::A;
 std::string Ellipsoid::name_ = "WGS84";
 
 double Ellipsoid::ComputeEllipsoidNormal(const double phi) { return a_ / sqrt(1.0 - e2_ * pow(sin(phi), 2)); }
@@ -37,8 +39,8 @@ void Ellipsoid::SetEcc1stSqr() { e2_ = 1.0 - pow(b_ / a_, 2); }
 void Ellipsoid::SetEcc2ndSqr() { e2b_ = pow(a_ / b_, 2) - 1.0; }
 
 Ellipsoid::Ellipsoid() {
-    Ellipsoid::a_ = WGS84_A;
-    Ellipsoid::b_ = WGS84_B;
+    Ellipsoid::a_ = snapengine::WGS84::A;
+    Ellipsoid::b_ = snapengine::WGS84::B;
     Ellipsoid::e2_ = 0.00669438003551279091;
     Ellipsoid::e2b_ = 0.00673949678826153145;
     Ellipsoid::name_ = "WGS84";
@@ -105,21 +107,25 @@ s1tbx::Point Ellipsoid::Ell2Xyz(const std::vector<double>& phi_lambda_height) {
 }
 
 s1tbx::Point Ellipsoid::Ell2Xyz(const GeoPoint& geo_point, const double height) {
-    return Ell2Xyz(geo_point.lat_ * DTOR, geo_point.lon_ * DTOR, height);
+    return Ell2Xyz(geo_point.lat_ * snapengine::eo::constants::DTOR,
+                   geo_point.lon_ * snapengine::eo::constants::DTOR, height);
 }
 s1tbx::Point Ellipsoid::Ell2Xyz(const GeoPoint& geo_point) {
-    return Ell2Xyz(geo_point.lat_ * DTOR, geo_point.lon_ * DTOR, 0.0);
+    return Ell2Xyz(geo_point.lat_ * snapengine::eo::constants::DTOR,
+                   geo_point.lon_ * snapengine::eo::constants::DTOR, 0.0);
 }
 
 void Ellipsoid::Ell2Xyz(const GeoPoint& geo_point, std::vector<double>& xyz) {
-    s1tbx::Point temp_point = Ell2Xyz(geo_point.lat_ * DTOR, geo_point.lon_ * DTOR, 0.0);
+    s1tbx::Point temp_point = Ell2Xyz(geo_point.lat_ * snapengine::eo::constants::DTOR,
+                                      geo_point.lon_ * snapengine::eo::constants::DTOR, 0.0);
     xyz.at(0) = temp_point.GetX();
     xyz.at(1) = temp_point.GetY();
     xyz.at(2) = temp_point.GetZ();
 }
 
 void Ellipsoid::Ell2Xyz(const GeoPoint& geo_point, const double height, std::vector<double>& xyz) {
-    s1tbx::Point temp_point = Ell2Xyz(geo_point.lat_ * DTOR, geo_point.lon_ * DTOR, height);
+    s1tbx::Point temp_point = Ell2Xyz(geo_point.lat_ * snapengine::eo::constants::DTOR,
+                                      geo_point.lon_ * snapengine::eo::constants::DTOR, height);
     xyz.at(0) = temp_point.GetX();
     xyz.at(1) = temp_point.GetY();
     xyz.at(2) = temp_point.GetZ();

@@ -31,12 +31,12 @@ inline __device__ int GetSamples(PointerArray* tiles, int* x, int* y, double* sa
 
     int i = 0;
     for (int yI = 0; yI < height; yI++) {
-        const int tile_y_index = (int)(y[yI] * NUM_PIXELS_PER_TILEinv);
+        const int tile_y_index = (int)(y[yI] * NUM_PIXELS_PER_TILE_INVERTED);
         const int pixel_y = y[yI] - tile_y_index * NUM_PIXELS_PER_TILE;
 
         int j = 0;
         for (int xI = 0; xI < width; xI++) {
-            const int tile_x_index = (int)(x[xI] * NUM_PIXELS_PER_TILEinv);
+            const int tile_x_index = (int)(x[xI] * NUM_PIXELS_PER_TILE_INVERTED);
 
             const int samples_index = i * width + j;
             // make sure that the tile we want is actually listed
@@ -82,11 +82,11 @@ inline __device__ double GetElevation(double geo_pos_lat, double geo_pos_lon, Po
         geo_pos_lat -= 360.0;
     }
 
-    double pixel_y = (60.0 - geo_pos_lat) * DEGREE_RES_BY_NUM_PIXELS_PER_TILEinv;
+    double pixel_y = (60.0 - geo_pos_lat) * DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED;
     if (pixel_y < 0 || isnan(pixel_y)) {
         return NO_DATA_VALUE;
     }
-    double pixel_x = (geo_pos_lon + 180.0) * DEGREE_RES_BY_NUM_PIXELS_PER_TILEinv;
+    double pixel_x = (geo_pos_lon + 180.0) * DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED;
     double elevation = 0.0;
 
     // computing corner based index.

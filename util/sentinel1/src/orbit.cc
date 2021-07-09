@@ -22,9 +22,11 @@
 
 #include "constants.h"
 #include "date_utils.h"
+#include "general_constants.h"
 #include "orbit_state_vector.h"
 #include "poly_utils.h"
 #include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
+#include "snap-engine-utilities/eo/constants.h"
 
 namespace alus::s1tbx {
 const double Orbit::CRITERPOS = pow(10, -6);
@@ -75,7 +77,7 @@ Point Orbit::Xyz2T(Point point_on_ellips, double time_azimuth) {
     // Update equations
     Point satellite_position = GetXyz(time_azimuth);
     delta = point_on_ellips.Min(satellite_position);
-    double time_range = delta.Norm() / jlinda::LIGHT_SPEED;
+    double time_range = delta.Norm() / snapengine::eo::constants::LIGHT_SPEED;
 
     // todo: check if 0.0 is ok for z
     return Point(time_range, time_azimuth, 0.0);
@@ -117,7 +119,7 @@ double Orbit::Eq1Doppler(Point& sat_velocity, Point& point_on_ellips) { return s
 // eq2_Range
 double Orbit::Eq2Range(Point& point_ellips_sat, double rg_time) {
     // SOL vs C
-    return point_ellips_sat.In(point_ellips_sat) - pow(jlinda::LIGHT_SPEED * rg_time, 2);
+    return point_ellips_sat.In(point_ellips_sat) - pow(snapengine::eo::constants::LIGHT_SPEED * rg_time, 2);
 }
 
 // eq3_Ellipsoid

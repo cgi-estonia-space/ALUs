@@ -24,6 +24,7 @@
 #include "alus_log.h"
 #include "gdal_data_copy.h"
 #include "general_constants.h"
+#include "snap-engine-utilities/eo/constants.h"
 #include "io/orbits/sentinel1/sentinel_p_o_d_orbit_file.h"
 #include "orbit_state_vector.h"
 #include "product_data_utc.h"
@@ -143,7 +144,7 @@ void ApplyOrbitFileOp::UpdateOrbitStateVectors() {
                                abs_root_->GetAttributeString(snapengine::AbstractMetadata::LAST_LINE_TIME))
                                ->GetMjd();  // in days
 
-    double delta = 1.0 / snapengine::constants::secondsInDay;  // time interval = 1s
+    double delta = 1.0 / snapengine::eo::constants::SECONDS_IN_DAY;  // time interval = 1s
 
     int num_extra_vectors = 10;  // # of vectors before and after acquisition period
 

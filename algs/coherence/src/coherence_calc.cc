@@ -19,6 +19,7 @@
 #include "tensorflow/cc/ops/math_ops_internal.h"
 
 #include "jlinda-core/constants.h"
+#include "snap-engine-utilities/eo/constants.h"
 
 namespace alus {
 
@@ -159,9 +160,11 @@ auto Coh::GetA(const tensorflow::Scope& root, const tensorflow::Input& lines, co
 std::vector<double> Coh::GenerateY(std::tuple<std::vector<int>, std::vector<int>> lines_pixels, MetaData& meta_master,
                                    MetaData& meta_slave) const {
     double master_min_pi_4_div_lam =
-        static_cast<double>(-4.0L * jlinda::SNAP_PI * jlinda::C) / meta_master.GetRadarWaveLength();
+        static_cast<double>(-4.0L * jlinda::SNAP_PI * snapengine::eo::constants::LIGHT_SPEED) /
+        meta_master.GetRadarWaveLength();
     double slave_min_pi_4_div_lam =
-        static_cast<double>(-4.0L * jlinda::SNAP_PI * jlinda::C) / meta_slave.GetRadarWaveLength();
+        static_cast<double>(-4.0L * jlinda::SNAP_PI * snapengine::eo::constants::LIGHT_SPEED) /
+        meta_slave.GetRadarWaveLength();
 
     std::vector<int> lines = std::get<0>(lines_pixels);
     std::vector<int> pixels = std::get<1>(lines_pixels);

@@ -13,6 +13,7 @@
  */
 #include "deramp_demod_computation.h"
 
+#include "snap-engine-utilities/eo/constants.h"
 #include "cuda_util.h"
 
 /**
@@ -23,13 +24,8 @@
 namespace alus {
 namespace backgeocoding {
 
-__global__ void DerampDemod(alus::Rectangle rectangle,
-                            double *slave_i,
-                            double *slave_q,
-                            double *demod_phase,
-                            double *demod_i,
-                            double *demod_q,
-                            alus::s1tbx::DeviceSubswathInfo *sub_swath,
+__global__ void DerampDemod(alus::Rectangle rectangle, double* slave_i, double* slave_q, double* demod_phase,
+                            double* demod_i, double* demod_q, alus::s1tbx::DeviceSubswathInfo* sub_swath,
                             int s_burst_index) {
     const int idx = threadIdx.x + (blockDim.x * blockIdx.x);
     const int idy = threadIdx.y + (blockDim.y * blockIdx.y);
@@ -45,9 +41,9 @@ __global__ void DerampDemod(alus::Rectangle rectangle,
     }
     ta = (y - first_line_in_burst) * sub_swath->azimuth_time_interval;
     kt = sub_swath->device_doppler_rate[s_burst_index * sub_swath->doppler_size_y + x];
-    deramp = -alus::snapengine::constants::PI * kt *
+    deramp = -snapengine::eo::constants::PI * kt *
              pow(ta - sub_swath->device_reference_time[s_burst_index * sub_swath->doppler_size_y + x], 2);
-    demod = -alus::snapengine::constants::TWO_PI *
+    demod = -snapengine::eo::constants::TWO_PI *
             sub_swath->device_doppler_centroid[s_burst_index * sub_swath->doppler_size_y + x] * ta;
     value_phase = deramp + demod;
 
@@ -60,22 +56,16 @@ __global__ void DerampDemod(alus::Rectangle rectangle,
     sin_phase = sin(value_phase);
     demod_i[global_index] = value_i * cos_phase - value_q * sin_phase;
     demod_q[global_index] = value_i * sin_phase + value_q * cos_phase;
-
 }
 
-cudaError_t LaunchDerampDemod(alus::Rectangle rectangle,
-                              double *slave_i,
-                              double *slave_q,
-                              double *demod_phase,
-                              double *demod_i,
-                              double *demod_q,
-                              alus::s1tbx::DeviceSubswathInfo *sub_swath,
+cudaError_t LaunchDerampDemod(alus::Rectangle rectangle, double* slave_i, double* slave_q, double* demod_phase,
+                              double* demod_i, double* demod_q, alus::s1tbx::DeviceSubswathInfo* sub_swath,
                               int s_burst_index) {
     dim3 block_size(24, 24);
     dim3 grid_size(cuda::GetGridDim(block_size.x, rectangle.width), cuda::GetGridDim(block_size.y, rectangle.height));
 
-    DerampDemod<<<grid_size, block_size>>>(
-        rectangle, slave_i, slave_q, demod_phase, demod_i, demod_q, sub_swath, s_burst_index);
+    DerampDemod<<<grid_size, block_size>>>(rectangle, slave_i, slave_q, demod_phase, demod_i, demod_q, sub_swath,
+                                           s_burst_index);
     return cudaGetLastError();
 }
 

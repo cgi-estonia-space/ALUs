@@ -16,6 +16,7 @@
 #include "burst_indices_computation.h"
 #include "general_constants.h"
 #include "position_data.h"
+#include "snap-engine-utilities/eo/constants.h"
 
 #include "sar_geocoding.cuh"
 #include "sentinel1_utils.cuh"
@@ -27,38 +28,29 @@ __device__ __host__ inline int GetBurstIndex(int y, int number_of_bursts, int li
     return (index >= number_of_bursts) * -1 + (index < number_of_bursts) * index;
 }
 
-__device__ __host__ inline double GetAzimuthTime(int y, int burst_index, s1tbx::DeviceSubswathInfo *subswath_info) {
+__device__ __host__ inline double GetAzimuthTime(int y, int burst_index, s1tbx::DeviceSubswathInfo* subswath_info) {
     return subswath_info->device_burst_first_line_time[burst_index] +
            (y - burst_index * subswath_info->lines_per_burst) * subswath_info->azimuth_time_interval;
 }
 
-__device__ __host__ inline double GetSlantRangeTime(int x, s1tbx::DeviceSubswathInfo *subswath_info) {
+__device__ __host__ inline double GetSlantRangeTime(int x, s1tbx::DeviceSubswathInfo* subswath_info) {
     return subswath_info->slr_time_to_first_pixel +
-           x * subswath_info->range_pixel_spacing / snapengine::constants::lightSpeed;
+           x * subswath_info->range_pixel_spacing / snapengine::eo::constants::LIGHT_SPEED;
 }
 
-inline __device__ bool GetPosition(s1tbx::DeviceSubswathInfo *subswath_info,
-                                   s1tbx::DeviceSentinel1Utils *sentinel1_utils,
-                                   int burst_index,
-                                   s1tbx::PositionData *position_data,
-                                   snapengine::OrbitStateVectorComputation *orbit,
-                                   const int num_orbit_vec,
-                                   const double dt,
-                                   int idx,
-                                   int idy) {
+inline __device__ bool GetPosition(s1tbx::DeviceSubswathInfo* subswath_info,
+                                   s1tbx::DeviceSentinel1Utils* sentinel1_utils, int burst_index,
+                                   s1tbx::PositionData* position_data, snapengine::OrbitStateVectorComputation* orbit,
+                                   const int num_orbit_vec, const double dt, int idx, int idy) {
     const double zero_doppler_time_in_days =
-        s1tbx::sargeocoding::GetZeroDopplerTime(sentinel1_utils->line_time_interval,
-                                                sentinel1_utils->wavelength,
-                                                position_data->earth_point,
-                                                orbit,
-                                                num_orbit_vec,
-                                                dt);
+        s1tbx::sargeocoding::GetZeroDopplerTime(sentinel1_utils->line_time_interval, sentinel1_utils->wavelength,
+                                                position_data->earth_point, orbit, num_orbit_vec, dt);
 
     if (zero_doppler_time_in_days == s1tbx::sargeocoding::NON_VALID_ZERO_DOPPLER_TIME) {
         return false;
     }
 
-    const double zero_doppler_time = zero_doppler_time_in_days * snapengine::constants::secondsInDay;
+    const double zero_doppler_time = zero_doppler_time_in_days * snapengine::eo::constants::SECONDS_IN_DAY;
     position_data->azimuth_index = burst_index * subswath_info->lines_per_burst +
                                    (zero_doppler_time - subswath_info->device_burst_first_line_time[burst_index]) /
                                        subswath_info->azimuth_time_interval;
@@ -68,10 +60,8 @@ inline __device__ bool GetPosition(s1tbx::DeviceSubswathInfo *subswath_info,
     // https://jira.devzone.ee/browse/SNAPGPU-169
     if (idx == 55 && idy == 53) {
         printf("AZ index %.10f zero doppler time: %.10f FLT %.10f AZTI %.10f zero doppler in days %.10f\n",
-               position_data->azimuth_index,
-               zero_doppler_time,
-               subswath_info->device_burst_first_line_time[burst_index],
-               subswath_info->azimuth_time_interval,
+               position_data->azimuth_index, zero_doppler_time,
+               subswath_info->device_burst_first_line_time[burst_index], subswath_info->azimuth_time_interval,
                zero_doppler_time_in_days);
     }
 
@@ -84,7 +74,7 @@ inline __device__ bool GetPosition(s1tbx::DeviceSubswathInfo *subswath_info,
 
     if (!sentinel1_utils->srgr_flag) {
         position_data->range_index =
-            (SLANT_RANGE - subswath_info->slr_time_to_first_pixel * snapengine::constants::lightSpeed) /
+            (SLANT_RANGE - subswath_info->slr_time_to_first_pixel * snapengine::eo::constants::LIGHT_SPEED) /
             sentinel1_utils->range_spacing;
     } else {
         // TODO: implement this some day, as we don't need it for first demo.
@@ -100,23 +90,19 @@ inline __device__ bool GetPosition(s1tbx::DeviceSubswathInfo *subswath_info,
     return true;
 }
 
-__device__ inline BurstIndices GetBurstIndices(double line_time_interval,
-                                               double wavelength,
-                                               int num_of_bursts,
-                                               const double *burst_first_line_times,
-                                               const double *burst_last_line_times,
-                                               snapengine::PosVector earth_point,
-                                               snapengine::OrbitStateVectorComputation *orbit,
-                                               const size_t num_orbit_vec,
-                                               const double dt) {
+__device__ inline BurstIndices GetBurstIndices(double line_time_interval, double wavelength, int num_of_bursts,
+                                               const double* burst_first_line_times,
+                                               const double* burst_last_line_times, snapengine::PosVector earth_point,
+                                               snapengine::OrbitStateVectorComputation* orbit,
+                                               const size_t num_orbit_vec, const double dt) {
     BurstIndices burst_indices{-1, -1, false, false, false};
-    const double zero_doppler_time_in_days = s1tbx::sargeocoding::GetZeroDopplerTime(
-        line_time_interval, wavelength, earth_point, orbit, num_orbit_vec, dt);
+    const double zero_doppler_time_in_days =
+        s1tbx::sargeocoding::GetZeroDopplerTime(line_time_interval, wavelength, earth_point, orbit, num_orbit_vec, dt);
     if (zero_doppler_time_in_days == s1tbx::sargeocoding::NON_VALID_ZERO_DOPPLER_TIME) {
         return burst_indices;
     }
 
-    const double zero_doppler_time = zero_doppler_time_in_days * snapengine::constants::secondsInDay;
+    const double zero_doppler_time = zero_doppler_time_in_days * snapengine::eo::constants::SECONDS_IN_DAY;
     for (int i = 0, k = 0; i < num_of_bursts; i++) {
         if (zero_doppler_time >= burst_first_line_times[i] && zero_doppler_time < burst_last_line_times[i]) {
             bool in_upper_part = (zero_doppler_time >= (burst_first_line_times[i] + burst_last_line_times[i]) / 2.0);
@@ -135,21 +121,14 @@ __device__ inline BurstIndices GetBurstIndices(double line_time_interval,
     return burst_indices;
 }
 
-__device__ inline BurstIndices GetBurstIndices(const s1tbx::DeviceSentinel1Utils *sentinel_utils,
-                                               const s1tbx::DeviceSubswathInfo *subswath_info,
+__device__ inline BurstIndices GetBurstIndices(const s1tbx::DeviceSentinel1Utils* sentinel_utils,
+                                               const s1tbx::DeviceSubswathInfo* subswath_info,
                                                snapengine::PosVector earth_point,
-                                               snapengine::OrbitStateVectorComputation *orbit,
-                                               const size_t num_orbit_vec,
-                                               const double dt) {
-    return GetBurstIndices(sentinel_utils->line_time_interval,
-                           sentinel_utils->wavelength,
-                           subswath_info->num_of_bursts,
-                           subswath_info->device_burst_first_line_time,
-                           subswath_info->device_burst_last_line_time,
-                           earth_point,
-                           orbit,
-                           num_orbit_vec,
-                           dt);
+                                               snapengine::OrbitStateVectorComputation* orbit,
+                                               const size_t num_orbit_vec, const double dt) {
+    return GetBurstIndices(sentinel_utils->line_time_interval, sentinel_utils->wavelength, subswath_info->num_of_bursts,
+                           subswath_info->device_burst_first_line_time, subswath_info->device_burst_last_line_time,
+                           earth_point, orbit, num_orbit_vec, dt);
 }
 }  // namespace backgeocoding
 }  // namespace alus

@@ -24,46 +24,9 @@
 namespace alus {
 namespace snapengine {
 namespace constants {
-
-constexpr double secondsInDay{86400.0};
-constexpr double lightSpeed{299792458.0};  //  m / s
-constexpr double halfLightSpeed{lightSpeed / 2.0};
-constexpr double lightSpeedInMetersPerDay{lightSpeed * secondsInDay};
-
-constexpr double semiMajorAxis{geoutils::WGS84::a};  // in m, WGS84 semi-major axis of Earth
-constexpr double semiMinorAxis{geoutils::WGS84::b};  // in m, WGS84 semi-minor axis of Earth
-
-constexpr double MeanEarthRadius{6371008.7714};  // in m (WGS84)
-
-constexpr double oneMillion{1000000.0};
-constexpr double tenMillion{10000000.0};
-constexpr double oneBillion{1000000000.0};
-constexpr double oneBillionth{1.0 / oneBillion};
-
-constexpr double PI{3.14159265358979323846264338327950288};
-constexpr double _PI{3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348};
-constexpr double TWO_PI{2.0 * PI};
-constexpr double HALF_PI{PI * 0.5};
-constexpr double _TWO_PI{2.0 * _PI};
-constexpr double sqrt2{1.41421356237};
-
-constexpr double DTOR{PI / 180.0};
-constexpr double RTOD{180.0 / PI};
-
-constexpr double _DTOR{_PI / 180.0};
-constexpr double _RTOD{180.0 / _PI};
-
-constexpr double EPS{1e-15};
-
-constexpr double NO_DATA_VALUE{-99999.0};
-
-constexpr double sTOns{oneBillion};    // s to ns
-constexpr double nsTOs{oneBillionth};  // ns to s
-
 constexpr int INVALID_INDEX{-1};
 
 constexpr float THERMAL_NOISE_TRG_FLOOR_VALUE{0.01234567890000F};
-
 }  // namespace constants
-}  // namespace snapEngine
+}  // namespace snapengine
 }  // namespace alus

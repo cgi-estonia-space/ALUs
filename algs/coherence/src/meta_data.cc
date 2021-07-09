@@ -14,19 +14,18 @@
 #include "meta_data.h"
 
 #include "date_utils.h"
-#include "jlinda-core/constants.h"
 #include "jlinda-core/ellipsoid.h"
 #include "jlinda-core/geopoint.h"
 #include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
+#include "snap-engine-utilities/eo/constants.h"
 
 namespace alus {
 
 MetaData::MetaData(IDataTileReader* incidence_angle_reader, std::shared_ptr<snapengine::MetadataElement> element,
-                   int orbit_degree) : MetaData(IsNearRangeOnLeft(incidence_angle_reader), element, orbit_degree){
-}
+                   int orbit_degree)
+    : MetaData(IsNearRangeOnLeft(incidence_angle_reader), element, orbit_degree) {}
 
 MetaData::MetaData(bool is_near_range_on_left, std::shared_ptr<snapengine::MetadataElement> element, int orbit_degree) {
-
     this->near_range_on_left_ = is_near_range_on_left;
 
     // todo: check what snap uses! this is custom solution
@@ -41,13 +40,14 @@ MetaData::MetaData(bool is_near_range_on_left, std::shared_ptr<snapengine::Metad
 
     line_time_interval_ = element->GetAttributeDouble(snapengine::AbstractMetadata::LINE_TIME_INTERVAL);
 
-    radar_wavelength_ = (jlinda::LIGHT_SPEED / jlinda::MEGA) /
+    radar_wavelength_ = (snapengine::eo::constants::LIGHT_SPEED / snapengine::eo::constants::ONE_MILLION) /
                         element->GetAttributeDouble(alus::snapengine::AbstractMetadata::RADAR_FREQUENCY);
     t_azi_1_ = snapengine::DateUtils::DateTimeToSecOfDay(
         element->GetAttributeUtc(alus::snapengine::AbstractMetadata::FIRST_LINE_TIME)->ToString());
     t_range_1_ = element->GetAttributeDouble(alus::snapengine::AbstractMetadata::SLANT_RANGE_TO_FIRST_PIXEL) /
-                 jlinda::LIGHT_SPEED;
-    rsr_2_x_ = element->GetAttributeDouble(alus::snapengine::AbstractMetadata::RANGE_SAMPLING_RATE) * jlinda::MEGA * 2;
+                 snapengine::eo::constants::LIGHT_SPEED;
+    rsr_2_x_ = element->GetAttributeDouble(alus::snapengine::AbstractMetadata::RANGE_SAMPLING_RATE) *
+               snapengine::eo::constants::ONE_MILLION * 2;
 
     approx_radar_centre_original_.SetX(static_cast<double>(band_x_size_) / 2.0);  // x direction is range!
     approx_radar_centre_original_.SetY(static_cast<double>(band_y_size_) / 2.0);  // y direction is azimuth
@@ -74,7 +74,6 @@ MetaData::MetaData(bool is_near_range_on_left, std::shared_ptr<snapengine::Metad
     approx_xyz_centre_original_ = s1tbx::Point(xyz.at(0), xyz.at(1), xyz.at(2));
 
     orbit_ = std::make_shared<s1tbx::Orbit>(element, orbit_degree);
-
 }
 
 // todo: how should we tie this to specific product in our logic?

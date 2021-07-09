@@ -31,6 +31,7 @@
 #include "snap-core/datamodel/tie_point_grid.h"
 #include "snap-core/subset/pixel_subset_region.h"
 #include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
+#include "snap-engine-utilities/eo/constants.h"
 #include "snap-engine-utilities/gpf/input_product_validator.h"
 #include "split_product_subset_builder.h"
 #include "subswath_info.h"
@@ -207,30 +208,31 @@ void TopsarSplit::UpdateAbstractedMetadata() {
     abs_tgt->SetAttributeUtc(
         snapengine::AbstractMetadata::FIRST_LINE_TIME,
         std::make_shared<snapengine::Utc>(selected_subswath_info_->burst_first_line_time_[first_burst_index_ - 1] /
-                                          snapengine::constants::secondsInDay));
+                                          snapengine::eo::constants::SECONDS_IN_DAY));
 
     abs_tgt->SetAttributeUtc(
         snapengine::AbstractMetadata::LAST_LINE_TIME,
         std::make_shared<snapengine::Utc>(selected_subswath_info_->burst_last_line_time_[last_burst_index_ - 1] /
-                                          snapengine::constants::secondsInDay));
+                                          snapengine::eo::constants::SECONDS_IN_DAY));
 
     abs_tgt->SetAttributeDouble(snapengine::AbstractMetadata::LINE_TIME_INTERVAL,
-                               selected_subswath_info_->azimuth_time_interval_);
+                                selected_subswath_info_->azimuth_time_interval_);
 
-    abs_tgt->SetAttributeDouble(snapengine::AbstractMetadata::SLANT_RANGE_TO_FIRST_PIXEL,
-                               selected_subswath_info_->slr_time_to_first_pixel_ * snapengine::constants::lightSpeed);
+    abs_tgt->SetAttributeDouble(
+        snapengine::AbstractMetadata::SLANT_RANGE_TO_FIRST_PIXEL,
+        selected_subswath_info_->slr_time_to_first_pixel_ * snapengine::eo::constants::LIGHT_SPEED);
 
     abs_tgt->SetAttributeDouble(snapengine::AbstractMetadata::RANGE_SPACING,
-                               selected_subswath_info_->range_pixel_spacing_);
+                                selected_subswath_info_->range_pixel_spacing_);
 
     abs_tgt->SetAttributeDouble(snapengine::AbstractMetadata::AZIMUTH_SPACING,
-                               selected_subswath_info_->azimuth_pixel_spacing_);
+                                selected_subswath_info_->azimuth_pixel_spacing_);
 
     abs_tgt->SetAttributeInt(snapengine::AbstractMetadata::NUM_OUTPUT_LINES,
-                            selected_subswath_info_->lines_per_burst_ * (last_burst_index_ - first_burst_index_ + 1));
+                             selected_subswath_info_->lines_per_burst_ * (last_burst_index_ - first_burst_index_ + 1));
 
     abs_tgt->SetAttributeInt(snapengine::AbstractMetadata::NUM_SAMPLES_PER_LINE,
-                            selected_subswath_info_->num_of_samples_);
+                             selected_subswath_info_->num_of_samples_);
 
     int cols = selected_subswath_info_->num_of_geo_points_per_line_;
 
@@ -318,7 +320,7 @@ void TopsarSplit::UpdateAbstractedMetadata() {
         std::shared_ptr<snapengine::Utc> time =
             orb_elem->GetAttributeUtc(snapengine::AbstractMetadata::ORBIT_VECTOR_TIME);
         tgt_orbit_vectors_elem->GetElement(elem_name)->SetAttributeUtc(snapengine::AbstractMetadata::ORBIT_VECTOR_TIME,
-                                                                    time);
+                                                                       time);
     }
 }
 
@@ -396,14 +398,14 @@ void TopsarSplit::UpdateImageInformation(std::shared_ptr<snapengine::MetadataEle
 
         std::shared_ptr<snapengine::Utc> first_line_time_utc =
             std::make_shared<snapengine::Utc>(selected_subswath_info_->burst_first_line_time_[first_burst_index_ - 1] /
-                                              snapengine::constants::secondsInDay);
+                                              snapengine::eo::constants::SECONDS_IN_DAY);
 
         image_information->SetAttributeString("productFirstLineUtcTime",
                                               first_line_time_utc->Format("%Y-%m-%d %H:%M:%S"));
 
         std::shared_ptr<snapengine::Utc> last_line_time_utc =
             std::make_shared<snapengine::Utc>(selected_subswath_info_->burst_last_line_time_[last_burst_index_ - 1] /
-                                              snapengine::constants::secondsInDay);
+                                              snapengine::eo::constants::SECONDS_IN_DAY);
 
         image_information->SetAttributeString("productLastLineUtcTime",
                                               last_line_time_utc->Format("%Y-%m-%d %H:%M:%S"));
