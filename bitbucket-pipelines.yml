@@ -56,6 +56,8 @@ pipelines:
                 - build-wrapper-linux-x86-64 --out-dir $BW_OUTPUT make -j8
                 - cd $BITBUCKET_CLONE_DIR
                 - sonar-scanner -Dsonar.cfamily.build-wrapper-output=$BW_OUTPUT -Dsonar.sources=algs,app,util -Dsonar.tests=test,test_integration -Dsonar.exclusions=tensorflow/**,external/**,build/**,.git/** -Dsonar.test.exclusions=tensorflow/**,external/**,build/**,.git/** -X
+              artifacts:
+                - sonar-cfamily-reproducer.zip
 
   custom:
     nightly-release: #name of this pipeline

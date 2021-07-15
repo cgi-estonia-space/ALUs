@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <array>
 #include <exception>
+#include <iterator>
 #include <map>
 #include <memory>
 #include <optional>
@@ -30,8 +31,8 @@
 #include <gdal_priv.h>
 #include <boost/algorithm/string.hpp>
 
-#include "alus_log.h"
 #include "abstract_metadata.h"
+#include "alus_log.h"
 #include "calibration_info.h"
 #include "calibration_type.h"
 #include "ceres-core/null_progress_monitor.h"
@@ -387,10 +388,10 @@ void Sentinel1Calibrator::SetTargetImages() {
         int sub_dataset_id{1};  // TODO: currently this is unimplemented (SNAPGPU-250)
         for (const auto& band : target_bands) {
             if (string_contains(band->GetName(), selected_sub_swaths_.at(0))) {
-                LOGI << "Processing band " << band->GetName() << std::endl;
+                LOGI << "Processing band " << band->GetName();
                 cal_data.calibration_type = GetCalibrationType(band->GetName());
                 cal_data.calibration_info = target_band_to_d_calibration_info_.at(band->GetName());
-                cal_data.dst_band = target_datasets_.at(selected_sub_swaths_.at(0))->GetGdalDataset()->GetRasterBand(1);
+                cal_data.dst_band = target_datasets_.at(selected_sub_swaths_.at(0))->GetRasterBand(1);
                 target_band_name_to_source_band_name_.at(band->GetName());
                 auto src_band = target_band_name_to_source_band_name_.at(band->GetName()).at(0);
                 cal_data.src_band = safe_helper_.GetSubDatasetByPolarisationAndSubSwath(src_band)->GetRasterBand(1);
@@ -424,7 +425,7 @@ void Sentinel1Calibrator::SetTargetImages() {
     // no error frees
     FreeContexts(thread_contexts);
 
-    LOGI << "Calibration done!\n";
+    LOGI << "Calibration done!";
 }
 
 void Sentinel1Calibrator::AddSelectedBands(std::vector<std::string>& source_band_names) {
@@ -593,19 +594,19 @@ void Sentinel1Calibrator::CreateDatasetsFromProduct(std::shared_ptr<snapengine::
         return std::string(band_name.substr(first_separator_position + 1));
     };
 
-    auto does_map_contain = [](std::map<std::string, std::shared_ptr<Dataset<float>>, std::less<>> map,
+    auto does_map_contain = [](std::map<std::string, std::shared_ptr<GDALDataset>, std::less<>> map,
                                std::string_view key) { return map.find(key.data()) != map.end(); };
 
     GDALAllRegister();
     char** dataset_options = nullptr;
-    const std::string_view format{"GTiff"};
-    GDALDriver* driver = GetGDALDriverManager()->GetDriverByName(format.data());
+    GDALDriver* driver = GetGDALDriverManager()->GetDriverByName(utils::constants::GDAL_MEM_DRIVER);
     if (!driver) {
-        throw Sentinel1CalibrateException("could not create GDAL driver for " + std::string(format.data()) + " format");
+        throw Sentinel1CalibrateException("could not create GDAL driver for " +
+                                          std::string(utils::constants::GDAL_MEM_DRIVER) + " format");
     }
 
     if (!CSLFetchBoolean(driver->GetMetadata(), GDAL_DCAP_CREATE, FALSE)) {
-        throw Sentinel1CalibrateException("GDAL driver for " + std::string(format.data()) +
+        throw Sentinel1CalibrateException("GDAL driver for " + std::string(utils::constants::GDAL_MEM_DRIVER) +
                                           " format does not support creating datasets.");
     }
     // End of placeholder
@@ -617,7 +618,7 @@ void Sentinel1Calibrator::CreateDatasetsFromProduct(std::shared_ptr<snapengine::
         if (utils::general::DoesVectorContain(selected_sub_swaths_, sub_swath) &&
             !does_map_contain(target_datasets_, sub_swath)) {
             // Create dataset
-            const auto output_file = output_path.data() + product->GetName() + "_" + sub_swath + ".tif";
+            const auto output_file = output_path.data() + product->GetName() + "_" + sub_swath;
 
             auto* const source_sub_dataset =
                 safe_helper_.GetSubDatasetByPolarisationAndSubSwath(get_polarisation_and_sub_swath(band->GetName()));
@@ -632,7 +633,8 @@ void Sentinel1Calibrator::CreateDatasetsFromProduct(std::shared_ptr<snapengine::
             source_sub_dataset->GetGeoTransform(geo_transform.data());
             gdal_dataset->SetGeoTransform(geo_transform.data());
 
-            target_datasets_.try_emplace(sub_swath, std::make_shared<Dataset<float>>(*gdal_dataset));
+            std::shared_ptr<GDALDataset> dataset(gdal_dataset, [](auto dataset_arg) { GDALClose(dataset_arg); });
+            target_datasets_.try_emplace(sub_swath, dataset);
             target_paths_.try_emplace(sub_swath, output_file);
         }
     }
@@ -791,6 +793,21 @@ Sentinel1Calibrator::~Sentinel1Calibrator() {
         }
     }
 }
+std::map<std::string, std::shared_ptr<GDALDataset>, std::less<>> Sentinel1Calibrator::GetOutputDatasets() const {
+    std::map<std::string, std::shared_ptr<GDALDataset>, std::less<>> output_datasets;
+
+    const auto& target_paths = target_paths_;
+    std::transform(target_datasets_.begin(), target_datasets_.end(),
+                   std::inserter(output_datasets, output_datasets.begin()),
+                   [&target_paths](auto subswath_dataset_pair) {
+                       std::pair<std::string, std::shared_ptr<GDALDataset>> pair;
+                       pair.first = target_paths.find(subswath_dataset_pair.first)->second;
+                       pair.second = subswath_dataset_pair.second;
+                       return pair;
+                   });
+
+    return output_datasets;
+}
 
 std::vector<CalibrationInfo> GetCalibrationInfoList(
     const std::shared_ptr<snapengine::MetadataElement>& original_product_metadata,
@@ -857,7 +874,7 @@ int GetNumOfLines(const std::shared_ptr<snapengine::MetadataElement>& original_p
         }
     }
 
-    return snapengine::constants::INVALID_INDEX;
+    return utils::constants::INVALID_INDEX;
 }
 
 std::shared_ptr<snapengine::MetadataElement> GetElement(

@@ -475,15 +475,15 @@ TEST_F(TerrainCorrectionTest, CreateTargetProduct) {
     geocoding::TiePointGeocoding source_geocoding(lat_grid, lon_grid);
     auto coh_dataset = Dataset<double>(COH_1_TIF);
     coh_dataset.LoadRasterBand(1);
-    TerrainCorrection terrain_correction(std::move(coh_dataset), metadata_.value().GetMetadata(),
+    TerrainCorrection terrain_correction(coh_dataset.GetGdalDataset(), metadata_.value().GetMetadata(),
                                          metadata_.value().GetLatTiePointGrid(), metadata_.value().GetLonTiePointGrid(),
                                          srtm_3_model_->GetSrtmBuffersInfo(), srtm_3_tiles_length_);
     auto target = terrain_correction.CreateTargetProduct(&source_geocoding, TC_OUTPUT);
     double target_geo_transform[6];
-    target.dataset_.GetGdalDataset()->GetGeoTransform(target_geo_transform);
+    target.dataset_->GetGeoTransform(target_geo_transform);
 
-    EXPECT_EQ(EXPECTED_HEIGHT, target.dataset_.GetRasterSizeY());
-    EXPECT_EQ(EXPECTED_WIDTH, target.dataset_.GetRasterSizeX());
+    EXPECT_EQ(EXPECTED_HEIGHT, target.dataset_->GetRasterYSize());
+    EXPECT_EQ(EXPECTED_WIDTH, target.dataset_->GetRasterXSize());
     for (int i = 0; i < 6; ++i) {
         EXPECT_NEAR(EXPECTED_GEOTRANSFORM[i], target_geo_transform[i], ERROR_MARGIN);
     }

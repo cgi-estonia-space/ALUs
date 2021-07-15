@@ -4,6 +4,7 @@ list(APPEND GDAL_UTIL_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/dem.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/target_dataset.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/c16_dataset.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/gdal_util.cc
         )
 
 list(APPEND GDAL_UTIL_INCLUDE_DIRS

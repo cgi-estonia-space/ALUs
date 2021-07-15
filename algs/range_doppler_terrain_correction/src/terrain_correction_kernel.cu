@@ -66,7 +66,8 @@ void CalculateVelocitiesAndPositions(const int source_image_height, const double
     CHECK_CUDA_ERR(cudaDeviceSynchronize());
 };
 
-__inline__ __device__ void SetNoDataValue(int index, double value, double* dest_data) { dest_data[index] = value; }
+template <typename T>
+__inline__ __device__ void SetNoDataValue(int index, T value, T* dest_data) { dest_data[index] = value; }
 
 __device__ Coordinates GetPixelCoordinates(TcTileCoordinates tile_coordinates,
                                            GeoTransformParameters target_geo_transform, unsigned int thread_x,
@@ -92,7 +93,7 @@ __device__ bool CheckPositionAndCellValidity(s1tbx::PositionData& position_data,
     return true;
 }
 
-__global__ void TerrainCorrectionKernel(TcTileCoordinates tile_coordinates, cuda::KernelArray<double> target,
+__global__ void TerrainCorrectionKernel(TcTileCoordinates tile_coordinates, cuda::KernelArray<float> target,
                                         TerrainCorrectionKernelArgs args) {
     const auto thread_x = threadIdx.x + blockIdx.x * blockDim.x;
     const auto thread_y = threadIdx.y + blockIdx.y * blockDim.y;
@@ -104,7 +105,7 @@ __global__ void TerrainCorrectionKernel(TcTileCoordinates tile_coordinates, cuda
     const auto index = thread_y * tile_coordinates.target_width + thread_x;
 
     if (args.valid_pixels.array[index] == false) {
-        SetNoDataValue(index, args.target_no_data_value, target.array);
+        SetNoDataValue(index, static_cast<float>(args.target_no_data_value), target.array);
         return;
     }
 
@@ -114,13 +115,13 @@ __global__ void TerrainCorrectionKernel(TcTileCoordinates tile_coordinates, cuda
                                                                         const_cast<PointerArray*>(&args.srtm_3_tiles));
 
     if (altitude == args.dem_no_data_value) {
-        SetNoDataValue(index, args.target_no_data_value, target.array);
+        SetNoDataValue(index, static_cast<float>(args.target_no_data_value), target.array);
         return;
     }
 
     s1tbx::PositionData position_data{};
     if (!CheckPositionAndCellValidity(position_data, coordinates, altitude, args)) {
-        SetNoDataValue(index, args.target_no_data_value, target.array);
+        SetNoDataValue(index, static_cast<float>(args.target_no_data_value), target.array);
         return;
     }
 
@@ -139,7 +140,7 @@ __global__ void TerrainCorrectionKernel(TcTileCoordinates tile_coordinates, cuda
 }
 
 __global__ void TerrainCorrectionWithAverageHeightKernel(TcTileCoordinates tile_coordinates,
-                                                         cuda::KernelArray<double> target,
+                                                         cuda::KernelArray<float> target,
                                                          TerrainCorrectionKernelArgs args) {
     auto const thread_x = threadIdx.x + blockIdx.x * blockDim.x;
     auto const thread_y = threadIdx.y + blockIdx.y * blockDim.y;
@@ -151,7 +152,7 @@ __global__ void TerrainCorrectionWithAverageHeightKernel(TcTileCoordinates tile_
     auto const pixel_index = thread_y * tile_coordinates.target_width + thread_x;
 
     if (args.valid_pixels.array[pixel_index] == false) {
-        SetNoDataValue(pixel_index, args.target_no_data_value, target.array);
+        SetNoDataValue(pixel_index, static_cast<float>(args.target_no_data_value), target.array);
         return;
     }
 
@@ -159,7 +160,7 @@ __global__ void TerrainCorrectionWithAverageHeightKernel(TcTileCoordinates tile_
 
     s1tbx::PositionData position_data{};
     if (!CheckPositionAndCellValidity(position_data, coordinates, args.avg_scene_height, args)) {
-        SetNoDataValue(pixel_index, args.target_no_data_value, target.array);
+        SetNoDataValue(pixel_index, static_cast<float>(args.target_no_data_value), target.array);
         return;
     }
 
@@ -185,8 +186,8 @@ cudaError_t LaunchTerrainCorrectionKernel(TcTile tile, TerrainCorrectionKernelAr
     dim3 main_kernel_grid_size{static_cast<unsigned int>(tile.tc_tile_coordinates.target_width / block_size.x + 1),
                                static_cast<unsigned int>(tile.tc_tile_coordinates.target_height / block_size.y + 1)};
 
-    thrust::device_vector<double> d_target(tile.target_tile_data_buffer.size);
-    cuda::KernelArray<double> kernel_target{thrust::raw_pointer_cast(d_target.data()), d_target.size()};
+    thrust::device_vector<float> d_target(tile.target_tile_data_buffer.size);
+    cuda::KernelArray<float> kernel_target{thrust::raw_pointer_cast(d_target.data()), d_target.size()};
 
     snapengine::resampling::Tile* d_source_tile;
     CHECK_CUDA_ERR(cudaMalloc(&d_source_tile, sizeof(snapengine::resampling::Tile)));
@@ -206,7 +207,7 @@ cudaError_t LaunchTerrainCorrectionKernel(TcTile tile, TerrainCorrectionKernelAr
     cudaError_t error = cudaGetLastError();
 
     CHECK_CUDA_ERR(cudaMemcpy(tile.target_tile_data_buffer.array, kernel_target.array,
-                              sizeof(double) * kernel_target.size, cudaMemcpyDeviceToHost));
+                              sizeof(float) * kernel_target.size, cudaMemcpyDeviceToHost));
 
     return error;
 }

@@ -40,6 +40,11 @@ void GdalImageReader::Open(std::string_view path_to_file, bool has_transform, bo
     InitializeDatasetProperties(dataset_, has_transform, has_correct_proj);
 }
 
+void GdalImageReader::TakeExternalDataset(GDALDataset* dataset) {
+    CHECK_GDAL_PTR(dataset);
+    dataset_ = dataset;
+}
+
 GdalImageReader::~GdalImageReader() {
     if (dataset_) {
         GDALClose(dataset_);
@@ -82,6 +87,9 @@ void GdalImageReader::ReadSubSampledData(const std::shared_ptr<custom::Rectangle
     CHECK_GDAL_ERROR(dataset_->RasterIO(GF_Read, rectangle->x, rectangle->y, rectangle->width, rectangle->height,
                                         data.data(), rectangle->width, rectangle->height, GDALDataType::GDT_Int32, 1,
                                         nullptr, 0, 0, 0));
+}
+void GdalImageReader::ReleaseDataset() {
+    dataset_ = nullptr;
 }
 
 }  // namespace alus::snapengine::custom

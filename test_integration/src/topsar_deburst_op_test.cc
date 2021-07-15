@@ -30,19 +30,9 @@
 #include "snap-core/datamodel/pugixml_meta_data_reader.h"
 #include "snap-core/datamodel/pugixml_meta_data_writer.h"
 #include "topsar_deburst_op.h"
+#include "test_utils.h"
 
 namespace {
-
-// todo:move to testing utility
-std::string Md5FromFile(const std::string& path) {
-    unsigned char result[MD5_DIGEST_LENGTH];
-    boost::iostreams::mapped_file_source src(path);
-    MD5((unsigned char*)src.data(), src.size(), result);
-    std::ostringstream sout;
-    sout << std::hex << std::setfill('0');
-    for (auto c : result) sout << std::setw(2) << static_cast<int>(c);
-    return sout.str();
-}
 
 class TOPSARDeburstOpIntegrationTest : public ::testing::Test {
 public:
@@ -102,13 +92,17 @@ TEST_F(TOPSARDeburstOpIntegrationTest, single_swath_beirut) {
         auto data_writer = std::make_shared<alus::snapengine::custom::GdalImageWriter>();
         data_writer->Open(op->GetTargetProduct()->GetFileLocation().generic_path().string(),
                           op->GetTargetProduct()->GetSceneRasterWidth(), op->GetTargetProduct()->GetSceneRasterHeight(),
-                          data_reader->GetGeoTransform(), data_reader->GetDataProjection());
+                          data_reader->GetGeoTransform(), data_reader->GetDataProjection(), false);
         op->GetTargetProduct()->SetImageWriter(data_writer);
         op->Compute();
+
+        data_writer->Close();
+
+        auto out_path = file_directory_out_.generic_string() + boost::filesystem::path::preferred_separator +
+        file_name_out_ + ".tif";
+        //alus::GeoTiffWriteFile(data_writer->GetDataset(), std::string_view(out_path));
         ASSERT_TRUE(boost::filesystem::exists(file_directory_out_));
-            ASSERT_EQ(expected_md5_tiff_,
-                  Md5FromFile(file_directory_out_.generic_string() + boost::filesystem::path::preferred_separator +
-                              file_name_out_ + ".tif"));
+        ASSERT_EQ(expected_md5_tiff_,alus::utils::test::Md5FromFile(out_path));
 
     }
 }

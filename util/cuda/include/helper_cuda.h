@@ -87,6 +87,8 @@ static const char* _cudaGetErrorEnum(cublasStatus_t error) {
         case CUBLAS_STATUS_LICENSE_ERROR:
 
             return "CUBLAS_STATUS_LICENSE_ERROR";
+        default:
+            break;
     }
 
     return "<unknown>";
@@ -275,6 +277,10 @@ static const char* _cudaGetErrorEnum(cusolverStatus_t error) {
         case CUSOLVER_STATUS_INVALID_LICENSE:
 
             return "CUSOLVER_STATUS_INVALID_LICENSE";
+
+        default:
+            break;
+
     }
 
     return "<unknown>";
@@ -339,6 +345,8 @@ static const char* _cudaGetErrorEnum(curandStatus_t error) {
         case CURAND_STATUS_INTERNAL_ERROR:
 
             return "CURAND_STATUS_INTERNAL_ERROR";
+        default:
+            break;
     }
 
     return "<unknown>";
@@ -387,6 +395,8 @@ static const char* _cudaGetErrorEnum(nvjpegStatus_t error) {
         case NVJPEG_STATUS_INTERNAL_ERROR:
 
             return "NVJPEG_STATUS_INTERNAL_ERROR";
+        default:
+            break;
     }
 
     return "<unknown>";
@@ -741,6 +751,8 @@ static const char* _cudaGetErrorEnum(NppStatus error) {
             return "NPP_CORRUPTED_DATA_ERROR";
 
 #endif
+        default:
+            break;
     }
 
     return "<unknown>";

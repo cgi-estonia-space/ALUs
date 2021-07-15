@@ -48,10 +48,6 @@ target_include_directories(coherence-cuda-obj
         PRIVATE
         ${COHERENCE_INCLUDE_DIRS}
         )
-target_compile_options(coherence-cuda-obj
-        PRIVATE
-        -Wno-switch
-        )
 
 add_library(coherence-cuda-static
         STATIC

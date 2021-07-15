@@ -87,7 +87,7 @@ TEST(coregistration, all3) {
                 {dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo(),
                  dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()});
 
-    cor.reset();
+    alus::GeoTiffWriteFile(cor->GetOutputDataset(), "./goods/beirut_images/coregistration_test.tif");
 
     CoregTester tester("./goods/coregistration_strips.txt");
 

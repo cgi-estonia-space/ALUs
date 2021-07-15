@@ -56,12 +56,12 @@ int TerrainCorrectionExecutor::Execute() {
             std::unique_ptr<TerrainCorrection> tc{nullptr};
             if (input_datasets_.size() == 1 && input_datasets_.at(0) != nullptr) {
                 Dataset<double> input(this->input_datasets_.at(0));
-                tc = std::make_unique<TerrainCorrection>(std::move(input), metadata.GetMetadata(),
+                tc = std::make_unique<TerrainCorrection>(input.GetGdalDataset(), metadata.GetMetadata(),
                                                          metadata.GetLatTiePointGrid(), metadata.GetLonTiePointGrid(),
                                                          nullptr, 0, default_band_id, use_avg_scene_height_);
             } else {
                 Dataset<double> input(this->input_dataset_names_.at(0));
-                tc = std::make_unique<TerrainCorrection>(std::move(input), metadata.GetMetadata(),
+                tc = std::make_unique<TerrainCorrection>(input.GetGdalDataset(), metadata.GetMetadata(),
                                                          metadata.GetLatTiePointGrid(), metadata.GetLonTiePointGrid(),
                                                          nullptr, 0, default_band_id, use_avg_scene_height_);
             }
@@ -75,13 +75,13 @@ int TerrainCorrectionExecutor::Execute() {
             std::unique_ptr<TerrainCorrection> tc{nullptr};
             if (input_datasets_.size() == 1 && input_datasets_.at(0) != nullptr) {
                 Dataset<double> input(this->input_datasets_.at(0));
-                tc = std::make_unique<TerrainCorrection>(std::move(input), metadata.GetMetadata(),
+                tc = std::make_unique<TerrainCorrection>(input.GetGdalDataset(), metadata.GetMetadata(),
                                                          metadata.GetLatTiePointGrid(), metadata.GetLonTiePointGrid(),
                                                          srtm3_buffers, srtm3_buffers_length, default_band_id,
                                                          use_avg_scene_height_);
             } else {
                 Dataset<double> input(this->input_dataset_names_.at(0));
-                tc = std::make_unique<TerrainCorrection>(std::move(input), metadata.GetMetadata(),
+                tc = std::make_unique<TerrainCorrection>(input.GetGdalDataset(), metadata.GetMetadata(),
                                                          metadata.GetLatTiePointGrid(), metadata.GetLonTiePointGrid(),
                                                          srtm3_buffers, srtm3_buffers_length, default_band_id,
                                                          use_avg_scene_height_);
@@ -134,7 +134,7 @@ void TerrainCorrectionExecutor::SetOutputFilename(const std::string& output_name
 std::string TerrainCorrectionExecutor::GetArgumentsHelp() const {
     std::stringstream help_stream;
     help_stream << "Range Doppler Terrain Correction configurable parameters: " << PARAMETER_ID_AVG_SCENE_HEIGHT
-                << " - use average scene height instead of SRTM3 DEM values (default: not used)";
+                << " - use average scene height instead of SRTM3 DEM values (default: not used)\n";
     return help_stream.str();
 }
 

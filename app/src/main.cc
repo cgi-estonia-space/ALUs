@@ -45,6 +45,9 @@ int main(int argc, const char* argv[]) {
     int alg_execute_status{};
     try {
         alus::common::log::Initialize();
+#ifdef NDEBUG
+        alus::common::log::SetLevel(alus::common::log::Level::INFO);
+#endif
 
         alus::app::CommandLineOptions options{};
         help_string = options.GetHelp();
@@ -73,7 +76,9 @@ int main(int argc, const char* argv[]) {
         const auto& merged_parameters =
             alus::app::AlgorithmParameters::MergeAndWarn(file_conf_parameters, command_line_parameters, warnings);
 
-        LOGW << warnings;
+        if(!warnings.empty()){
+            LOGW << warnings;
+        }
         if (merged_parameters.count(alg_to_run)) {
             alg_guard.GetInstanceHandle()->SetParameters(merged_parameters.at(alg_to_run));
         } else if (!merged_parameters.empty() &&

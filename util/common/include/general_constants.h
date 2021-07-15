@@ -18,15 +18,20 @@
 #pragma once
 
 #include <cstddef>
-
-#include "geo_utils.h"
+#include <string>
 
 namespace alus {
-namespace snapengine {
+namespace utils {
 namespace constants {
 constexpr int INVALID_INDEX{-1};
 
 constexpr float THERMAL_NOISE_TRG_FLOOR_VALUE{0.01234567890000F};
+
+// GDAL driver constants
+constexpr char GDAL_MEM_DRIVER[]{"MEM"};
+constexpr char GDAL_GTIFF_DRIVER[]{"GTiff"};
+constexpr char GDAL_GTIFF_FILE_EXTENSION[]{".tif"};
+constexpr int GDAL_DEFAULT_RASTER_BAND{1};
 }  // namespace constants
-}  // namespace snapengine
+}  // namespace utils
 }  // namespace alus

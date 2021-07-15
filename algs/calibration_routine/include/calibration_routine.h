@@ -33,8 +33,8 @@ public:
     void SetInputFilenames(const std::vector<std::string>& input_datasets,
                            const std::vector<std::string>& metadata_paths) override;
     void SetOutputFilename(const std::string& output_name) override;
-    virtual void SetSrtm3Manager(snapengine::Srtm3ElevationModel* manager) override;
-    virtual void SetEgm96Manager(const snapengine::EarthGravitationalModel96* manager) override;
+    void SetSrtm3Manager(snapengine::Srtm3ElevationModel* manager) override;
+    void SetEgm96Manager(const snapengine::EarthGravitationalModel96* manager) override;
 
 private:
     size_t tile_width_{};
@@ -45,15 +45,16 @@ private:
     std::vector<std::string> sub_swaths_{};
     std::set<std::string, std::less<>> polarisations_{};
     sentinel1calibrate::SelectedCalibrationBands calibration_bands_{};
+    bool write_intermediate_files_{};
 
     snapengine::Srtm3ElevationModel* srtm3_manager_{};
     const snapengine::EarthGravitationalModel96* egm96_manager_{};
 
     void ParseCalibrationType(std::string_view calibration_string);
-    void ValidateSubSwath();
-    void ValidatePolarisation();
-    void ValidateCalibrationType();
-    void ValidateParameters();
+    void ValidateSubSwath() const;
+    void ValidatePolarisation() const;
+    void ValidateCalibrationType() const;
+    void ValidateParameters() const;
 
     static bool DoesStringEqualAnyOf(std::string_view comparand, const std::vector<std::string>& string_list);
 };

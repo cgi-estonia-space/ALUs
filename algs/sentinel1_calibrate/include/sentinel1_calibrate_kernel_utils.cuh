@@ -30,8 +30,8 @@ namespace sentinel1calibrate {
 inline __host__ __device__ size_t GetCalibrationVectorIndexImpl(int y, int count, const int* line_values) {
     const auto index = mathutils::FindFirstGreaterElement(y, count, line_values);
 
-    return mathutils::ChooseOne(index == snapengine::constants::INVALID_INDEX,
-                                static_cast<int64_t>(snapengine::constants::INVALID_INDEX), index - 1);
+    return mathutils::ChooseOne(index == utils::constants::INVALID_INDEX,
+                                static_cast<int64_t>(utils::constants::INVALID_INDEX), index - 1);
 }
 
 inline __device__ __host__ void SetupTileLineImpl(int y, CalibrationKernelArgs& args,
@@ -71,7 +71,7 @@ inline __device__ __host__ double CalculateLutValImpl(const CalibrationLineParam
 
 inline __device__ __host__ void AdjustDnImpl(double dn, double& calibration_value, double calibration_factor) {
     // TODO: think about the way to avoid this if-clause
-    if (dn == snapengine::constants::THERMAL_NOISE_TRG_FLOOR_VALUE) {
+    if (dn == utils::constants::THERMAL_NOISE_TRG_FLOOR_VALUE) {
         while (calibration_value < 0.00001) {
             dn *= 2;
             calibration_value = dn * calibration_factor;
