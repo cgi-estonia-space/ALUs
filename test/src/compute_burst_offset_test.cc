@@ -4,35 +4,35 @@
 
 #include "../goods/compute_burst_offset_data.h"
 #include "allocators.h"
-#include "cuda_util.h"
 #include "backgeocoding_constants.h"
 #include "burst_offset_computation.h"
-#include "earth_gravitational_model96.h"
+#include "cuda_util.h"
 #include "orbit_state_vector_computation.h"
 #include "shapes.h"
+#include "snap-dem/dem/dataio/earth_gravitational_model96.h"
 #include "srtm3_elevation_model.h"
 
 namespace {
 using namespace alus;
 class ComputeBurstOffsetTest : public ::testing::Test {
-   protected:
+protected:
     backgeocoding::BurstOffsetKernelArgs args_{};
 
-   private:
+private:
     std::shared_ptr<snapengine::EarthGravitationalModel96> egm_96_;
     std::unique_ptr<snapengine::Srtm3ElevationModel> srtm_3_dem_;
-    s1tbx::DeviceSentinel1Utils *master_utils_{};
-    s1tbx::DeviceSentinel1Utils *slave_utils_{};
-    s1tbx::DeviceSubswathInfo *master_info_{};
-    s1tbx::DeviceSubswathInfo *slave_info_{};
-    double **latitude_{};
-    double **longitude_{};
+    s1tbx::DeviceSentinel1Utils* master_utils_{};
+    s1tbx::DeviceSentinel1Utils* slave_utils_{};
+    s1tbx::DeviceSubswathInfo* master_info_{};
+    s1tbx::DeviceSubswathInfo* slave_info_{};
+    double** latitude_{};
+    double** longitude_{};
     size_t master_num_orbit_vec_{};
     size_t master_width_{};
     size_t master_height_{};
 
-    snapengine::OrbitStateVectorComputation *d_master_orbit_state_vector_{nullptr};
-    snapengine::OrbitStateVectorComputation *d_slave_orbit_state_vector_{nullptr};
+    snapengine::OrbitStateVectorComputation* d_master_orbit_state_vector_{nullptr};
+    snapengine::OrbitStateVectorComputation* d_slave_orbit_state_vector_{nullptr};
 
     void PrepareSrtm3Data() {
         egm_96_ = std::make_shared<snapengine::EarthGravitationalModel96>();
@@ -48,7 +48,7 @@ class ComputeBurstOffsetTest : public ::testing::Test {
         temp_utils.line_time_interval = 2.3791160879629606e-8;
         temp_utils.wavelength = 0.05546576;
 
-        CHECK_CUDA_ERR(cudaMalloc((void **)&master_utils_, sizeof(s1tbx::DeviceSentinel1Utils)));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&master_utils_, sizeof(s1tbx::DeviceSentinel1Utils)));
         CHECK_CUDA_ERR(
             cudaMemcpy(master_utils_, &temp_utils, sizeof(s1tbx::DeviceSentinel1Utils), cudaMemcpyHostToDevice));
     }
@@ -58,20 +58,16 @@ class ComputeBurstOffsetTest : public ::testing::Test {
 
         temp_info.num_of_bursts = 19;
 
-        CHECK_CUDA_ERR(cudaMalloc((void **)&temp_info.device_burst_first_line_time,
+        CHECK_CUDA_ERR(cudaMalloc((void**)&temp_info.device_burst_first_line_time,
                                   sizeof(double) * goods::master_burst_first_line_time.size()));
-        CHECK_CUDA_ERR(cudaMemcpy(temp_info.device_burst_first_line_time,
-                                  goods::master_burst_first_line_time.data(),
-                                  sizeof(double) * goods::master_burst_first_line_time.size(),
-                                  cudaMemcpyHostToDevice));
-        CHECK_CUDA_ERR(cudaMalloc((void **)&temp_info.device_burst_last_line_time,
+        CHECK_CUDA_ERR(cudaMemcpy(temp_info.device_burst_first_line_time, goods::master_burst_first_line_time.data(),
+                                  sizeof(double) * goods::master_burst_first_line_time.size(), cudaMemcpyHostToDevice));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&temp_info.device_burst_last_line_time,
                                   sizeof(double) * goods::master_burst_last_line_time.size()));
-        CHECK_CUDA_ERR(cudaMemcpy(temp_info.device_burst_last_line_time,
-                                  goods::master_burst_last_line_time.data(),
-                                  sizeof(double) * goods::master_burst_first_line_time.size(),
-                                  cudaMemcpyHostToDevice));
+        CHECK_CUDA_ERR(cudaMemcpy(temp_info.device_burst_last_line_time, goods::master_burst_last_line_time.data(),
+                                  sizeof(double) * goods::master_burst_first_line_time.size(), cudaMemcpyHostToDevice));
 
-        CHECK_CUDA_ERR(cudaMalloc((void **)&master_info_, sizeof(s1tbx::DeviceSubswathInfo)));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&master_info_, sizeof(s1tbx::DeviceSubswathInfo)));
         CHECK_CUDA_ERR(cudaMemcpy(master_info_, &temp_info, sizeof(s1tbx::DeviceSubswathInfo), cudaMemcpyHostToDevice));
     }
 
@@ -84,11 +80,11 @@ class ComputeBurstOffsetTest : public ::testing::Test {
 
         geo_location_reader >> num_of_geo_lines >> num_of_geo_points_per_line;
 
-        double **azimuth_time = Allocate2DArray<double>(num_of_geo_lines, num_of_geo_points_per_line);
-        double **slant_range_time = Allocate2DArray<double>(num_of_geo_lines, num_of_geo_points_per_line);
+        double** azimuth_time = Allocate2DArray<double>(num_of_geo_lines, num_of_geo_points_per_line);
+        double** slant_range_time = Allocate2DArray<double>(num_of_geo_lines, num_of_geo_points_per_line);
         latitude_ = Allocate2DArray<double>(num_of_geo_lines, num_of_geo_points_per_line);
         longitude_ = Allocate2DArray<double>(num_of_geo_lines, num_of_geo_points_per_line);
-        double **incidence_angle = Allocate2DArray<double>(num_of_geo_lines, num_of_geo_points_per_line);
+        double** incidence_angle = Allocate2DArray<double>(num_of_geo_lines, num_of_geo_points_per_line);
 
         for (int i = 0; i < num_of_geo_lines; i++) {
             for (int j = 0; j < num_of_geo_points_per_line; j++) {
@@ -147,12 +143,10 @@ class ComputeBurstOffsetTest : public ::testing::Test {
 
         vector_reader.close();
 
-        CHECK_CUDA_ERR(cudaMalloc((void **)&d_master_orbit_state_vector_,
-                                  sizeof(snapengine::OrbitStateVectorComputation) * count));
-        CHECK_CUDA_ERR(cudaMemcpy(d_master_orbit_state_vector_,
-                                  orbit_vectors.data(),
-                                  sizeof(snapengine::OrbitStateVectorComputation) * count,
-                                  cudaMemcpyHostToDevice));
+        CHECK_CUDA_ERR(
+            cudaMalloc((void**)&d_master_orbit_state_vector_, sizeof(snapengine::OrbitStateVectorComputation) * count));
+        CHECK_CUDA_ERR(cudaMemcpy(d_master_orbit_state_vector_, orbit_vectors.data(),
+                                  sizeof(snapengine::OrbitStateVectorComputation) * count, cudaMemcpyHostToDevice));
         master_num_orbit_vec_ = count;
     }
 
@@ -168,7 +162,7 @@ class ComputeBurstOffsetTest : public ::testing::Test {
         temp_utils.line_time_interval = 2.3791160879629606E-8;
         temp_utils.wavelength = 0.05546576;
 
-        CHECK_CUDA_ERR(cudaMalloc((void **)&slave_utils_, sizeof(s1tbx::DeviceSentinel1Utils)));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&slave_utils_, sizeof(s1tbx::DeviceSentinel1Utils)));
         CHECK_CUDA_ERR(
             cudaMemcpy(slave_utils_, &temp_utils, sizeof(s1tbx::DeviceSentinel1Utils), cudaMemcpyHostToDevice));
     }
@@ -178,30 +172,25 @@ class ComputeBurstOffsetTest : public ::testing::Test {
 
         temp_info.num_of_bursts = 9;
 
-        CHECK_CUDA_ERR(cudaMalloc((void **)&temp_info.device_burst_first_line_time,
+        CHECK_CUDA_ERR(cudaMalloc((void**)&temp_info.device_burst_first_line_time,
                                   sizeof(double) * goods::slave_burst_first_line_time.size()));
-        CHECK_CUDA_ERR(cudaMemcpy(temp_info.device_burst_first_line_time,
-                                  goods::slave_burst_first_line_time.data(),
-                                  sizeof(double) * goods::slave_burst_first_line_time.size(),
-                                  cudaMemcpyHostToDevice));
-        CHECK_CUDA_ERR(cudaMalloc((void **)&temp_info.device_burst_last_line_time,
+        CHECK_CUDA_ERR(cudaMemcpy(temp_info.device_burst_first_line_time, goods::slave_burst_first_line_time.data(),
+                                  sizeof(double) * goods::slave_burst_first_line_time.size(), cudaMemcpyHostToDevice));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&temp_info.device_burst_last_line_time,
                                   sizeof(double) * goods::slave_burst_last_line_time.size()));
-        CHECK_CUDA_ERR(cudaMemcpy(temp_info.device_burst_last_line_time,
-                                  goods::slave_burst_last_line_time.data(),
-                                  sizeof(double) * goods::slave_burst_last_line_time.size(),
-                                  cudaMemcpyHostToDevice));
+        CHECK_CUDA_ERR(cudaMemcpy(temp_info.device_burst_last_line_time, goods::slave_burst_last_line_time.data(),
+                                  sizeof(double) * goods::slave_burst_last_line_time.size(), cudaMemcpyHostToDevice));
 
-        CHECK_CUDA_ERR(cudaMalloc((void **)&slave_info_, sizeof(s1tbx::DeviceSubswathInfo)));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&slave_info_, sizeof(s1tbx::DeviceSubswathInfo)));
         CHECK_CUDA_ERR(cudaMemcpy(slave_info_, &temp_info, sizeof(s1tbx::DeviceSubswathInfo), cudaMemcpyHostToDevice));
     }
 
     void PrepareSlaveData() {
         PrepareSlaveSentinelUtils();
         PrepareSlaveSubswathInfo();
-        CHECK_CUDA_ERR(cudaMalloc((void **)&d_slave_orbit_state_vector_,
+        CHECK_CUDA_ERR(cudaMalloc((void**)&d_slave_orbit_state_vector_,
                                   sizeof(snapengine::OrbitStateVectorComputation) * goods::slave_orbit.size()));
-        CHECK_CUDA_ERR(cudaMemcpy(d_slave_orbit_state_vector_,
-                                  goods::slave_orbit.data(),
+        CHECK_CUDA_ERR(cudaMemcpy(d_slave_orbit_state_vector_, goods::slave_orbit.data(),
                                   sizeof(snapengine::OrbitStateVectorComputation) * goods::slave_orbit.size(),
                                   cudaMemcpyHostToDevice));
     }
@@ -235,7 +224,7 @@ class ComputeBurstOffsetTest : public ::testing::Test {
         CHECK_CUDA_ERR(cudaMemcpy(args_.burst_offset, &burst_offset, sizeof(int), cudaMemcpyHostToDevice));
     }
 
-   public:
+public:
     ComputeBurstOffsetTest() {
         PrepareSrtm3Data();
         PrepareMasterData();
@@ -244,7 +233,6 @@ class ComputeBurstOffsetTest : public ::testing::Test {
     }
 
     ~ComputeBurstOffsetTest() override {
-
         Deallocate2DArray(latitude_);
         Deallocate2DArray(longitude_);
         cudaFree(d_master_orbit_state_vector_);
@@ -264,7 +252,7 @@ class ComputeBurstOffsetTest : public ::testing::Test {
 TEST_F(ComputeBurstOffsetTest, ComputeBurstOffset) {
     constexpr int EXPECTED_BURST_OFFSET{-13};
     int burst_offset;
-    cudaError_t  error = backgeocoding::LaunchBurstOffsetKernel(args_, &burst_offset);
+    cudaError_t error = backgeocoding::LaunchBurstOffsetKernel(args_, &burst_offset);
 
     EXPECT_THAT(EXPECTED_BURST_OFFSET, ::testing::Eq(burst_offset));
     EXPECT_THAT(::cudaError::cudaSuccess, ::testing::Eq(error));

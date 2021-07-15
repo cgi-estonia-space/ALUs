@@ -16,9 +16,9 @@ list(APPEND BACKGEOCODING_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/../../util/gdal/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/common/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/exotic_operations/include
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/sentinel1/include
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-core/datamodel
+        ${CMAKE_CURRENT_LIST_DIR}/../../sentinel1
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine/snap-core/core/datamodel
         ${CMAKE_CURRENT_LIST_DIR}/../../util/cuda/include
         ${CMAKE_CURRENT_LIST_DIR}/../../app/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/common/include

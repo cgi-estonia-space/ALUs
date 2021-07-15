@@ -32,9 +32,9 @@
 #include "dataset.h"
 #include "gdal_management.h"
 
-#include "sentinel1_calibrate.h"
-#include "snap-core/datamodel/product.h"
 #include "srtm3_elevation_model.h"
+#include "sentinel1_calibrate.h"
+#include "snap-core/core/datamodel/product.h"
 #include "terrain_correction.h"
 #include "terrain_correction_metadata.h"
 #include "topsar_deburst_op.h"

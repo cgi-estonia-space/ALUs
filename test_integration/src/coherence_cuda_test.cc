@@ -31,7 +31,7 @@
 #include "gdal_tile_writer.h"
 #include "meta_data.h"
 #include "pugixml_meta_data_reader.h"
-#include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
+#include "snap-engine-utilities/engine-utilities/datamodel/metadata/abstract_metadata.h"
 
 namespace {
 

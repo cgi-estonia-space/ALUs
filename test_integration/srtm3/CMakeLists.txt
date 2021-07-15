@@ -4,7 +4,7 @@ list(APPEND SRTM3_TEST_UTIL_SOURCES
 
 list(APPEND SRTM3_TEST_UTIL_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/include
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine
         ${CMAKE_CURRENT_LIST_DIR}/../../util/exotic_operations/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/cuda/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/common/include

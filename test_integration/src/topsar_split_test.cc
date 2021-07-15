@@ -17,13 +17,20 @@
 #include <gmock/gmock.h>
 
 #include "pugixml_meta_data_reader.h"
+#include "product.h"
+#include "snap-engine-utilities/engine-utilities/datamodel/metadata/abstract_metadata.h"
+
+#include "apply_orbit_file_op.h"
 #include "topsar_split.h"
 
+#include "snap-core/core/util/system_utils.h"
+#include "target_dataset.h"
+#include "c16_dataset.h"
 #include "../../test/include/sentinel1_utils_tester.h"
 #include "apply_orbit_file_op.h"
 #include "c16_dataset.h"
-#include "snap-core/util/system_utils.h"
-#include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
+#include "snap-core/core/util/system_utils.h"
+#include "snap-engine-utilities/engine-utilities/datamodel/metadata/abstract_metadata.h"
 
 namespace {
 

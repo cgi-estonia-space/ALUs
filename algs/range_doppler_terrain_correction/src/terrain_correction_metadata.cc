@@ -20,9 +20,9 @@
 
 #include "dataset.h"
 #include "pugixml_meta_data_reader.h"
-#include "snap-core/datamodel/band.h"
-#include "snap-core/datamodel/tie_point_grid.h"
-#include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
+#include "snap-core/core/datamodel/band.h"
+#include "snap-core/core/datamodel/tie_point_grid.h"
+#include "snap-engine-utilities/engine-utilities//datamodel/metadata/abstract_metadata.h"
 
 namespace alus::terraincorrection {
 

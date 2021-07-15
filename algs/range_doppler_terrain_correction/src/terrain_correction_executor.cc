@@ -22,9 +22,9 @@
 #include <utility>
 #include <vector>
 
+#include "srtm3_elevation_model.h"
 #include "alg_bond.h"
 #include "alus_log.h"
-#include "srtm3_elevation_model.h"
 #include "terrain_correction.h"
 #include "terrain_correction_metadata.h"
 

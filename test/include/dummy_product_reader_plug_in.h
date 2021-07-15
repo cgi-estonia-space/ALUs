@@ -23,9 +23,9 @@
 
 #include "gmock/gmock.h"
 
-#include "snap-core/dataio/decode_qualification.h"
-#include "snap-core/dataio/i_product_reader.h"
-#include "snap-core/dataio/i_product_reader_plug_in.h"
+#include "snap-core/core/dataio/decode_qualification.h"
+#include "snap-core/core/dataio/i_product_reader.h"
+#include "snap-core/core/dataio/i_product_reader_plug_in.h"
 
 #include "dummy_product_reader.h"
 

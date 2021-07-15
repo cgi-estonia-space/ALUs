@@ -13,12 +13,12 @@
  */
 #include "meta_data.h"
 
-#include "date_utils.h"
-#include "jlinda-core/constants.h"
-#include "jlinda-core/ellipsoid.h"
-#include "jlinda-core/geopoint.h"
-#include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
-#include "snap-engine-utilities/eo/constants.h"
+#include "jlinda/jlinda-core/constants.h"
+#include "jlinda/jlinda-core/ellipsoid.h"
+#include "jlinda/jlinda-core/geopoint.h"
+#include "jlinda/jlinda-core/utils/date_utils.h"
+#include "snap-engine-utilities/engine-utilities/datamodel/metadata/abstract_metadata.h"
+#include "snap-engine-utilities/engine-utilities//eo/constants.h"
 
 namespace alus {
 namespace coherence_cuda {
@@ -45,7 +45,7 @@ MetaData::MetaData(bool is_near_range_on_left, std::shared_ptr<snapengine::Metad
     constexpr long MEGA{1000000};
     radar_wavelength_ = (snapengine::eo::constants::LIGHT_SPEED / MEGA) /
                         element->GetAttributeDouble(alus::snapengine::AbstractMetadata::RADAR_FREQUENCY);
-    t_azi_1_ = snapengine::DateUtils::DateTimeToSecOfDay(
+    t_azi_1_ = s1tbx::DateUtils::DateTimeToSecOfDay(
         element->GetAttributeUtc(alus::snapengine::AbstractMetadata::FIRST_LINE_TIME)->ToString());
     t_range_1_ = element->GetAttributeDouble(alus::snapengine::AbstractMetadata::SLANT_RANGE_TO_FIRST_PIXEL) /
         snapengine::eo::constants::LIGHT_SPEED;

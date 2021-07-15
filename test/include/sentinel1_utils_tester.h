@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "allocators.h"
-#include "subswath_info.h"
+#include "s1tbx-commons/subswath_info.h"
 
 namespace {
 

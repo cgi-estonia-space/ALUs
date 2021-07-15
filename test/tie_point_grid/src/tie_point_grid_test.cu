@@ -1,4 +1,4 @@
-#include "tie_point_grid.cuh"
+#include "../../../snap-engine/tie_point_grid.cuh"
 #include "tie_point_grid_test.cuh"
 
 namespace alus {

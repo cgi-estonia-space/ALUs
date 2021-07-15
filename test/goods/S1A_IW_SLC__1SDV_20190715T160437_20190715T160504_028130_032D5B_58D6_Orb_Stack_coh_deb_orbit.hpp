@@ -19,8 +19,8 @@
 
 #include <vector>
 
-#include "orbit_state_vector.h"
-#include "pos_vector.h"
+#include "../../snap-engine/orbit_state_vector.h"
+#include "../../snap-engine/pos_vector.h"
 #include "product_data_utc.h"
 
 namespace alus::goods{

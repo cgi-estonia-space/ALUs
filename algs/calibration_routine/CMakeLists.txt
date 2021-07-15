@@ -11,7 +11,7 @@ list(APPEND CALIBRATION_ROUTINE_INCLUDES
         ${CMAKE_CURRENT_LIST_DIR}/../../util/common/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/cuda/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/gdal/include
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine/include
         )
 
 

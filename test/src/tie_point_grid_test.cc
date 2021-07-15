@@ -26,7 +26,7 @@ using namespace alus::tests;
 namespace {
 
 class TiePointGridTester : public cuda::CudaFriendlyObject {
-   public:
+public:
     // Array values are received by running terrain correction on
     // S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb.dim data file.
     float tie_points_array_[126]{
@@ -47,16 +47,16 @@ class TiePointGridTester : public cuda::CudaFriendlyObject {
 
     const double EXPECTED_RESULT_ = 58.21324222804141;
     double end_result_;
-    double *device_result_{};
-    float *device_tie_points_{};
+    double* device_result_{};
+    float* device_tie_points_{};
 
     ~TiePointGridTester() { this->DeviceFree(); }
 
     void HostToDevice() {
         CHECK_CUDA_ERR(cudaMalloc(&device_tie_points_, sizeof(float) * tie_points_.size));
         CHECK_CUDA_ERR(cudaMalloc(&device_result_, sizeof(double)));
-        CHECK_CUDA_ERR(cudaMemcpy(
-            device_tie_points_, tie_points_.array, sizeof(float) * tie_points_.size, cudaMemcpyHostToDevice));
+        CHECK_CUDA_ERR(cudaMemcpy(device_tie_points_, tie_points_.array, sizeof(float) * tie_points_.size,
+                                  cudaMemcpyHostToDevice));
     }
 
     void DeviceToHost() {
@@ -73,11 +73,7 @@ TEST(getPixelDouble, tie_point_grid) {
     TiePointGridTester tester;
 
     tester.HostToDevice();
-    CHECK_CUDA_ERR(LaunchGetPixelDouble(1,
-                                        1,
-                                        0.5,
-                                        0.5,
-                                        tester.device_result_,
+    CHECK_CUDA_ERR(LaunchGetPixelDouble(1, 1, 0.5, 0.5, tester.device_result_,
                                         tiepointgrid::TiePointGrid{0, 0, 1163, 300, 21, 6, tester.device_tie_points_}));
 
     tester.DeviceToHost();

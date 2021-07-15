@@ -14,12 +14,12 @@
 #include <cmath>
 #include <cstddef>
 
+#include "../../../snap-engine/srtm3_elevation_calc.cuh"
 #include "get_position.cuh"
 #include "math_utils.cuh"
 #include "range_doppler_geocoding.cuh"
 #include "raster_utils.cuh"
-#include "sar_geocoding.cuh"
-#include "srtm3_elevation_calc.cuh"
+#include "s1tbx-commons/sar_geocoding.cuh"
 
 #include "cuda_util.h"
 #include "position_data.h"

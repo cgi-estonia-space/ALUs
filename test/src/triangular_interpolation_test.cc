@@ -16,8 +16,8 @@
 
 #include "gmock/gmock.h"
 
-#include "cuda_friendly_object.h"
 #include "comparators.h"
+#include "cuda_friendly_object.h"
 #include "cuda_util.h"
 
 #include "backgeocoding_constants.h"
@@ -27,13 +27,13 @@
 namespace {
 
 class TriangularInterpolationTester : public alus::cuda::CudaFriendlyObject {
-   private:
+private:
     static const std::string az_rg_data_file_;
     static const std::string lats_lons_file_;
     static const std::string arrays_file_;
     static const std::string triangles_data_file_;
 
-   public:
+public:
     static constexpr double RG_AZ_RATIO{0.16742323135844578};
     static constexpr double INVALID_INDEX{-9999.0};
 
@@ -42,7 +42,7 @@ class TriangularInterpolationTester : public alus::cuda::CudaFriendlyObject {
     double *device_lat_ = nullptr, *device_lon_ = nullptr;
     double *device_rg_array_ = nullptr, *device_az_array_ = nullptr;
     double *device_lat_array_ = nullptr, *device_lon_array_ = nullptr;
-    alus::delaunay::DelaunayTriangle2D *device_triangles_ = nullptr;
+    alus::delaunay::DelaunayTriangle2D* device_triangles_ = nullptr;
 
     std::vector<double> master_az_;
     std::vector<double> master_rg_;
@@ -158,20 +158,20 @@ class TriangularInterpolationTester : public alus::cuda::CudaFriendlyObject {
         size_t array_size = arr_width_ * arr_height_;
         size_t az_rg_size = az_rg_width_ * az_rg_height_;
 
-        CHECK_CUDA_ERR(cudaMalloc((void **)&device_rg_array_, array_size * sizeof(double)));
-        CHECK_CUDA_ERR(cudaMalloc((void **)&device_az_array_, array_size * sizeof(double)));
-        CHECK_CUDA_ERR(cudaMalloc((void **)&device_lat_array_, array_size * sizeof(double)));
-        CHECK_CUDA_ERR(cudaMalloc((void **)&device_lon_array_, array_size * sizeof(double)));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&device_rg_array_, array_size * sizeof(double)));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&device_az_array_, array_size * sizeof(double)));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&device_lat_array_, array_size * sizeof(double)));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&device_lon_array_, array_size * sizeof(double)));
 
-        CHECK_CUDA_ERR(cudaMalloc((void **)&device_master_az_, az_rg_size * sizeof(double)));
-        CHECK_CUDA_ERR(cudaMalloc((void **)&device_master_rg_, az_rg_size * sizeof(double)));
-        CHECK_CUDA_ERR(cudaMalloc((void **)&device_slave_az_, az_rg_size * sizeof(double)));
-        CHECK_CUDA_ERR(cudaMalloc((void **)&device_slave_rg_, az_rg_size * sizeof(double)));
-        CHECK_CUDA_ERR(cudaMalloc((void **)&device_lat_, az_rg_size * sizeof(double)));
-        CHECK_CUDA_ERR(cudaMalloc((void **)&device_lon_, az_rg_size * sizeof(double)));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&device_master_az_, az_rg_size * sizeof(double)));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&device_master_rg_, az_rg_size * sizeof(double)));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&device_slave_az_, az_rg_size * sizeof(double)));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&device_slave_rg_, az_rg_size * sizeof(double)));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&device_lat_, az_rg_size * sizeof(double)));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&device_lon_, az_rg_size * sizeof(double)));
 
         CHECK_CUDA_ERR(
-            cudaMalloc((void **)&device_triangles_, triangle_size_ * sizeof(alus::delaunay::DelaunayTriangle2D)));
+            cudaMalloc((void**)&device_triangles_, triangle_size_ * sizeof(alus::delaunay::DelaunayTriangle2D)));
 
         CHECK_CUDA_ERR(
             cudaMemcpy(device_master_az_, master_az_.data(), az_rg_size * sizeof(double), cudaMemcpyHostToDevice));
@@ -184,22 +184,20 @@ class TriangularInterpolationTester : public alus::cuda::CudaFriendlyObject {
         CHECK_CUDA_ERR(cudaMemcpy(device_lat_, lats_.data(), az_rg_size * sizeof(double), cudaMemcpyHostToDevice));
         CHECK_CUDA_ERR(cudaMemcpy(device_lon_, lons_.data(), az_rg_size * sizeof(double), cudaMemcpyHostToDevice));
 
-        CHECK_CUDA_ERR(cudaMemcpy(device_triangles_,
-                                  triangles_.data(),
-                                  triangle_size_ * sizeof(alus::delaunay::DelaunayTriangle2D),
-                                  cudaMemcpyHostToDevice));
+        CHECK_CUDA_ERR(cudaMemcpy(device_triangles_, triangles_.data(),
+                                  triangle_size_ * sizeof(alus::delaunay::DelaunayTriangle2D), cudaMemcpyHostToDevice));
     }
     void DeviceToHost() {
         size_t array_size = arr_width_ * arr_height_;
 
-        CHECK_CUDA_ERR(cudaMemcpy(
-            results_rg_array_.data(), device_rg_array_, array_size * sizeof(double), cudaMemcpyDeviceToHost));
-        CHECK_CUDA_ERR(cudaMemcpy(
-            results_az_array_.data(), device_az_array_, array_size * sizeof(double), cudaMemcpyDeviceToHost));
-        CHECK_CUDA_ERR(cudaMemcpy(
-            results_lat_array_.data(), device_lat_array_, array_size * sizeof(double), cudaMemcpyDeviceToHost));
-        CHECK_CUDA_ERR(cudaMemcpy(
-            results_lon_array_.data(), device_lon_array_, array_size * sizeof(double), cudaMemcpyDeviceToHost));
+        CHECK_CUDA_ERR(cudaMemcpy(results_rg_array_.data(), device_rg_array_, array_size * sizeof(double),
+                                  cudaMemcpyDeviceToHost));
+        CHECK_CUDA_ERR(cudaMemcpy(results_az_array_.data(), device_az_array_, array_size * sizeof(double),
+                                  cudaMemcpyDeviceToHost));
+        CHECK_CUDA_ERR(cudaMemcpy(results_lat_array_.data(), device_lat_array_, array_size * sizeof(double),
+                                  cudaMemcpyDeviceToHost));
+        CHECK_CUDA_ERR(cudaMemcpy(results_lon_array_.data(), device_lon_array_, array_size * sizeof(double),
+                                  cudaMemcpyDeviceToHost));
     }
     void DeviceFree() {
         if (device_rg_array_ != nullptr) {
@@ -257,10 +255,10 @@ const std::string TriangularInterpolationTester::arrays_file_ = "./goods/backgeo
 const std::string TriangularInterpolationTester::triangles_data_file_ =
     "./goods/backgeocoding/masterTrianglesTestData.txt";
 
-void PrepareParams(TriangularInterpolationTester *tester,
-                   alus::snapengine::triangularinterpolation::TriangleInterpolationParams*params,
-                   alus::snapengine::triangularinterpolation::Window *window,
-                   alus::snapengine::triangularinterpolation::Zdata *zdata) {
+void PrepareParams(TriangularInterpolationTester* tester,
+                   alus::snapengine::triangularinterpolation::TriangleInterpolationParams* params,
+                   alus::snapengine::triangularinterpolation::Window* window,
+                   alus::snapengine::triangularinterpolation::Zdata* zdata) {
     window->linelo = 17000;
     window->linehi = 17099;
     window->pixlo = 4000;
@@ -320,18 +318,16 @@ TEST(TriangularInterpolation, InterpolationTest) {
     alus::snapengine::triangularinterpolation::TriangleInterpolationParams params;
     alus::snapengine::triangularinterpolation::Window window;
     alus::snapengine::triangularinterpolation::Zdata zdata[alus::backgeocoding::Z_DATA_SIZE];
-    alus::snapengine::triangularinterpolation::Zdata *device_zdata;
+    alus::snapengine::triangularinterpolation::Zdata* device_zdata;
 
     PrepareParams(&tester, &params, &window, zdata);
 
     params.window = window;
 
+    CHECK_CUDA_ERR(cudaMalloc((void**)&device_zdata, alus::backgeocoding::Z_DATA_SIZE *
+                                                         sizeof(alus::snapengine::triangularinterpolation::Zdata)));
     CHECK_CUDA_ERR(
-        cudaMalloc((void **)&device_zdata,
-                   alus::backgeocoding::Z_DATA_SIZE * sizeof(alus::snapengine::triangularinterpolation::Zdata)));
-    CHECK_CUDA_ERR(
-        cudaMemcpy(device_zdata,
-                   zdata,
+        cudaMemcpy(device_zdata, zdata,
                    alus::backgeocoding::Z_DATA_SIZE * sizeof(alus::snapengine::triangularinterpolation::Zdata),
                    cudaMemcpyHostToDevice));
 
@@ -361,17 +357,12 @@ TEST(DelaunayTest, BigCPUTriangulationTest) {
     TriangularInterpolationTester tester;
 
     alus::delaunay::DelaunayTriangulator triangulator;
-    triangulator.TriangulateCPU2(tester.master_az_.data(),
-                                 1.0,
-                                 tester.master_rg_.data(),
-                                 TriangularInterpolationTester::RG_AZ_RATIO,
-                                 tester.az_rg_width_ * tester.az_rg_height_,
+    triangulator.TriangulateCPU2(tester.master_az_.data(), 1.0, tester.master_rg_.data(),
+                                 TriangularInterpolationTester::RG_AZ_RATIO, tester.az_rg_width_ * tester.az_rg_height_,
                                  alus::backgeocoding::INVALID_INDEX);
 
-    size_t count = alus::EqualsTriangles(triangulator.host_triangles_.data(),
-                                         tester.triangles_.data(),
-                                         triangulator.triangle_count_,
-                                         0.00001);
+    size_t count = alus::EqualsTriangles(triangulator.host_triangles_.data(), tester.triangles_.data(),
+                                         triangulator.triangle_count_, 0.00001);
     EXPECT_EQ(count, 0) << "Triangle results do not match. Mismatches: " << count << std::endl;
 }
 
@@ -383,13 +374,10 @@ TEST(TriangularInterpolation, InterpolationAndTriangulation) {
     alus::snapengine::triangularinterpolation::TriangleInterpolationParams params;
     alus::snapengine::triangularinterpolation::Window window;
     alus::snapengine::triangularinterpolation::Zdata zdata[alus::backgeocoding::Z_DATA_SIZE];
-    alus::snapengine::triangularinterpolation::Zdata *device_zdata;
+    alus::snapengine::triangularinterpolation::Zdata* device_zdata;
 
-    triangulator.TriangulateCPU2(tester.master_az_.data(),
-                                 1.0,
-                                 tester.master_rg_.data(),
-                                 TriangularInterpolationTester::RG_AZ_RATIO,
-                                 tester.az_rg_width_ * tester.az_rg_height_,
+    triangulator.TriangulateCPU2(tester.master_az_.data(), 1.0, tester.master_rg_.data(),
+                                 TriangularInterpolationTester::RG_AZ_RATIO, tester.az_rg_width_ * tester.az_rg_height_,
                                  alus::backgeocoding::INVALID_INDEX);
     tester.triangle_size_ = triangulator.triangle_count_;
     tester.triangles_ = triangulator.host_triangles_;
@@ -398,12 +386,10 @@ TEST(TriangularInterpolation, InterpolationAndTriangulation) {
     PrepareParams(&tester, &params, &window, zdata);
     params.window = window;
 
+    CHECK_CUDA_ERR(cudaMalloc((void**)&device_zdata, alus::backgeocoding::Z_DATA_SIZE *
+                                                         sizeof(alus::snapengine::triangularinterpolation::Zdata)));
     CHECK_CUDA_ERR(
-        cudaMalloc((void **)&device_zdata,
-                   alus::backgeocoding::Z_DATA_SIZE * sizeof(alus::snapengine::triangularinterpolation::Zdata)));
-    CHECK_CUDA_ERR(
-        cudaMemcpy(device_zdata,
-                   zdata,
+        cudaMemcpy(device_zdata, zdata,
                    alus::backgeocoding::Z_DATA_SIZE * sizeof(alus::snapengine::triangularinterpolation::Zdata),
                    cudaMemcpyHostToDevice));
 
@@ -412,10 +398,12 @@ TEST(TriangularInterpolation, InterpolationAndTriangulation) {
     tester.DeviceToHost();
 
     const size_t size = window.lines * window.pixels;
-    size_t slave_az_count = alus::EqualsArraysd(tester.results_az_array_.data(), tester.az_array_.data(), size, 0.00001);
+    size_t slave_az_count =
+        alus::EqualsArraysd(tester.results_az_array_.data(), tester.az_array_.data(), size, 0.00001);
     EXPECT_EQ(slave_az_count, 0) << "Slave azimuth results do not match. Mismatches: " << slave_az_count << '\n';
 
-    size_t slave_rg_count = alus::EqualsArraysd(tester.results_rg_array_.data(), tester.rg_array_.data(), size, 0.00001);
+    size_t slave_rg_count =
+        alus::EqualsArraysd(tester.results_rg_array_.data(), tester.rg_array_.data(), size, 0.00001);
     EXPECT_EQ(slave_rg_count, 0) << "Slave range results do not match. Mismatches: " << slave_rg_count << '\n';
 
     size_t lats_count = alus::EqualsArraysd(tester.results_lat_array_.data(), tester.lat_array_.data(), size, 0.00001);

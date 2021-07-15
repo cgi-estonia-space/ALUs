@@ -4,7 +4,7 @@ list(APPEND EGM96_TEST_SOURCES
 
 list(APPEND EGM96_TEST_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/include
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine
         )
 
 add_library(egm96-test-obj

@@ -21,6 +21,7 @@
 #include "general_constants.h"
 #include "kernel_array.h"
 #include "sentinel1_calibrate_kernel.h"
+#include "s1tbx-commons/calibration_vector_computation.h"
 
 #include "math_utils.cuh"
 

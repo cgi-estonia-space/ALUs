@@ -23,9 +23,10 @@
 #include "gmock/gmock.h"
 #include "metadata_element.h"
 #include "product_data_utc.h"
-#include "sentinel1_utils.h"
+#include "s1tbx-commons/calibration_vector.h"
+#include "s1tbx-commons/sentinel1_utils.h"
+#include "s1tbx-commons/subswath_info.h"
 #include "sentinel1_utils_tester.h"
-#include "subswath_info.h"
 
 namespace {
 
@@ -35,8 +36,7 @@ namespace {
 TEST(sentinel1, utils) {
     alus::s1tbx::Sentinel1Utils utils("./goods/slave_metadata.dim");
     Sentinel1UtilsTester tester;
-    tester.Read4Arrays("./goods/backgeocoding/slaveDopplerRate.txt",
-                       "./goods/backgeocoding/slaveDopplerCentroid.txt",
+    tester.Read4Arrays("./goods/backgeocoding/slaveDopplerRate.txt", "./goods/backgeocoding/slaveDopplerCentroid.txt",
                        "./goods/backgeocoding/slaveRangeDependDopplerRate.txt",
                        "./goods/backgeocoding/slaveReferenceTime.txt");
 

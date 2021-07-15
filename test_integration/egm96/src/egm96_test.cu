@@ -1,6 +1,6 @@
 #include "egm96_test.cuh"
 
-#include "earth_gravitational_model96.cuh"
+#include "snap-dem/dem/dataio/earth_gravitational_model96.cuh"
 
 namespace alus {
 namespace tests{

@@ -26,7 +26,7 @@
 #include "gdal_management.h"
 #include "get_position.h"
 #include "position_data.h"
-#include "snap-engine-utilities/eo/constants.h"
+#include "snap-engine-utilities/engine-utilities/eo/constants.h"
 #include "srtm3_elevation_model.h"
 #include "srtm3_elevation_model_constants.h"
 #include "tc_tile.h"
@@ -170,11 +170,11 @@ TEST_F(TerrainCorrectionTest, getPositionTrueScenario) {
 
     std::vector<double> osv_lookup = CalculateOrbitStateVectorLUT(comp_orbits);
 
-    KernelArray<double> osv_lut = { osv_lookup.data(), osv_lookup.size()};
+    KernelArray<double> osv_lut = {osv_lookup.data(), osv_lookup.size()};
 
-
-    const GetPositionMetadata metadata{7135.669951395567, 2.3822903166873924E-8, 0.05546576,     2.329562,
-                                       799303.6132771898, sensorPositions,       sensorVelocity, orbitStateVectors, osv_lut};
+    const GetPositionMetadata metadata{7135.669951395567, 2.3822903166873924E-8, 0.05546576,
+                                       2.329562,          799303.6132771898,     sensorPositions,
+                                       sensorVelocity,    orbitStateVectors,     osv_lut};
     const auto series_size = POS_DATA_TRUE.size();
     for (size_t i = 0; i < series_size; i++) {
         s1tbx::PositionData pos_data{};
@@ -227,10 +227,11 @@ TEST_F(TerrainCorrectionTest, getPositionFalseScenario) {
 
     std::vector<double> osv_lookup = CalculateOrbitStateVectorLUT(comp_orbits);
 
-    KernelArray<double> osv_lut = { osv_lookup.data(), osv_lookup.size()};
+    KernelArray<double> osv_lut = {osv_lookup.data(), osv_lookup.size()};
 
-    const GetPositionMetadata metadata{7135.669951395567, 2.3822903166873924E-8, 0.05546576,     2.329562,
-                                       799303.6132771898, sensorPositions,       sensorVelocity, orbitStateVectors, osv_lut};
+    const GetPositionMetadata metadata{7135.669951395567, 2.3822903166873924E-8, 0.05546576,
+                                       2.329562,          799303.6132771898,     sensorPositions,
+                                       sensorVelocity,    orbitStateVectors,     osv_lut};
     const auto series_size = POS_DATA_FALSE.size();
     for (size_t i = 0; i < series_size; i++) {
         s1tbx::PositionData pos_data{};

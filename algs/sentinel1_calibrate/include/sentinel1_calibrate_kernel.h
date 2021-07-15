@@ -18,8 +18,8 @@
 
 #include "calibration_info_computation.h"
 #include "calibration_type.h"
-#include "calibration_vector_computation.h"
 #include "kernel_array.h"
+#include "s1tbx-commons/calibration_vector_computation.h"
 #include "shapes.h"
 
 namespace alus {

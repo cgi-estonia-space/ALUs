@@ -21,17 +21,11 @@
 
 // Forward declaration
 namespace alus::tests {
-cudaError_t LaunchComputeBurstIndicesKernel(double line_time_interval,
-                                            double wavelength,
-                                            int num_of_bursts,
-                                            const double *burst_first_line_times,
-                                            const double *burst_last_line_times,
+cudaError_t LaunchComputeBurstIndicesKernel(double line_time_interval, double wavelength, int num_of_bursts,
+                                            const double* burst_first_line_times, const double* burst_last_line_times,
                                             snapengine::PosVector earth_point,
-                                            snapengine::OrbitStateVectorComputation *orbit,
-                                            const size_t num_orbit_vec,
-                                            const double dt,
-                                            backgeocoding::BurstIndices *indices,
-                                            dim3 grid_dim,
+                                            snapengine::OrbitStateVectorComputation* orbit, const size_t num_orbit_vec,
+                                            const double dt, backgeocoding::BurstIndices* indices, dim3 grid_dim,
                                             dim3 block_dim);
 }
 
@@ -39,28 +33,16 @@ namespace {
 using namespace alus;
 
 class BurstIndicesTest : public ::testing::Test {
-   protected:
+protected:
     const double line_time_interval_{2.3791160879629606E-8};
     const double wavelength_{0.05546576};
     const int num_of_bursts_{9};
-    const std::vector<double> burst_first_line_times_{6.4887741417916e8,
-                                                      6.488774169418269e8,
-                                                      6.48877419696273e8,
-                                                      6.48877422452774e8,
-                                                      6.48877425209275e8,
-                                                      6.48877427967831e8,
-                                                      6.48877430726388e8,
-                                                      6.48877433484944e8,
-                                                      6.48877436243501e8};
-    const std::vector<double> burst_last_line_times_{6.4887741726455e8,
-                                                     6.488774200272169e8,
-                                                     6.48877422781663e8,
-                                                     6.48877425538164e8,
-                                                     6.48877428294665e8,
-                                                     6.48877431053221e8,
-                                                     6.48877433811778e8,
-                                                     6.48877436570334e8,
-                                                     6.488774393288909e8};
+    const std::vector<double> burst_first_line_times_{6.4887741417916e8,  6.488774169418269e8, 6.48877419696273e8,
+                                                      6.48877422452774e8, 6.48877425209275e8,  6.48877427967831e8,
+                                                      6.48877430726388e8, 6.48877433484944e8,  6.48877436243501e8};
+    const std::vector<double> burst_last_line_times_{6.4887741726455e8,  6.488774200272169e8, 6.48877422781663e8,
+                                                     6.48877425538164e8, 6.48877428294665e8,  6.48877431053221e8,
+                                                     6.48877433811778e8, 6.48877436570334e8,  6.488774393288909e8};
     const std::vector<snapengine::OrbitStateVectorComputation> orbit_{
         {7510.154510824572, 7510.154510824572, 3673383.6086, 4325991.863895, 4569.33705, 1647.673002, -5836.793471},
         {7510.154626565312, 4262854.414968, 3689620.922176, 4267380.762376, 4524.172986, 1599.770229, -5885.316687},
@@ -81,56 +63,43 @@ class BurstIndicesTest : public ::testing::Test {
     const size_t num_orb_vec_ = orbit_.size();
     const double dt_ = 1.1574074075421474e-4;
 
-    const double *d_burst_first_line_times_;
-    const double *d_burst_last_line_times_;
-    const snapengine::OrbitStateVectorComputation *d_orbit_;
+    const double* d_burst_first_line_times_;
+    const double* d_burst_last_line_times_;
+    const snapengine::OrbitStateVectorComputation* d_orbit_;
 
-   public:
+public:
     BurstIndicesTest() {
-        CHECK_CUDA_ERR(
-            cudaMalloc((void **)&d_burst_first_line_times_, sizeof(double) * burst_first_line_times_.size()));
-        CHECK_CUDA_ERR(cudaMalloc((void **)&d_burst_last_line_times_, sizeof(double) * burst_last_line_times_.size()));
-        CHECK_CUDA_ERR(cudaMalloc((void **)&d_orbit_, sizeof(snapengine::OrbitStateVectorComputation) * num_orb_vec_));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&d_burst_first_line_times_, sizeof(double) * burst_first_line_times_.size()));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&d_burst_last_line_times_, sizeof(double) * burst_last_line_times_.size()));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&d_orbit_, sizeof(snapengine::OrbitStateVectorComputation) * num_orb_vec_));
 
-        CHECK_CUDA_ERR(cudaMemcpy((void *)d_burst_first_line_times_,
-                                  burst_first_line_times_.data(),
-                                  sizeof(double) * burst_first_line_times_.size(),
-                                  cudaMemcpyHostToDevice));
-        CHECK_CUDA_ERR(cudaMemcpy((void *)d_burst_last_line_times_,
-                                  burst_last_line_times_.data(),
-                                  sizeof(double) * burst_last_line_times_.size(),
-                                  cudaMemcpyHostToDevice));
-        CHECK_CUDA_ERR(cudaMemcpy((void *)d_orbit_,
-                                  orbit_.data(),
+        CHECK_CUDA_ERR(cudaMemcpy((void*)d_burst_first_line_times_, burst_first_line_times_.data(),
+                                  sizeof(double) * burst_first_line_times_.size(), cudaMemcpyHostToDevice));
+        CHECK_CUDA_ERR(cudaMemcpy((void*)d_burst_last_line_times_, burst_last_line_times_.data(),
+                                  sizeof(double) * burst_last_line_times_.size(), cudaMemcpyHostToDevice));
+        CHECK_CUDA_ERR(cudaMemcpy((void*)d_orbit_, orbit_.data(),
                                   sizeof(snapengine::OrbitStateVectorComputation) * orbit_.size(),
                                   cudaMemcpyHostToDevice));
     }
 
     ~BurstIndicesTest() override {
-        cudaFree((void *)d_burst_last_line_times_);
-        cudaFree((void *)d_burst_first_line_times_);
-        cudaFree((void *)d_orbit_);
+        cudaFree((void*)d_burst_last_line_times_);
+        cudaFree((void*)d_burst_first_line_times_);
+        cudaFree((void*)d_orbit_);
     }
 };
 TEST_F(BurstIndicesTest, ComputeBurstIndices) {
-    backgeocoding::BurstIndices *d_computed_indices;
-    CHECK_CUDA_ERR(cudaMalloc((void **)&d_computed_indices, sizeof(backgeocoding::BurstIndices)));
+    backgeocoding::BurstIndices* d_computed_indices;
+    CHECK_CUDA_ERR(cudaMalloc((void**)&d_computed_indices, sizeof(backgeocoding::BurstIndices)));
 
     snapengine::PosVector earth_point{4266449.299985306, 3092570.538750303, 3582073.5968776057};
-    CHECK_CUDA_ERR(tests::LaunchComputeBurstIndicesKernel(line_time_interval_,
-                                                          wavelength_,
-                                                          num_of_bursts_,
-                                                          d_burst_first_line_times_,
-                                                          d_burst_last_line_times_,
-                                                          earth_point,
-                                                          const_cast<snapengine::OrbitStateVectorComputation *>(d_orbit_),
-                                                          num_orb_vec_,
-                                                          dt_,
-                                                          d_computed_indices,
-                                                          {1},
-                                                          {1}));
+    CHECK_CUDA_ERR(tests::LaunchComputeBurstIndicesKernel(
+        line_time_interval_, wavelength_, num_of_bursts_, d_burst_first_line_times_, d_burst_last_line_times_,
+        earth_point, const_cast<snapengine::OrbitStateVectorComputation*>(d_orbit_), num_orb_vec_, dt_,
+        d_computed_indices, {1}, {1}));
     backgeocoding::BurstIndices computed_indices[1];
-    CHECK_CUDA_ERR(cudaMemcpy(&computed_indices, d_computed_indices, sizeof(backgeocoding::BurstIndices), cudaMemcpyDeviceToHost));
+    CHECK_CUDA_ERR(
+        cudaMemcpy(&computed_indices, d_computed_indices, sizeof(backgeocoding::BurstIndices), cudaMemcpyDeviceToHost));
     EXPECT_THAT(computed_indices[0].first_burst_index, ::testing::Eq(1));
     EXPECT_THAT(computed_indices[0].second_burst_index, ::testing::Eq(-1));
     EXPECT_THAT(computed_indices[0].in_upper_part_of_first_burst, ::testing::IsTrue());
@@ -140,24 +109,17 @@ TEST_F(BurstIndicesTest, ComputeBurstIndices) {
 }
 
 TEST_F(BurstIndicesTest, ComputeBurstIndicesInvalid) {
-    backgeocoding::BurstIndices *d_computed_indices;
-    CHECK_CUDA_ERR(cudaMalloc((void **)&d_computed_indices, sizeof(backgeocoding::BurstIndices)));
+    backgeocoding::BurstIndices* d_computed_indices;
+    CHECK_CUDA_ERR(cudaMalloc((void**)&d_computed_indices, sizeof(backgeocoding::BurstIndices)));
 
     snapengine::PosVector earth_point{4244349.646061476, 3087456.945708205, 3612029.2389756213};
-    CHECK_CUDA_ERR(tests::LaunchComputeBurstIndicesKernel(line_time_interval_,
-                                           wavelength_,
-                                           num_of_bursts_,
-                                           d_burst_first_line_times_,
-                                           d_burst_last_line_times_,
-                                           earth_point,
-                                           const_cast<snapengine::OrbitStateVectorComputation *>(d_orbit_),
-                                           num_orb_vec_,
-                                           dt_,
-                                           d_computed_indices,
-                                           {1},
-                                           {1}));
+    CHECK_CUDA_ERR(tests::LaunchComputeBurstIndicesKernel(
+        line_time_interval_, wavelength_, num_of_bursts_, d_burst_first_line_times_, d_burst_last_line_times_,
+        earth_point, const_cast<snapengine::OrbitStateVectorComputation*>(d_orbit_), num_orb_vec_, dt_,
+        d_computed_indices, {1}, {1}));
     backgeocoding::BurstIndices computed_indices[1];
-    CHECK_CUDA_ERR(cudaMemcpy(&computed_indices, d_computed_indices, sizeof(backgeocoding::BurstIndices), cudaMemcpyDeviceToHost));
+    CHECK_CUDA_ERR(
+        cudaMemcpy(&computed_indices, d_computed_indices, sizeof(backgeocoding::BurstIndices), cudaMemcpyDeviceToHost));
     EXPECT_THAT(computed_indices[0].first_burst_index, ::testing::Eq(-1));
     EXPECT_THAT(computed_indices[0].second_burst_index, ::testing::Eq(-1));
     EXPECT_THAT(computed_indices[0].in_upper_part_of_second_burst, ::testing::IsFalse());

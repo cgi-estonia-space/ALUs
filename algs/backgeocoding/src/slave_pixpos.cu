@@ -15,15 +15,15 @@
 
 #include <cstdio>
 
+#include "../../../snap-engine/srtm3_elevation_calc.cuh"
 #include "backgeocoding_constants.h"
 #include "backgeocoding_utils.cuh"
-#include "earth_gravitational_model96.cuh"
-#include "geo_utils.cuh"
 #include "position_data.h"
-#include "srtm3_elevation_calc.cuh"
+#include "snap-dem/dem/dataio/earth_gravitational_model96.cuh"
+#include "snap-engine-utilities/engine-utilities/eo/geo_utils.cuh"
 
+#include "../../../snap-engine/srtm3_elevation_model_constants.h"
 #include "cuda_util.h"
-#include "srtm3_elevation_model_constants.h"
 
 /**
  * The contents of this file refer to BackGeocodingOp.computeSlavePixPos in SNAP's java code.

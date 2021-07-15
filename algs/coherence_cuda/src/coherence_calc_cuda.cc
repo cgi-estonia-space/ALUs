@@ -16,8 +16,8 @@
 #include <cmath>
 
 #include "coherence_computation.h"
-#include "jlinda-core/constants.h"
-#include "snap-engine-utilities/eo/constants.h"
+#include "jlinda/jlinda-core/constants.h"
+#include "snap-engine-utilities/engine-utilities/eo/constants.h"
 
 namespace alus {
 namespace coherence_cuda {
@@ -88,9 +88,11 @@ std::vector<int> CohCuda::GetYPows(int srp_polynomial_degree) {
 std::vector<double> CohCuda::GenerateY(std::tuple<std::vector<int>, std::vector<int>> lines_pixels,
                                        MetaData& meta_master, MetaData& meta_slave) const {
     double master_min_pi_4_div_lam =
-        static_cast<double>(-4.0L * jlinda::SNAP_PI * snapengine::eo::constants::LIGHT_SPEED) / meta_master.GetRadarWaveLength();
+        static_cast<double>(-4.0L * jlinda::SNAP_PI * snapengine::eo::constants::LIGHT_SPEED) /
+        meta_master.GetRadarWaveLength();
     double slave_min_pi_4_div_lam =
-        static_cast<double>(-4.0L * jlinda::SNAP_PI * snapengine::eo::constants::LIGHT_SPEED) / meta_slave.GetRadarWaveLength();
+        static_cast<double>(-4.0L * jlinda::SNAP_PI * snapengine::eo::constants::LIGHT_SPEED) /
+        meta_slave.GetRadarWaveLength();
 
     std::vector<int> lines = std::get<0>(lines_pixels);
     std::vector<int> pixels = std::get<1>(lines_pixels);
@@ -111,8 +113,7 @@ std::vector<double> CohCuda::GenerateY(std::tuple<std::vector<int>, std::vector<
             meta_slave.Line2Ta(static_cast<int>(0.5 * meta_slave.GetApproxRadarCentreOriginal().GetY()));
         s1tbx::Point slave_time_vector = meta_slave.GetOrbit()->Xyz2T(xyz_master, line_2_a);
         double slave_time_range = slave_time_vector.GetX();
-        y.push_back((master_min_pi_4_div_lam * master_time_range) -
-                                          (slave_min_pi_4_div_lam * slave_time_range));
+        y.push_back((master_min_pi_4_div_lam * master_time_range) - (slave_min_pi_4_div_lam * slave_time_range));
     }
 
     return y;

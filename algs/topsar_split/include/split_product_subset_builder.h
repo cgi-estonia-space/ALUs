@@ -13,7 +13,7 @@
  */
 #pragma once
 
-#include "snap-core/dataio/product_subset_builder.h"
+#include "snap-core/core/dataio/product_subset_builder.h"
 
 namespace alus::snapengine{
 /**

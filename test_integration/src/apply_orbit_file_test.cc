@@ -28,11 +28,11 @@
 #include "../goods/apply_orbit_test_data.h"
 #include "custom/dimension.h"
 #include "sentinel1_product_reader_plug_in.h"
-#include "snap-core/datamodel/pugixml_meta_data_reader.h"
-#include "snap-core/datamodel/pugixml_meta_data_writer.h"
-#include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
-#include "snap-core/util/alus_utils.h"
-#include "snap-core/util/system_utils.h"
+#include "snap-core/core/datamodel/pugixml_meta_data_reader.h"
+#include "snap-core/core/datamodel/pugixml_meta_data_writer.h"
+#include "snap-engine-utilities/engine-utilities/datamodel/metadata/abstract_metadata.h"
+#include "snap-core/core/util/alus_utils.h"
+#include "snap-core/core/util/system_utils.h"
 
 namespace {
 

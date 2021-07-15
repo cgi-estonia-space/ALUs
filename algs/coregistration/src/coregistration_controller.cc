@@ -20,8 +20,8 @@
 #include "apply_orbit_file_op.h"
 #include "backgeocoding_controller.h"
 #include "general_constants.h"
-#include "snap-core/util/alus_utils.h"
-#include "snap-core/util/system_utils.h"
+#include "snap-core/core/util/alus_utils.h"
+#include "snap-core/core/util/system_utils.h"
 #include "target_dataset.h"
 #include "topsar_split.h"
 

@@ -23,6 +23,8 @@
 #include <utility>
 #include <vector>
 
+#include "srtm3_elevation_model_constants.h"
+#include "tie_point_geocoding.h"
 #include "alus_log.h"
 #include "crs_geocoding.h"
 #include "cuda_util.h"
@@ -31,12 +33,10 @@
 #include "product_old.h"
 #include "raster_properties.h"
 #include "shapes_util.h"
-#include "snap-engine-utilities/eo/constants.h"
-#include "srtm3_elevation_model_constants.h"
+#include "snap-engine-utilities/engine-utilities//eo/constants.h"
 #include "tc_tile.h"
 #include "terrain_correction_constants.h"
 #include "terrain_correction_kernel.h"
-#include "tie_point_geocoding.h"
 #include "tile_queue.h"
 
 namespace {

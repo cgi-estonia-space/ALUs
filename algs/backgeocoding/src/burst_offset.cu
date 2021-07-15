@@ -16,10 +16,10 @@
 #include "backgeocoding_constants.h"
 #include "position_data.h"
 
+#include "../../../snap-engine/srtm3_elevation_calc.cuh"
 #include "backgeocoding_utils.cuh"
-#include "geo_utils.cuh"
 #include "math_utils.cuh"
-#include "srtm3_elevation_calc.cuh"
+#include "snap-engine-utilities/engine-utilities/eo/geo_utils.cuh"
 
 namespace alus {
 namespace backgeocoding {

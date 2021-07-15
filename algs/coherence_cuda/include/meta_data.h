@@ -16,9 +16,9 @@
 #include <memory>
 
 #include "i_data_tile_reader.h"
-#include "metadata_element.h"
-#include "orbit.h"
+#include "snap-core/core/datamodel/metadata_element.h"
 #include "point.h"
+#include "s1tbx-commons/orbit.h"
 
 namespace alus {
 namespace coherence_cuda {

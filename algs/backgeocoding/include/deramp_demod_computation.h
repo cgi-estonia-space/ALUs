@@ -15,8 +15,8 @@
 #include <cuda_runtime.h>
 
 #include "general_constants.h"
+#include "s1tbx-commons/subswath_info_computation.h"
 #include "shapes.h"
-#include "subswath_info_computation.h"
 
 namespace alus {
 namespace backgeocoding {

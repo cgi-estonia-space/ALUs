@@ -20,9 +20,9 @@
 
 #include <memory>
 
-#include "snap-core/datamodel/geo_pos.h"
-#include "snap-core/datamodel/i_geo_coding.h"
-#include "snap-core/datamodel/pixel_pos.h"
+#include "snap-core/core/datamodel/geo_pos.h"
+#include "snap-core/core/datamodel/i_geo_coding.h"
+#include "snap-core/core/datamodel/pixel_pos.h"
 
 namespace alus::snapengine {
 

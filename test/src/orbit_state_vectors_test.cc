@@ -19,7 +19,7 @@
 #include "../goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_orbit.hpp"
 #include "kernel_array.h"
 #include "pos_vector.h"
-#include "orbit_state_vectors.h"
+#include "s1tbx-commons/orbit_state_vectors.h"
 
 namespace {
 
@@ -29,13 +29,9 @@ using namespace alus::goods;
 using namespace alus::snapengine;
 
 class OrbitStateVectorsTest : public ::testing::Test {
-   public:
-    std::vector<double> const TIME_ARGS{7135.669986176958,
-                                        7135.669986531099,
-                                        7135.669986951332,
-                                        7135.669986692994,
-                                        7135.669986434845,
-                                        7135.669986179413};
+public:
+    std::vector<double> const TIME_ARGS{7135.669986176958, 7135.669986531099, 7135.669986951332,
+                                        7135.669986692994, 7135.669986434845, 7135.669986179413};
     std::vector<PosVector> POS_VECTOR_ARGS{{0.0, 0.0, 0.0},
                                            {0.0, 0.0, 0.0},
                                            {0.0, 0.0, 0.0},
@@ -49,7 +45,7 @@ class OrbitStateVectorsTest : public ::testing::Test {
                                                 {3659155.9302892475, 1053555.0759501432, 5954058.782688444},
                                                 {3659271.6043083738, 1053640.3296334823, 5953972.804162062}};
 
-   private:
+private:
 };
 
 TEST_F(OrbitStateVectorsTest, getPositionCalculatesCorrectly) {

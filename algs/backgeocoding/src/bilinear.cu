@@ -13,10 +13,10 @@
  */
 #include "bilinear_computation.h"
 
-#include "cuda_util.h"
-#include "bilinear_interpolation.cuh"
-#include "pointer_holders.h"
 #include "backgeocoding_constants.h"
+#include "cuda_util.h"
+#include "pointer_holders.h"
+#include "snap-core/core/dataop/resamp/bilinear_interpolation.cuh"
 
 /**
  * The contents of this file refer to BackGeocodingOp.performInterpolation method on SNAP's code s1tbx module.

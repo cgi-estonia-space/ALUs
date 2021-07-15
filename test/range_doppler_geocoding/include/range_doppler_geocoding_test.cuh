@@ -14,7 +14,7 @@
 #pragma once
 
 #include <cuda_runtime.h>
-#include "resampling.h"
+#include "../../../snap-engine/resampling.h"
 
 namespace alus {
 namespace tests {

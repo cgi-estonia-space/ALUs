@@ -13,18 +13,19 @@
  */
 #pragma once
 
+#include <s1tbx-commons/sentinel1_utils.h>
 #include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
 
 #include "c16_dataset.h"
+#include "s1tbx-commons/sentinel1_utils.h"
+#include "s1tbx-commons/subswath_info.h"
 #include "s1tbx-io/sentinel1/sentinel1_product_reader.h"
-#include "sentinel1_utils.h"
-#include "snap-core/dataio/i_product_reader.h"
-#include "snap-core/datamodel/product.h"
+#include "snap-core/core/dataio/i_product_reader.h"
+#include "snap-core/core/datamodel/product.h"
 #include "split_product_subset_builder.h"
-#include "subswath_info.h"
 
 namespace alus::topsarsplit {
 

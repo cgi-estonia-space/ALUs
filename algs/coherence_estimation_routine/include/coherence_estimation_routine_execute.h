@@ -19,8 +19,8 @@
 
 #include "alg_bond.h"
 #include "algorithm_parameters.h"
-#include "earth_gravitational_model96.h"
 #include "pointer_holders.h"
+#include "snap-dem/dem/dataio/earth_gravitational_model96.h"
 #include "srtm3_elevation_model.h"
 
 namespace alus {
@@ -80,7 +80,7 @@ private:
     int srp_polynomial_degree_{5};
     bool subtract_flat_earth_phase_{true};
     int coherence_window_range_{15};
-    int coherence_window_azimuth_{0}; // if left as zero, derived from range window
+    int coherence_window_azimuth_{0};  // if left as zero, derived from range window
     int orbit_degree_{3};
 };
-}
+}  // namespace alus

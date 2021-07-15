@@ -17,20 +17,20 @@
 
 #include "gmock/gmock.h"
 
-#include "cuda_friendly_object.h"
 #include "comparators.h"
+#include "cuda_friendly_object.h"
 #include "cuda_util.h"
-#include "earth_gravitational_model96.h"
 #include "pointer_holders.h"
+#include "snap-dem/dem/dataio/earth_gravitational_model96.h"
 #include "srtm3_elevation_model.h"
 
 namespace {
 
 class SRTM3TileTester {
-   private:
+private:
     std::string test_file_name_;
 
-   public:
+public:
     std::vector<int> xs_;
     std::vector<int> ys_;
     std::vector<float> results_;
@@ -62,7 +62,8 @@ TEST(SRTM3, tileFormating) {
     SRTM3TileTester tester("./goods/tileFormatTestData.txt");
     tester.ReadTestData();
 
-    std::shared_ptr<alus::snapengine::EarthGravitationalModel96> egm_96 = std::make_shared<alus::snapengine::EarthGravitationalModel96>();
+    std::shared_ptr<alus::snapengine::EarthGravitationalModel96> egm_96 =
+        std::make_shared<alus::snapengine::EarthGravitationalModel96>();
     egm_96->HostToDevice();
 
     std::vector<std::string> files{"./goods/srtm_41_01.tif", "./goods/srtm_42_01.tif"};
@@ -76,22 +77,22 @@ TEST(SRTM3, tileFormating) {
     std::vector<alus::PointerHolder> tiles;
     tiles.resize(2);
     const int chosen_tile = 0;
-    CHECK_CUDA_ERR(cudaMemcpy(
-        tiles.data(), srtm_3_dem.GetSrtmBuffersInfo(), 2 * sizeof(alus::PointerHolder), cudaMemcpyDeviceToHost));
+    CHECK_CUDA_ERR(cudaMemcpy(tiles.data(), srtm_3_dem.GetSrtmBuffersInfo(), 2 * sizeof(alus::PointerHolder),
+                              cudaMemcpyDeviceToHost));
     int tile_x_size = tiles.at(chosen_tile).x;
     int tile_y_size = tiles.at(chosen_tile).y;
     int tile_size = tile_x_size * tile_y_size;
     end_tile.resize(tile_size);
 
-    CHECK_CUDA_ERR(cudaMemcpy(end_tile.data(), tiles.at(chosen_tile).pointer, tile_size *sizeof(float), cudaMemcpyDeviceToHost));
+    CHECK_CUDA_ERR(
+        cudaMemcpy(end_tile.data(), tiles.at(chosen_tile).pointer, tile_size * sizeof(float), cudaMemcpyDeviceToHost));
 
     for (size_t i = 0; i < tester.size_; i++) {
         end_results.at(i) = end_tile.at(tester.xs_.at(i) + tile_x_size * tester.ys_.at(i));
     }
 
     size_t count = alus::EqualsArrays(end_results.data(), tester.results_.data(), tester.size_, 0.0000001);
-    EXPECT_EQ(count,0) << "SRTM3 tiling test results do not match. Mismatches: " <<count << '\n';
-
+    EXPECT_EQ(count, 0) << "SRTM3 tiling test results do not match. Mismatches: " << count << '\n';
 }
 
 }  // namespace

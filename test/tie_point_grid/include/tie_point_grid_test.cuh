@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cuda_runtime.h>
-#include "tie_point_grid.h"
+#include "../../../snap-engine/tie_point_grid.h"
 
 namespace alus {
 namespace tests {

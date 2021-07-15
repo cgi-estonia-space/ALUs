@@ -14,10 +14,10 @@
 
 #pragma once
 
-#include "geo_utils.cuh"
 #include "get_position.h"
 #include "position_data.h"
-#include "sar_geocoding.cuh"
+#include "s1tbx-commons/sar_geocoding.cuh"
+#include "snap-engine-utilities/engine-utilities/eo/geo_utils.cuh"
 
 namespace alus {
 namespace terraincorrection {
@@ -63,10 +63,8 @@ inline __device__ __host__ snapengine::PosVector GetPositionWithLut(
 }
 
 inline __device__ __host__ double ComputeSlantRangeWithLut(
-    double time,
-    cuda::KernelArray<snapengine::OrbitStateVectorComputation> vectors, double* osv_lut,
-    snapengine::PosVector earth_point,
-    snapengine::PosVector& sensor_pos) {
+    double time, cuda::KernelArray<snapengine::OrbitStateVectorComputation> vectors, double* osv_lut,
+    snapengine::PosVector earth_point, snapengine::PosVector& sensor_pos) {
     sensor_pos = GetPositionWithLut(time, vectors, osv_lut);
     double const xDiff = sensor_pos.x - earth_point.x;
     double const yDiff = sensor_pos.y - earth_point.y;
@@ -75,26 +73,21 @@ inline __device__ __host__ double ComputeSlantRangeWithLut(
     return std::sqrt(xDiff * xDiff + yDiff * yDiff + zDiff * zDiff);
 }
 
-inline __device__ __host__ bool GetPositionImpl(
-    double lat, double lon, double alt, s1tbx::PositionData& satellite_pos, const GetPositionMetadata& metadata) {
+inline __device__ __host__ bool GetPositionImpl(double lat, double lon, double alt, s1tbx::PositionData& satellite_pos,
+                                                const GetPositionMetadata& metadata) {
     snapengine::geoutils::Geo2xyzWgs84Impl(lat, lon, alt, satellite_pos.earth_point);
-    const auto zero_doppler_time = s1tbx::sargeocoding::GetEarthPointZeroDopplerTimeImpl(metadata.first_line_utc,
-                                                                                         metadata.line_time_interval,
-                                                                                         metadata.wavelength,
-                                                                                         satellite_pos.earth_point,
-                                                                                         metadata.sensor_position,
-                                                                                         metadata.sensor_velocity);
+    const auto zero_doppler_time = s1tbx::sargeocoding::GetEarthPointZeroDopplerTimeImpl(
+        metadata.first_line_utc, metadata.line_time_interval, metadata.wavelength, satellite_pos.earth_point,
+        metadata.sensor_position, metadata.sensor_velocity);
     if (zero_doppler_time == s1tbx::sargeocoding::NON_VALID_ZERO_DOPPLER_TIME) {
         return false;
     }
-    satellite_pos.slant_range = ComputeSlantRangeWithLut(
-        zero_doppler_time, metadata.orbit_state_vectors, metadata.orbit_state_vector_lut.array,
-        satellite_pos.earth_point, satellite_pos.sensor_pos);
+    satellite_pos.slant_range =
+        ComputeSlantRangeWithLut(zero_doppler_time, metadata.orbit_state_vectors, metadata.orbit_state_vector_lut.array,
+                                 satellite_pos.earth_point, satellite_pos.sensor_pos);
 
     satellite_pos.range_index = s1tbx::sargeocoding::ComputeRangeIndexSlcImpl(
-        metadata.range_spacing,
-        satellite_pos.slant_range,
-        metadata.near_edge_slant_range);
+        metadata.range_spacing, satellite_pos.slant_range, metadata.near_edge_slant_range);
 
     if (satellite_pos.range_index == -1.0) {
         return false;

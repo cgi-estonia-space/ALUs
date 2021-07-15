@@ -77,11 +77,11 @@ add_subdirectory(external/pugixml)
 
 # Utilities
 add_subdirectory(util/gdal)
-add_subdirectory(util/sentinel1)
+add_subdirectory(sentinel1)
 add_subdirectory(util/exotic_operations)
 add_subdirectory(util/common)
 add_subdirectory(util/cuda)
-add_subdirectory(util/snap-engine)
+add_subdirectory(snap-engine)
 
 # Algorithms
 add_subdirectory(algs/algorithm_bond)

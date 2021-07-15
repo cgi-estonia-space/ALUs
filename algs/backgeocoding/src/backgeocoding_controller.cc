@@ -21,10 +21,10 @@
 
 #include "alus_log.h"
 #include "pointer_holders.h"
-#include "snap-core/datamodel/metadata_element.h"
-#include "snap-core/util/product_utils.h"
-#include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
-#include "snap-engine-utilities/gpf/stack_utils.h"
+#include "snap-core/core/datamodel/metadata_element.h"
+#include "snap-core/core/util/product_utils.h"
+#include "snap-engine-utilities/engine-utilities/datamodel/metadata/abstract_metadata.h"
+#include "snap-engine-utilities/engine-utilities/gpf/stack_utils.h"
 
 namespace alus::backgeocoding {
 

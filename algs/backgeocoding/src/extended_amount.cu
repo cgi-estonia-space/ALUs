@@ -19,24 +19,24 @@
 #include <thrust/sequence.h>
 
 #include "allocators.h"
-#include "earth_gravitational_model96_computation.h"
 #include "extended_amount_computation.h"
 #include "general_constants.h"
 #include "pointer_holders.h"
 #include "position_data.h"
 #include "raster_properties.h"
+#include "snap-dem/dem/dataio/earth_gravitational_model96_computation.h"
 
+#include "../../../snap-engine/srtm3_elevation_calc.cuh"
 #include "backgeocoding_utils.cuh"
 #include "cuda_util.cuh"
-#include "earth_gravitational_model96.cuh"
-#include "geo_utils.cuh"
-#include "sentinel1_utils.cuh"
-#include "srtm3_elevation_calc.cuh"
+#include "s1tbx-commons/sentinel1_utils.cuh"
+#include "snap-dem/dem/dataio/earth_gravitational_model96.cuh"
+#include "snap-engine-utilities/engine-utilities/eo/geo_utils.cuh"
 
 namespace alus {
 namespace backgeocoding {
 
-constexpr int index_step {20};
+constexpr int index_step{20};
 
 struct ExtendedAmountKernelArgs {
     s1tbx::DeviceSentinel1Utils* sentinel_utils;
@@ -78,11 +78,9 @@ __global__ void ComputeExtendedAmountKernel(ExtendedAmountKernelArgs args) {
     double azimuth_time = GetAzimuthTime(y, burst_index, args.subswath_info);
     double slant_range_time = GetSlantRangeTime(x, args.subswath_info);
 
-    s1tbx::Sentinel1Index sentinel_index = s1tbx::ComputeIndex(azimuth_time,
-                                                               slant_range_time,
-                                                               args.subswath_info,
-                                                               args.subswath_slant_range_times,
-                                                               args.subswath_azimuth_times);
+    s1tbx::Sentinel1Index sentinel_index =
+        s1tbx::ComputeIndex(azimuth_time, slant_range_time, args.subswath_info, args.subswath_slant_range_times,
+                            args.subswath_azimuth_times);
 
     double latitude =
         s1tbx::GetLatitude(sentinel_index, args.latitudes, args.subswath_info->num_of_geo_points_per_line);
@@ -92,23 +90,14 @@ __global__ void ComputeExtendedAmountKernel(ExtendedAmountKernelArgs args) {
     // TODO: we may have to rewire this in the future, but no idea to where atm.
     //       (see algs/backgeocoding/src/backgeocoding.cc)
     if (altitude == snapengine::srtm3elevationmodel::NO_DATA_VALUE) {
-        altitude = snapengine::earthgravitationalmodel96computation::GetEGM96(latitude,
-                                                                   longitude,
-                                                                   snapengine::earthgravitationalmodel96computation::MAX_LATS,
-                                                                   snapengine::earthgravitationalmodel96computation::MAX_LONS,
-                                                                   args.egm);
+        altitude = snapengine::earthgravitationalmodel96computation::GetEGM96(
+            latitude, longitude, snapengine::earthgravitationalmodel96computation::MAX_LATS,
+            snapengine::earthgravitationalmodel96computation::MAX_LONS, args.egm);
     }
     s1tbx::PositionData position_data{};
     snapengine::geoutils::Geo2xyzWgs84Impl(latitude, longitude, altitude, position_data.earth_point);
-    if (backgeocoding::GetPosition(args.subswath_info,
-                                   args.sentinel_utils,
-                                   burst_index,
-                                   &position_data,
-                                   args.orbit_state_vectors,
-                                   args.nr_of_orbit_vectors,
-                                   args.dt,
-                                   x,
-                                   y)) {
+    if (backgeocoding::GetPosition(args.subswath_info, args.sentinel_utils, burst_index, &position_data,
+                                   args.orbit_state_vectors, args.nr_of_orbit_vectors, args.dt, x, y)) {
         const double azimuth_extended_amount = position_data.azimuth_index - y;
         const double range_extended_amount = position_data.range_index - x;
 
@@ -127,29 +116,20 @@ __global__ void ComputeExtendedAmountKernel(ExtendedAmountKernelArgs args) {
     }
 }
 
-void PrepareArguments(ExtendedAmountKernelArgs* args,
-                      PointerArray tiles,
-                      const snapengine::OrbitStateVectorComputation* vectors,
-                      size_t nr_of_vectors,
-                      double vectors_dt,
-                      const s1tbx::SubSwathInfo& subswath_info,
-                      s1tbx::DeviceSentinel1Utils* d_sentinel_1_utils,
-                      s1tbx::DeviceSubswathInfo* d_subswath_info,
-                      thrust::device_vector<double>& max_extended_azimuths,
+void PrepareArguments(ExtendedAmountKernelArgs* args, PointerArray tiles,
+                      const snapengine::OrbitStateVectorComputation* vectors, size_t nr_of_vectors, double vectors_dt,
+                      const s1tbx::SubSwathInfo& subswath_info, s1tbx::DeviceSentinel1Utils* d_sentinel_1_utils,
+                      s1tbx::DeviceSubswathInfo* d_subswath_info, thrust::device_vector<double>& max_extended_azimuths,
                       thrust::device_vector<double>& min_extended_azimuths,
                       thrust::device_vector<double>& max_extended_ranges,
-                      thrust::device_vector<double>& min_extended_ranges,
-                      Rectangle& bounds,
-                      float* egm) {
+                      thrust::device_vector<double>& min_extended_ranges, Rectangle& bounds, float* egm) {
     args->tiles.array = tiles.array;
     args->tiles.size = tiles.size;
 
     CHECK_CUDA_ERR(
         cudaMalloc(&args->orbit_state_vectors, sizeof(snapengine::OrbitStateVectorComputation) * nr_of_vectors));
-    CHECK_CUDA_ERR(cudaMemcpy(args->orbit_state_vectors,
-                              vectors,
-                              sizeof(snapengine::OrbitStateVectorComputation) * nr_of_vectors,
-                              cudaMemcpyHostToDevice));
+    CHECK_CUDA_ERR(cudaMemcpy(args->orbit_state_vectors, vectors,
+                              sizeof(snapengine::OrbitStateVectorComputation) * nr_of_vectors, cudaMemcpyHostToDevice));
     args->nr_of_orbit_vectors = nr_of_vectors;
     args->dt = vectors_dt;
     args->bounds = bounds;
@@ -161,20 +141,14 @@ void PrepareArguments(ExtendedAmountKernelArgs* args,
     CHECK_CUDA_ERR(cudaMalloc(&args->longitudes, sizeof(double) * subswath_geo_grid_size));
     CHECK_CUDA_ERR(cudaMalloc(&args->latitudes, sizeof(double) * subswath_geo_grid_size));
 
-    CHECK_CUDA_ERR(cudaMemcpy(args->subswath_azimuth_times,
-                              subswath_info.azimuth_time_[0],
-                              subswath_geo_grid_size * sizeof(double),
+    CHECK_CUDA_ERR(cudaMemcpy(args->subswath_azimuth_times, subswath_info.azimuth_time_[0],
+                              subswath_geo_grid_size * sizeof(double), cudaMemcpyHostToDevice));
+    CHECK_CUDA_ERR(cudaMemcpy(args->subswath_slant_range_times, subswath_info.slant_range_time_[0],
+                              subswath_geo_grid_size * sizeof(double), cudaMemcpyHostToDevice));
+    CHECK_CUDA_ERR(cudaMemcpy(args->longitudes, subswath_info.longitude_[0], subswath_geo_grid_size * sizeof(double),
                               cudaMemcpyHostToDevice));
-    CHECK_CUDA_ERR(cudaMemcpy(args->subswath_slant_range_times,
-                              subswath_info.slant_range_time_[0],
-                              subswath_geo_grid_size * sizeof(double),
+    CHECK_CUDA_ERR(cudaMemcpy(args->latitudes, subswath_info.latitude_[0], subswath_geo_grid_size * sizeof(double),
                               cudaMemcpyHostToDevice));
-    CHECK_CUDA_ERR(cudaMemcpy(args->longitudes,
-                              subswath_info.longitude_[0],
-                              subswath_geo_grid_size * sizeof(double),
-                              cudaMemcpyHostToDevice));
-    CHECK_CUDA_ERR(cudaMemcpy(
-        args->latitudes, subswath_info.latitude_[0], subswath_geo_grid_size * sizeof(double), cudaMemcpyHostToDevice));
 
     args->max_extended_azimuths = thrust::raw_pointer_cast(max_extended_azimuths.data());
     args->min_extended_azimuths = thrust::raw_pointer_cast(min_extended_azimuths.data());
@@ -189,15 +163,11 @@ void PrepareArguments(ExtendedAmountKernelArgs* args,
     args->egm = egm;
 }
 
-cudaError_t LaunchComputeExtendedAmount(Rectangle bounds,
-                                        AzimuthAndRangeBounds& extended_amount,
-                                        const snapengine::OrbitStateVectorComputation* vectors,
-                                        size_t nr_of_vectors,
-                                        double vectors_dt,
-                                        const s1tbx::SubSwathInfo& subswath_info,
+cudaError_t LaunchComputeExtendedAmount(Rectangle bounds, AzimuthAndRangeBounds& extended_amount,
+                                        const snapengine::OrbitStateVectorComputation* vectors, size_t nr_of_vectors,
+                                        double vectors_dt, const s1tbx::SubSwathInfo& subswath_info,
                                         s1tbx::DeviceSentinel1Utils* d_sentinel_1_utils,
-                                        s1tbx::DeviceSubswathInfo* d_subswath_info,
-                                        const PointerArray& tiles,
+                                        s1tbx::DeviceSubswathInfo* d_subswath_info, const PointerArray& tiles,
                                         float* egm) {
     ExtendedAmountKernelArgs args{};
 
@@ -212,23 +182,13 @@ cudaError_t LaunchComputeExtendedAmount(Rectangle bounds,
     thrust::device_vector<double> max_extended_ranges(total_thread_count, double_min);
     thrust::device_vector<double> min_extended_ranges(total_thread_count, double_max);
 
-    PrepareArguments(&args,
-                     tiles,
-                     vectors,
-                     nr_of_vectors,
-                     vectors_dt,
-                     subswath_info,
-                     d_sentinel_1_utils,
-                     d_subswath_info,
-                     max_extended_azimuths,
-                     min_extended_azimuths,
-                     max_extended_ranges,
-                     min_extended_ranges,
-                     bounds,
-                     egm);
+    PrepareArguments(&args, tiles, vectors, nr_of_vectors, vectors_dt, subswath_info, d_sentinel_1_utils,
+                     d_subswath_info, max_extended_azimuths, min_extended_azimuths, max_extended_ranges,
+                     min_extended_ranges, bounds, egm);
 
     dim3 block_dim{20, 20};
-    dim3 grid_dim(cuda::GetGridDim(block_dim.x, cuda::GetGridDim(index_step, bounds.width)), cuda::GetGridDim(block_dim.y, cuda::GetGridDim(index_step, bounds.height)));
+    dim3 grid_dim(cuda::GetGridDim(block_dim.x, cuda::GetGridDim(index_step, bounds.width)),
+                  cuda::GetGridDim(block_dim.y, cuda::GetGridDim(index_step, bounds.height)));
     ComputeExtendedAmountKernel<<<grid_dim, block_dim>>>(args);
 
     cudaDeviceSynchronize();

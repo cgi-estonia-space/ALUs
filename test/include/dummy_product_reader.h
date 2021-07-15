@@ -21,11 +21,11 @@
 #include <memory>
 #include <stdexcept>
 
-#include "ceres-core/i_progress_monitor.h"
+#include "ceres-core/core/i_progress_monitor.h"
 #include "dummy_product_reader_plug_in.h"
-#include "snap-core/dataio/abstract_product_reader.h"
-#include "snap-core/datamodel/band.h"
-#include "snap-core/datamodel/product.h"
+#include "snap-core/core/dataio/abstract_product_reader.h"
+#include "snap-core/core/datamodel/band.h"
+#include "snap-core/core/datamodel/product.h"
 
 namespace alus::snapengine {
 

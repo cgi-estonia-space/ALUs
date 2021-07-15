@@ -20,6 +20,10 @@
 
 #include <boost/numeric/conversion/cast.hpp>
 
+#include "interpolation_constants.h"
+#include "srtm3_elevation_model.h"
+#include "srtm3_elevation_model_constants.h"
+#include "triangular_interpolation_computation.h"
 #include "alus_log.h"
 #include "backgeocoding_constants.h"
 #include "bilinear_computation.h"
@@ -27,16 +31,11 @@
 #include "cuda_util.h"
 #include "delaunay_triangulator.h"
 #include "deramp_demod_computation.h"
-#include "earth_gravitational_model96_computation.h"
 #include "elevation_mask_computation.h"
 #include "extended_amount_computation.h"
-#include "general_constants.h"
-#include "interpolation_constants.h"
 #include "slave_pixpos_computation.h"
-#include "snap-engine-utilities/eo/constants.h"
-#include "srtm3_elevation_model.h"
-#include "srtm3_elevation_model_constants.h"
-#include "triangular_interpolation_computation.h"
+#include "snap-dem/dem/dataio/earth_gravitational_model96_computation.h"
+#include "snap-engine-utilities/engine-utilities/eo/constants.h"
 
 namespace alus::backgeocoding {
 

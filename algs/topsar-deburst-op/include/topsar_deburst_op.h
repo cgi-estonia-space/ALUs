@@ -27,16 +27,16 @@
 #include <utility>
 #include <vector>
 
-#include "ceres-core/i_progress_monitor.h"
+#include "ceres-core/core/i_progress_monitor.h"
 #include "custom/rectangle.h"
 #include "i_meta_data_writer.h"  //todo move under custom, this is not ported
-#include "sentinel1_utils.h"
-#include "snap-core/datamodel/band.h"
-#include "snap-core/datamodel/i_geo_coding.h"
-#include "snap-core/datamodel/metadata_element.h"
-#include "snap-core/datamodel/product.h"
-#include "snap-gpf/i_tile.h"
-#include "subswath_info.h"
+#include "s1tbx-commons/sentinel1_utils.h"
+#include "s1tbx-commons/subswath_info.h"
+#include "snap-core/core/datamodel/band.h"
+#include "snap-core/core/datamodel/i_geo_coding.h"
+#include "snap-core/core/datamodel/metadata_element.h"
+#include "snap-core/core/datamodel/product.h"
+#include "snap-gpf/gpf/i_tile.h"
 
 namespace alus::s1tbx {
 

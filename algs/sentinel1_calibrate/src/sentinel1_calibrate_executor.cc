@@ -31,8 +31,8 @@
 #include "gdal_management.h"
 #include "s1tbx-io/sentinel1/sentinel1_product_reader_plug_in.h"
 #include "sentinel1_calibrate.h"
-#include "snap-core/dataio/i_product_reader.h"
-#include "snap-core/datamodel/product.h"
+#include "snap-core/core/dataio/i_product_reader.h"
+#include "snap-core/core/datamodel/product.h"
 #include "topsar_split.h"
 
 namespace {

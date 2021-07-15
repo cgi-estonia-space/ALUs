@@ -19,7 +19,10 @@
 
 #include <gdal_priv.h>
 
+#include "srtm3_elevation_model.h"
 #include "alg_bond.h"
+#include "algorithm_parameters.h"
+#include "snap-dem/dem/dataio/earth_gravitational_model96.h"
 
 namespace alus::terraincorrection {
 class TerrainCorrectionExecutor : public AlgBond {

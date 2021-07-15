@@ -24,16 +24,16 @@
 #include "calibration_info.h"
 #include "calibration_info_computation.h"
 #include "calibration_type.h"
-#include "calibration_vector_computation.h"
 #include "dataset.h"
 #include "gdal_util.h"
 #include "metadata_element.h"
+#include "s1tbx-commons/calibration_vector_computation.h"
 #include "sentinel1_calibrate_kernel.h"
 #include "shapes.h"
-#include "snap-core/datamodel/band.h"
-#include "snap-core/datamodel/product.h"
-#include "snap-core/datamodel/product_data.h"
-#include "snap-core/datamodel/raster_data_node.h"
+#include "snap-core/core/datamodel/band.h"
+#include "snap-core/core/datamodel/product.h"
+#include "snap-core/core/datamodel/product_data.h"
+#include "snap-core/core/datamodel/raster_data_node.h"
 
 namespace alus::sentinel1calibrate {
 

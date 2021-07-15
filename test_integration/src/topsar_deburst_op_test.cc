@@ -27,8 +27,8 @@
 #include "custom/dimension.h"
 #include "custom/gdal_image_reader.h"
 #include "custom/gdal_image_writer.h"
-#include "snap-core/datamodel/pugixml_meta_data_reader.h"
-#include "snap-core/datamodel/pugixml_meta_data_writer.h"
+#include "snap-core/core/datamodel/pugixml_meta_data_reader.h"
+#include "snap-core/core/datamodel/pugixml_meta_data_writer.h"
 #include "topsar_deburst_op.h"
 #include "test_utils.h"
 

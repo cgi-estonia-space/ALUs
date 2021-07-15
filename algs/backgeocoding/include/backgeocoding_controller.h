@@ -25,7 +25,7 @@
 #include "alus_file_writer.h"
 #include "backgeocoding.h"
 #include "pointer_holders.h"
-#include "snap-core/datamodel/product.h"
+#include "snap-core/core/datamodel/product.h"
 
 namespace alus::backgeocoding {
 

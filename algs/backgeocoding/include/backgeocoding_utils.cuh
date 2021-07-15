@@ -16,10 +16,10 @@
 #include "burst_indices_computation.h"
 #include "general_constants.h"
 #include "position_data.h"
-#include "snap-engine-utilities/eo/constants.h"
+#include "snap-engine-utilities/engine-utilities/eo/constants.h"
 
-#include "sar_geocoding.cuh"
-#include "sentinel1_utils.cuh"
+#include "s1tbx-commons/sar_geocoding.cuh"
+#include "s1tbx-commons/sentinel1_utils.cuh"
 
 namespace alus {
 namespace backgeocoding {
