@@ -25,24 +25,24 @@
 //#include <geos/geom/Polygon.h>
 
 #include "custom/rectangle.h"
-#include "i_geo_coding.h"
+#include "snap-core/datamodel/i_geo_coding.h"
 
 namespace alus {
 namespace snapengine {
+
+namespace WGS84 {
+constexpr double A = 6378137.0;                          // m
+constexpr double B = 6356752.3142451794975639665996337;  // 6356752.31424518; // m
+constexpr double FLAT_EARTH_COEF = 1.0 / ((A - B) / A);  // 298.257223563;
+constexpr double E2 = 2.0 / FLAT_EARTH_COEF - 1.0 / (FLAT_EARTH_COEF * FLAT_EARTH_COEF);
+constexpr double E2_INV = 1 - WGS84::E2;
+constexpr double EP2 = E2 / (1 - E2);
+}  // namespace WGS84
 
 struct DistanceHeading {
     double distance;
     double heading1;
     double heading2;
-};
-
-struct WGS84 {
-    static constexpr double a = 6378137.0;                          // m
-    static constexpr double b = 6356752.3142451794975639665996337;  // 6356752.31424518; // m
-    static constexpr double earth_flat_coef = 1.0 / ((a - b) / a);  // 298.257223563;
-    static constexpr double e2 = 2.0 / earth_flat_coef - 1.0 / (earth_flat_coef * earth_flat_coef);
-    static constexpr double e2inv = 1 - WGS84::e2;
-    static constexpr double ep2 = e2 / (1 - e2);
 };
 
 class GeoUtils {

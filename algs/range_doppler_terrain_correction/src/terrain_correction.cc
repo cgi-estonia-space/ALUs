@@ -34,6 +34,7 @@
 #include "product_old.h"
 #include "raster_properties.h"
 #include "shapes_util.h"
+#include "snap-engine-utilities/eo/constants.h"
 #include "srtm3_elevation_model_constants.h"
 #include "tc_tile.h"
 #include "terrain_correction_constants.h"
@@ -51,8 +52,8 @@ void FillGetPositionMetadata(GetPositionMetadata& get_position_metadata,
     get_position_metadata.orbit_state_vectors = comp_metadata.orbit_state_vectors;
     get_position_metadata.first_line_utc = comp_metadata.first_line_time_mjd;
     get_position_metadata.line_time_interval = line_time_interval_in_days;
-    get_position_metadata.wavelength =
-        snapengine::constants::lightSpeed / (comp_metadata.radar_frequency * snapengine::constants::oneMillion);
+    get_position_metadata.wavelength = snapengine::eo::constants::LIGHT_SPEED /
+                                       (comp_metadata.radar_frequency * snapengine::eo::constants::ONE_MILLION);
     get_position_metadata.range_spacing = comp_metadata.range_spacing;
     get_position_metadata.near_edge_slant_range = comp_metadata.slant_range_to_first_pixel;
 }
@@ -246,7 +247,8 @@ snapengine::old::Product TerrainCorrection::CreateTargetProduct(
     const char* const output_format = "GTiff";
 
     double pixel_spacing_in_meter = std::trunc(metadata_.azimuth_spacing * 100 + 0.5) / 100.0;
-    double pixel_spacing_in_degree = pixel_spacing_in_meter / SEMI_MAJOR_AXIS * RTOD;
+    double pixel_spacing_in_degree =
+        pixel_spacing_in_meter / snapengine::eo::constants::SEMI_MAJOR_AXIS * snapengine::eo::constants::RTOD;
 
     OGRSpatialReference target_crs;
     // EPSG:4326 is a WGS84 code

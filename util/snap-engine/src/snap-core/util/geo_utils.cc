@@ -141,10 +141,10 @@ std::shared_ptr<DistanceHeading> GeoUtils::VincentyInverse(std::shared_ptr<GeoPo
         return output;
     }
 
-    lat1 *= Constants::DTOR;
-    lat2 *= Constants::DTOR;
-    lon1 *= Constants::DTOR;
-    lon2 *= Constants::DTOR;
+    lat1 *= eo::constants::DTOR;
+    lat2 *= eo::constants::DTOR;
+    lon1 *= eo::constants::DTOR;
+    lon2 *= eo::constants::DTOR;
 
     // Model WGS84:
     //    F=1/298.25722210;	// flattening
@@ -184,7 +184,7 @@ std::shared_ptr<DistanceHeading> GeoUtils::VincentyInverse(std::shared_ptr<GeoPo
     } while (std::abs(D - X) > (0.01));
 
     FAZ = std::atan2(TU1, TU2);
-    BAZ = std::atan2(CU1 * SX, BAZ * CX - SU1 * CU2) + Constants::PI;
+    BAZ = std::atan2(CU1 * SX, BAZ * CX - SU1 * CU2) + eo::constants::PI;
     X = std::sqrt((1. / R / R - 1.) * C2A + 1.) + 1.;
     X = (X - 2.) / X;
     C = 1. - X;
@@ -192,11 +192,11 @@ std::shared_ptr<DistanceHeading> GeoUtils::VincentyInverse(std::shared_ptr<GeoPo
     D = (0.375 * X * X - 1.) * X;
     X = E * CY;
     S = 1. - E - E;
-    S = ((((SY * SY * 4. - 3.) * S * CZ * D / 6. - X) * D / 4. + CZ) * SY * D + Y) * C * WGS84::a * R;
+    S = ((((SY * SY * 4. - 3.) * S * CZ * D / 6. - X) * D / 4. + CZ) * SY * D + Y) * C * WGS84::A * R;
 
     output->distance = S;
-    output->heading1 = FAZ * Constants::RTOD;
-    output->heading2 = BAZ * Constants::RTOD;
+    output->heading1 = FAZ * eo::constants::RTOD;
+    output->heading2 = BAZ * eo::constants::RTOD;
 
     while (output->heading1 < 0) output->heading1 += 360;
     while (output->heading2 < 0) output->heading2 += 360;

@@ -20,6 +20,7 @@
 #pragma once
 
 #include "pos_vector.h"
+#include "snap-core/util/geo_utils.h"
 
 namespace alus {
 namespace snapengine {
@@ -31,15 +32,6 @@ namespace geoutils {
  * This procedure is duplicated by the nvcc for host processing in geoutils.cu.
  */
 void Geo2xyzWgs84(double latitude, double longitude, double altitude, PosVector& xyz);
-
-namespace WGS84 {
-constexpr double a{6378137.0};                          // m
-constexpr double b{6356752.3142451794975639665996337};  // 6356752.31424518; // m
-constexpr double earthFlatCoef{1.0 / ((a - b) / a)};    // 298.257223563;
-constexpr double e2{2.0 / earthFlatCoef - 1.0 / (earthFlatCoef * earthFlatCoef)};
-constexpr double e2inv{1 - e2};
-constexpr double ep2{e2 / (1 - e2)};
-}  // namespace WGS84
 }  // namespace geoutils
-}  // namespace snapEngine
+}  // namespace snapengine
 }  // namespace alus
