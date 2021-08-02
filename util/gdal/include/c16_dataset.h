@@ -39,6 +39,7 @@ public:
     size_t GetBufferElemCount() override;
 
     Dataset<Iq16>* GetDataset() { return dataset_.get(); }
+    void TryToCacheImage() override;
 
 private:
     std::unique_ptr<Dataset<Iq16>> dataset_;

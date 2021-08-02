@@ -14,7 +14,8 @@
 
 #include <memory>
 
-#include "gmock/gmock.h"
+#include <gmock/gmock.h>
+#include <gdal_priv.h>
 
 #include "topsar_split.h"
 #include "i_meta_data_reader.h"
@@ -38,6 +39,7 @@ TEST(DISABLED_topsar_split, subswaths){
 }
 
 TEST(topsar_split, s1utils_slave){
+    GDALSetCacheMax64(4e9);
     alus::snapengine::SystemUtils::SetAuxDataPath("./goods/apply_orbit_file_op/orbit-files/");
     std::string subswath_name = "IW1";
     std::string polarisation = "VV";
@@ -155,6 +157,7 @@ TEST(topsar_split, s1utils_slave){
 }
 
 TEST(topsar_split, s1utils_master){
+    GDALSetCacheMax64(4e9);
     alus::snapengine::SystemUtils::SetAuxDataPath("./goods/apply_orbit_file_op/orbit-files/");
     std::string subswath_name = "IW1";
     std::string polarisation = "VV";

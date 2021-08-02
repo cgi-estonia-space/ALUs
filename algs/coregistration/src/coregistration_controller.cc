@@ -15,6 +15,8 @@
 
 #include <memory>
 
+#include "gdal_priv.h"
+
 #include "apply_orbit_file_op.h"
 #include "backgeocoding_controller.h"
 #include "general_constants.h"
