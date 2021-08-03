@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/stream_executor/libtemporary_device_memory.pic.a
-bazel-out/host/bin/tensorflow/stream_executor/_objs/temporary_device_memory/temporary_device_memory.pic.o

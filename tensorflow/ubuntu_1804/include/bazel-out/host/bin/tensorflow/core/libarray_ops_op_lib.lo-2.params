@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/libarray_ops_op_lib.lo
-bazel-out/host/bin/tensorflow/core/_objs/array_ops_op_lib/array_ops.o

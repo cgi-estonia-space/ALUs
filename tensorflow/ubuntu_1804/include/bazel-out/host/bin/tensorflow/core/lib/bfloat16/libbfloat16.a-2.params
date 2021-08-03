@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/lib/bfloat16/libbfloat16.a
-bazel-out/host/bin/tensorflow/core/lib/bfloat16/_objs/bfloat16/bfloat16.o

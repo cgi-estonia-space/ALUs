@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/lib/io/libsnappy_inputbuffer.pic.lo
-bazel-out/host/bin/tensorflow/core/lib/io/_objs/snappy_inputbuffer/snappy_inputbuffer.pic.o

@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/grappler/utils/libtransitive_fanin.pic.a
-bazel-out/host/bin/tensorflow/core/grappler/utils/_objs/transitive_fanin/transitive_fanin.pic.o

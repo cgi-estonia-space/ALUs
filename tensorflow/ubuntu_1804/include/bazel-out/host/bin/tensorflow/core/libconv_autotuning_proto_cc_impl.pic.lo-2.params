@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/libconv_autotuning_proto_cc_impl.pic.lo
-bazel-out/host/bin/tensorflow/core/_objs/conv_autotuning_proto_cc_impl/conv_autotuning.pb.pic.o

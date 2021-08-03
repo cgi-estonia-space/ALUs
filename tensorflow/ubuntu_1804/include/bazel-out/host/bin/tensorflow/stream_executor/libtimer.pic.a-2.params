@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/stream_executor/libtimer.pic.a
-bazel-out/host/bin/tensorflow/stream_executor/_objs/timer/timer.pic.o

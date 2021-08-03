@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/platform/default/libsubprocess.pic.lo
-bazel-out/host/bin/tensorflow/core/platform/default/_objs/subprocess/subprocess.pic.o

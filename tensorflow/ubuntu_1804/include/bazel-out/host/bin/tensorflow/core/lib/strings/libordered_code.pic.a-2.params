@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/lib/strings/libordered_code.pic.a
-bazel-out/host/bin/tensorflow/core/lib/strings/_objs/ordered_code/ordered_code.pic.o

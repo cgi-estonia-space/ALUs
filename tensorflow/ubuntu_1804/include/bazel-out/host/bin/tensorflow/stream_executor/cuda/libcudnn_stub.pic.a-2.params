@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/stream_executor/cuda/libcudnn_stub.pic.a
-bazel-out/host/bin/tensorflow/stream_executor/cuda/_objs/cudnn_stub/cudnn_stub.pic.o

@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/lib/core/libarena.pic.a
-bazel-out/host/bin/tensorflow/core/lib/core/_objs/arena/arena.pic.o

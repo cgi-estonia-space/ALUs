@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/framework/libgraph_transfer_info_proto_cc_impl.pic.lo
-bazel-out/host/bin/tensorflow/core/framework/_objs/graph_transfer_info_proto_cc_impl/graph_transfer_info.pb.pic.o

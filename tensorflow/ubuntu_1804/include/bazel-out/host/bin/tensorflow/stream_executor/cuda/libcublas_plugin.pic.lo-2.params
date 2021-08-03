@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/stream_executor/cuda/libcublas_plugin.pic.lo
-bazel-out/host/bin/tensorflow/stream_executor/cuda/_objs/cublas_plugin/cuda_blas.pic.o

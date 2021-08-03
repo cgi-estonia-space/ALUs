@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/c/libtf_tensor.a
-bazel-out/host/bin/tensorflow/c/_objs/tf_tensor/tf_tensor.o

@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/grappler/optimizers/libremapper.pic.lo
-bazel-out/host/bin/tensorflow/core/grappler/optimizers/_objs/remapper/remapper.pic.o

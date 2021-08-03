@@ -2,8 +2,9 @@
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/egm96)
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/srtm3)
 
-list(APPEND TEST_SOURCES_COHERENCE
-        src/coherence_test.cc
+
+list(APPEND TEST_SOURCES_COHERENCE_CUDA
+        src/coherence_cuda_test.cc
         )
 
 list(APPEND TEST_SOURCES_SNAP_ENGINE
@@ -123,9 +124,11 @@ add_custom_command(TARGET integration-test-snap-engine
         COMMAND ln -fns ${CMAKE_CURRENT_LIST_DIR}/goods/altitudeTestData.txt ${CMAKE_BINARY_DIR}/test_integration/goods/.
         )
 
-add_executable(integration-test-coherence ${TEST_SOURCES_COHERENCE})
-target_include_directories(integration-test-coherence PUBLIC ${TEST_INCLUDE})
-target_link_libraries(integration-test-coherence
+
+
+add_executable(integration-test-coherence-cuda ${TEST_SOURCES_COHERENCE_CUDA})
+target_include_directories(integration-test-coherence-cuda PUBLIC ${TEST_INCLUDE})
+target_link_libraries(integration-test-coherence-cuda
         PRIVATE
         Boost::filesystem
         Boost::iostreams
@@ -133,24 +136,20 @@ target_link_libraries(integration-test-coherence
         cuda_util-static
         gdal-util-static
         sentinel1-util-static
-        coherence-static
+        coherence-cuda-static
         crypto
         )
-target_compile_options(integration-test-coherence
+target_compile_options(integration-test-coherence-cuda
         PRIVATE
-        -Wno-pedantic
-        -Wno-unused-parameter
-        -Wno-ignored-qualifiers
-        -Wno-unused-variable
-        -Wno-unused-but-set-parameter
         )
-add_custom_command(TARGET integration-test-coherence
+add_custom_command(TARGET integration-test-coherence-cuda
         POST_BUILD
         COMMAND mkdir -p ${CMAKE_BINARY_DIR}/test_integration/goods
         COMMAND rm -rf ${CMAKE_BINARY_DIR}/test_integration/goods/coherence
         COMMAND ln -s ${CMAKE_CURRENT_LIST_DIR}/goods/coherence
         ${CMAKE_BINARY_DIR}/test_integration/goods/coherence
         )
+
 
 add_executable(integration-test-tc ${TEST_SOURCES_TC})
 target_include_directories(integration-test-tc PUBLIC ${TEST_INCLUDE})

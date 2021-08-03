@@ -27,8 +27,8 @@
 #include <boost/filesystem.hpp>
 
 // TEMPORARY// todo: move readers writers behind IProductReader/writer interface
-#include "../../../../../algs/coherence/include/i_data_tile_reader.h"
-#include "../../../../../algs/coherence/include/i_data_tile_writer.h"
+#include "../../../../../algs/coherence_cuda/include/i_data_tile_reader.h"
+#include "../../../../../algs/coherence_cuda/include/i_data_tile_writer.h"
 
 #include "custom/dimension.h"
 //#include "custom/i_image_reader.h"

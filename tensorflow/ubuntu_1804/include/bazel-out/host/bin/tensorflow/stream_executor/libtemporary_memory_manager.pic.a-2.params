@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/stream_executor/libtemporary_memory_manager.pic.a
-bazel-out/host/bin/tensorflow/stream_executor/_objs/temporary_memory_manager/temporary_memory_manager.pic.o

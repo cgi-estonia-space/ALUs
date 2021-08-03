@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/libgpu_id_impl.pic.a
-bazel-out/host/bin/tensorflow/core/_objs/gpu_id_impl/gpu_id_manager.pic.o

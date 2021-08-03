@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/stream_executor/libplugin_registry.pic.a
-bazel-out/host/bin/tensorflow/stream_executor/_objs/plugin_registry/plugin_registry.pic.o

@@ -82,7 +82,7 @@ add_subdirectory(util/snap-engine)
 
 # Algorithms
 add_subdirectory(algs/algorithm_bond)
-add_subdirectory(algs/coherence)
+add_subdirectory(algs/coherence_cuda)
 add_subdirectory(algs/range_doppler_terrain_correction)
 add_subdirectory(algs/backgeocoding)
 add_subdirectory(algs/apply-orbit-file-op)

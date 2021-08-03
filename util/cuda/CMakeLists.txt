@@ -22,3 +22,4 @@ set_target_properties(cuda_util-static
 target_link_libraries(cuda_util-static
         PUBLIC
         )
+

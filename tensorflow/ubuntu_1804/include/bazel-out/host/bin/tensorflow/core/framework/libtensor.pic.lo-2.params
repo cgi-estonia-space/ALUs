@@ -1,9 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/framework/libtensor.pic.lo
-bazel-out/host/bin/tensorflow/core/framework/_objs/tensor/log_memory.pic.o
-bazel-out/host/bin/tensorflow/core/framework/_objs/tensor/tensor.pic.o
-bazel-out/host/bin/tensorflow/core/framework/_objs/tensor/typed_allocator.pic.o
-bazel-out/host/bin/tensorflow/core/framework/_objs/tensor/types.pic.o
-bazel-out/host/bin/tensorflow/core/framework/_objs/tensor/variant.pic.o
-bazel-out/host/bin/tensorflow/core/framework/_objs/tensor/variant_op_registry.pic.o
-bazel-out/host/bin/tensorflow/core/framework/_objs/tensor/variant_tensor_data.pic.o

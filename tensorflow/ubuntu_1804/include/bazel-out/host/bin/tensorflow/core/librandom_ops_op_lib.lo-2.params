@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/librandom_ops_op_lib.lo
-bazel-out/host/bin/tensorflow/core/_objs/random_ops_op_lib/random_ops.o

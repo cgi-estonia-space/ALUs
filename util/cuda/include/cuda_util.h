@@ -1,3 +1,17 @@
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
+
 #pragma once
 
 #include <iostream>
@@ -26,17 +40,23 @@ cudaError_t CudaDeviceSynchronize();
 
 class CudaErrorException final : public std::runtime_error {
 public:
-    CudaErrorException(cudaError_t cudaError, std::string file, int line)
-        : std::runtime_error("CUDA error (" + std::to_string(static_cast<int>(cudaError)) + ")-'" +
-                             std::string{cudaGetErrorString(cudaError)} + "' at " + file + ":" + std::to_string(line)),
-          m_cudaError{cudaError},
-          m_file{file},
-          m_line{line} {}
+    CudaErrorException(cudaError_t cuda_error, std::string file, int line)
+        : std::runtime_error("CUDA error (" + std::to_string(static_cast<int>(cuda_error)) + ")-'" +
+                             std::string{cudaGetErrorString(cuda_error)} + "' at " + file + ":" + std::to_string(line)),
+          cuda_error_{static_cast<int>(cuda_error)},
+          file_{std::move(file)},
+          line_{line} {}
+
+    CudaErrorException(std::string what)
+        : std::runtime_error(std::move(what)),
+          cuda_error_{},
+          file_{},
+          line_{} {}
 
 private:
-    cudaError_t const m_cudaError;
-    std::string m_file;
-    int const m_line;
+    const int cuda_error_;
+    std::string file_;
+    const int line_;
 };
 
 inline void checkCudaError(cudaError_t const cudaErr, const char* file, int const line) {

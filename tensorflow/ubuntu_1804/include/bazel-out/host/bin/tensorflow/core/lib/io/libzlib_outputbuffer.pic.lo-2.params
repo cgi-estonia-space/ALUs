@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/lib/io/libzlib_outputbuffer.pic.lo
-bazel-out/host/bin/tensorflow/core/lib/io/_objs/zlib_outputbuffer/zlib_outputbuffer.pic.o

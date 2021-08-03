@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/platform/cloud/libgcs_throttle.pic.a
-bazel-out/host/bin/tensorflow/core/platform/cloud/_objs/gcs_throttle/gcs_throttle.pic.o

@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/platform/default/libstacktrace_handler.pic.a
-bazel-out/host/bin/tensorflow/core/platform/default/_objs/stacktrace_handler/stacktrace_handler.pic.o

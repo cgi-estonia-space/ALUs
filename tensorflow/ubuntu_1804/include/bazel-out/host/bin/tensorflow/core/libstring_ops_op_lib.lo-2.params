@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/libstring_ops_op_lib.lo
-bazel-out/host/bin/tensorflow/core/_objs/string_ops_op_lib/string_ops.o

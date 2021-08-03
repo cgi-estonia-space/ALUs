@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/platform/libstr_util.a
-bazel-out/host/bin/tensorflow/core/platform/_objs/str_util/str_util.o

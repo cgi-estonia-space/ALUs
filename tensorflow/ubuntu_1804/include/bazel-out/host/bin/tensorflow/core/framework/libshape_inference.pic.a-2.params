@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/framework/libshape_inference.pic.a
-bazel-out/host/bin/tensorflow/core/framework/_objs/shape_inference/shape_inference.pic.o
