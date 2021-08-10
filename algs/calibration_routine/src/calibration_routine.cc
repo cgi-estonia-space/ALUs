@@ -284,7 +284,7 @@ void CalibrationRoutine::ValidateCalibrationType() const {
 
 void CalibrationRoutine::SetSrtm3Manager(snapengine::Srtm3ElevationModel* manager) { srtm3_manager_ = manager; }
 
-void CalibrationRoutine::SetEgm96Manager(const snapengine::EarthGravitationalModel96* manager) {
+void CalibrationRoutine::SetEgm96Manager(snapengine::EarthGravitationalModel96* manager) {
     egm96_manager_ = manager;
 }
 

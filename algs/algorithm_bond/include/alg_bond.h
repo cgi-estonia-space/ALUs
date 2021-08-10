@@ -57,8 +57,7 @@ public:
     virtual void SetSrtm3Manager(snapengine::Srtm3ElevationModel* /*manager*/) { /* Some of the operators do not require
                                                                                     elevation calulations. */
     }
-    virtual void SetEgm96Manager(
-        const snapengine::EarthGravitationalModel96* /*manager*/) { /* Some of the operators do not require elevation
+    virtual void SetEgm96Manager(snapengine::EarthGravitationalModel96* /*manager*/) { /* Some of the operators do not require elevation
                                                                        calulations. */
     }
     virtual void SetTileSize(size_t width, size_t height) = 0;

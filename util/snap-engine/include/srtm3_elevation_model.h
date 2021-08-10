@@ -13,16 +13,20 @@
  */
 #pragma once
 
+#include <condition_variable>
+#include <memory>
+#include <mutex>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "cuda_friendly_object.h"
 #include "dataset.h"
-#include "shapes.h"
 #include "earth_gravitational_model96.h"
 #include "pointer_holders.h"
-#include "srtm3_format_computation.h"
+#include "shapes.h"
 #include "srtm3_elevation_model_constants.h"
+#include "srtm3_format_computation.h"
 
 namespace alus {
 namespace snapengine {
@@ -45,24 +49,40 @@ private:
     size_t device_srtm3_tiles_count_;
     std::vector<Srtm3FormatComputation> srtm_format_info_;
 
+    bool is_inited_{false};
+    bool is_on_device_{false};
+    std::mutex init_mutex_;
+    std::mutex info_mutex_;
+    std::mutex buffer_mutex_;
+    std::condition_variable init_var_;
+    std::condition_variable copy_var_;
+
+    std::thread init_thread_;
+    std::thread copy_thread_;
+
+    std::shared_ptr<EarthGravitationalModel96> egm_96_;
+    std::exception_ptr elevation_exception_{nullptr};
+
+    void ReadSrtmTilesThread();
+    void HostToDeviceThread();
+
 public:
     Srtm3ElevationModel(std::vector<std::string> file_names);
     ~Srtm3ElevationModel();
 
-    void ReadSrtmTiles(EarthGravitationalModel96* egm_96);
-    PointerHolder* GetSrtmBuffersInfo() const { return device_formated_srtm_buffers_info_; }
-    size_t GetDeviceSrtm3TilesCount(){ return device_srtm3_tiles_count_; }
+    void ReadSrtmTiles(std::shared_ptr<EarthGravitationalModel96>& egm_96);
+    PointerHolder* GetSrtmBuffersInfo();
+    size_t GetDeviceSrtm3TilesCount();
 
     void HostToDevice() override;
     void DeviceToHost() override;
     void DeviceFree() override;
 
-    static int GetTileWidthInDegrees(){
-        return srtm3elevationmodel::DEGREE_RES;
-    }
-    static int GetTileWidth(){
-        return srtm3elevationmodel::TILE_WIDTH_PIXELS;
-    }
+    constexpr static int GetTileWidthInDegrees() { return srtm3elevationmodel::DEGREE_RES; }
+    constexpr static int GetTileWidth() { return srtm3elevationmodel::TILE_WIDTH_PIXELS; }
+
+    Srtm3ElevationModel(const Srtm3ElevationModel&) = delete;  // class does not support copying(and moving)
+    Srtm3ElevationModel& operator=(const Srtm3ElevationModel&) = delete;
 };
 
 }  // namespace snapengine

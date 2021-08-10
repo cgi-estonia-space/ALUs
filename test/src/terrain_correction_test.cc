@@ -66,12 +66,12 @@ public:
         metadata_ = std::make_optional<Metadata>(main_metadata_file_, lat_tie_points_file_, lon_tie_points_file_);
         tc_metadata_ = metadata_->GetMetadata();
 
-        egm_96_ = std::make_unique<EarthGravitationalModel96>();
+        egm_96_ = std::make_shared<EarthGravitationalModel96>();
         egm_96_->HostToDevice();
 
         std::vector<std::string> files{"./goods/srtm_41_01.tif", "./goods/srtm_42_01.tif"};
         srtm_3_model_ = std::make_unique<Srtm3ElevationModel>(files);
-        srtm_3_model_->ReadSrtmTiles(egm_96_.get());
+        srtm_3_model_->ReadSrtmTiles(egm_96_);
         srtm_3_model_->HostToDevice();
     }
 
@@ -81,7 +81,7 @@ public:
     std::optional<Metadata> metadata_;
     std::optional<RangeDopplerTerrainMetadata> tc_metadata_;
     std::unique_ptr<Srtm3ElevationModel> srtm_3_model_;
-    std::unique_ptr<EarthGravitationalModel96> egm_96_;
+    std::shared_ptr<EarthGravitationalModel96> egm_96_;
     const size_t srtm_3_tiles_length_{2};
 
 protected:

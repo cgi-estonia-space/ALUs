@@ -106,12 +106,12 @@ TEST(SRTM3, altitudeCalc) {
     dim3 block_size(512);
     dim3 grid_size(alus::cuda::GetGridDim(block_size.x, tester.size_));
 
-    alus::snapengine::EarthGravitationalModel96 egm_96{};
-    egm_96.HostToDevice();
+    std::shared_ptr<alus::snapengine::EarthGravitationalModel96> egm_96 = std::make_shared<alus::snapengine::EarthGravitationalModel96>();
+    egm_96->HostToDevice();
 
     std::vector<std::string> files{"./goods/srtm_41_01.tif", "./goods/srtm_42_01.tif"};
     alus::snapengine::Srtm3ElevationModel srtm_3_dem(files);
-    srtm_3_dem.ReadSrtmTiles(&egm_96);
+    srtm_3_dem.ReadSrtmTiles(egm_96);
     srtm_3_dem.HostToDevice();
 
     SRTM3TestData calc_data;
