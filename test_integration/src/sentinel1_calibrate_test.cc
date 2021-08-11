@@ -14,6 +14,7 @@
 #include "sentinel1_calibrate.h"
 #include "gmock/gmock.h"
 
+#include <cstdio>
 #include <memory>
 
 #include <boost/filesystem.hpp>
@@ -31,7 +32,7 @@ using namespace alus::sentinel1calibrate;
 class Sentinel1CalibrateTest : public ::testing::Test {
 protected:
     boost::filesystem::path input_file_{
-        "./goods/sentinel1_calibrate/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563.SAFE"};
+        "./goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6_thin.SAFE"};
 
     const std::shared_ptr<s1tbx::Sentinel1ProductReaderPlugIn> reader_plug_in_ =
         std::make_shared<s1tbx::Sentinel1ProductReaderPlugIn>();
@@ -39,6 +40,10 @@ protected:
 
 TEST_F(Sentinel1CalibrateTest, Virumaa) {
     // Scope for forcing destruction of Sentinel1Calibrator
+
+    const std::string result_file{
+        "/tmp/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6_THIN_Cal_IW1.tif"};
+    std::remove(result_file.data());
     {
         ASSERT_THAT(boost::filesystem::exists(input_file_), ::testing::IsTrue());
         const std::shared_ptr<snapengine::IProductReader> product_reader = reader_plug_in_->CreateReaderInstance();
@@ -46,7 +51,7 @@ TEST_F(Sentinel1CalibrateTest, Virumaa) {
             product_reader->ReadProductNodes(boost::filesystem::canonical(input_file_), nullptr);
         const auto source_path = boost::filesystem::canonical(input_file_).string();
 
-        Sentinel1Calibrator calibrator{input_product, source_path, {"IW1"}, {"VH"}, {true, false, false, false},
+        Sentinel1Calibrator calibrator{input_product, source_path, {"IW1"}, {"VV"}, {true, false, false, false},
                                        "/tmp/",       false,       2000,    2000};
         calibrator.Execute();
 
@@ -56,10 +61,8 @@ TEST_F(Sentinel1CalibrateTest, Virumaa) {
         }
     }
 
-    const std::string result_file{
-        "/tmp/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_Cal_IW1.tif"};
     ASSERT_THAT(boost::filesystem::exists(result_file), ::testing::IsTrue());
-    const std::string expected_md5{"f0fde5dfd3a8fae1"};
+    const std::string expected_md5{"d389aa9b7cefb448"};
     ASSERT_THAT(utils::test::HashFromBand(result_file), ::testing::Eq(expected_md5));
 }
 }  // namespace

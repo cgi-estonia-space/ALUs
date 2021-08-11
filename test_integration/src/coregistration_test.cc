@@ -76,23 +76,23 @@ TEST(coregistration, all3) {
     std::shared_ptr<alus::app::DemAssistant> dem_assistant =
         alus::app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(std::move(srtm3_files));
     dem_assistant->GetSrtm3Manager()->HostToDevice();
+    const std::string_view output_file{"/tmp/coregistration_test.tif"};
 
     std::unique_ptr<alus::coregistration::Coregistration> cor =
-        std::make_unique<alus::coregistration::Coregistration>("./goods/apply_orbit_file_op/orbit-files/");
+        std::make_unique<alus::coregistration::Coregistration>("goods/apply_orbit_file_op/orbit-files/");
     cor->Initialize(
-        "./goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD.SAFE",
-        "./goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.SAFE",
-        "./goods/beirut_images/coregistration_test.tif", "IW1", "VV");
-
+        "goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD_thin.SAFE",
+        "goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6_thin.SAFE",
+        output_file.data(), "IW1", "VV");
     cor->DoWork(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
                 {dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo(),
                  dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()});
 
-    alus::GeoTiffWriteFile(cor->GetOutputDataset(), "./goods/beirut_images/coregistration_test.tif");
+    alus::GeoTiffWriteFile(cor->GetOutputDataset(), "/tmp/coregistration_test.tif");
 
     CoregTester tester("./goods/coregistration_strips.txt");
 
-    alus::Dataset<double> test_set("./goods/beirut_images/coregistration_test.tif");
+    alus::Dataset<double> test_set(output_file);
     alus::Rectangle rectangle{1000, 10000, 1, 100};
     alus::Rectangle rectangle2{7436, 6293, 1, 100};
     alus::Rectangle rectangle3{15576, 4440, 1, 100};

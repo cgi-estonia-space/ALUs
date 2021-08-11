@@ -10,7 +10,7 @@ function is_error_then_quit {
 
 # This script runs the CI routine for the project.
 rm -rf build
-cmake . -Bbuild
+cmake . -Bbuild -DENABLE_TESTS=ON
 is_error_then_quit
 cd build
 is_error_then_quit

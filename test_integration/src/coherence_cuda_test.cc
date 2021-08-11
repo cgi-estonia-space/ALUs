@@ -74,13 +74,12 @@ TEST_F(CoherenceIntegrationTest, single_burst_data_2018) {
         int band_count_ia = 1;
         alus::coherence_cuda::GdalTileReader ia_data_reader{file_name_ia, band_map_ia, band_count_ia, false};
         // small dataset as single tile
-        alus::Tile incidence_angle_data_set{ia_data_reader.GetBandXSize() - 1,
-                                                            ia_data_reader.GetBandYSize() - 1,
-                                                            ia_data_reader.GetBandXMin(), ia_data_reader.GetBandYMin()};
+        alus::Tile incidence_angle_data_set{ia_data_reader.GetBandXSize() - 1, ia_data_reader.GetBandYSize() - 1,
+                                            ia_data_reader.GetBandXMin(), ia_data_reader.GetBandYMin()};
         ia_data_reader.ReadTile(incidence_angle_data_set);
         alus::snapengine::PugixmlMetaDataReader xml_reader{
-            "./goods/coherence/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_split_Orb_Stack"
-            ".dim"};
+            "./goods/coherence/"
+            "S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_split_Orb_Stack.dim"};
         auto master_root = xml_reader.Read(alus::snapengine::AbstractMetadata::ABSTRACT_METADATA_ROOT);
         auto slave_root = xml_reader.Read(alus::snapengine::AbstractMetadata::SLAVE_METADATA_ROOT)->GetElements().at(0);
 
@@ -101,14 +100,15 @@ TEST_F(CoherenceIntegrationTest, single_burst_data_2018) {
         alus::coherence_cuda::GdalTileReader coh_data_reader{file_name_in_.c_str(), band_map, band_count_in, true};
 
         alus::BandParams band_params{band_map_out,
-                                                     band_count_out,
-                                                     coh_data_reader.GetBandXSize(),
-                                                     coh_data_reader.GetBandYSize(),
-                                                     coh_data_reader.GetBandXMin(),
-                                                     coh_data_reader.GetBandYMin()};
+                                     band_count_out,
+                                     coh_data_reader.GetBandXSize(),
+                                     coh_data_reader.GetBandYSize(),
+                                     coh_data_reader.GetBandXMin(),
+                                     coh_data_reader.GetBandYMin()};
 
-        alus::coherence_cuda::GdalTileWriter coh_data_writer{
-            file_name_out_.c_str(), band_params, coh_data_reader.GetGeoTransform(), coh_data_reader.GetDataProjection()};
+        alus::coherence_cuda::GdalTileWriter coh_data_writer{file_name_out_.c_str(), band_params,
+                                                             coh_data_reader.GetGeoTransform(),
+                                                             coh_data_reader.GetDataProjection()};
 
         alus::coherence_cuda::CohTilesGenerator tiles_generator{coh_data_reader.GetBandXSize(),
                                                                 coh_data_reader.GetBandYSize(),
@@ -118,12 +118,8 @@ TEST_F(CoherenceIntegrationTest, single_burst_data_2018) {
                                                                 COH_WIN_AZ};
 
         alus::coherence_cuda::CohWindow coh_window{COH_WIN_RG, COH_WIN_AZ};
-        alus::coherence_cuda::CohCuda coherence{SRP_NUMBER_POINTS,
-                                                SRP_POLYNOMIAL_DEGREE,
-                                                SUBTRACT_FLAT_EARTH,
-                                                coh_window,
-                                                ORBIT_DEGREE,
-                                                meta_master,
+        alus::coherence_cuda::CohCuda coherence{SRP_NUMBER_POINTS, SRP_POLYNOMIAL_DEGREE, SUBTRACT_FLAT_EARTH,
+                                                coh_window,        ORBIT_DEGREE,          meta_master,
                                                 meta_slave};
 
         //    // run the algorithm
@@ -135,16 +131,14 @@ TEST_F(CoherenceIntegrationTest, single_burst_data_2018) {
     ASSERT_TRUE(boost::filesystem::exists(file_name_out_));
     // make sure output file md5 or pixel values are ok
     std::string expected_md5{"7b30dd7e3c04cf819fe288490b0f1e3e"};
-    std::string expected_md5_2 {"79d887102ec90671354f43778070898f"};
+    std::string expected_md5_2{"79d887102ec90671354f43778070898f"};
     auto actual_md5 = Md5FromFile(file_name_out_.generic_string());
 
-    if(actual_md5 == expected_md5 || actual_md5 == expected_md5_2) return;
+    if (actual_md5 == expected_md5 || actual_md5 == expected_md5_2) return;
 
     // release and debug builds can differ due to floating point math
     // unfortunately this needs a bigger refactor in the future
-    ASSERT_TRUE(false) << " actual md5" << actual_md5 << " expected: " << expected_md5 << ", "
-                       << expected_md5_2;
-
+    ASSERT_TRUE(false) << " actual md5" << actual_md5 << " expected: " << expected_md5 << ", " << expected_md5_2;
 }
 
 }  // namespace
