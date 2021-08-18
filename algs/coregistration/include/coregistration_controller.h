@@ -17,6 +17,7 @@
 
 #include "apply_orbit_file_op.h"
 #include "backgeocoding_controller.h"
+#include "target_dataset.h"
 #include "topsar_split.h"
 
 namespace alus::coregistration {
@@ -36,6 +37,9 @@ public:
     std::shared_ptr<snapengine::Product> GetMasterProduct() { return split_master_->GetTargetProduct(); }
     std::shared_ptr<snapengine::Product> GetSlaveProduct() { return split_slave_->GetTargetProduct(); }
 
+    GDALDataset* GetOutputDataset() { return target_dataset_->GetDataset(); }
+    void ReleaseOutputDataset() { target_dataset_->ReleaseDataset(); }
+
     ~Coregistration() = default;
 
 private:
@@ -44,6 +48,7 @@ private:
     std::unique_ptr<topsarsplit::TopsarSplit> split_slave_;
     std::unique_ptr<s1tbx::ApplyOrbitFileOp> orbit_file_master_;
     std::unique_ptr<s1tbx::ApplyOrbitFileOp> orbit_file_slave_;
+    std::shared_ptr<alus::TargetDataset<float>> target_dataset_;
     std::string main_orbit_file_{};
     std::string secondary_orbit_file_{};
 };

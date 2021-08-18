@@ -50,6 +50,11 @@ TEST_F(Sentinel1CalibrateTest, Virumaa) {
         Sentinel1Calibrator calibrator{input_product, source_path, {"IW1"}, {"VH"}, {true, false, false, false},
                                        "/tmp/",       false,       2000,    2000};
         calibrator.Execute();
+
+        const auto outputs = calibrator.GetOutputDatasets();
+        for (const auto& output : outputs) {
+            GeoTiffWriteFile(output.second.get(), output.first);
+        }
     }
 
     const std::string result_file{

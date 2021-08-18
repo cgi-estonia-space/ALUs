@@ -41,7 +41,7 @@ public:
     //                                    std::vector<int32_t>& data) = 0;
 
     virtual void Open(std::string_view path_to_band_file, int raster_size_x, int raster_size_y,
-                      std::vector<double> affine_geo_transform_out, const std::string_view data_projection_out) = 0;
+                      std::vector<double> affine_geo_transform_out, const std::string_view data_projection_out, bool in_memory_file) = 0;
 
     /**
      * close dataset

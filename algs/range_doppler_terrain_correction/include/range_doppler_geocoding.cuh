@@ -69,7 +69,7 @@ inline __device__ double Resample(PointerArray* tiles, snapengine::resampling::R
 inline __device__ int GetSamples(PointerArray* tiles, int* x_values, int* y_values, double* samples, int width,
                                  int height, double no_value, int use_no_data) {
     bool all_valid = true;
-    auto* values = (double*)tiles->array[0].pointer;
+    auto* values = (float*)tiles->array[0].pointer;
 
     for (int y = 0; y < 2; y++) {
         for (int x = 0; x < 2; x++) {
@@ -111,7 +111,7 @@ inline __device__ double GetPixelValue(double azimuth_index, double range_index,
     p_holder.x = source_image_width;
     p_holder.y = source_image_height;
     p_holder.pointer = resampling_raster.source_tile_i->data_buffer;
-    double v = Resample(&p_array, &resampling_index, resampling_raster.source_tile_i->width, 0, 0, GetSamples);
+    double v = Resample(&p_array, &resampling_index, resampling_raster.source_tile_i->width, 0, 0, GetSamples); // TODO(anton): change correctness
 
     sub_swath_index = resampling_raster.sub_swath_index;
 

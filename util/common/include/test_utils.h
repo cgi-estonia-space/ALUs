@@ -16,6 +16,7 @@
 #include <cmath>
 #include <ios>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -60,10 +61,8 @@ std::string Md5FromFile(const std::string& path) {
     return sout.str();
 }
 
-bool AreDatasetsEqual(const std::string_view comparand, const std::string_view reference, double error_margin) {
-    auto *const reference_dataset = static_cast<GDALDataset*>(GDALOpen(reference.data(), GA_ReadOnly));
-    auto *const comparand_dataset = static_cast<GDALDataset*>(GDALOpen(comparand.data(), GA_ReadOnly));
-
+bool AreDatasetsEqual(std::shared_ptr<GDALDataset> comparand_dataset, std::shared_ptr<GDALDataset> reference_dataset,
+                      double error_margin) {
     const auto width = reference_dataset->GetRasterXSize();
     const auto height = reference_dataset->GetRasterYSize();
 
@@ -76,12 +75,10 @@ bool AreDatasetsEqual(const std::string_view comparand, const std::string_view r
 
     auto read_error = reference_dataset->GetRasterBand(1)->RasterIO(GF_Read, 0, 0, width, height, reference_data.data(),
                                                                     width, height, GDT_Float32, 0, 0);
-    GDALClose(reference_dataset);
     CHECK_GDAL_ERROR(read_error);
 
     read_error = comparand_dataset->GetRasterBand(1)->RasterIO(GF_Read, 0, 0, width, height, comparand_data.data(),
                                                                width, height, GDT_Float64, 0, 0);
-    GDALClose(comparand_dataset);
     CHECK_GDAL_ERROR(read_error);
 
     for (size_t i = 0; i < reference_data.size(); ++i) {
@@ -91,7 +88,7 @@ bool AreDatasetsEqual(const std::string_view comparand, const std::string_view r
         if (std::fabs(ref_value - comparand_value) > error_margin) {
             const auto y = i / width;
             const auto x = i - width * y;
-            std::cout << std::setprecision(10);
+            std::cout << std::setprecision(static_cast<int>(std::log10(1 / error_margin)) + 1);
             std::cout << "Value mismatch at " << x << "x" << y << ". Expected " << ref_value << ", received "
                       << comparand_value << "." << std::endl;
             return false;
@@ -99,6 +96,18 @@ bool AreDatasetsEqual(const std::string_view comparand, const std::string_view r
     }
 
     return true;
+}
+
+bool AreDatasetsEqual(const std::string_view comparand, const std::string_view reference, double error_margin) {
+    auto dataset_closer = [](GDALDataset* dataset) { GDALClose(dataset); };
+
+    auto* const reference_dataset = static_cast<GDALDataset*>(GDALOpen(reference.data(), GA_ReadOnly));
+    auto* const comparand_dataset = static_cast<GDALDataset*>(GDALOpen(comparand.data(), GA_ReadOnly));
+
+    std::shared_ptr<GDALDataset> comparand_dataset_pointer(comparand_dataset, dataset_closer);
+    std::shared_ptr<GDALDataset> reference_dataset_pointer(reference_dataset, dataset_closer);
+
+    return AreDatasetsEqual(comparand_dataset_pointer, reference_dataset_pointer, error_margin);
 }
 }  // namespace test
 }  // namespace utils

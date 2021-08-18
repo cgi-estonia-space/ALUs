@@ -14,11 +14,11 @@
 
 #include "coherence_estimation_routine_execute.h"
 
-#include <string_view>
 #include <sstream>
+#include <string_view>
 
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/filesystem.hpp>
 
 #include "alus_log.h"
 #include "backgeocoding_bond.h"
@@ -38,15 +38,15 @@ constexpr std::string_view PARAMETER_ID_SUBTRACT_FLAT_EARTH_PHASE{"subtract_flat
 constexpr std::string_view PARAMETER_ID_RG_WINDOW{"rg_window"};
 constexpr std::string_view PARAMETER_ID_AZ_WINDOW{"az_window"};
 constexpr std::string_view PARAMETER_ID_ORBIT_DEGREE{"orbit_degree"};
+constexpr std::string_view PARAMETER_WRITE_INTERMEDIATE_FILES("wif");
 }  // namespace
 
 namespace alus {
 
 int CoherenceEstimationRoutineExecute::Execute() {
-
     if (input_datasets_.size() != 2) {
         LOGE << "Coherence estimation expects 2 scenes - main and secondary, currently supplied - "
-                  << input_datasets_.size();
+             << input_datasets_.size();
         return 3;
     }
 
@@ -60,7 +60,9 @@ int CoherenceEstimationRoutineExecute::Execute() {
 
     PrintProcessingParameters();
 
-    GDALSetCacheMax64(8e9); // GDAL Cache 4GB, enough for for whole swath input + output
+    // 2 x SLC input = ~2.5 GB + TC output = ~1GB, mem driver do not use the cache
+    // should never reach 8 GB, but left larger as optional intermediate file writing is RasterIO based for now
+    GDALSetCacheMax64(8e9);
 
     int exit_code{};
     if (IsSafeInput()) {
@@ -98,6 +100,7 @@ void CoherenceEstimationRoutineExecute::SetParameters(const app::AlgorithmParame
     alg_params_ = param_values;
 
     ParseCoherenceParams();
+    ParseOutputParams();
 }
 
 void CoherenceEstimationRoutineExecute::SetSrtm3Manager(snapengine::Srtm3ElevationModel* manager) {
@@ -121,20 +124,25 @@ std::string CoherenceEstimationRoutineExecute::GetArgumentsHelp() const {
     std::stringstream help_stream;
     help_stream << EXECUTOR_NAME << " parameters:\n"
                 << PARAMETER_ID_MAIN_SCENE << " - string Full or partial identifier of main scene of input datasets\n"
-               
+
                 << PARAMETER_ID_MAIN_SCENE_ORBIT_FILE << " - string Full path of the main scene's orbit file\n"
-               
-                << PARAMETER_ID_SECONDARY_SCENE_ORBIT_FILE << " - string Full path of the secondary scene's orbit file\n"
-               
-                << PARAMETER_ID_ORBIT_FILE_DIR << " - string ESA SNAP compatible root folder or orbit files. "
-                                                  "For example: /home/user/.snap/auxData/Orbits/Sentinel-1/POEORB/\n"
-               
+
+                << PARAMETER_ID_SECONDARY_SCENE_ORBIT_FILE
+                << " - string Full path of the secondary scene's orbit file\n"
+
+                << PARAMETER_ID_ORBIT_FILE_DIR
+                << " - string ESA SNAP compatible root folder of unzipped orbit files. "
+                   "For example: /home/user/.snap/auxData/Orbits/Sentinel-1/POEORB/\n"
+
                 << PARAMETER_ID_SUBSWATH << " - string Subswath to process - valid values: IW1, IW2, IW3\n"
                 << PARAMETER_ID_POLARIZATION << " - string Polarization to process - valid value: VV, VH\n";
 
     help_stream << backgeocoding::BackgeocodingBond().GetArgumentsHelp();
     help_stream << GetCoherenceHelp();
     help_stream << terraincorrection::TerrainCorrectionExecutor().GetArgumentsHelp();
+
+    help_stream << PARAMETER_WRITE_INTERMEDIATE_FILES
+                << " - write intermediate files - true/false (default:false)\n";
 
     return help_stream.str();
 }
@@ -161,7 +169,6 @@ std::string CoherenceEstimationRoutineExecute::GetCoherenceHelp() const {
 }
 
 void CoherenceEstimationRoutineExecute::ParseCoherenceParams() {
-
     auto orb_deg_it = alg_params_.find(PARAMETER_ID_ORBIT_DEGREE.data());
     if (orb_deg_it != alg_params_.end()) {
         orbit_degree_ = std::stoi(orb_deg_it->second);
@@ -193,19 +200,16 @@ void CoherenceEstimationRoutineExecute::ParseCoherenceParams() {
 }
 
 void CoherenceEstimationRoutineExecute::PrintProcessingParameters() const {
-    LOGI << EXECUTOR_NAME << " processing parameters:"
-              << PARAMETER_ID_MAIN_SCENE << " " << main_scene_file_id_
-              << PARAMETER_ID_MAIN_SCENE_ORBIT_FILE << " " << main_scene_orbit_file_
-              << PARAMETER_ID_SECONDARY_SCENE_ORBIT_FILE << " " << secondary_scene_orbit_file_
-              << PARAMETER_ID_ORBIT_FILE_DIR << " " << orbit_file_dir_
-              << PARAMETER_ID_SUBSWATH << " " << subswath_
-              << PARAMETER_ID_POLARIZATION << " " << polarization_
-              << "Main scene - " << main_scene_file_path_
-              << "Secondary scene - " << secondary_scene_file_path_;
+    LOGI << EXECUTOR_NAME << " processing parameters:" << PARAMETER_ID_MAIN_SCENE << " " << main_scene_file_id_
+         << " " << PARAMETER_ID_MAIN_SCENE_ORBIT_FILE << " " << main_scene_orbit_file_
+         << PARAMETER_ID_SECONDARY_SCENE_ORBIT_FILE << " " << secondary_scene_orbit_file_ << PARAMETER_ID_ORBIT_FILE_DIR
+         << " " << orbit_file_dir_ << " " << PARAMETER_ID_SUBSWATH << " " << subswath_  << " "
+         << PARAMETER_ID_POLARIZATION << " " << polarization_
+         << " Main scene - " << main_scene_file_path_ << " Secondary scene - "
+         << secondary_scene_file_path_ << " " << PARAMETER_WRITE_INTERMEDIATE_FILES << " " << write_intermediate_files_;
 }
 
 bool CoherenceEstimationRoutineExecute::IsSafeInput() const {
-
     for (const auto& ds : input_datasets_) {
         const auto ext = boost::filesystem::path(ds).extension().string();
         if (ext != ".SAFE" && ext != ".safe") {
@@ -214,10 +218,16 @@ bool CoherenceEstimationRoutineExecute::IsSafeInput() const {
     }
     return true;
 }
+void CoherenceEstimationRoutineExecute::ParseOutputParams() {
+    if (const auto write_intermediate_files = alg_params_.find(PARAMETER_WRITE_INTERMEDIATE_FILES.data());
+        write_intermediate_files != alg_params_.end()) {
+        write_intermediate_files_ = boost::iequals(write_intermediate_files->second, "true");
+    }
+}
 }  // namespace alus
 
 extern "C" {
-alus::AlgBond* CreateAlgorithm() { return new alus::CoherenceEstimationRoutineExecute(); } //NOSONAR
+alus::AlgBond* CreateAlgorithm() { return new alus::CoherenceEstimationRoutineExecute(); }  // NOSONAR
 
-void DeleteAlgorithm(alus::AlgBond* instance) { delete (alus::CoherenceEstimationRoutineExecute*)instance; } //NOSONAR
+void DeleteAlgorithm(alus::AlgBond* instance) { delete (alus::CoherenceEstimationRoutineExecute*)instance; }  // NOSONAR
 }

@@ -1055,10 +1055,6 @@ void TOPSARDeburstOp::Compute() {
         }
         ComputeTileStack(target_tiles, rect, std::make_shared<ceres::NullProgressMonitor>());
     }
-
-    // before closing dataset we don't see image... if used differently we can avoid explicit call since destructor will
-    // also close
-    target_product_->GetImageWriter()->Close();
 }
 
 const std::shared_ptr<snapengine::Product>& TOPSARDeburstOp::GetTargetProduct() const { return target_product_; }

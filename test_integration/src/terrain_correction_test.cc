@@ -88,13 +88,17 @@ TEST_F(TerrainCorrectionIntegrationTest, Saaremaa1) {
 
     const std::string output_path{"/tmp/tc_test.tif"};
 
-    TerrainCorrection tc(std::move(input), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
-                         metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length, selected_band);
-    tc.ExecuteTerrainCorrection(output_path, 420, 416);
+    {
+        TerrainCorrection tc(input.GetGdalDataset(), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
+                             metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length, selected_band);
+        tc.ExecuteTerrainCorrection(output_path, 420, 416);
+        const auto output = tc.GetOutputDataset();
+    }
 
     ASSERT_THAT(boost::filesystem::exists(output_path), IsTrue());
-    const std::string expected_md5{"67458d461c814e4b00f894956c08285a"};
-    ASSERT_THAT(utils::test::Md5FromFile(output_path), Eq(expected_md5));
+    const std::string expected_hash{"116081948fded5da"};
+    ASSERT_THAT(utils::test::HashFromBand(output_path), ::testing::Eq(expected_hash));
+
 
     CompareGeocoding(
         "./goods/"
@@ -118,27 +122,18 @@ TEST_F(TerrainCorrectionIntegrationTest, SaaremaaAverageSceneHeight) {
                       coh_1_data + "/tie_point_grids/latitude.img", coh_1_data + "/tie_point_grids/longitude.img");
     Dataset<double> input(coh_1_tif);
 
-    auto egm_96 = std::make_shared<snapengine::EarthGravitationalModel96>();
-    egm_96->HostToDevice();
-
-    std::vector<std::string> files{"./goods/srtm_41_01.tif", "./goods/srtm_42_01.tif"};
-    auto srtm_3_model = std::make_unique<snapengine::Srtm3ElevationModel>(files);
-    srtm_3_model->ReadSrtmTiles(egm_96.get());
-    srtm_3_model->HostToDevice();
-
-    const auto* d_srtm_3_tiles = srtm_3_model->GetSrtmBuffersInfo();
-    const size_t srtm_3_tiles_length{2};
-
     const std::string output_path{"/tmp/tc_test.tif"};
 
-    TerrainCorrection tc(std::move(input), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
-                         metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length, selected_band,
-                         use_avg_scene_height);
-    tc.ExecuteTerrainCorrection(output_path, 420, 416);
+    {
+        TerrainCorrection tc(input.GetGdalDataset(), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
+                             metadata.GetLonTiePointGrid(), nullptr, 0, selected_band,
+                             use_avg_scene_height);
+        tc.ExecuteTerrainCorrection(output_path, 420, 416);
+    }
 
     ASSERT_THAT(boost::filesystem::exists(output_path), IsTrue());
-    const std::string expected_md5{"658c6417eb967f302a44f3b59e1ba9e8"};
-    ASSERT_THAT(utils::test::Md5FromFile(output_path), Eq(expected_md5));
+    const std::string expected_hash{"d1df3d7662d94b05"};
+    ASSERT_THAT(utils::test::HashFromBand(output_path), ::testing::Eq(expected_hash));
 
     CompareGeocoding(
         "./goods/"
@@ -172,9 +167,11 @@ TEST_F(TerrainCorrectionIntegrationTest, BeirutExplosion) {
 
     const std::string output_path{"/tmp/tc_beirut_test.tif"};
 
-    TerrainCorrection tc(std::move(input), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
-                         metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length, selected_band);
-    tc.ExecuteTerrainCorrection(output_path, 420, 416);
+    {
+        TerrainCorrection tc(input.GetGdalDataset(), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
+                             metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length, selected_band);
+        tc.ExecuteTerrainCorrection(output_path, 420, 416);
+    }
 
     ASSERT_THAT(boost::filesystem::exists(output_path), IsTrue());
     CompareGeocoding(

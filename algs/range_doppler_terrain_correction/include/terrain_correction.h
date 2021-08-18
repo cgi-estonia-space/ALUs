@@ -18,6 +18,8 @@
 #include <string_view>
 #include <vector>
 
+#include "gdal_priv.h"
+
 #include "computation_metadata.h"
 #include "dataset.h"
 #include "dem.h"
@@ -33,7 +35,7 @@ namespace alus::terraincorrection {
 
 class TerrainCorrection {
 public:
-    explicit TerrainCorrection(Dataset<double> coh_ds, const RangeDopplerTerrainMetadata& metadata,
+    explicit TerrainCorrection(GDALDataset* input_dataset, const RangeDopplerTerrainMetadata& metadata,
                                const snapengine::tiepointgrid::TiePointGrid& lat_tie_point_grid,
                                const snapengine::tiepointgrid::TiePointGrid& lon_tie_point_grid,
                                const PointerHolder* srtm_3_tiles, size_t srtm_3_tiles_length_,
@@ -51,8 +53,10 @@ public:
 
     ~TerrainCorrection();
 
+    std::pair<std::string,std::shared_ptr<GDALDataset>> GetOutputDataset() const;
+
 private:
-    Dataset<double> coh_ds_;
+    GDALDataset* input_ds_;
     const RangeDopplerTerrainMetadata& metadata_;
     snapengine::geocoding::Geocoding* target_geocoding_{};
     const PointerHolder* d_srtm_3_tiles_;
@@ -62,6 +66,7 @@ private:
     const snapengine::tiepointgrid::TiePointGrid& lat_tie_point_grid_;
     const snapengine::tiepointgrid::TiePointGrid& lon_tie_point_grid_;
     const bool use_average_scene_height_{false};
+    std::pair<std::string,std::shared_ptr<GDALDataset>> output_;
 
     /**
      * Computes target image boundary by creating a rectangle around the source image. The source image should be

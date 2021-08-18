@@ -48,6 +48,7 @@ private:
     bool IsSafeInput() const;
     int ExecuteSafe();
     void ParseCoherenceParams();
+    void ParseOutputParams();
     std::string GetCoherenceHelp() const;
 
     std::vector<std::string> input_datasets_{};
@@ -56,6 +57,7 @@ private:
     const snapengine::EarthGravitationalModel96* egm96_manager_{};
     size_t tile_width_{};
     size_t tile_height_{};
+    bool write_intermediate_files_{};
     std::string output_name_{};
     app::AlgorithmParameters::Table alg_params_;
     std::string main_scene_file_id_{};

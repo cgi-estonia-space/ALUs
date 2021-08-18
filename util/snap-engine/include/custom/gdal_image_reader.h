@@ -54,6 +54,9 @@ public:
      */
     void Open(std::string_view path_to_band_file, bool has_transform, bool has_correct_proj) override;
 
+
+    void TakeExternalDataset(GDALDataset* dataset);
+
     /**
      * Make sure std::vector data has correct size before using gdal to fill it
      * if it has wrong size it gets resized
@@ -72,6 +75,7 @@ public:
     [[nodiscard]] std::vector<double> GetGeoTransform() const;
     [[nodiscard]] const std::vector<float>& GetData() const override { return data_; }
     void Close() override;
+    void ReleaseDataset();
 };
 }  // namespace custom
 }  // namespace snapengine

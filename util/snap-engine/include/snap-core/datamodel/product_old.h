@@ -15,6 +15,8 @@
 
 #include <memory>
 
+#include "gdal_priv.h"
+
 #include "dataset.h"
 #include "geocoding.h"
 
@@ -25,7 +27,7 @@ namespace old {
 class Product {
 public:
     std::unique_ptr<alus::snapengine::geocoding::Geocoding> geocoding_;
-    alus::Dataset<double> dataset_;
+    std::shared_ptr<GDALDataset> dataset_;
     const char* FILE_FORMAT_;
 };
 }  // namespace old

@@ -60,7 +60,6 @@ target_link_libraries(terrain-correction-static
         snap-engine-static
         sentinel1-util-static
         pugixml-static
-        common-util-static
         )
 
 add_library(terrain-correction-shared

@@ -39,7 +39,7 @@ struct Tile {
     size_t height;
     bool target;
     bool scaled;
-    double *data_buffer;
+    float *data_buffer;
 };
 
 struct ResamplingRaster {

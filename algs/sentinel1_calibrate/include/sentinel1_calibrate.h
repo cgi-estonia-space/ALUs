@@ -62,6 +62,7 @@ public:
     std::shared_ptr<snapengine::Product> GetTargetProduct() { return target_product_; }
     std::string GetTargetPath(const std::string& swath) { return target_paths_.at(swath); }
     void Execute();
+    std::map<std::string, std::shared_ptr<GDALDataset>, std::less<>> GetOutputDatasets() const;
 
 private:
     std::shared_ptr<snapengine::Product> source_product_;
@@ -82,7 +83,7 @@ private:
     bool output_image_in_complex_;
     int tile_width_;
     int tile_height_;
-    std::map<std::string, std::shared_ptr<Dataset<float>>, std::less<>> target_datasets_;
+    std::map<std::string, std::shared_ptr<GDALDataset>, std::less<>> target_datasets_;
     std::map<std::string, std::string, std::less<>> target_paths_;
     std::string output_path_;
     std::vector<void*> cuda_arrays_to_clean_;
