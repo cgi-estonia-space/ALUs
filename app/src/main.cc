@@ -25,6 +25,7 @@
 #include "alus_log.h"
 #include "command_line_options.h"
 #include "dem_assistant.h"
+#include "gdal_management.h"
 
 #include "../../VERSION"
 
@@ -108,6 +109,7 @@ int main(int argc, const char* argv[]) {
                 alg_guard.GetInstanceHandle()->SetEgm96Manager(dem_assistant->GetEgm96Manager());
             }
 
+            alus::gdalmanagement::Initialize();
             alg_execute_status = alg_guard.GetInstanceHandle()->Execute();
         }
 

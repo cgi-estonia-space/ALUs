@@ -209,7 +209,6 @@ std::vector<int32_t> Sentinel1ProductReader::ReadRect(const std::shared_ptr<Band
     // this and other related stuff comes from band_info and is probably set up during reader init there, simpler to
     // modify later---->>>>>>>>>
     /*std::string file_name{"placeholder"};
-    GDALAllRegister();
     auto* dataset = static_cast<GDALDataset*>(GDALOpen(file_name.data(), GA_ReadOnly));
     CHECK_GDAL_PTR(dataset);*/
     // also add other stuff for dataset setup...

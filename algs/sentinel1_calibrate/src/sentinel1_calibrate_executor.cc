@@ -28,6 +28,7 @@
 #include "algorithm_parameters.h"
 #include "alus_log.h"
 #include "dataset.h"
+#include "gdal_management.h"
 #include "s1tbx-io/sentinel1/sentinel1_product_reader_plug_in.h"
 #include "sentinel1_calibrate.h"
 #include "snap-core/dataio/i_product_reader.h"
@@ -74,7 +75,7 @@ void Sentinel1CalibrateExecutor::SetTileSize(size_t width, size_t height) {
 int Sentinel1CalibrateExecutor::Execute() {
     try {
         ValidateParameters();
-        GDALSetCacheMax64(4e9); // GDAL Cache 4GB, enough for for whole swath input + output
+        alus::gdalmanagement::SetCacheMax(4e9); // GDAL Cache 4GB, enough for for whole swath input + output
         const auto reader_plug_in = std::make_shared<s1tbx::Sentinel1ProductReaderPlugIn>();
         const std::shared_ptr<snapengine::IProductReader> product_reader = reader_plug_in->CreateReaderInstance();
         std::shared_ptr<snapengine::Product> input_product =

@@ -21,8 +21,6 @@
 
 namespace alus::snapengine::custom {
 
-GdalImageReader::GdalImageReader() { GDALAllRegister(); }
-
 void GdalImageReader::ReadSubSampledData(const custom::Rectangle& rectangle, int band_indx) {
     // todo:    later add support for subsampled data, this will change parameters for this function
     if (data_.size() != static_cast<std::size_t>(rectangle.width * rectangle.height)) {

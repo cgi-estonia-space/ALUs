@@ -17,6 +17,8 @@
 #include <string_view>
 #include <vector>
 
+#include <gdal.h>
+
 #include "gdal_util.h"
 #include "i_data_tile_read_write_base.h"
 
@@ -25,7 +27,6 @@ namespace coherence_cuda {
 GdalTileReader::GdalTileReader(const std::string_view file_name, const std::vector<int>& band_map, int band_count,
                                bool has_transform)
     : IDataTileReader(file_name, band_map, band_count), do_close_dataset_{true} {
-    GDALAllRegister();
     dataset_ = static_cast<GDALDataset*>(GDALOpen(file_name.data(), GA_ReadOnly));
     CHECK_GDAL_PTR(dataset_);
     InitializeDatasetProperties(dataset_, has_transform);

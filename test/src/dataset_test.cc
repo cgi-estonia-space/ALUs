@@ -3,8 +3,8 @@
 
 #include "gmock/gmock.h"
 
-#include "gdal_util.h"
-#include "tests_common.hpp"
+#include "gdal_management.h"
+#include "tests_common.h"
 
 using namespace alus::tests;
 using ::testing::ContainerEq;
@@ -14,10 +14,13 @@ using ::testing::SizeIs;
 namespace {
 
 class DatasetTest : public ::testing::Test {
-   public:
-    DatasetTest() { CPLPushErrorHandler(silentGdalErrorHandler); }
+public:
+    DatasetTest() : gdalErrorHandleGuard_{alus::gdalmanagement::SetErrorHandle(silentGdalErrorHandle_)} {}
 
-    ~DatasetTest() override { CPLPopErrorHandler(); }
+    alus::gdalmanagement::ErrorCallback silentGdalErrorHandle_ = [](std::string_view) {};
+    alus::gdalmanagement::ErrorCallbackGuard gdalErrorHandleGuard_;
+
+    ~DatasetTest() override { }
 };
 
 TEST_F(DatasetTest, onInvalidFilenameThrows) {
@@ -85,7 +88,7 @@ TEST_F(DatasetTest, createsTargetDataset) {
         auto tgt = alus::TargetDataset<double>(params);
         ASSERT_EQ(tgt.getSize(), from.size());
         std::fill(from.begin(), from.end(), 15.6734);
-        tgt.WriteRectangle(from.data(), {0,0,ds.GetRasterSizeX(),ds.GetRasterSizeY()}, 1);
+        tgt.WriteRectangle(from.data(), {0, 0, ds.GetRasterSizeX(), ds.GetRasterSizeY()}, 1);
     }
 
     auto checkDs = alus::Dataset<double>("/tmp/test.tif");
@@ -111,7 +114,7 @@ TEST_F(DatasetTest, throwsWhenWritingInvalidSizes) {
     dims = dims + 1;
 
     std::vector<double> dummySizeSmall(5);
-    ASSERT_THROW(tgt.WriteRectangle(dummySizeSmall.data(), {0,0,0,0}, 1), std::invalid_argument);
+    ASSERT_THROW(tgt.WriteRectangle(dummySizeSmall.data(), {0, 0, 0, 0}, 1), std::invalid_argument);
     std::vector<double> dummyFullSize(tgt.getSize());
     ASSERT_THROW(tgt.WriteRectangle(dummyFullSize.data(), {1, 1, 0, 0}, 1), std::invalid_argument);
 }

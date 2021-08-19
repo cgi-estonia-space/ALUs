@@ -18,8 +18,9 @@
 #include <string_view>
 #include <vector>
 
-#include "boost/filesystem.hpp"
-#include "gdal_priv.h"
+#include <boost/filesystem.hpp>
+#include <gdal_priv.h>
+
 #include "gmock/gmock.h"
 
 #include "gdal_util.h"
@@ -59,7 +60,6 @@ private:
     }
 
     void CreateInMemoryDataset() {
-        GDALAllRegister();
         GDALDataset* temp = GetGDALDriverManager()
                                 ->GetDriverByName(utils::constants::GDAL_MEM_DRIVER)
                                 ->Create("/dev/null", width_, height_, 1, GDT_Float32, nullptr);

@@ -34,7 +34,7 @@ public:
     /**
      * avoid tight coupling to data... (swappable sources, targets, types etc..)
      */
-    GdalImageWriter();
+    GdalImageWriter() = default;
     GdalImageWriter(const GdalImageWriter&) = delete;
     GdalImageWriter& operator=(const GdalImageWriter&) = delete;
     ~GdalImageWriter() override;

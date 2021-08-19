@@ -6,7 +6,7 @@
 
 #include "gmock/gmock.h"
 
-#include "tests_common.hpp"
+#include "tests_common.h"
 
 using namespace alus::tests;
 

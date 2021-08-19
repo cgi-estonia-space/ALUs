@@ -18,7 +18,6 @@
 #include "dataset.h"
 #include "gdal_util.h"
 #include "resampling.h"
-#include "tests_common.hpp"
 
 #include "range_doppler_geocoding_test.cuh"
 

@@ -22,6 +22,7 @@
 
 #include "alus_log.h"
 #include "backgeocoding_bond.h"
+#include "gdal_management.h"
 #include "terrain_correction_executor.h"
 
 namespace {
@@ -62,7 +63,7 @@ int CoherenceEstimationRoutineExecute::Execute() {
 
     // 2 x SLC input = ~2.5 GB + TC output = ~1GB, mem driver do not use the cache
     // should never reach 8 GB, but left larger as optional intermediate file writing is RasterIO based for now
-    GDALSetCacheMax64(8e9);
+    alus::gdalmanagement::SetCacheMax(8e9);
 
     int exit_code{};
     if (IsSafeInput()) {

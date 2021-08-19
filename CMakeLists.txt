@@ -125,6 +125,9 @@ if (ENABLE_UNIT_TESTS OR ENABLE_INTEGRATION_TESTS)
         set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
         # Prevent GoogleTest from using PThreads
         set(gtest_disable_pthreads ON CACHE BOOL "" FORCE)
+        set(BUILD_SHARED_VERSION OFF CACHE BOOL "" FORCE)
+        set(BUILD_TEST OFF CACHE BOOL "" FORCE)
+        set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
 
         # adds the targers: gtest, gtest_main, gmock, gmock_main
         add_subdirectory(
@@ -134,7 +137,7 @@ if (ENABLE_UNIT_TESTS OR ENABLE_INTEGRATION_TESTS)
 
         # Silence std::tr1 warning on MSVC
         if (MSVC)
-            foreach (_tgt gtest gtest_main gmock gmock_main)
+            foreach (_tgt gmock)
                 target_compile_definitions(${_tgt}
                         PRIVATE
                         "_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING"

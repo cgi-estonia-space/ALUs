@@ -15,18 +15,12 @@
 #include <memory>
 
 #include <gmock/gmock.h>
-#include <gdal_priv.h>
 
 #include "topsar_split.h"
-#include "i_meta_data_reader.h"
 #include "pugixml_meta_data_reader.h"
-#include "product.h"
-#include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
 
 #include "apply_orbit_file_op.h"
-#include "topsar_split.h"
 #include "snap-core/util/system_utils.h"
-#include "target_dataset.h"
 #include "c16_dataset.h"
 #include "../../test/include/sentinel1_utils_tester.h"
 
@@ -39,7 +33,6 @@ TEST(DISABLED_topsar_split, subswaths){
 }
 
 TEST(topsar_split, s1utils_slave){
-    GDALSetCacheMax64(4e9);
     alus::snapengine::SystemUtils::SetAuxDataPath("./goods/apply_orbit_file_op/orbit-files/");
     std::string subswath_name = "IW1";
     std::string polarisation = "VV";
@@ -157,7 +150,6 @@ TEST(topsar_split, s1utils_slave){
 }
 
 TEST(topsar_split, s1utils_master){
-    GDALSetCacheMax64(4e9);
     alus::snapengine::SystemUtils::SetAuxDataPath("./goods/apply_orbit_file_op/orbit-files/");
     std::string subswath_name = "IW1";
     std::string polarisation = "VV";

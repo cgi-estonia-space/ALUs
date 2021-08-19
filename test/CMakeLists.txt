@@ -4,12 +4,12 @@ list(APPEND TEST_INCLUDE_DIRS
         )
 
 list(APPEND TEST_SOURCES
-        src/dataset_test.cpp
+        src/alus_gmock_main.cc
+        src/dataset_test.cc
         src/terrain_correction_test.cc
         src/terrain_correction_test_kernels.cu
-        src/dem_test.cpp
+        src/dem_test.cc
         src/orbit_state_vectors_test.cc
-        src/tests_common.cpp
         src/sentinel1_test.cc
         src/geo_utils_test.cpp
         src/product_data_test.cpp
@@ -52,7 +52,7 @@ target_include_directories(unit_test
 
 target_link_libraries(unit_test
         PRIVATE
-        gmock_main
+        gmock
         gdal-util-static
         terrain-correction-static
         sentinel1-util-static
