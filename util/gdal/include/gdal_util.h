@@ -71,6 +71,8 @@ GDALDataType FindGdalDataType() {
 
 void GeoTiffWriteFile(GDALDataset* input_dataset, const std::string_view output_file);
 
+std::string findOptimalTileSize(int raster_dimension);
+
 }  // namespace alus
 
 inline void checkGdalError(CPLErr const err, char const* file, int const line) {

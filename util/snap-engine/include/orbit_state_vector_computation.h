@@ -17,13 +17,13 @@
 namespace alus {
 namespace snapengine {
 struct OrbitStateVectorComputation {
-    double timeMjd_{};
-    double xPos_{};
-    double yPos_{};
-    double zPos_{};
-    double xVel_{};
-    double yVel_{};
-    double zVel_{};
+    double timeMjd_;
+    double xPos_;
+    double yPos_;
+    double zPos_;
+    double xVel_;
+    double yVel_;
+    double zVel_;
 };
 }  // namespace snapengine
 }  // namespace alus

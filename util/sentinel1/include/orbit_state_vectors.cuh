@@ -19,6 +19,7 @@
 #include "orbit_state_vector_computation.h"
 #include "pos_vector.h"
 
+
 namespace alus {
 namespace s1tbx {
 namespace orbitstatevectors {
@@ -127,14 +128,13 @@ inline __device__ __host__ void GetPositionVelocity(double time,
     }
 }
 
-
 inline __device__ __host__ snapengine::PosVector GetPositionImpl(
-    double time, cuda::KernelArray<snapengine::OrbitStateVectorComputation> vectors) {
+        double time, cuda::KernelArray<snapengine::OrbitStateVectorComputation> vectors) {
     const int nv{8};
     const int vectorsSize = vectors.size;
     // TODO: This should be done once.
     const double dt =
-        (vectors.array[vectorsSize - 1].timeMjd_ - vectors.array[0].timeMjd_) / static_cast<double>(vectorsSize - 1);
+            (vectors.array[vectorsSize - 1].timeMjd_ - vectors.array[0].timeMjd_) / static_cast<double>(vectorsSize - 1);
 
     int i0;
     int iN;
@@ -164,6 +164,7 @@ inline __device__ __host__ snapengine::PosVector GetPositionImpl(
     }
     return result;
 }
+
 
 }  // namespace orbitstatevectors
 }  // namespace s1tbx

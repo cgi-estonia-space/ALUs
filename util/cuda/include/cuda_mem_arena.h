@@ -11,6 +11,7 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
+#pragma once
 
 #include "cuda_runtime_api.h"
 #include "cuda_util.h"
@@ -50,9 +51,14 @@ public:
         return static_cast<T*>(AllocateBytes(sizeof(T) * n_elem));
     }
 
+    template <class T>
+    T* Alloc() {
+        return AllocArray<T>(1);
+    }
+
     void Reset() { used_byte_size_ = 0; }
 
-    void Free() {
+    void FreeMemory() {
         used_byte_size_ = 0;
         max_byte_size_ = 0;
         CHECK_CUDA_ERR(cudaFree(device_arena_ptr_));

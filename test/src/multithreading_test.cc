@@ -13,33 +13,38 @@
  */
 #include "gmock/gmock.h"
 
-#include <boost/asio/thread_pool.hpp>
-#include <boost/asio/post.hpp>
-
 #include <atomic>
+#include <thread>
+
+#include "tile_queue.h"
 
 namespace {
 
-
-TEST(MultiThreadingTest, MultiThreading) {
+TEST(MultiThreadingTest, ThreadSafeQueueWorksCorrectly) {
     std::atomic<uint64_t> test_atomic = 0;
-    constexpr uint64_t RERUNS = 100;
-    constexpr uint64_t INCREMENTS = 10000;
+    constexpr uint64_t reruns = 100;
+    constexpr uint64_t increments = 10000;
 
-    /*
-        a simple threadpool stress test
-        The test against boost is left in for future reference,
-        if we choose use another library or implement our own
-     */
-    for(uint64_t i = 0; i < RERUNS; i++) {
-
+    for (uint64_t i = 0; i < reruns; i++) {
         test_atomic = 0;
-        boost::asio::thread_pool thread_pool(4);
-        for(uint64_t j = 0; j < INCREMENTS; j++) {
-            boost::asio::post(thread_pool, [&test_atomic](){ test_atomic++; });
+        const int value = 2;
+        alus::ThreadSafeTileQueue<int> tile_queue;
+        std::vector<int> data(increments, value);
+        tile_queue.InsertData(std::move(data));
+        std::vector<std::thread> pool;
+        for (uint64_t j = 0; j < 16; j++) {
+            pool.emplace_back([&]() {
+                while (true) {
+                    int value = 0;
+                    if (!tile_queue.PopFront(value)) {
+                        break;
+                    }
+                    test_atomic += value;
+                }
+            });
         }
-        thread_pool.wait();
-        ASSERT_EQ(INCREMENTS, test_atomic);
+        for (auto& t : pool) t.join();
+        ASSERT_EQ(increments * value, test_atomic);
     }
 }
 }  // namespace

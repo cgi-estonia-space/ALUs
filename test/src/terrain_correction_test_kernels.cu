@@ -60,6 +60,10 @@ void LaunchGetPositionKernel(const std::vector<double>& lat_args,
     cuda::KernelArray<s1tbx::PositionData> k_sat_positions{
         thrust::raw_pointer_cast(d_sat_positions.data()), d_sat_positions.size()};
 
+
+    thrust::device_vector<double> d_osv_lookup = terraincorrection::CalculateOrbitStateVectorLUT(orbit_state_vector);
+
+
     thrust::device_vector<snapengine::PosVector> d_sensor_position = sensor_position;
     cuda::KernelArray<snapengine::PosVector> k_sensor_position{thrust::raw_pointer_cast(d_sensor_position.data()),
                                                                    d_sensor_position.size()};
@@ -69,10 +73,13 @@ void LaunchGetPositionKernel(const std::vector<double>& lat_args,
     thrust::device_vector<snapengine::OrbitStateVectorComputation> d_orbit_state_vector = orbit_state_vector;
     cuda::KernelArray<snapengine::OrbitStateVectorComputation> k_orbit_state_vector{
         thrust::raw_pointer_cast(d_orbit_state_vector.data()), d_orbit_state_vector.size()};
+
+    cuda::KernelArray<double> k_osv_lookup = {d_osv_lookup.data().get(), d_osv_lookup.size()};
     auto k_metadata = metadata;
     k_metadata.sensor_position = k_sensor_position;
     k_metadata.sensor_velocity = k_sensor_velocity;
     k_metadata.orbit_state_vectors = k_orbit_state_vector;
+    k_metadata.orbit_state_vector_lut = k_osv_lookup;
 
     thrust::device_vector<bool> d_results(results.size());
     cuda::KernelArray<bool> k_results{thrust::raw_pointer_cast(d_results.data()), d_results.size()};
