@@ -59,6 +59,7 @@ TopsarSplit::TopsarSplit(std::string filename, std::string selected_subswath, st
                 current_file.find(low_polarisation) != std::string::npos) {
                 LOGV << "Selecting tif for reading: " << current_file;
                 pixel_reader_ = std::make_shared<C16Dataset<double>>(current_file);
+                pixel_reader_->TryToCacheImage();
                 found_it = true;
                 break;
             }

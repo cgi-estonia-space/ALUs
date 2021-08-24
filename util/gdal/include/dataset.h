@@ -19,6 +19,9 @@
 #include <tuple>
 #include <vector>
 #include <map>
+#include <mutex>
+#include <thread>
+#include <atomic>
 
 #include <gdal_priv.h>
 
@@ -123,15 +126,20 @@ class Dataset: public AlusFileReader<BufferType> {
     long unsigned int GetBufferByteSize() override { return data_buffer_.size() * sizeof(BufferType);};
     size_t GetBufferElemCount() override { return data_buffer_.size();};
     BufferType* GetDeviceDataBuffer() override ;
-    void ReadRectangle(Rectangle rectangle, int band_nr, BufferType*data_buffer) override ;
+    void ReadRectangle(Rectangle rectangle, int band_nr, BufferType* data_buffer) override ;
     [[nodiscard]] std::string_view GetFilePath();
     void ReadRectangle(Rectangle rectangle, std::map<int, BufferType*>& bands) override;
+    void TryToCacheImage() override;
 
     ~Dataset();
 
    private:
     void LoadDataset(std::string_view filename);
     void LoadDataset(std::string_view filename, GDALAccess access);
+    void CacheImage();
+    void ReadRectangle(Rectangle rectangle, int band_nr, BufferType* data_buffer, bool is_from_cache);
+    std::mutex read_lock_; //rasterIO is not actually thread safe. Some stream object is shared.
+    std::thread cacher_;
 
     GDALDataset* dataset_{};
     GDALDataType gdal_data_type_;
@@ -141,11 +149,14 @@ class Dataset: public AlusFileReader<BufferType> {
     double origin_lat_{};
     double pixel_size_lon_{};
     double pixel_size_lat_{};
+    std::atomic<bool> is_allowed_to_cache_{true};
 
     int x_size_{};
     int y_size_{};
     std::vector<BufferType> data_buffer_{};
     std::string file_path_{};
+
+    std::exception_ptr cacher_exception{nullptr};
 
 };
 

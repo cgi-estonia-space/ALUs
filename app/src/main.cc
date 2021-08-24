@@ -16,6 +16,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <thread>
 
 #include <boost/program_options.hpp>
 
@@ -30,6 +31,7 @@
 namespace po = boost::program_options;
 
 namespace {
+
 void PrintHelp(const std::string& options_help) {
     std::cout << "ALUS - EO processing on steroids" << std::endl;
     std::cout << "Version " << VERSION_MAJOR << "." << VERSION_MINOR << "." << VERSION_PATCH << std::endl;
@@ -44,6 +46,8 @@ int main(int argc, const char* argv[]) {
     std::string help_string{};
     int alg_execute_status{};
     try {
+        std::thread cuda_warmup([](){cudaFree(nullptr);}); //init cuda with a cudaFree so others don't have to wait.
+        cuda_warmup.detach();
         alus::common::log::Initialize();
 #ifdef NDEBUG
         alus::common::log::SetLevel(alus::common::log::Level::INFO);
@@ -106,6 +110,7 @@ int main(int argc, const char* argv[]) {
 
             alg_execute_status = alg_guard.GetInstanceHandle()->Execute();
         }
+
     } catch (const po::error& e) {
         LOGE << e.what();
         PrintHelp(help_string);

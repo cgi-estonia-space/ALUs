@@ -15,7 +15,7 @@
 #include <fstream>
 #include <memory>
 
-#include "gmock/gmock.h"
+#include <gmock/gmock.h>
 
 #include "comparators.h"
 #include "coregistration_controller.h"

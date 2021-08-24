@@ -15,6 +15,8 @@
 
 #include <cstdint>
 #include <map>
+#include <mutex>
+#include <thread>
 
 #include "alus_log.h"
 #include "gdal.h"
@@ -42,7 +44,8 @@ Dataset<BufferType>::Dataset(GDALDataset* input_dataset) : dataset_{input_datase
 }
 
 template <typename BufferType>
-Dataset<BufferType>::Dataset(std::string_view filename, const GeoTransformSourcePriority& georef_source) : file_path_(filename) {
+Dataset<BufferType>::Dataset(std::string_view filename, const GeoTransformSourcePriority& georef_source)
+    : file_path_(filename) {
     CPLSetThreadLocalConfigOption("GDAL_GEOREF_SOURCES", GEOREF_CONFIG_STRING_TABLE.at(georef_source).c_str());
     try {
         LoadDataset(filename);
@@ -77,6 +80,11 @@ std::tuple<int, int> Dataset<BufferType>::GetPixelIndexFromCoordinates(double lo
 
 template <typename BufferType>
 Dataset<BufferType>::~Dataset() {
+    if (cacher_.joinable()) {
+        is_allowed_to_cache_ = false;
+        cacher_.join();
+    }
+
     if (this->dataset_) {
         GDALClose(this->dataset_);
         this->dataset_ = nullptr;
@@ -135,7 +143,7 @@ BufferType* Dataset<BufferType>::GetDeviceDataBuffer() {
 }
 
 template <typename BufferType>
-void Dataset<BufferType>::ReadRectangle(Rectangle rectangle, std::map<int, BufferType*>& bands){
+void Dataset<BufferType>::ReadRectangle(Rectangle rectangle, std::map<int, BufferType*>& bands) {
     for (auto it = bands.begin(); it != bands.end(); ++it) {
         LOGV << it->first << ", " << it->second;
         ReadRectangle(rectangle, it->first, it->second);
@@ -143,7 +151,12 @@ void Dataset<BufferType>::ReadRectangle(Rectangle rectangle, std::map<int, Buffe
 }
 
 template <typename BufferType>
-void Dataset<BufferType>::ReadRectangle(Rectangle rectangle, int band_nr, BufferType *data_buffer) {
+void Dataset<BufferType>::ReadRectangle(Rectangle rectangle, int band_nr, BufferType* data_buffer) {
+    ReadRectangle(rectangle, band_nr, data_buffer, false);
+}
+
+template <typename BufferType>
+void Dataset<BufferType>::ReadRectangle(Rectangle rectangle, int band_nr, BufferType* data_buffer, bool is_from_cache) {
     auto const bandCount = this->dataset_->GetRasterCount();
     if (bandCount == 0) {
         throw DatasetError("Does not support rasters with no bands.", this->dataset_->GetFileList()[0], 0);
@@ -155,6 +168,15 @@ void Dataset<BufferType>::ReadRectangle(Rectangle rectangle, int band_nr, Buffer
     }
     if (rectangle.width == 0 || rectangle.height == 0) {
         throw DatasetError("Can not read a band with no numbers. ", this->dataset_->GetFileList()[0], 0);
+    }
+
+    std::unique_lock lock(read_lock_);
+    if (!is_from_cache) {
+        is_allowed_to_cache_ = false;
+    }
+    if (cacher_exception != nullptr) {
+        LOGE << "Rethrowing cacher exception" << std::endl;
+        std::rethrow_exception(cacher_exception);
     }
 
     auto const inError = this->dataset_->GetRasterBand(band_nr)->RasterIO(
@@ -195,6 +217,43 @@ Dataset<BufferType>::Dataset(std::string_view filename, GDALAccess access) : fil
 template <typename BufferType>
 std::string_view Dataset<BufferType>::GetFilePath() {
     return file_path_;
+}
+
+template <typename BufferType>
+void Dataset<BufferType>::CacheImage() {
+    int default_y = 1500;
+    int offset_y = 0;
+    int actual_y = 0;
+
+    try {
+        int raster_y = dataset_->GetRasterYSize();
+        int band_count = this->dataset_->GetRasterCount();
+        std::vector<BufferType> temp_pile(dataset_->GetRasterYSize());
+
+        for (int i = 1; i <= band_count; i++) {
+            for (offset_y = 0; offset_y < raster_y; offset_y += default_y) {
+                if ((offset_y + default_y) >= raster_y) {
+                    actual_y = raster_y - offset_y;
+                } else {
+                    actual_y = default_y;
+                }
+                ReadRectangle({0, offset_y, 1, actual_y}, i, temp_pile.data(), true);
+                if (!is_allowed_to_cache_) {
+                    break;
+                }
+            }
+        }
+    } catch (const std::exception& e) {
+        cacher_exception = std::current_exception();
+    }
+}
+
+template <typename BufferType>
+void Dataset<BufferType>::TryToCacheImage() {
+    if (!cacher_.joinable()) {
+        is_allowed_to_cache_ = true;
+        cacher_ = std::thread(&Dataset<BufferType>::CacheImage, this);
+    }
 }
 
 template class Dataset<double>;

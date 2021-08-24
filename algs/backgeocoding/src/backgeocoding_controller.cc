@@ -33,12 +33,12 @@ BackgeocodingController::BackgeocodingController(std::shared_ptr<AlusFileReader<
                                                  std::shared_ptr<AlusFileWriter<float>> output_dataset,
                                                  std::string_view master_metadata_file,
                                                  std::string_view slave_metadata_file)
-    : master_input_dataset_(master_input_dataset),
+    : beam_dimap_mode_(true),
+      master_input_dataset_(master_input_dataset),
       slave_input_dataset_(slave_input_dataset),
       output_dataset_(output_dataset),
       master_metadata_file_(master_metadata_file),
       slave_metadata_file_(slave_metadata_file) {
-    beam_dimap_mode_ = true;
 }
 
 BackgeocodingController::BackgeocodingController(std::shared_ptr<AlusFileReader<double>> master_input_dataset,
@@ -69,14 +69,14 @@ void BackgeocodingController::PrepareToCompute(const float* egm96_device_array, 
 }
 
 void BackgeocodingController::RegisterException(std::exception_ptr e) {
-    std::unique_lock<std::mutex> lock(exception_mutex_);
+    std::unique_lock lock(exception_mutex_);
 
     exceptions_.push_back(e);
     exceptions_thrown_++;
 }
 
 void BackgeocodingController::RegisterThreadEnd() {
-    std::unique_lock<std::mutex> lock(register_mutex_);
+    std::unique_lock lock(register_mutex_);
 
     finished_count_++;
 
@@ -88,11 +88,8 @@ void BackgeocodingController::RegisterThreadEnd() {
 }
 
 void BackgeocodingController::ReadMaster(Rectangle master_area, double* i_tile, double* q_tile) {
-    std::unique_lock<std::mutex> lock(master_read_mutex_);
     // TODO: Could we read slave and master at the same time if we branch into 2 other threads during this thread.
     // TODO: find out if the band ordering is random or not. Then replace those numbers.
-    // master_input_dataset_->ReadRectangle(master_area, 1, i_tile);
-    // master_input_dataset_->ReadRectangle(master_area, 2, q_tile);
     std::map<int, double*> bands;
     bands.insert({1, i_tile});
     bands.insert({2, q_tile});
@@ -103,7 +100,7 @@ PositionComputeResults BackgeocodingController::PositionCompute(int m_burst_inde
                                                                 Rectangle target_area, double* device_x_points,
                                                                 double* device_y_points) {
     PositionComputeResults result;
-    std::unique_lock<std::mutex> lock(position_compute_mutex_);
+    std::unique_lock lock(position_compute_mutex_);
 
     result.slave_area =
         backgeocoding_->PositionCompute(m_burst_index, s_burst_index, target_area, device_x_points, device_y_points);
@@ -113,11 +110,8 @@ PositionComputeResults BackgeocodingController::PositionCompute(int m_burst_inde
 }
 
 void BackgeocodingController::ReadSlave(Rectangle slave_area, double* i_tile, double* q_tile) {
-    std::unique_lock<std::mutex> lock(slave_read_mutex_);
 
     // TODO: find out if the band ordering is random or not. Then replace those numbers.
-    // slave_input_dataset_->ReadRectangle(slave_area, 1, i_tile);
-    // slave_input_dataset_->ReadRectangle(slave_area, 2, q_tile);
     std::map<int, double*> bands;
     bands.insert({1, i_tile});
     bands.insert({2, q_tile});
@@ -125,7 +119,7 @@ void BackgeocodingController::ReadSlave(Rectangle slave_area, double* i_tile, do
 }
 
 void BackgeocodingController::CoreCompute(CoreComputeParams params) {
-    std::unique_lock<std::mutex> lock(core_compute_mutex_);
+    std::unique_lock lock(core_compute_mutex_);
 
     backgeocoding_->CoreCompute(params);
 }
@@ -183,7 +177,7 @@ void BackgeocodingController::DoWork() {
     }
 
     std::mutex final_mutex;
-    std::unique_lock<std::mutex> final_lock(final_mutex);
+    std::unique_lock final_lock(final_mutex);
     end_block_.wait(final_lock);
     LOGV << "Final block reached.";
 
