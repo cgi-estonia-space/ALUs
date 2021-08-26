@@ -94,8 +94,8 @@ void Srtm3ElevationModel::HostToDeviceThread() {
             constexpr dim3 block_size(20, 20);
 
             for (size_t i = 0; i < nr_of_tiles; i++) {
-                const auto x_size = this->srtms_.at(i).GetXSize();
-                const auto y_size = this->srtms_.at(i).GetYSize();
+                const auto x_size = this->srtms_.at(i).GetRasterSizeX();
+                const auto y_size = this->srtms_.at(i).GetRasterSizeY();
                 const auto dem_size_bytes = x_size * y_size * sizeof(float);
                 CHECK_CUDA_ERR(cudaMalloc((void**)&this->device_formated_srtm_buffers_.at(i), dem_size_bytes));
                 float* temp_buffer;

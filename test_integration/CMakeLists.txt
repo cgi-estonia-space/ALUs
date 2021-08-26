@@ -67,6 +67,7 @@ add_custom_target(integration-test-prepare-data ALL
 
         # Coregistration data
         COMMAND test -f ${CMAKE_BINARY_DIR}/test_integration/goods/coregistration_strips.txt || cp ${CMAKE_CURRENT_LIST_DIR}/goods/coregistration_strips.txt ${CMAKE_BINARY_DIR}/test_integration/goods/coregistration_strips.txt
+        COMMAND test -f ${CMAKE_BINARY_DIR}/test_integration/goods/coregistration_strips_cut.txt || cp ${CMAKE_CURRENT_LIST_DIR}/goods/coregistration_strips_cut.txt ${CMAKE_BINARY_DIR}/test_integration/goods/coregistration_strips_cut.txt
 
         COMMAND ln -rfns ${CMAKE_CURRENT_LIST_DIR}/goods/ww15mgh_b.grd ${CMAKE_BINARY_DIR}/test_integration/goods/.
         COMMAND ln -rfns ${CMAKE_CURRENT_LIST_DIR}/goods/master_metadata.dim ${CMAKE_BINARY_DIR}/test_integration/goods/.

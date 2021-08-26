@@ -102,13 +102,13 @@ void Dataset<BufferType>::LoadRasterBand(int band_nr) {
         throw DatasetError("Too big band nr! You can not read a band that isn't there.",
                            this->dataset_->GetFileList()[0], 0);
     }
-    this->x_size_ = this->dataset_->GetRasterBand(band_nr)->GetXSize();
-    this->y_size_ = this->dataset_->GetRasterBand(band_nr)->GetYSize();
-    this->data_buffer_.resize(this->x_size_ * this->y_size_);
 
-    auto const inError = this->dataset_->GetRasterBand(band_nr)->RasterIO(GF_Read, 0, 0, this->x_size_, this->y_size_,
-                                                                          this->data_buffer_.data(), this->x_size_,
-                                                                          this->y_size_, gdal_data_type_, 0, 0);
+    reading_area_ = {0,0,this->dataset_->GetRasterBand(band_nr)->GetXSize(), this->dataset_->GetRasterBand(band_nr)->GetYSize()};
+    this->data_buffer_.resize(reading_area_.width * reading_area_.height);
+
+    auto const inError = this->dataset_->GetRasterBand(band_nr)->RasterIO(GF_Read, 0, 0, reading_area_.width, reading_area_.height,
+                                                                          this->data_buffer_.data(), reading_area_.width,
+                                                                          reading_area_.height, gdal_data_type_, 0, 0);
 
     if (inError != CE_None) {
         throw DatasetError(CPLGetLastErrorMsg(), this->dataset_->GetFileList()[0], CPLGetLastErrorNo());
@@ -127,8 +127,7 @@ Dataset<BufferType>::Dataset(GDALDataset& dataset) {
         throw DatasetError(CPLGetLastErrorMsg(), this->dataset_->GetFileList()[0], CPLGetLastErrorNo());
     }
 
-    this->x_size_ = this->dataset_->GetRasterXSize();
-    this->y_size_ = this->dataset_->GetRasterYSize();
+    reading_area_ = {0,0,this->dataset_->GetRasterXSize(), this->dataset_->GetRasterYSize()};
 
     this->origin_lon_ = this->transform_[transform::TRANSFORM_LON_ORIGIN_INDEX];
     this->origin_lat_ = this->transform_[transform::TRANSFORM_LAT_ORIGIN_INDEX];
@@ -136,6 +135,7 @@ Dataset<BufferType>::Dataset(GDALDataset& dataset) {
     this->pixel_size_lat_ = this->transform_[transform::TRANSFORM_PIXEL_Y_SIZE_INDEX];
 
     gdal_data_type_ = FindGdalDataType<BufferType>();
+
 }
 template <typename BufferType>
 BufferType* Dataset<BufferType>::GetDeviceDataBuffer() {
@@ -146,17 +146,17 @@ template <typename BufferType>
 void Dataset<BufferType>::ReadRectangle(Rectangle rectangle, std::map<int, BufferType*>& bands) {
     for (auto it = bands.begin(); it != bands.end(); ++it) {
         LOGV << it->first << ", " << it->second;
-        ReadRectangle(rectangle, it->first, it->second);
+        ReadRectangle(rectangle, it->first, it->second, false, reading_area_.x, reading_area_.y);
     }
 }
 
 template <typename BufferType>
 void Dataset<BufferType>::ReadRectangle(Rectangle rectangle, int band_nr, BufferType* data_buffer) {
-    ReadRectangle(rectangle, band_nr, data_buffer, false);
+    ReadRectangle(rectangle, band_nr, data_buffer, false, reading_area_.x, reading_area_.y);
 }
 
 template <typename BufferType>
-void Dataset<BufferType>::ReadRectangle(Rectangle rectangle, int band_nr, BufferType* data_buffer, bool is_from_cache) {
+void Dataset<BufferType>::ReadRectangle(Rectangle rectangle, int band_nr, BufferType* data_buffer, bool is_from_cache, int offset_x, int offset_y) {
     auto const bandCount = this->dataset_->GetRasterCount();
     if (bandCount == 0) {
         throw DatasetError("Does not support rasters with no bands.", this->dataset_->GetFileList()[0], 0);
@@ -174,6 +174,14 @@ void Dataset<BufferType>::ReadRectangle(Rectangle rectangle, int band_nr, Buffer
         is_allowed_to_cache_ = false;
     }
 
+    if(rectangle.x + offset_x + rectangle.width > dataset_->GetRasterXSize() || rectangle.y + offset_y + rectangle.height > dataset_->GetRasterYSize()) {
+        throw DatasetError("Rectangle out of image bounds", this->dataset_->GetFileList()[0], 0);
+    }
+
+    if(!is_from_cache && (rectangle.x + rectangle.width > reading_area_.width || rectangle.y + rectangle.height > reading_area_.height)){
+        throw DatasetError("Rectangle out of reading area bounds", this->dataset_->GetFileList()[0], 0);
+    }
+
     std::unique_lock lock(read_lock_);
     if (cacher_exception != nullptr) {
         LOGE << "Rethrowing cacher exception" << std::endl;
@@ -181,13 +189,14 @@ void Dataset<BufferType>::ReadRectangle(Rectangle rectangle, int band_nr, Buffer
     }
 
     auto const inError = this->dataset_->GetRasterBand(band_nr)->RasterIO(
-        GF_Read, rectangle.x, rectangle.y, rectangle.width, rectangle.height, data_buffer, rectangle.width,
+        GF_Read, rectangle.x + offset_x, rectangle.y + offset_y, rectangle.width, rectangle.height, data_buffer, rectangle.width,
         rectangle.height, gdal_data_type_, 0, 0);
 
     if (inError != CE_None) {
         throw DatasetError(CPLGetLastErrorMsg(), this->dataset_->GetFileList()[0], CPLGetLastErrorNo());
     }
 }
+
 template <typename BufferType>
 void Dataset<BufferType>::LoadDataset(std::string_view filename, GDALAccess access) {
     if (dataset_ == nullptr) {
@@ -209,6 +218,7 @@ void Dataset<BufferType>::LoadDataset(std::string_view filename, GDALAccess acce
     }
 
     gdal_data_type_ = FindGdalDataType<BufferType>();
+    reading_area_ = {0,0, dataset_->GetRasterXSize(), dataset_->GetRasterYSize()};
 }
 template <typename BufferType>
 Dataset<BufferType>::Dataset(std::string_view filename, GDALAccess access) : file_path_(filename) {
@@ -239,7 +249,7 @@ void Dataset<BufferType>::CacheImage() {
                 } else {
                     actual_y = default_y;
                 }
-                ReadRectangle({0, offset_y, 1, actual_y}, i, temp_pile.data(), true);
+                ReadRectangle({0, offset_y, 1, actual_y}, i, temp_pile.data(), true,0,0);
                 cached_blocks++;
                 if (!is_allowed_to_cache_) {
                     break;

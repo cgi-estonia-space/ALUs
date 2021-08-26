@@ -27,11 +27,17 @@ public:
     Coregistration(std::string aux_data_path);
     Coregistration() = default;
 
-    void Initialize(std::string master_file, std::string slave_file, std::string output_file, std::string subswath_name,
-                    std::string polarisation);
-    void Initialize(std::string master_file, std::string slave_file, std::string output_file, std::string subswath_name,
-                    std::string polarisation, const std::string& main_orbit_file,
-                    const std::string& secondary_orbit_file);
+    void Initialize(std::string_view master_file, std::string_view slave_file, std::string_view output_file,
+                    std::string_view subswath_name, std::string_view polarisation);
+    void Initialize(std::string_view master_file, std::string_view slave_file, std::string_view output_file,
+                    std::string_view subswath_name, std::string_view polarisation, std::string_view main_orbit_file,
+                    std::string_view secondary_orbit_file);
+    void Initialize(std::string_view master_file, std::string_view slave_file, std::string_view output_file,
+                    std::string_view subswath_name, std::string_view polarisation, size_t first_burst_index,
+                    size_t last_burst_index);
+    void Initialize(std::string_view master_file, std::string_view slave_file, std::string_view output_file,
+                    std::string_view subswath_name, std::string_view polarisation, size_t first_burst_index,
+                    size_t last_burst_index, size_t slave_first_burst_index, size_t slave_last_burst_index);
     void DoWork(const float* egm96_device_array, PointerArray srtm3_tiles);
 
     std::shared_ptr<snapengine::Product> GetMasterProduct() { return split_master_->GetTargetProduct(); }

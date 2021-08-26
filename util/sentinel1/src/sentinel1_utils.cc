@@ -970,6 +970,7 @@ void Sentinel1Utils::GetAbstractedMetadata() {
     auto orbit_state_vectors = snapengine::AbstractMetadata::GetOrbitStateVectors(abs_root);
     orbit_ = std::make_unique<s1tbx::OrbitStateVectors>(orbit_state_vectors, first_line_utc_, line_time_interval_,
                                                         source_image_height_);
+    is_orbit_available_ = true;
 
     if (srgr_flag_) {
         //        todo: implement if used

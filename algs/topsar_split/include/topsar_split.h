@@ -29,7 +29,8 @@ namespace alus::topsarsplit {
 
 class TopsarSplit {
 public:
-    TopsarSplit(std::string filename, std::string selected_subswath, std::string selected_polarisation);
+    TopsarSplit(std::string_view filename, std::string_view selected_subswath, std::string_view selected_polarisation);
+    TopsarSplit(std::string_view filename, std::string_view selected_subswath, std::string_view selected_polarisation, size_t first_burst, size_t last_burst);
     void initialize();
 
     std::shared_ptr<snapengine::Product> GetTargetProduct() { return target_product_; }

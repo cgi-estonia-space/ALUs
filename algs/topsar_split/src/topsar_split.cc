@@ -38,13 +38,24 @@
 
 namespace alus::topsarsplit {
 
-TopsarSplit::TopsarSplit(std::string filename, std::string selected_subswath, std::string selected_polarisation)
-    : subswath_(selected_subswath), selected_polarisations_({selected_polarisation}) {
+TopsarSplit::TopsarSplit(std::string_view filename, std::string_view selected_subswath, std::string_view selected_polarisation,
+                         size_t first_burst, size_t last_burst)
+    :  TopsarSplit(filename, selected_subswath, selected_polarisation) {
+    first_burst_index_ = static_cast<int>(first_burst);
+    last_burst_index_ = static_cast<int>(last_burst);
+
+    if(first_burst_index_ == 0){
+        throw std::runtime_error("Numbers to select burst in TOPSAR split start from 1, you chose 0.");
+    }
+}
+
+TopsarSplit::TopsarSplit(std::string_view filename, std::string_view selected_subswath, std::string_view selected_polarisation)
+    : subswath_(selected_subswath), selected_polarisations_({std::string(selected_polarisation)}) {
     boost::filesystem::path path = std::string(filename);
     boost::filesystem::path measurement = path.string() + "/measurement";
     boost::filesystem::directory_iterator end_itr;
-    std::string low_subswath = boost::to_lower_copy(selected_subswath);
-    std::string low_polarisation = boost::to_lower_copy(selected_polarisation);
+    std::string low_subswath = boost::to_lower_copy(std::string(selected_subswath));
+    std::string low_polarisation = boost::to_lower_copy(std::string(selected_polarisation));
 
     auto reader_plug_in = std::make_shared<alus::s1tbx::Sentinel1ProductReaderPlugIn>();
     reader_ = reader_plug_in->CreateReaderInstance();
@@ -67,8 +78,8 @@ TopsarSplit::TopsarSplit(std::string filename, std::string selected_subswath, st
     }
 
     if (!found_it) {
-        throw std::runtime_error("SAFE file does not contain GeoTIFF file for subswath '" + selected_subswath +
-                                 "' and polarisation '" + selected_polarisation + "'");
+        throw std::runtime_error("SAFE file does not contain GeoTIFF file for subswath '" + std::string(selected_subswath) +
+                                 "' and polarisation '" + std::string(selected_polarisation) + "'");
     }
 }
 
@@ -171,6 +182,7 @@ void TopsarSplit::initialize() {
 
     subset_def->SetSubSampling(1, 1);
     subset_def->SetIgnoreMetadata(false);
+    pixel_reader_->SetReadingArea({x,y,w,h});
 
     std::vector<std::string> selected_band_names(selected_bands.size());
     for (size_t i = 0; i < selected_bands.size(); i++) {

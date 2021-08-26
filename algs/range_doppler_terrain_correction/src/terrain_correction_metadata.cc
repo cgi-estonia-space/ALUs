@@ -86,8 +86,8 @@ void Metadata::FetchTiePoints(std::string_view tie_points_file, snapengine::tiep
                               std::vector<float>& tie_points_buffer) {
     Dataset<float> ds(tie_points_file); // *.img is of type float
     ds.LoadRasterBand(1);
-    const bool width_ok = static_cast<size_t>(ds.GetXSize()) == tie_points.grid_width;
-    const bool height_ok = static_cast<size_t>(ds.GetYSize()) == tie_points.grid_height;
+    const bool width_ok = static_cast<size_t>(ds.GetRasterSizeX()) == tie_points.grid_width;
+    const bool height_ok = static_cast<size_t>(ds.GetRasterSizeY()) == tie_points.grid_height;
     if(!width_ok || !height_ok)
     {
         throw std::runtime_error(std::string(tie_points_file) + " dimensions mismatch!\n");

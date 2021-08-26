@@ -599,8 +599,8 @@ void Sentinel1Calibrator::CreateDatasetsFromProduct(std::shared_ptr<snapengine::
             const auto band_count = GetCalibrationCount();
 
             GDALDataset* gdal_dataset =
-                driver->Create(output_file.data(), source_sub_dataset->GetRasterXSize(),
-                               source_sub_dataset->GetRasterYSize(), band_count, GDT_Float32, dataset_options);
+                driver->Create(output_file.data(), pixel_reader_->GetRasterSizeX(),
+                               pixel_reader_->GetRasterSizeY(), band_count, GDT_Float32, dataset_options);
 
             std::array<double, 6> geo_transform;
             source_sub_dataset->GetGeoTransform(geo_transform.data());

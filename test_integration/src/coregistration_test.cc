@@ -71,31 +71,79 @@ public:
     }
 };
 
-TEST(coregistration, all3) {
+TEST(coregistration, full3) {
     std::vector<std::string> srtm3_files{"./goods/srtm_43_06.tif", "./goods/srtm_44_06.tif"};
     std::shared_ptr<alus::app::DemAssistant> dem_assistant =
         alus::app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(std::move(srtm3_files));
     dem_assistant->GetSrtm3Manager()->HostToDevice();
-    const std::string_view output_file{"/tmp/coregistration_test.tif"};
+
+    const std::string_view output_file{"./goods/beirut_images/coregistration_test.tif"};
 
     std::unique_ptr<alus::coregistration::Coregistration> cor =
-        std::make_unique<alus::coregistration::Coregistration>("goods/apply_orbit_file_op/orbit-files/");
+        std::make_unique<alus::coregistration::Coregistration>("./goods/apply_orbit_file_op/orbit-files/");
     cor->Initialize(
-        "goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD_thin.SAFE",
-        "goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6_thin.SAFE",
+        "./goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD_thin.SAFE",
+        "./goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6_thin.SAFE",
         output_file.data(), "IW1", "VV");
+    dem_assistant->GetSrtm3Manager()->HostToDevice();
     cor->DoWork(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
                 {dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo(),
                  dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()});
 
-    alus::GeoTiffWriteFile(cor->GetOutputDataset(), "/tmp/coregistration_test.tif");
+    alus::GeoTiffWriteFile(cor->GetOutputDataset(), output_file.data());
 
     CoregTester tester("./goods/coregistration_strips.txt");
 
-    alus::Dataset<double> test_set(output_file);
+    alus::Dataset<double> test_set(output_file.data());
     alus::Rectangle rectangle{1000, 10000, 1, 100};
     alus::Rectangle rectangle2{7436, 6293, 1, 100};
     alus::Rectangle rectangle3{15576, 4440, 1, 100};
+    std::vector<double> data_buf(100);
+    test_set.ReadRectangle(rectangle, 3, data_buf.data());
+
+    size_t count_land = alus::EqualsArraysd(data_buf.data(), tester.land_strip_.data(), 100, 0.001);
+    EXPECT_EQ(count_land, 0) << "Land results I do not match. Mismatches: " << count_land << '\n';
+
+    test_set.ReadRectangle(rectangle2, 3, data_buf.data());
+
+    size_t count_coast = alus::EqualsArraysd(data_buf.data(), tester.coast_strip_.data(), 100, 0.001);
+    EXPECT_EQ(count_coast, 0) << "Land results I do not match. Mismatches: " << count_coast << '\n';
+
+    test_set.ReadRectangle(rectangle3, 3, data_buf.data());
+
+    size_t count_sea = alus::EqualsArraysd(data_buf.data(), tester.sea_strip_.data(), 100, 0.001);
+    EXPECT_EQ(count_sea, 0) << "Land results I do not match. Mismatches: " << count_sea << '\n';
+
+}
+
+TEST(coregistration, split_cut){
+    std::vector<std::string> srtm3_files{"./goods/srtm_43_06.tif", "./goods/srtm_44_06.tif"};
+    std::shared_ptr<alus::app::DemAssistant> dem_assistant =
+        alus::app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(std::move(srtm3_files));
+    dem_assistant->GetSrtm3Manager()->HostToDevice();
+    const std::string_view output_file_cut{"./goods/beirut_images/coregistration_test_cut.tif"};
+
+    std::unique_ptr<alus::coregistration::Coregistration> cor =
+        std::make_unique<alus::coregistration::Coregistration>("goods/apply_orbit_file_op/orbit-files/");
+
+    cor->Initialize(
+    "goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD_thin.SAFE",
+    "goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6_thin.SAFE",
+    output_file_cut.data(), "IW1", "VV", 4, 6);
+
+    dem_assistant->GetSrtm3Manager()->HostToDevice();
+
+    cor->DoWork(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
+    {dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo(),
+    dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()});
+
+    alus::GeoTiffWriteFile(cor->GetOutputDataset(), output_file_cut.data());
+
+    CoregTester tester("./goods/coregistration_strips_cut.txt");
+    alus::Dataset<double> test_set(output_file_cut.data());
+    alus::Rectangle rectangle{3991, 1620, 1, 100};
+    alus::Rectangle rectangle2{5350, 1531, 100, 1};
+    alus::Rectangle rectangle3{5457, 1602, 100, 1};
     std::vector<double> data_buf(100);
     test_set.ReadRectangle(rectangle, 3, data_buf.data());
 
