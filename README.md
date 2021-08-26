@@ -16,7 +16,6 @@ Latest build can be downloaded from - https://alus-builds.s3.eu-central-1.amazon
 
 On dockerhub one can download prepared image with all of the needed dependencies from [dockerhub](https://hub.docker.com/repository/docker/cgialus/alus-infra) 
 
-Exception is libcudnn which must be downloaded and installed separately - https://developer.nvidia.com/cudnn (version 7.6)
 
 ## Docker example
 
@@ -25,8 +24,6 @@ docker pull cgialus/alus-infra:latest
 docker run -t -d --gpus all --name alus_container cgialus/alus-infra
 docker exec -t alus_container mkdir /root/alus
 docker cp <latest build tar archive> alus_container:/root/alus/
-docker cp libcudnn7_7.6.5.32-1+cuda10.2_amd64.deb alus_container:/tmp/
-docker exec -t alus_container bash -c "apt install -y /tmp/libcudnn7_7.6.5.32-1+cuda10.2_amd64.deb"
 docker exec -t alus_container bash -c "tar -xzf /root/alus/*.tar.gz -C /root/alus/"
 # Use docker cp to transfer all the input datasets, auxiliary data.
 # docker exec -t alus_container bash -c "cd /root/alus; ./alus --alg_name ...."
@@ -69,3 +66,7 @@ See ``--help`` and ``--alg_help`` for specific arguments/parameters how to invok
 # License
 
 [GNU GPLv3](LICENSE.txt)
+
+# Releases
+
+(https://alus-builds.s3.eu-central-1.amazonaws.com/release)[https://alus-builds.s3.eu-central-1.amazonaws.com/release]

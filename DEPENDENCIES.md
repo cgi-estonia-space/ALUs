@@ -6,8 +6,6 @@ Possible compatibility with newer versions, but not tested/supported.
 
 Nvidia driver version at least 440.33.
 
-Runtime library of NVIDIA cuDNN version 7.6 (strictly bound to version 7) - must be installed separately.
-
 # GDAL
 
 GDAL version 3.x is required for development/building or running.
@@ -43,7 +41,7 @@ Development team has used also other flavor of Ubuntu which setup is also listed
 
 ## Pop_OS! 20.04 (Possible to convert to plain Ubuntu 20.04)
 
-* ``apt install system76-cuda-10.2 system76-cudnn-10.2``
+* ``apt install system76-cuda-10.2``
 * ``export PATH=$HOME/bin:/usr/local/bin:/usr/lib/cuda/bin:$PATH``
 * ``export LD_LIBRARY_PATH=/usr/lib/cuda/lib64:/usr/local/lib/:$LD_LIBRARY_PATH``
 * ``update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 8``

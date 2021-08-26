@@ -62,10 +62,10 @@ int CoherenceEstimationRoutineExecute::ExecuteSafe() {
             const auto coreg_start = std::chrono::steady_clock::now();
             coregistration::Coregistration coreg{orbit_file_dir_};
             if (!main_scene_orbit_file_.empty() || !secondary_scene_orbit_file_.empty()) {
-                coreg.Initialize(main_scene_file_path_, secondary_scene_file_path_, cor_output_file, "IW1", "VV",
+                coreg.Initialize(main_scene_file_path_, secondary_scene_file_path_, cor_output_file, subswath_, polarization_,
                                  main_scene_orbit_file_, secondary_scene_orbit_file_);
             } else {
-                coreg.Initialize(main_scene_file_path_, secondary_scene_file_path_, cor_output_file, "IW1", "VV");
+                coreg.Initialize(main_scene_file_path_, secondary_scene_file_path_, cor_output_file, subswath_, polarization_);
             }
             coreg.DoWork(egm96_manager_->GetDeviceValues(),
                          {srtm3_manager_->GetSrtmBuffersInfo(), srtm3_manager_->GetDeviceSrtm3TilesCount()});
