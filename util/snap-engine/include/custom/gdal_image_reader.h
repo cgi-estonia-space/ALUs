@@ -43,7 +43,7 @@ public:
     /**
      * avoid tight coupling to data... (swappable sources, targets, types etc..)
      */
-    GdalImageReader();
+    GdalImageReader() = default;
     GdalImageReader(const GdalImageReader&) = delete;
     GdalImageReader& operator=(const GdalImageReader&) = delete;
     ~GdalImageReader() override;

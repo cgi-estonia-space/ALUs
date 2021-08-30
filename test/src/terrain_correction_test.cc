@@ -23,6 +23,7 @@
 #include "../goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_rectangles.h"
 #include "crs_geocoding.h"
 #include "cuda_util.h"
+#include "gdal_management.h"
 #include "get_position.h"
 #include "position_data.h"
 #include "snap-engine-utilities/eo/constants.h"
@@ -32,7 +33,7 @@
 #include "terrain_correction.h"
 #include "terrain_correction_kernel.h"
 #include "terrain_correction_metadata.h"
-#include "tests_common.hpp"
+#include "tests_common.h"
 #include "tie_point_geocoding.h"
 
 namespace alus::tests {
@@ -705,9 +706,15 @@ TEST_F(TerrainCorrectionTest, MetadataConstructionThrowsWhenConstructedWithInval
         "goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb"
         ".data/tie_point_grids/longitude.img"};
 
-    EXPECT_THROW(Metadata("invalid file", LAT_TIE_POINTS_FILE, LON_TIE_POINTS_FILE), std::runtime_error);
-    EXPECT_THROW(Metadata(MAIN_METADATA_FILE, "invalid lat", LON_TIE_POINTS_FILE), std::runtime_error);
-    EXPECT_THROW(Metadata(MAIN_METADATA_FILE, LAT_TIE_POINTS_FILE, "invalid_lon"), std::runtime_error);
+    auto gdalErrorCount{0};
+    alus::gdalmanagement::ErrorCallback gdalErrorCountCallback = [&](std::string_view) { gdalErrorCount++; };
+    {
+        auto guard = alus::gdalmanagement::SetErrorHandle(gdalErrorCountCallback);
+        EXPECT_THROW(Metadata("invalid file", LAT_TIE_POINTS_FILE, LON_TIE_POINTS_FILE), std::runtime_error);
+        EXPECT_THROW(Metadata(MAIN_METADATA_FILE, "invalid lat", LON_TIE_POINTS_FILE), std::runtime_error);
+        EXPECT_THROW(Metadata(MAIN_METADATA_FILE, LAT_TIE_POINTS_FILE, "invalid_lon"), std::runtime_error);
+    }
+    EXPECT_EQ(gdalErrorCount, 4);
 }
 
 }  // namespace

@@ -40,7 +40,6 @@ protected:
 TEST_F(Sentinel1CalibrateTest, Virumaa) {
     // Scope for forcing destruction of Sentinel1Calibrator
     {
-        GDALSetCacheMax64(4e9);  // GDAL Cache 4GB, enough for for whole swath input + output
         ASSERT_THAT(boost::filesystem::exists(input_file_), ::testing::IsTrue());
         const std::shared_ptr<snapengine::IProductReader> product_reader = reader_plug_in_->CreateReaderInstance();
         std::shared_ptr<snapengine::Product> input_product =

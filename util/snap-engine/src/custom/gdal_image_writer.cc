@@ -23,8 +23,6 @@
 
 namespace alus::snapengine::custom {
 
-GdalImageWriter::GdalImageWriter() { GDALAllRegister(); }
-
 void GdalImageWriter::WriteSubSampledData(const custom::Rectangle& rectangle, std::vector<float>& data, int band_indx) {
     if (data.size() > static_cast<std::size_t>(rectangle.width * rectangle.height)) {
         throw std::runtime_error("Buffer overflow");

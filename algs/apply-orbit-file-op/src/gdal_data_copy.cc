@@ -12,13 +12,14 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 #include "gdal_data_copy.h"
+
 #include <gdal_priv.h>
+
 #include "gdal_util.h"
 
 namespace alus {
 
 void GdalDataCopy(const char* file_name_src, const char* file_name_dst) {
-    GDALAllRegister();
     auto const po_driver = GetGDALDriverManager()->GetDriverByName("GTiff");
     CHECK_GDAL_PTR(po_driver);
 

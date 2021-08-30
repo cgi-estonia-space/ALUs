@@ -597,7 +597,6 @@ void Sentinel1Calibrator::CreateDatasetsFromProduct(std::shared_ptr<snapengine::
     auto does_map_contain = [](std::map<std::string, std::shared_ptr<GDALDataset>, std::less<>> map,
                                std::string_view key) { return map.find(key.data()) != map.end(); };
 
-    GDALAllRegister();
     char** dataset_options = nullptr;
     GDALDriver* driver = GetGDALDriverManager()->GetDriverByName(utils::constants::GDAL_MEM_DRIVER);
     if (!driver) {

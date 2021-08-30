@@ -192,7 +192,6 @@ void Dataset<BufferType>::LoadDataset(std::string_view filename, GDALAccess acce
     if (dataset_ == nullptr) {
         // TODO: move this to a place where it is unifiedly called once when system
         // starts.
-        GDALAllRegister();  // Register all known drivers.
         this->dataset_ = (GDALDataset*)GDALOpen(filename.data(), GA_ReadOnly);
     }
 

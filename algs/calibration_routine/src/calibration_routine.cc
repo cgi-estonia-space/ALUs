@@ -15,7 +15,6 @@
 
 #include <cstddef>
 #include <memory>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -31,6 +30,8 @@
 #include "custom/gdal_image_reader.h"
 #include "custom/gdal_image_writer.h"
 #include "dataset.h"
+#include "gdal_management.h"
+
 #include "sentinel1_calibrate.h"
 #include "snap-core/datamodel/product.h"
 #include "srtm3_elevation_model.h"
@@ -105,8 +106,8 @@ int CalibrationRoutine::Execute() {
 
         // SLC input x 1 = ~1.25GB
         // TC ouput = ~1GB
-        GDALSetCacheMax64(4e9);
-        
+        alus::gdalmanagement::SetCacheMax(4e9);
+
         // split
         alus::topsarsplit::TopsarSplit split_op(input_path, subswath, polarization);
         split_op.initialize();

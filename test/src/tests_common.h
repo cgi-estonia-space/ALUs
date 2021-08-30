@@ -31,6 +31,4 @@ std::string const COH_1_DATA{GOODS_DIR +
                              "Stack_coh_deb.data"};
 std::string const TC_OUTPUT{GOODS_DIR + "tc_output.tif"};
 
-void silentGdalErrorHandler(CPLErr, CPLErrorNum, const char*);
-
 }  // namespace alus::tests

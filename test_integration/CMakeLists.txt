@@ -1,7 +1,14 @@
 
+add_library(alus-gmock-main "" src/alus_gmock_main.cc)
+target_link_libraries(alus-gmock-main
+        PUBLIC
+        gmock
+        common-util-static
+        gdal-util-static
+        )
+
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/egm96)
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/srtm3)
-
 
 list(APPEND TEST_SOURCES_COHERENCE_CUDA
         src/coherence_cuda_test.cc
@@ -46,7 +53,7 @@ target_include_directories(backgeocoding-full
 
 target_link_libraries(backgeocoding-full
         PRIVATE
-        gmock_main
+        alus-gmock-main
         cuda_util-static
         backgeocoding-static
         exotic_operations-static
@@ -56,7 +63,7 @@ target_link_libraries(backgeocoding-full
 add_executable(integration-test-topsar-split ${TEST_SOURCES_TOPSAR_SPLIT})
 target_link_libraries(integration-test-topsar-split
         PRIVATE
-        gmock_main
+        alus-gmock-main
         cuda_util-static
         topsar-split-static
         exotic_operations-static
@@ -73,7 +80,7 @@ target_include_directories(integration-test-coregistration
         )
 target_link_libraries(integration-test-coregistration
         PRIVATE
-        gmock_main
+        alus-gmock-main
         cuda_util-static
         topsar-split-static
         exotic_operations-static
@@ -103,7 +110,7 @@ target_include_directories(integration-test-snap-engine
 target_link_libraries(integration-test-snap-engine
         PRIVATE
         Boost::filesystem
-        gmock_main
+        alus-gmock-main
         egm96-test-static
         srtm3-test-util-static
         snap-engine-static
@@ -130,9 +137,9 @@ add_executable(integration-test-coherence-cuda ${TEST_SOURCES_COHERENCE_CUDA})
 target_include_directories(integration-test-coherence-cuda PUBLIC ${TEST_INCLUDE})
 target_link_libraries(integration-test-coherence-cuda
         PRIVATE
+        alus-gmock-main
         Boost::filesystem
         Boost::iostreams
-        gtest_main
         cuda_util-static
         gdal-util-static
         sentinel1-util-static
@@ -157,7 +164,7 @@ target_link_libraries(integration-test-tc
         PRIVATE
         Boost::filesystem
         Boost::iostreams
-        gmock_main
+        alus-gmock-main
         terrain-correction-static
         crypto
         )
@@ -203,7 +210,7 @@ target_include_directories(integration-test-backgeocoding
         )
 target_link_libraries(integration-test-backgeocoding
         PRIVATE
-        gmock_main
+        alus-gmock-main
         backgeocoding-static
         sentinel1-util-static
         snap-engine-static
@@ -234,7 +241,7 @@ target_link_libraries(integration-test-apply-orbit-file-op
         PRIVATE
         Boost::filesystem
         Boost::iostreams
-        gmock_main
+        alus-gmock-main
         cuda_util-static
         gdal-util-static
         sentinel1-util-static
@@ -261,7 +268,7 @@ target_link_libraries(integration-test-topsar-deburst-op
         PRIVATE
         Boost::filesystem
         Boost::iostreams
-        gmock_main
+        alus-gmock-main
         cuda_util-static
         gdal-util-static
         sentinel1-util-static
@@ -289,7 +296,7 @@ target_link_libraries(integration-sentinel1_product_reader
         PRIVATE
         Boost::filesystem
         Boost::iostreams
-        gmock_main
+        alus-gmock-main
         cuda_util-static
         gdal-util-static
         sentinel1-util-static
@@ -319,7 +326,7 @@ target_link_libraries(integration-test-sentinel1-calibrate
         crypto
         Boost::filesystem
         Boost::iostreams
-        gmock_main
+        alus-gmock-main
         sentinel1-calibrate-static
         cuda_util-static
         gdal-util-static

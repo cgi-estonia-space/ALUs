@@ -12,16 +12,13 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 #include <cstddef>
-#include <fstream>
 #include <memory>
-#include <stdexcept>
 #include <string_view>
 #include <vector>
 
 #include "../goods/sentinel1_calibrate_data.h"
 
 #include "abstract_metadata.h"
-#include "allocators.h"
 #include "comparators.h"
 #include "gmock/gmock.h"
 #include "metadata_element.h"
@@ -29,7 +26,6 @@
 #include "sentinel1_utils.h"
 #include "sentinel1_utils_tester.h"
 #include "subswath_info.h"
-#include "tests_common.hpp"
 
 namespace {
 
