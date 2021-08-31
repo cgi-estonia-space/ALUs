@@ -94,6 +94,7 @@ int main(int argc, const char* argv[]) {
         if (options.DoRequireAlgorithmHelp()) {
             LOGI << alg_guard.GetInstanceHandle()->GetArgumentsHelp();
         } else {
+            alus::gdalmanagement::Initialize();
             std::shared_ptr<alus::app::DemAssistant> dem_assistant{};
             if (const auto& dem_files_param = options.GetDemFiles(); !dem_files_param.empty()) {
                 LOGI << "Processing DEM files and creating EGM96.";
@@ -109,7 +110,6 @@ int main(int argc, const char* argv[]) {
                 alg_guard.GetInstanceHandle()->SetEgm96Manager(dem_assistant->GetEgm96Manager());
             }
 
-            alus::gdalmanagement::Initialize();
             alg_execute_status = alg_guard.GetInstanceHandle()->Execute();
         }
 
