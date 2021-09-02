@@ -268,10 +268,10 @@ TEST_F(ApplyOrbitFileOpIntegrationTest, modify_source_only_test) {
 
 TEST_F(ApplyOrbitFileOpIntegrationTest, modify_safe_test) {
     boost::filesystem::path input_path =
-        "./goods/sentinel1_product_reader/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563.SAFE";
+        "./goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6_thin.SAFE";
     alus::snapengine::AlusUtils::SetOrbitFilePath(
-        "./goods/apply_orbit_file_op/orbit-files/S1A/2018/08/"
-        "S1A_OPER_AUX_POEORB_OPOD_20180904T120748_V20180814T225942_20180816T005942.EOF");
+        "./goods/apply_orbit_file_op/orbit-files/S1A/2020/08/"
+        "S1A_OPER_AUX_POEORB_OPOD_20200825T121215_V20200804T225942_20200806T005942.EOF");
 
     auto reader_plug_in = std::make_shared<alus::s1tbx::Sentinel1ProductReaderPlugIn>();
     //auto can_read = reader_plug_in->GetDecodeQualification(input_path);
@@ -284,8 +284,6 @@ TEST_F(ApplyOrbitFileOpIntegrationTest, modify_safe_test) {
     auto metadata = alus::snapengine::AbstractMetadata::GetAbstractedMetadata(product);
     auto alus_vec = alus::snapengine::AbstractMetadata::GetOrbitStateVectors(metadata);
 
-    VerifyOrbitStateVectorResult(alus_vec, OSV_TESTDATA_S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563);
-
-
+    VerifyOrbitStateVectorResult(alus_vec, OSV_TEST_DATA_S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6_thin);
 }
 }  // namespace

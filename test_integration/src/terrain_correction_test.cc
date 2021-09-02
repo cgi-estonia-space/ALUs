@@ -63,16 +63,16 @@ protected:
 TEST_F(TerrainCorrectionIntegrationTest, Saaremaa1) {
     const int selected_band{1};
     std::string const coh_1_tif{
-        "./goods/"
-        "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_"
-        "Stack_coh_deb.tif"};
+        "./goods/terrain_correction/"
+        "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_data/"
+        "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb.tif"};
     std::string const coh_1_data{
-        "./goods/"
-        "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_"
-        "Stack_coh_deb.data"};
+        "./goods/terrain_correction/"
+        "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_data"};
 
-    Metadata metadata(coh_1_data.substr(0, coh_1_data.length() - 5) + ".dim",
-                      coh_1_data + "/tie_point_grids/latitude.img", coh_1_data + "/tie_point_grids/longitude.img");
+    Metadata metadata(
+        coh_1_data + "/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb.dim",
+        coh_1_data + "/latitude.img", coh_1_data + "/longitude.img");
     Dataset<double> input(coh_1_tif);
 
     auto egm_96 = std::make_shared<snapengine::EarthGravitationalModel96>();
@@ -101,7 +101,8 @@ TEST_F(TerrainCorrectionIntegrationTest, Saaremaa1) {
 
 
     CompareGeocoding(
-        "./goods/"
+        "./goods/terrain_correction/"
+        "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_data/"
         "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_TC.tif",
         output_path);
 }
@@ -110,16 +111,16 @@ TEST_F(TerrainCorrectionIntegrationTest, SaaremaaAverageSceneHeight) {
     const int selected_band{1};
     const bool use_avg_scene_height{true};
     std::string const coh_1_tif{
-        "./goods/"
-        "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_"
-        "Stack_coh_deb.tif"};
+        "./goods/terrain_correction/"
+        "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_data/"
+        "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb.tif"};
     std::string const coh_1_data{
-        "./goods/"
-        "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_"
-        "Stack_coh_deb.data"};
+        "./goods/terrain_correction/"
+        "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_data"};
 
-    Metadata metadata(coh_1_data.substr(0, coh_1_data.length() - 5) + ".dim",
-                      coh_1_data + "/tie_point_grids/latitude.img", coh_1_data + "/tie_point_grids/longitude.img");
+    Metadata metadata(
+        coh_1_data + "/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb.dim",
+        coh_1_data + "/latitude.img", coh_1_data + "/longitude.img");
     Dataset<double> input(coh_1_tif);
 
     const std::string output_path{"/tmp/tc_test.tif"};
@@ -136,7 +137,8 @@ TEST_F(TerrainCorrectionIntegrationTest, SaaremaaAverageSceneHeight) {
     ASSERT_THAT(utils::test::HashFromBand(output_path), ::testing::Eq(expected_hash));
 
     CompareGeocoding(
-        "./goods/"
+        "./goods/terrain_correction/"
+        "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_data/"
         "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_TC.tif",
         output_path);
 }
@@ -144,14 +146,14 @@ TEST_F(TerrainCorrectionIntegrationTest, SaaremaaAverageSceneHeight) {
 TEST_F(TerrainCorrectionIntegrationTest, BeirutExplosion) {
     const int selected_band{1};
     std::string const coh_1_tif{
-        "./goods/terrain_correction/"
+        "./goods/terrain_correction/Beirut_IW1_6_VH_orb_stack_cor_deb_coh_data/"
         "Beirut_IW1_6_VH_orb_stack_cor_deb_coh.tif"};
     std::string const coh_1_data{
         "./goods/terrain_correction/"
-        "Beirut_IW1_6_VH_orb_stack_cor_deb_coh.data"};
+        "Beirut_IW1_6_VH_orb_stack_cor_deb_coh_data"};
 
-    Metadata metadata(coh_1_data.substr(0, coh_1_data.length() - 5) + ".dim",
-                      coh_1_data + "/tie_point_grids/latitude.img", coh_1_data + "/tie_point_grids/longitude.img");
+    Metadata metadata(coh_1_data + "/Beirut_IW1_6_VH_orb_stack_cor_deb_coh.dim", coh_1_data + "/latitude.img",
+                      coh_1_data + "/longitude.img");
     Dataset<double> input(coh_1_tif);
 
     auto egm_96 = std::make_shared<snapengine::EarthGravitationalModel96>();
@@ -175,7 +177,7 @@ TEST_F(TerrainCorrectionIntegrationTest, BeirutExplosion) {
 
     ASSERT_THAT(boost::filesystem::exists(output_path), IsTrue());
     CompareGeocoding(
-        "./goods/terrain_correction/"
+        "./goods/terrain_correction/Beirut_IW1_6_VH_orb_stack_cor_deb_coh_data/"
         "Beirut_IW1_6_VH_orb_stack_cor_deb_coh_TC.tif",
         output_path);
 

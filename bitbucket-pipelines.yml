@@ -96,7 +96,7 @@ pipelines:
               script:
                 - git submodule update --init --recursive
                 - build_dir="build-nightly"
-                - cmake . -B${build_dir} -DENABLE_UNIT_TESTS=false -DENABLE_INTEGRATION_TESTS=false -DCUDA_ARCH="50;60;70;75"
+                - cmake . -B${build_dir} -DENABLE_TESTS=false -DCUDA_ARCH="50;60;70;75"
                 - cmake --build $build_dir --target all -- -j 8
                 - cd $build_dir
                 - date_stamp=$(date +"%Y_%m_%d_%H%M")
@@ -154,7 +154,7 @@ pipelines:
           script:
             - git submodule update --init --recursive
             - build_dir="build-nightly"
-            - cmake . -B${build_dir} -DENABLE_UNIT_TESTS=false -DENABLE_INTEGRATION_TESTS=false -DCUDA_ARCH="50;60;70;75"
+            - cmake . -B${build_dir} -DENABLE_TESTS=false -DCUDA_ARCH="50;60;70;75"
             - cmake --build $build_dir --target all -- -j 8
             - cd $build_dir
             - date_stamp=$(date +"%Y_%m_%d_%H%M")

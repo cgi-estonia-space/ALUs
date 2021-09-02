@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
-
 project(aluserer
         LANGUAGES CXX CUDA
         DESCRIPTION "Geospatial algorithms on steroids."
@@ -45,8 +44,7 @@ find_package(Eigen3 REQUIRED)
 set(ALUS_BINARY_OUTPUT_DIR ${PROJECT_BINARY_DIR}/alus_package)
 set(ALUS_UNIT_TEST_BINARY_OUTPUT_DIR ${PROJECT_BINARY_DIR}/unit-test)
 
-option(ENABLE_UNIT_TESTS "Enable unit tests" ON)
-option(ENABLE_INTEGRATION_TESTS "Enable integration tests" ON)
+option(ENABLE_TESTS "Enable tests" OFF)
 
 #external library as git submodule with separate CMakeLists.txt project
 add_subdirectory(external/zipper)
@@ -115,7 +113,7 @@ FetchContent_Declare(
 
 FetchContent_GetProperties(googletest)
 
-if (ENABLE_UNIT_TESTS OR ENABLE_INTEGRATION_TESTS)
+if (ENABLE_TESTS)
 
     if (NOT googletest_POPULATED)
         FetchContent_Populate(googletest)
@@ -145,12 +143,6 @@ if (ENABLE_UNIT_TESTS OR ENABLE_INTEGRATION_TESTS)
             endforeach ()
         endif ()
     endif ()
-endif ()
-
-if (ENABLE_UNIT_TESTS)
     add_subdirectory(test)
-endif ()
-
-if (ENABLE_INTEGRATION_TESTS)
     add_subdirectory(test_integration)
 endif ()
