@@ -42,6 +42,8 @@ int CoherenceEstimationRoutineExecute::ExecuteSafe() {
         std::string result_stem{};
         std::string predefined_end_result_name{};
         std::string output_folder{};
+        srtm3_manager_->HostToDevice();
+
         if (boost::filesystem::is_directory(boost::filesystem::path(output_name_))) {
             // For example "/tmp/" is given. Result would be "/tmp/MAIN_SCENE_ID_Orb_Split_Stack_Coh_TC.tif"
             output_folder = output_name_ + "/";
@@ -53,7 +55,6 @@ int CoherenceEstimationRoutineExecute::ExecuteSafe() {
         }
 
         std::string cor_output_file = output_folder + result_stem + "_Orb_Stack.tif";
-        srtm3_manager_->HostToDevice();
         std::shared_ptr<snapengine::Product> main_product{};
         std::shared_ptr<snapengine::Product> secondary_product{};
         GDALDataset* coreg_dataset = nullptr;

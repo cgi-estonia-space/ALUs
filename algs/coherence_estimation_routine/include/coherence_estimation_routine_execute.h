@@ -33,7 +33,7 @@ public:
                            const std::vector<std::string>& metadata_paths) override;
     void SetParameters(const app::AlgorithmParameters::Table& param_values) override;
     void SetSrtm3Manager(snapengine::Srtm3ElevationModel* manager) override;
-    void SetEgm96Manager(const snapengine::EarthGravitationalModel96* manager) override;
+    void SetEgm96Manager(snapengine::EarthGravitationalModel96* manager) override;
     void SetTileSize(size_t width, size_t height) override;
     void SetOutputFilename(const std::string& output_name) override;
     int Execute() override;
@@ -54,7 +54,7 @@ private:
     std::vector<std::string> input_datasets_{};
     std::vector<std::string> metadata_paths_{};
     snapengine::Srtm3ElevationModel* srtm3_manager_{};
-    const snapengine::EarthGravitationalModel96* egm96_manager_{};
+    snapengine::EarthGravitationalModel96* egm96_manager_{};
     size_t tile_width_{};
     size_t tile_height_{};
     bool write_intermediate_files_{};

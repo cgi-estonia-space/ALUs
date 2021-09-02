@@ -51,7 +51,7 @@ void BackgeocodingBond::SetParameters(const app::AlgorithmParameters::Table& par
 
 void BackgeocodingBond::SetSrtm3Manager(snapengine::Srtm3ElevationModel* manager) { srtm3_manager_ = manager; }
 
-void BackgeocodingBond::SetEgm96Manager(const snapengine::EarthGravitationalModel96* manager) {
+void BackgeocodingBond::SetEgm96Manager(snapengine::EarthGravitationalModel96* manager) {
     egm96_manager_ = manager;
 }
 

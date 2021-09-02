@@ -40,13 +40,13 @@ public:
         const std::vector<std::string>& cmd_line_arguments);
 
     snapengine::Srtm3ElevationModel* GetSrtm3Manager() { return &model_; }
-    const snapengine::EarthGravitationalModel96* GetEgm96Manager() const { return &egm96_; }
+    snapengine::EarthGravitationalModel96* GetEgm96Manager() { return egm96_.get(); }
 
     ~DemAssistant() = default;
 
 private:
 
     snapengine::Srtm3ElevationModel model_;
-    snapengine::EarthGravitationalModel96 egm96_;
+    std::shared_ptr<snapengine::EarthGravitationalModel96> egm96_;
 };
 }

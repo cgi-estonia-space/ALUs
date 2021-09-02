@@ -108,7 +108,7 @@ void CoherenceEstimationRoutineExecute::SetSrtm3Manager(snapengine::Srtm3Elevati
     srtm3_manager_ = manager;
 }
 
-void CoherenceEstimationRoutineExecute::SetEgm96Manager(const snapengine::EarthGravitationalModel96* manager) {
+void CoherenceEstimationRoutineExecute::SetEgm96Manager(snapengine::EarthGravitationalModel96* manager) {
     egm96_manager_ = manager;
 }
 

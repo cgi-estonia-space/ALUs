@@ -48,13 +48,13 @@ std::vector<std::string> DemAssistant::ArgumentsExtract::ExtractSrtm3Files(
 
 std::shared_ptr<DemAssistant> DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(
     const std::vector<std::string>& cmd_line_arguments) {
-    return std::make_shared<DemAssistant>(
-        DemAssistant::ArgumentsExtract::ExtractSrtm3Files(cmd_line_arguments));
+    return std::make_shared<DemAssistant>(DemAssistant::ArgumentsExtract::ExtractSrtm3Files(cmd_line_arguments));
 }
 
-DemAssistant::DemAssistant(std::vector<std::string> srtm3_files) : model_(std::move(srtm3_files)), egm96_{} {
-    egm96_.HostToDevice();
-    model_.ReadSrtmTiles(&egm96_);
+DemAssistant::DemAssistant(std::vector<std::string> srtm3_files)
+    : model_(std::move(srtm3_files)), egm96_{std::make_shared<snapengine::EarthGravitationalModel96>()} {
+    egm96_->HostToDevice();
+    model_.ReadSrtmTiles(egm96_);
 }
 
 }  // namespace alus::app

@@ -33,8 +33,9 @@ public:
     void SetInputFilenames(const std::vector<std::string>& input_datasets,
                            const std::vector<std::string>& metadata_paths) override;
     void SetOutputFilename(const std::string& output_name) override;
+
     void SetSrtm3Manager(snapengine::Srtm3ElevationModel* manager) override;
-    void SetEgm96Manager(const snapengine::EarthGravitationalModel96* manager) override;
+    void SetEgm96Manager(snapengine::EarthGravitationalModel96* manager) override;
 
 private:
     size_t tile_width_{};

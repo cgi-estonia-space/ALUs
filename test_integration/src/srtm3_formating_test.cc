@@ -62,12 +62,12 @@ TEST(SRTM3, tileFormating) {
     SRTM3TileTester tester("./goods/tileFormatTestData.txt");
     tester.ReadTestData();
 
-    alus::snapengine::EarthGravitationalModel96 egm_96{};
-    egm_96.HostToDevice();
+    std::shared_ptr<alus::snapengine::EarthGravitationalModel96> egm_96 = std::make_shared<alus::snapengine::EarthGravitationalModel96>();
+    egm_96->HostToDevice();
 
     std::vector<std::string> files{"./goods/srtm_41_01.tif", "./goods/srtm_42_01.tif"};
     alus::snapengine::Srtm3ElevationModel srtm_3_dem(files);
-    srtm_3_dem.ReadSrtmTiles(&egm_96);
+    srtm_3_dem.ReadSrtmTiles(egm_96);
     srtm_3_dem.HostToDevice();
 
     std::vector<float> end_tile;
