@@ -16,7 +16,6 @@
 #include <array>
 #include <cstddef>
 #include <memory>
-#include <numeric>
 #include <string_view>
 #include <vector>
 
@@ -86,25 +85,30 @@ TEST_F(TerrainCorrectionIntegrationTest, Saaremaa1) {
     const auto* d_srtm_3_tiles = srtm_3_model->GetSrtmBuffersInfo();
     const size_t srtm_3_tiles_length{2};
 
-    const std::string output_path{"/tmp/tc_test.tif"};
+    const std::string output_path{"/tmp/tc_saaremaa.tif"};
 
     {
         TerrainCorrection tc(input.GetGdalDataset(), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
                              metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length, selected_band);
-        tc.ExecuteTerrainCorrection(output_path, 420, 416);
+        tc.ExecuteTerrainCorrection(output_path, 1000, 1000);
         const auto output = tc.GetOutputDataset();
     }
 
     ASSERT_THAT(boost::filesystem::exists(output_path), IsTrue());
-    const std::string expected_hash{"116081948fded5da"};
-    ASSERT_THAT(utils::test::HashFromBand(output_path), ::testing::Eq(expected_hash));
 
+    const std::string expected_hash{"f85d9adb013ba1a3"};
+    ASSERT_THAT(utils::test::HashFromBand(output_path), ::testing::Eq(expected_hash));
 
     CompareGeocoding(
         "./goods/terrain_correction/"
         "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_data/"
         "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_TC.tif",
         output_path);
+
+    CHECK_CUDA_ERR(cudaGetLastError());
+    srtm_3_model->DeviceFree();
+    egm_96->DeviceFree();
+    cudaDeviceReset();  // for cuda-memcheck --leak-check full
 }
 
 TEST_F(TerrainCorrectionIntegrationTest, SaaremaaAverageSceneHeight) {
@@ -123,17 +127,17 @@ TEST_F(TerrainCorrectionIntegrationTest, SaaremaaAverageSceneHeight) {
         coh_1_data + "/latitude.img", coh_1_data + "/longitude.img");
     Dataset<double> input(coh_1_tif);
 
-    const std::string output_path{"/tmp/tc_test.tif"};
+    const std::string output_path{"/tmp/tc_saaremaa_avg.tif"};
 
     {
         TerrainCorrection tc(input.GetGdalDataset(), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
                              metadata.GetLonTiePointGrid(), nullptr, 0, selected_band,
                              use_avg_scene_height);
-        tc.ExecuteTerrainCorrection(output_path, 420, 416);
+        tc.ExecuteTerrainCorrection(output_path, 1000, 1000);
     }
 
     ASSERT_THAT(boost::filesystem::exists(output_path), IsTrue());
-    const std::string expected_hash{"d1df3d7662d94b05"};
+    const std::string expected_hash{"88c9ce152a75bde"};
     ASSERT_THAT(utils::test::HashFromBand(output_path), ::testing::Eq(expected_hash));
 
     CompareGeocoding(
@@ -141,6 +145,9 @@ TEST_F(TerrainCorrectionIntegrationTest, SaaremaaAverageSceneHeight) {
         "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_data/"
         "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_TC.tif",
         output_path);
+
+    CHECK_CUDA_ERR(cudaGetLastError());
+    cudaDeviceReset();  // for cuda-memcheck --leak-check full
 }
 
 TEST_F(TerrainCorrectionIntegrationTest, BeirutExplosion) {
@@ -172,7 +179,7 @@ TEST_F(TerrainCorrectionIntegrationTest, BeirutExplosion) {
     {
         TerrainCorrection tc(input.GetGdalDataset(), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
                              metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length, selected_band);
-        tc.ExecuteTerrainCorrection(output_path, 420, 416);
+        tc.ExecuteTerrainCorrection(output_path, 1000, 1000);
     }
 
     ASSERT_THAT(boost::filesystem::exists(output_path), IsTrue());
@@ -181,7 +188,13 @@ TEST_F(TerrainCorrectionIntegrationTest, BeirutExplosion) {
         "Beirut_IW1_6_VH_orb_stack_cor_deb_coh_TC.tif",
         output_path);
 
-    const std::string expected_boost_hash{"fa952a77788339ee"};
+    const std::string expected_boost_hash{"ac15c62a7e5f6fe9"};
     ASSERT_THAT(utils::test::HashFromBand(output_path), ::testing::Eq(expected_boost_hash));
+
+    CHECK_CUDA_ERR(cudaGetLastError());
+    srtm_3_model->DeviceFree();
+    egm_96->DeviceFree();
+
+    cudaDeviceReset();  // for cuda-memcheck --leak-check full
 }
 }  // namespace

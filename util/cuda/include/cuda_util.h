@@ -22,6 +22,11 @@
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
 
+#define CHECK_CUDA_ERR(x) alus::checkCudaError(x, __FILE__, __LINE__)
+#define REPORT_WHEN_CUDA_ERR(x) alus::ReportIfCudaError(x, __FILE__, __LINE__)
+#define PRINT_DEVICE_FUNC_OCCUPANCY(dev_func, block_size) \
+    std::cout << #dev_func << " occupancy " << alus::cuda::GetOccupancyPercentageFor(dev_func, block_size) << "%";
+
 namespace alus {
 namespace cuda {
 
@@ -47,11 +52,7 @@ public:
           file_{std::move(file)},
           line_{line} {}
 
-    CudaErrorException(std::string what)
-        : std::runtime_error(std::move(what)),
-          cuda_error_{},
-          file_{},
-          line_{} {}
+    CudaErrorException(std::string what) : std::runtime_error(std::move(what)), cuda_error_{}, file_{}, line_{} {}
 
 private:
     const int cuda_error_;
@@ -72,9 +73,43 @@ inline void ReportIfCudaError(const cudaError_t cuda_err, const char* file, cons
     }
 }
 
-}  // namespace alus
+template <class T>
+class PagedOrPinnedHostPtr {
+public:
+    explicit PagedOrPinnedHostPtr() = default;
+    void Allocate(bool pinned, size_t n_elem) {
+        if (host_ptr_) {
+            Free();
+        }
+        if (pinned) {
+            CHECK_CUDA_ERR(cudaMallocHost(&host_ptr_, sizeof(T) * n_elem));
+        } else {
+            host_ptr_ = new T[n_elem];
+        }
+        use_pinned_ = pinned;
+    }
 
-#define CHECK_CUDA_ERR(x) alus::checkCudaError(x, __FILE__, __LINE__)
-#define REPORT_WHEN_CUDA_ERR(x) alus::ReportIfCudaError(x, __FILE__, __LINE__)
-#define PRINT_DEVICE_FUNC_OCCUPANCY(dev_func, block_size) \
-    std::cout << #dev_func << " occupancy " << alus::cuda::GetOccupancyPercentageFor(dev_func, block_size) << "%";
+    T* Get() { return host_ptr_; }
+
+    void Free() {
+        if (use_pinned_) {
+            CHECK_CUDA_ERR(cudaFreeHost(host_ptr_));
+        } else {
+            delete[] host_ptr_;
+        }
+        host_ptr_ = nullptr;
+        use_pinned_ = false;
+    }
+
+    // no copy or move yet
+    PagedOrPinnedHostPtr(const PagedOrPinnedHostPtr&) = delete;
+    PagedOrPinnedHostPtr& operator=(const PagedOrPinnedHostPtr&) = delete;
+
+    ~PagedOrPinnedHostPtr() { Free(); }
+
+private:
+    T* host_ptr_ = nullptr;
+    bool use_pinned_ = false;
+};
+
+}  // namespace alus

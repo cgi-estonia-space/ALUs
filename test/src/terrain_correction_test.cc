@@ -96,77 +96,6 @@ private:
         ".data/tie_point_grids/longitude.img"};
 };
 
-ComputationMetadata CreateComputationMetadata(RangeDopplerTerrainMetadata metadata,
-                                              std::vector<OrbitStateVectorComputation>& computation_orbit) {
-    ComputationMetadata md{};
-
-    for (auto&& orbit : metadata.orbit_state_vectors2) {
-        computation_orbit.push_back(
-            {orbit.time_mjd_, orbit.x_pos_, orbit.y_pos_, orbit.z_pos_, orbit.x_vel_, orbit.y_vel_, orbit.z_vel_});
-    }
-
-    cuda::KernelArray<OrbitStateVectorComputation> kernel_orbits{nullptr, computation_orbit.size()};
-    CHECK_CUDA_ERR(cudaMalloc(&kernel_orbits.array, sizeof(OrbitStateVectorComputation) * kernel_orbits.size));
-    CHECK_CUDA_ERR(cudaMemcpy(kernel_orbits.array, computation_orbit.data(),
-                              sizeof(OrbitStateVectorComputation) * kernel_orbits.size, cudaMemcpyHostToDevice));
-
-    md.orbit_state_vectors = kernel_orbits;
-    md.first_line_time_mjd = metadata.first_line_time->GetMjd();
-    md.last_line_time_mjd = metadata.last_line_time->GetMjd();
-    md.first_near_lat = metadata.first_near_lat;
-    md.first_near_long = metadata.first_near_long;
-    md.first_far_lat = metadata.first_far_lat;
-    md.first_far_long = metadata.first_far_long;
-    md.last_near_lat = metadata.last_near_lat;
-    md.last_near_long = metadata.last_near_long;
-    md.last_far_lat = metadata.last_far_lat;
-    md.last_far_long = metadata.last_far_long;
-    md.radar_frequency = metadata.radar_frequency;
-    md.range_spacing = metadata.range_spacing;
-    md.line_time_interval = metadata.line_time_interval;
-    md.avg_scene_height = metadata.avg_scene_height;
-    md.slant_range_to_first_pixel = metadata.slant_range_to_first_pixel;
-    md.first_valid_pixel = metadata.first_valid_pixel;
-    md.last_valid_pixel = metadata.last_valid_pixel;
-    md.first_valid_line_time = metadata.first_valid_line_time;
-    md.last_valid_line_time = metadata.last_valid_line_time;
-
-    return md;
-}
-
-void FillGetPositionMetadata(GetPositionMetadata& get_position_metadata,
-                             const ComputationMetadata& computation_metadata, int height) {
-    cuda::KernelArray<PosVector> sensor_position{nullptr, SENSOR_POSITION.size()};
-
-    CHECK_CUDA_ERR(cudaMalloc(&sensor_position.array, sizeof(PosVector) * sensor_position.size));
-    CHECK_CUDA_ERR(cudaMemcpy(sensor_position.array, SENSOR_POSITION.data(), sizeof(PosVector) * sensor_position.size,
-                              cudaMemcpyHostToDevice));
-
-    get_position_metadata.sensor_position = sensor_position;
-
-    cuda::KernelArray<PosVector> sensor_velocity{nullptr, SENSOR_VELOCITY.size()};
-
-    CHECK_CUDA_ERR(cudaMalloc(&sensor_velocity.array, sizeof(PosVector) * sensor_velocity.size));
-    CHECK_CUDA_ERR(cudaMemcpy(sensor_velocity.array, SENSOR_VELOCITY.data(), sizeof(PosVector) * sensor_velocity.size,
-                              cudaMemcpyHostToDevice));
-
-    get_position_metadata.sensor_velocity = sensor_velocity;
-    get_position_metadata.orbit_state_vectors = computation_metadata.orbit_state_vectors;
-    get_position_metadata.first_line_utc = computation_metadata.first_line_time_mjd;
-    get_position_metadata.line_time_interval =
-        (computation_metadata.last_line_time_mjd - computation_metadata.first_line_time_mjd) / (height - 1);
-    get_position_metadata.wavelength =
-        eo::constants::LIGHT_SPEED / (computation_metadata.radar_frequency * eo::constants::ONE_MILLION);
-    get_position_metadata.range_spacing = computation_metadata.range_spacing;
-    get_position_metadata.near_edge_slant_range = computation_metadata.slant_range_to_first_pixel;
-}
-
-void FreeMetadata(GetPositionMetadata& get_position_metadata, ComputationMetadata& comp_metadata) {
-    CHECK_CUDA_ERR(cudaFree(comp_metadata.orbit_state_vectors.array));
-    CHECK_CUDA_ERR(cudaFree(get_position_metadata.sensor_position.array));
-    CHECK_CUDA_ERR(cudaFree(get_position_metadata.sensor_velocity.array));
-}
-
 TEST_F(TerrainCorrectionTest, getPositionTrueScenario) {
     std::vector<double> const LATS_TRUE{58.52938269941166, 58.52938269941166, 58.52938269941166, 58.52938269941166,
                                         58.52938269941166, 58.52938269941166, 58.52938269941166, 58.52938269941166,
@@ -239,8 +168,13 @@ TEST_F(TerrainCorrectionTest, getPositionTrueScenario) {
                                                  SENSOR_POSITION.size()};
     const KernelArray<PosVector> sensorVelocity{const_cast<PosVector*>(SENSOR_VELOCITY.data()), SENSOR_VELOCITY.size()};
 
+    std::vector<double> osv_lookup = CalculateOrbitStateVectorLUT(comp_orbits);
+
+    KernelArray<double> osv_lut = { osv_lookup.data(), osv_lookup.size()};
+
+
     const GetPositionMetadata metadata{7135.669951395567, 2.3822903166873924E-8, 0.05546576,     2.329562,
-                                       799303.6132771898, sensorPositions,       sensorVelocity, orbitStateVectors};
+                                       799303.6132771898, sensorPositions,       sensorVelocity, orbitStateVectors, osv_lut};
     const auto series_size = POS_DATA_TRUE.size();
     for (size_t i = 0; i < series_size; i++) {
         s1tbx::PositionData pos_data{};
@@ -291,8 +225,12 @@ TEST_F(TerrainCorrectionTest, getPositionFalseScenario) {
                                                  SENSOR_POSITION.size()};
     const KernelArray<PosVector> sensorVelocity{const_cast<PosVector*>(SENSOR_VELOCITY.data()), SENSOR_VELOCITY.size()};
 
+    std::vector<double> osv_lookup = CalculateOrbitStateVectorLUT(comp_orbits);
+
+    KernelArray<double> osv_lut = { osv_lookup.data(), osv_lookup.size()};
+
     const GetPositionMetadata metadata{7135.669951395567, 2.3822903166873924E-8, 0.05546576,     2.329562,
-                                       799303.6132771898, sensorPositions,       sensorVelocity, orbitStateVectors};
+                                       799303.6132771898, sensorPositions,       sensorVelocity, orbitStateVectors, osv_lut};
     const auto series_size = POS_DATA_FALSE.size();
     for (size_t i = 0; i < series_size; i++) {
         s1tbx::PositionData pos_data{};
@@ -371,8 +309,8 @@ TEST_F(TerrainCorrectionTest, getPositionTrueScenarioKernel) {
                                                           16471.278523574896,
                                                           837674.477817126}};
 
-    const GetPositionMetadata metadata{
-        7135.669951395567, 2.3822903166873924E-8, 0.05546576, 2.329562, 799303.6132771898, {}, {}, {}};
+    GetPositionMetadata metadata{
+        7135.669951395567, 2.3822903166873924E-8, 0.05546576, 2.329562, 799303.6132771898, {}, {}, {}, {}};
 
     std::vector<OrbitStateVectorComputation> comp_orbits;
     for (auto&& o : ORBIT_STATE_VECTORS) {
@@ -489,198 +427,6 @@ TEST_F(TerrainCorrectionTest, CreateTargetProduct) {
         EXPECT_NEAR(EXPECTED_GEOTRANSFORM[i], target_geo_transform[i], ERROR_MARGIN);
     }
     remove(TC_OUTPUT.c_str());
-}
-
-TEST_F(TerrainCorrectionTest, DISABLED_GetNonBorderSourceRectangle) {
-    assert(SOURCE_RECTANGLES.size() == EXPECTED_RECTANGLES.size());
-
-    std::vector<Rectangle> calculated_rectangles;
-    calculated_rectangles.reserve(EXPECTED_RECTANGLES.size());
-
-    const GeoTransformParameters target_geo_transform{21.908443888855807, 58.57642850390358, 1.2495565602102545e-4,
-                                                      -1.2495565602102545e-4};
-
-    std::vector<OrbitStateVectorComputation> computation_orbit;
-    ComputationMetadata computation_metadata =
-        CreateComputationMetadata(metadata_.value().GetMetadata(), computation_orbit);
-
-    GetPositionMetadata get_position_metadata{};
-    FillGetPositionMetadata(get_position_metadata, computation_metadata, coh_ds_->GetYSize());
-
-    for (auto&& source_tile : SOURCE_RECTANGLES) {
-        TcTile tile{};
-        tile.tc_tile_coordinates.target_x_0 = source_tile.x;
-        tile.tc_tile_coordinates.target_y_0 = source_tile.y;
-        tile.tc_tile_coordinates.target_width = source_tile.width;
-        tile.tc_tile_coordinates.target_height = source_tile.height;
-        Rectangle calculated_rectangle{};
-        const PointerArray srtm_3_tiles{srtm_3_model_->GetSrtmBuffersInfo(), srtm_3_model_->GetDeviceSrtm3TilesCount()};
-        TerrainCorrectionKernelArgs args{static_cast<unsigned int>(coh_ds_->GetXSize()),
-                                         static_cast<unsigned int>(coh_ds_->GetYSize()),
-                                         srtm3elevationmodel::NO_DATA_VALUE,
-                                         0,
-                                         metadata_->GetMetadata().avg_scene_height,
-                                         target_geo_transform,
-                                         false,
-                                         0,
-                                         {},
-                                         get_position_metadata,
-                                         {},
-                                         {},
-                                         srtm_3_tiles,
-                                         {}};
-        bool valid = GetNonBorderSourceRectangle(tile, args, calculated_rectangle);
-        calculated_rectangles.push_back(
-            {calculated_rectangle.x, calculated_rectangle.y, calculated_rectangle.width, calculated_rectangle.height});
-        EXPECT_THAT(valid, ::testing::IsTrue());
-    }
-
-    for (size_t i = 0; i < EXPECTED_RECTANGLES.size(); ++i) {
-        const Rectangle& expected_rectangle = EXPECTED_RECTANGLES[i];
-        const Rectangle& calculated_rectangle = calculated_rectangles[i];
-
-        EXPECT_THAT(calculated_rectangles.size(), ::testing::Eq(EXPECTED_RECTANGLES.size()));
-        EXPECT_THAT(calculated_rectangle.x, ::testing::Eq(expected_rectangle.x));
-        EXPECT_THAT(calculated_rectangle.y, ::testing::Eq(expected_rectangle.y));
-        EXPECT_THAT(calculated_rectangle.width, ::testing::Eq(expected_rectangle.width));
-        EXPECT_THAT(calculated_rectangle.height, ::testing::Eq(expected_rectangle.height));
-    }
-
-    FreeMetadata(get_position_metadata, computation_metadata);
-}
-
-TEST_F(TerrainCorrectionTest, GetInvalidSourceRectangle) {
-    const GeoTransformParameters target_geo_transform{21.908443888855807, 58.57642850390358, 1.2495565602102545e-4,
-                                                      -1.2495565602102545e-4};
-
-    std::vector<OrbitStateVectorComputation> computation_orbit;
-    ComputationMetadata computation_metadata =
-        CreateComputationMetadata(metadata_.value().GetMetadata(), computation_orbit);
-
-    GetPositionMetadata get_position_metadata{};
-    FillGetPositionMetadata(get_position_metadata, computation_metadata, coh_ds_->GetYSize());
-
-    for (auto&& source_tile : INVALID_SOURCE_RECTANGLES) {
-        TcTile tile{};
-        tile.tc_tile_coordinates.target_x_0 = source_tile.x;
-        tile.tc_tile_coordinates.target_y_0 = source_tile.y;
-        tile.tc_tile_coordinates.target_width = source_tile.width;
-        tile.tc_tile_coordinates.target_height = source_tile.height;
-        Rectangle calculated_rectangle{};
-        const PointerArray srtm_3_tiles{srtm_3_model_->GetSrtmBuffersInfo(), srtm_3_model_->GetDeviceSrtm3TilesCount()};
-        TerrainCorrectionKernelArgs args{static_cast<unsigned int>(coh_ds_->GetXSize()),
-                                         static_cast<unsigned int>(coh_ds_->GetYSize()),
-                                         srtm3elevationmodel::NO_DATA_VALUE,
-                                         0,
-                                         metadata_->GetMetadata().avg_scene_height,
-                                         target_geo_transform,
-                                         false,
-                                         0,
-                                         {},
-                                         get_position_metadata,
-                                         {},
-                                         {},
-                                         srtm_3_tiles,
-                                         {}};
-        bool valid = GetNonBorderSourceRectangle(tile, args, calculated_rectangle);
-        EXPECT_THAT(valid, ::testing::IsFalse());
-    }
-
-    FreeMetadata(get_position_metadata, computation_metadata);
-}
-
-TEST_F(TerrainCorrectionTest, GetSourceRectangleWithAverageHeight) {
-    assert(SOURCE_RECTANGLES_FOR_AVERAGE_HEIGHT.size() == EXPECTED_RECTANGLES_WITH_AVERAGE_HEIGHT.size());
-
-    std::vector<Rectangle> calculated_rectangles;
-    const GeoTransformParameters target_geo_transform{21.908443888855807, 58.57642850390358, 1.2495565602102545e-4,
-                                                      -1.2495565602102545e-4};
-
-    std::vector<OrbitStateVectorComputation> computation_orbit;
-    ComputationMetadata computation_metadata =
-        CreateComputationMetadata(metadata_.value().GetMetadata(), computation_orbit);
-    GetPositionMetadata get_position_metadata{};
-    FillGetPositionMetadata(get_position_metadata, computation_metadata, coh_ds_->GetYSize());
-    PointerArray srtm_3_tiles{};
-    TerrainCorrectionKernelArgs args{static_cast<unsigned int>(coh_ds_->GetXSize()),
-                                     static_cast<unsigned int>(coh_ds_->GetYSize()),
-                                     srtm3elevationmodel::NO_DATA_VALUE,
-                                     0,
-                                     metadata_->GetMetadata().avg_scene_height,
-                                     target_geo_transform,
-                                     true,
-                                     0,
-                                     {},
-                                     get_position_metadata,
-                                     {},
-                                     {},
-                                     srtm_3_tiles,
-                                     {}};
-    std::for_each(SOURCE_RECTANGLES_FOR_AVERAGE_HEIGHT.begin(), SOURCE_RECTANGLES_FOR_AVERAGE_HEIGHT.end(),
-                  [&](auto source_tile) {
-                      TcTile tile{};
-                      tile.tc_tile_coordinates.target_x_0 = source_tile.x;
-                      tile.tc_tile_coordinates.target_y_0 = source_tile.y;
-                      tile.tc_tile_coordinates.target_width = source_tile.width;
-                      tile.tc_tile_coordinates.target_height = source_tile.height;
-                      Rectangle calculated_rectangle{};
-                      bool valid = GetNonBorderSourceRectangle(tile, args, calculated_rectangle);
-                      calculated_rectangles.push_back({calculated_rectangle.x, calculated_rectangle.y,
-                                                       calculated_rectangle.width, calculated_rectangle.height});
-                      EXPECT_THAT(valid, ::testing::IsTrue());
-                  });
-
-    for (size_t i = 0; i < EXPECTED_RECTANGLES_WITH_AVERAGE_HEIGHT.size(); ++i) {
-        const Rectangle& expected_rectangle = EXPECTED_RECTANGLES_WITH_AVERAGE_HEIGHT[i];
-        const Rectangle& calculated_rectangle = calculated_rectangles[i];
-
-        EXPECT_THAT(calculated_rectangles.size(), ::testing::Eq(EXPECTED_RECTANGLES_WITH_AVERAGE_HEIGHT.size()));
-        EXPECT_THAT(calculated_rectangle.x, ::testing::Eq(expected_rectangle.x));
-        EXPECT_THAT(calculated_rectangle.y, ::testing::Eq(expected_rectangle.y));
-        EXPECT_THAT(calculated_rectangle.width, ::testing::Eq(expected_rectangle.width));
-        EXPECT_THAT(calculated_rectangle.height, ::testing::Eq(expected_rectangle.height));
-    }
-
-    FreeMetadata(get_position_metadata, computation_metadata);
-}
-
-TEST_F(TerrainCorrectionTest, GetSourceRectangleWithAverageHeightInvalid) {
-    const GeoTransformParameters target_geo_transform{21.908443888855807, 58.57642850390358, 1.2495565602102545e-4,
-                                                      -1.2495565602102545e-4};
-
-    std::vector<OrbitStateVectorComputation> computation_orbit;
-    ComputationMetadata computation_metadata =
-        CreateComputationMetadata(metadata_.value().GetMetadata(), computation_orbit);
-    GetPositionMetadata get_position_metadata{};
-    FillGetPositionMetadata(get_position_metadata, computation_metadata, coh_ds_->GetYSize());
-
-    PointerArray srtm_3_tiles{};
-    TerrainCorrectionKernelArgs args{static_cast<unsigned int>(coh_ds_->GetXSize()),
-                                     static_cast<unsigned int>(coh_ds_->GetYSize()),
-                                     srtm3elevationmodel::NO_DATA_VALUE,
-                                     0,
-                                     metadata_->GetMetadata().avg_scene_height,
-                                     target_geo_transform,
-                                     true,
-                                     0,
-                                     {},
-                                     get_position_metadata,
-                                     {},
-                                     {},
-                                     srtm_3_tiles,
-                                     {}};
-    std::for_each(INVALID_SOURCE_RECTANGLES_AVERAGE_HEIGHT.begin(), INVALID_SOURCE_RECTANGLES_AVERAGE_HEIGHT.end(),
-                  [&](auto source_tile) {
-                      TcTile tile{};
-                      tile.tc_tile_coordinates.target_x_0 = source_tile.x;
-                      tile.tc_tile_coordinates.target_y_0 = source_tile.y;
-                      tile.tc_tile_coordinates.target_width = source_tile.width;
-                      tile.tc_tile_coordinates.target_height = source_tile.height;
-                      Rectangle calculated_rectangle{};
-                      bool valid = GetNonBorderSourceRectangle(tile, args, calculated_rectangle);
-                      EXPECT_THAT(valid, ::testing::IsFalse());
-                  });
-    FreeMetadata(get_position_metadata, computation_metadata);
 }
 
 TEST_F(TerrainCorrectionTest, MetadataConstructionSucceedsOnValidFiles) {
