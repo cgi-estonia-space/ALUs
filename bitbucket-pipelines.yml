@@ -126,11 +126,11 @@ pipelines:
             - echo "[profile sid_man]" > config
             - echo "aws_access_key_id = $SID_MAN_ACCESS_KEY_ID" >> config
             - echo "aws_secret_access_key = $SID_MAN_SECRET_ACCESS_KEY" >> config
-            - echo "region = eu-central-1" >> config
+            - echo "region = eu-west-1" >> config
             - echo "output = json" >> config
-            - aws ec2 start-instances --instance-ids $P3_2xLARGE_INSTANCE_ID --profile sid_man
+            - aws ec2 start-instances --instance-ids $P3_2X_LARGE_IRELAND_INSTANCE_ID --profile sid_man
             - sleep 60
-            - ip_address=$(aws ec2 describe-instances --instance-ids $P3_2xLARGE_INSTANCE_ID --profile sid_man | grep PublicDnsName | head -1 | awk -F'[:]' '{print $2}' | xargs)
+            - ip_address=$(aws ec2 describe-instances --instance-ids $P3_2X_LARGE_IRELAND_INSTANCE_ID --profile sid_man | grep PublicDnsName | head -1 | awk -F'[:]' '{print $2}' | xargs)
             - ip_address=${ip_address%?}
             - echo $ip_address
             - cd $BITBUCKET_CLONE_DIR
@@ -142,7 +142,7 @@ pipelines:
             - scp -r -oStrictHostKeyChecking=no *.tar.gz ubuntu@$ip_address:/tmp/nightly_builds
             - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "cd /tmp/nightly_builds; ./execute_nightly.sh ${build_id} /home/ubuntu/nightly_datasets/beirut_dimap/ /home/ubuntu/nightly_aux/ /home/ubuntu/nightly_datasets/virumaa/"
           after-script:
-            - aws ec2 stop-instances --instance-ids $P3_2xLARGE_INSTANCE_ID --profile sid_man 
+            - aws ec2 stop-instances --instance-ids $P3_2X_LARGE_IRELAND_INSTANCE_ID --profile sid_man
     nightly-binary-check: # Duplicate of nightly-build except no CI check
       - step:
           name: 'Build Alus release package'
@@ -184,11 +184,11 @@ pipelines:
             - echo "[profile sid_man]" > config
             - echo "aws_access_key_id = $SID_MAN_ACCESS_KEY_ID" >> config
             - echo "aws_secret_access_key = $SID_MAN_SECRET_ACCESS_KEY" >> config
-            - echo "region = eu-central-1" >> config
+            - echo "region = eu-west-1" >> config
             - echo "output = json" >> config
-            - aws ec2 start-instances --instance-ids $P3_2xLARGE_INSTANCE_ID --profile sid_man
+            - aws ec2 start-instances --instance-ids $P3_2X_LARGE_IRELAND_INSTANCE_ID --profile sid_man
             - sleep 60
-            - ip_address=$(aws ec2 describe-instances --instance-ids $P3_2xLARGE_INSTANCE_ID --profile sid_man | grep PublicDnsName | head -1 | awk -F'[:]' '{print $2}' | xargs)
+            - ip_address=$(aws ec2 describe-instances --instance-ids $P3_2X_LARGE_IRELAND_INSTANCE_ID --profile sid_man | grep PublicDnsName | head -1 | awk -F'[:]' '{print $2}' | xargs)
             - ip_address=${ip_address%?}
             - echo $ip_address
             - cd $BITBUCKET_CLONE_DIR
@@ -200,5 +200,5 @@ pipelines:
             - scp -r -oStrictHostKeyChecking=no *.tar.gz ubuntu@$ip_address:/tmp/nightly_builds
             - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "cd /tmp/nightly_builds; ./execute_nightly.sh ${build_id} /home/ubuntu/nightly_datasets/beirut_dimap/ /home/ubuntu/nightly_aux/ /home/ubuntu/nightly_datasets/virumaa/"
           after-script:
-            - aws ec2 stop-instances --instance-ids $P3_2xLARGE_INSTANCE_ID --profile sid_man
+            - aws ec2 stop-instances --instance-ids $P3_2X_LARGE_IRELAND_INSTANCE_ID --profile sid_man
 
