@@ -1,5 +1,6 @@
 list(APPEND TOPSAR_SPLIT_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/topsar_split.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/aoi_burst_extract.cc
         )
 
 list(APPEND TOPSAR_SPLIT_INCLUDE_DIRS

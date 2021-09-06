@@ -49,6 +49,6 @@ set_target_properties(app-util-static
         OUTPUT_NAME app-util
         )
 
-if(ENABLE_UNIT_TESTS)
+if(ENABLE_TESTS)
         add_subdirectory(unit_test)
 endif()

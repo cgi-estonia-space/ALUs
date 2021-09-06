@@ -60,13 +60,23 @@ int CoherenceEstimationRoutineExecute::ExecuteSafe() {
         GDALDataset* coreg_dataset = nullptr;
         {
             const auto coreg_start = std::chrono::steady_clock::now();
+
             coregistration::Coregistration coreg{orbit_file_dir_};
-            if (!main_scene_orbit_file_.empty() || !secondary_scene_orbit_file_.empty()) {
-                coreg.Initialize(main_scene_file_path_, secondary_scene_file_path_, cor_output_file, subswath_, polarization_,
-                                 main_scene_orbit_file_, secondary_scene_orbit_file_);
-            } else {
-                coreg.Initialize(main_scene_file_path_, secondary_scene_file_path_, cor_output_file, subswath_, polarization_);
-            }
+            coregistration::Coregistration::Parameters coreg_params{};
+            coreg_params.main_scene_file = main_scene_file_path_;
+            coreg_params.main_orbit_file = main_scene_orbit_file_;
+            coreg_params.main_scene_first_burst_index = main_scene_first_burst_index_;
+            coreg_params.main_scene_last_burst_index = main_scene_last_burst_index_;
+            coreg_params.secondary_scene_file = secondary_scene_file_path_;
+            coreg_params.secondary_orbit_file = secondary_scene_orbit_file_;
+            coreg_params.secondary_scene_first_burst_index = secondary_scene_first_burst_index_;
+            coreg_params.secondary_scene_last_burst_index = secondary_scene_last_burst_index_;
+            coreg_params.polarisation = polarization_;
+            coreg_params.subswath = subswath_;
+            coreg_params.aoi = wkt_aoi_;
+            coreg_params.output_file = cor_output_file;
+            coreg.Initialize(coreg_params);
+
             coreg.DoWork(egm96_manager_->GetDeviceValues(),
                          {srtm3_manager_->GetSrtmBuffersInfo(), srtm3_manager_->GetDeviceSrtm3TilesCount()});
             main_product = coreg.GetMasterProduct();

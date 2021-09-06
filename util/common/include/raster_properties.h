@@ -27,9 +27,13 @@ struct RasterPoint final {
     int const y;
 };
 
+using Coordinate = double;
+using Longitude = Coordinate;
+using Latitude = Coordinate;
+
 struct Coordinates final {
-    double const lon;
-    double const lat;
+    const Longitude lon;
+    const Latitude lat;
 };
 
 struct PixelPosition final {

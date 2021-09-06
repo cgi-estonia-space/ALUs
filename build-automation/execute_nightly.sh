@@ -25,9 +25,15 @@ mv gdalcompare.py ${build_id}
 
 cd ${build_id}
 
+set +e
+
 # Run cases
 ./run_beirut_disaster_test.sh $2 $3
+disaster_test_exit=$?
 ./run_virumaa_calibration_chain_test.sh $4 $3
+virumaa_calibration_test_exit=$?
+
+set -e
 
 cd ..
 
@@ -47,3 +53,5 @@ for file in *tc.tif; do
         aws s3api put-object --bucket alus-builds --key "${build_id}/${png_file}" --body $png_file --acl public-read --storage-class STANDARD_IA --profile tarmo
         echo "Uploaded resource available at https://alus-builds.s3.eu-central-1.amazonaws.com/${build_id}/${png_file}"
 done
+
+exit $(($disaster_test_exit | $virumaa_calibration_test_exit))

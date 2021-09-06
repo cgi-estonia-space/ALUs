@@ -14,6 +14,7 @@
 
 #include "algorithm_parameters.h"
 
+#include <algorithm>
 #include <fstream>
 #include <functional>
 #include <sstream>
@@ -26,6 +27,9 @@ constexpr char ALGORITHM_NAME_END_MARK{':'};
 constexpr char PARAMETERS_SEPARATOR{','};
 constexpr char PARAMETER_VALUE_SEPARATOR{'='};
 constexpr char ALGORITHM_SEPARATORS{';'};
+constexpr char WKT_START{'('};
+constexpr char WKT_END{')'};
+constexpr char TEMPORARY_REPLACE_CHARACTER{'$'};
 }  // namespace
 
 namespace alus::app {
@@ -46,19 +50,31 @@ std::string AlgorithmParameters::ParseAlgName(std::string_view parameter_list) {
 }
 
 AlgorithmParameters::Table AlgorithmParameters::ParseParameters(std::string_view parameters_only_list) {
-    std::vector<std::string> parameter_pairs{};
-    boost::split(parameter_pairs, parameters_only_list, std::bind1st(std::equal_to<char>(), PARAMETERS_SEPARATOR));
-
     Table params_and_values{};
+
+    std::string parameters_list_local{parameters_only_list};
+    const auto wkt_parentheses_start = std::find(parameters_list_local.begin(), parameters_list_local.end(), WKT_START);
+    if (const auto wkt_parentheses_end = std::find(wkt_parentheses_start, parameters_list_local.end(), WKT_END);
+        wkt_parentheses_start != parameters_list_local.cend() && wkt_parentheses_end != parameters_list_local.cend() &&
+        wkt_parentheses_start < wkt_parentheses_end) {
+        std::replace(wkt_parentheses_start, wkt_parentheses_end, PARAMETERS_SEPARATOR, TEMPORARY_REPLACE_CHARACTER);
+    }
+
+    std::vector<std::string> parameter_pairs{};
+    boost::split(parameter_pairs, parameters_list_local, std::bind1st(std::equal_to<char>(), PARAMETERS_SEPARATOR));
+
     for (auto&& pp : parameter_pairs) {
         const auto param_val_sep_pos = pp.find(PARAMETER_VALUE_SEPARATOR);
         if (param_val_sep_pos == std::string_view::npos || param_val_sep_pos == pp.length() - 1) {
             throw std::runtime_error("Invalid algorithm parameter value pair - '" + std::string(pp) + "'");
         }
 
-        const auto result = params_and_values.try_emplace(pp.substr(0, param_val_sep_pos),
-                                                          pp.substr(param_val_sep_pos + 1, pp.length()));
-        if (!result.second) {
+        auto value = pp.substr(param_val_sep_pos + 1, pp.length());
+        std::replace(value.begin(), value.end(), TEMPORARY_REPLACE_CHARACTER, PARAMETERS_SEPARATOR);
+        [[maybe_unused]] const auto [it_value, inserted] =
+            params_and_values.try_emplace(pp.substr(0, param_val_sep_pos), value);
+        (void)it_value;
+        if (!inserted) {
             throw std::runtime_error("Redefining algorithm parameter value - '" + std::string(pp) + "'");
         }
     }

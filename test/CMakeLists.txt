@@ -39,6 +39,7 @@ list(APPEND TEST_SOURCES
         src/multithreading_test.cc
         src/sentinel_1_calibrate_test.cc
         src/sentinel_1_calibrate_utils_test.cc
+        src/aoi_burst_extract_test.cc
         src/cuda_util_test.cc
         src/geotiff_write_test.cc
         )
@@ -64,6 +65,7 @@ target_link_libraries(unit_test
         range-doppler-geocoding-test-static
         sar-geocoding-test-static
         sentinel1-calibrate-static
+        topsar-split-static
         crypto
         Boost::filesystem
         )

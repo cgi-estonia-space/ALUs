@@ -23,15 +23,13 @@
 #include "apply_orbit_file_op.h"
 #include "c16_dataset.h"
 #include "snap-core/util/system_utils.h"
+#include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
 
 namespace {
 
-TEST(DISABLED_topsar_split, subswaths) {
-    alus::topsarsplit::TopsarSplit splitter(
-        "goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.SAFE", "IW1",
-        "VV");
-    splitter.initialize();
-}
+using ::testing::DoubleEq;
+using ::testing::DoubleNear;
+using ::testing::Eq;
 
 TEST(topsar_split, s1utils_slave) {
     alus::snapengine::SystemUtils::SetAuxDataPath("goods/apply_orbit_file_op/orbit-files/");
@@ -356,6 +354,78 @@ TEST(topsar_split, s1utils_master) {
     EXPECT_EQ(master_utils.source_image_height_, 13500);
     EXPECT_EQ(master_utils.near_range_on_left_, 1);
     EXPECT_EQ(master_utils.srgr_flag_, 0);
+}
+
+TEST(TopsarSplit, extractsSingleBurstFromAoiWkt) {
+    std::string subswath_name = "IW1";
+    std::string polarisation = "VV";
+    std::string master_file =
+        "./goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD.SAFE";
+    // Only burst 5 selected
+    std::string_view aoi_wkt =
+        "POLYGON((35.98629227594312 33.78599319266792,35.58951654737135 33.889421777083186,35.55574840025886 "
+        "33.83334045091287,35.98629227594312 33.78599319266792))";
+    alus::topsarsplit::TopsarSplit split_master(master_file, subswath_name, polarisation, aoi_wkt);
+    split_master.initialize();
+
+    alus::s1tbx::Sentinel1Utils master_utils(split_master.GetTargetProduct());
+    const auto& subswath = master_utils.subswath_.at(0);
+
+    EXPECT_THAT(subswath->num_of_bursts_, Eq(1));
+    // y offset 6000
+    EXPECT_THAT(master_utils.source_image_height_, Eq(1500));
+    EXPECT_THAT(master_utils.first_line_utc_, DoubleEq(7516.154935741955));
+    // 7516.1549714048961 - Real value from Split by Alus.
+    EXPECT_THAT(master_utils.last_line_utc_, DoubleNear(7516.154971404906, 1e-10));
+    EXPECT_THAT(subswath->num_of_lines_, Eq(1500));
+    auto abs_tgt = alus::snapengine::AbstractMetadata::GetAbstractedMetadata(split_master.GetTargetProduct());
+    EXPECT_THAT(alus::snapengine::AbstractMetadata::GetAttributeDouble(
+                    abs_tgt, alus::snapengine::AbstractMetadata::FIRST_NEAR_LAT),
+                DoubleEq(33.88976728973444));
+    EXPECT_THAT(alus::snapengine::AbstractMetadata::GetAttributeDouble(
+                    abs_tgt, alus::snapengine::AbstractMetadata::FIRST_NEAR_LONG),
+                DoubleEq(35.81126019432898));
+    EXPECT_THAT(alus::snapengine::AbstractMetadata::GetAttributeDouble(
+                    abs_tgt, alus::snapengine::AbstractMetadata::LAST_FAR_LAT),
+                DoubleEq(33.87092932542821));
+    EXPECT_THAT(alus::snapengine::AbstractMetadata::GetAttributeDouble(
+                    abs_tgt, alus::snapengine::AbstractMetadata::LAST_FAR_LONG),
+                DoubleEq(34.82984801448071));
+}
+
+TEST(TopsarSplit, extractsMultipleBurstsFromAoiWkt) {
+    std::string subswath_name = "IW1";
+    std::string polarisation = "VV";
+    std::string master_file =
+        "./goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD.SAFE";
+    // Four last bursts covered (6-9)
+    std::string_view aoi_wkt =
+        "POLYGON((34.42016601562499 33.5047590692261,35.35675048828125 33.72433966174759,35.28259277343749 "
+        "32.85651801010955,34.42016601562499 33.5047590692261))";
+    alus::topsarsplit::TopsarSplit split_master(master_file, subswath_name, polarisation, aoi_wkt);
+    split_master.initialize();
+
+    alus::s1tbx::Sentinel1Utils master_utils(split_master.GetTargetProduct());
+    const auto& subswath = master_utils.subswath_.at(0);
+
+    EXPECT_THAT(subswath->num_of_bursts_, Eq(4));
+    EXPECT_THAT(master_utils.source_image_height_, Eq(6000));
+    EXPECT_THAT(master_utils.first_line_utc_, DoubleEq(7516.154967622118));
+    EXPECT_THAT(master_utils.last_line_utc_, DoubleEq(7516.15509904449));
+    EXPECT_THAT(subswath->num_of_lines_, Eq(6000));
+    auto abs_tgt = alus::snapengine::AbstractMetadata::GetAbstractedMetadata(split_master.GetTargetProduct());
+    EXPECT_THAT(alus::snapengine::AbstractMetadata::GetAttributeDouble(
+                    abs_tgt, alus::snapengine::AbstractMetadata::FIRST_NEAR_LAT),
+                DoubleEq(33.72244304511345));
+    EXPECT_THAT(alus::snapengine::AbstractMetadata::GetAttributeDouble(
+                    abs_tgt, alus::snapengine::AbstractMetadata::FIRST_NEAR_LONG),
+                DoubleEq(35.78204457711804));
+    EXPECT_THAT(alus::snapengine::AbstractMetadata::GetAttributeDouble(
+                    abs_tgt, alus::snapengine::AbstractMetadata::LAST_FAR_LAT),
+                DoubleEq(33.18729964093926));
+    EXPECT_THAT(alus::snapengine::AbstractMetadata::GetAttributeDouble(
+                    abs_tgt, alus::snapengine::AbstractMetadata::LAST_FAR_LONG),
+                DoubleEq(34.67947070642776));
 }
 
 }  // namespace

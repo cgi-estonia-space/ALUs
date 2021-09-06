@@ -24,20 +24,30 @@ namespace alus::coregistration {
 
 class Coregistration {
 public:
+    struct Parameters {
+        std::string_view main_scene_file{};
+        std::string_view secondary_scene_file{};
+        std::string_view output_file{};
+        std::string_view subswath{};
+        std::string_view polarisation{};
+        std::string_view main_orbit_file{};
+        std::string_view secondary_orbit_file{};
+        size_t main_scene_first_burst_index{};
+        size_t main_scene_last_burst_index{};
+        size_t secondary_scene_first_burst_index{};
+        size_t secondary_scene_last_burst_index{};
+        std::string_view aoi{};
+    };
+
     Coregistration(std::string aux_data_path);
     Coregistration() = default;
 
-    void Initialize(std::string_view master_file, std::string_view slave_file, std::string_view output_file,
-                    std::string_view subswath_name, std::string_view polarisation);
-    void Initialize(std::string_view master_file, std::string_view slave_file, std::string_view output_file,
-                    std::string_view subswath_name, std::string_view polarisation, std::string_view main_orbit_file,
-                    std::string_view secondary_orbit_file);
+    void Initialize(const Parameters&);
     void Initialize(std::string_view master_file, std::string_view slave_file, std::string_view output_file,
                     std::string_view subswath_name, std::string_view polarisation, size_t first_burst_index,
                     size_t last_burst_index);
     void Initialize(std::string_view master_file, std::string_view slave_file, std::string_view output_file,
-                    std::string_view subswath_name, std::string_view polarisation, size_t first_burst_index,
-                    size_t last_burst_index, size_t slave_first_burst_index, size_t slave_last_burst_index);
+                    std::string_view subswath_name, std::string_view polarisation);
     void DoWork(const float* egm96_device_array, PointerArray srtm3_tiles);
 
     std::shared_ptr<snapengine::Product> GetMasterProduct() { return split_master_->GetTargetProduct(); }
@@ -55,8 +65,6 @@ private:
     std::unique_ptr<s1tbx::ApplyOrbitFileOp> orbit_file_master_;
     std::unique_ptr<s1tbx::ApplyOrbitFileOp> orbit_file_slave_;
     std::shared_ptr<alus::TargetDataset<float>> target_dataset_;
-    std::string main_orbit_file_{};
-    std::string secondary_orbit_file_{};
 };
 
 }  // namespace alus::coregistration

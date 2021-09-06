@@ -14,14 +14,15 @@
 
 #include "coherence_estimation_routine_execute.h"
 
+#include <cstdlib>
 #include <sstream>
 #include <string_view>
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include "alus_log.h"
-#include "backgeocoding_bond.h"
 #include "gdal_management.h"
 #include "terrain_correction_executor.h"
 
@@ -40,6 +41,11 @@ constexpr std::string_view PARAMETER_ID_RG_WINDOW{"rg_window"};
 constexpr std::string_view PARAMETER_ID_AZ_WINDOW{"az_window"};
 constexpr std::string_view PARAMETER_ID_ORBIT_DEGREE{"orbit_degree"};
 constexpr std::string_view PARAMETER_WRITE_INTERMEDIATE_FILES("wif");
+constexpr std::string_view PARAMETER_ID_MAIN_SCENE_FIRST_BURST_INDEX{"main_scene_first_burst_index"};
+constexpr std::string_view PARAMETER_ID_MAIN_SCENE_LAST_BURST_INDEX{"main_scene_last_burst_index"};
+constexpr std::string_view PARAMETER_ID_SECONDARY_SCENE_FIRST_BURST_INDEX{"secondary_scene_first_burst_index"};
+constexpr std::string_view PARAMETER_ID_SECONDARY_SCENE_LAST_BURST_INDEX{"secondary_scene_last_burst_index"};
+constexpr std::string_view PARAMETER_ID_WKT_AOI{"aoi"};
 }  // namespace
 
 namespace alus {
@@ -89,12 +95,27 @@ void CoherenceEstimationRoutineExecute::SetParameters(const app::AlgorithmParame
         {PARAMETER_ID_SECONDARY_SCENE_ORBIT_FILE, secondary_scene_orbit_file_},
         {PARAMETER_ID_ORBIT_FILE_DIR, orbit_file_dir_},
         {PARAMETER_ID_SUBSWATH, subswath_},
-        {PARAMETER_ID_POLARIZATION, polarization_}};
+        {PARAMETER_ID_POLARIZATION, polarization_},
+        {PARAMETER_ID_WKT_AOI, wkt_aoi_}};
 
-    for (const auto& parameter : string_parameters_var_table) {
-        auto value_it = param_values.find(std::string(parameter.first));
+    for (const auto& [param, member_var] : string_parameters_var_table) {
+        auto value_it = param_values.find(std::string(param));
         if (value_it != param_values.end()) {
-            parameter.second = value_it->second;
+            member_var = value_it->second;
+        }
+    }
+
+    const std::map<std::string_view, int&> int_parameters_var_table{
+        {PARAMETER_ID_MAIN_SCENE_FIRST_BURST_INDEX, main_scene_first_burst_index_},
+        {PARAMETER_ID_MAIN_SCENE_LAST_BURST_INDEX, main_scene_last_burst_index_},
+        {PARAMETER_ID_SECONDARY_SCENE_FIRST_BURST_INDEX, secondary_scene_first_burst_index_},
+        {PARAMETER_ID_SECONDARY_SCENE_LAST_BURST_INDEX, secondary_scene_last_burst_index_}
+    };
+
+    for (const auto& [param, member_var] : int_parameters_var_table) {
+        auto value_it = param_values.find(std::string(param));
+        if (value_it != param_values.end()) {
+            member_var = boost::lexical_cast<int>(value_it->second);
         }
     }
 
@@ -125,20 +146,25 @@ std::string CoherenceEstimationRoutineExecute::GetArgumentsHelp() const {
     std::stringstream help_stream;
     help_stream << EXECUTOR_NAME << " parameters:\n"
                 << PARAMETER_ID_MAIN_SCENE << " - string Full or partial identifier of main scene of input datasets\n"
-
                 << PARAMETER_ID_MAIN_SCENE_ORBIT_FILE << " - string Full path of the main scene's orbit file\n"
-
                 << PARAMETER_ID_SECONDARY_SCENE_ORBIT_FILE
                 << " - string Full path of the secondary scene's orbit file\n"
-
                 << PARAMETER_ID_ORBIT_FILE_DIR
                 << " - string ESA SNAP compatible root folder of unzipped orbit files. "
                    "For example: /home/user/.snap/auxData/Orbits/Sentinel-1/POEORB/\n"
-
                 << PARAMETER_ID_SUBSWATH << " - string Subswath to process - valid values: IW1, IW2, IW3\n"
-                << PARAMETER_ID_POLARIZATION << " - string Polarization to process - valid value: VV, VH\n";
+                << PARAMETER_ID_POLARIZATION << " - string Polarization to process - valid value: VV, VH\n"
+                << PARAMETER_ID_MAIN_SCENE_FIRST_BURST_INDEX
+                << " - main scene first burst index, omit to process full subswath" << std::endl
+                << PARAMETER_ID_MAIN_SCENE_LAST_BURST_INDEX
+                << " - main scene last burst index, omit to process full subswath" << std::endl
+                << PARAMETER_ID_SECONDARY_SCENE_FIRST_BURST_INDEX
+                << " - secondary scene first burst index, omit to process full subswath" << std::endl
+                << PARAMETER_ID_SECONDARY_SCENE_LAST_BURST_INDEX
+                << " - secondary scene last burst index, omit to process full subswath" << std::endl
+                << PARAMETER_ID_WKT_AOI << " - Area Of Interest WKT polygon, overrules first and last burst indexes"
+                << std::endl;
 
-    help_stream << backgeocoding::BackgeocodingBond().GetArgumentsHelp();
     help_stream << GetCoherenceHelp();
     help_stream << terraincorrection::TerrainCorrectionExecutor().GetArgumentsHelp();
 
@@ -201,13 +227,20 @@ void CoherenceEstimationRoutineExecute::ParseCoherenceParams() {
 }
 
 void CoherenceEstimationRoutineExecute::PrintProcessingParameters() const {
-    LOGI << EXECUTOR_NAME << " processing parameters:" << PARAMETER_ID_MAIN_SCENE << " " << main_scene_file_id_
-         << " " << PARAMETER_ID_MAIN_SCENE_ORBIT_FILE << " " << main_scene_orbit_file_
-         << PARAMETER_ID_SECONDARY_SCENE_ORBIT_FILE << " " << secondary_scene_orbit_file_ << PARAMETER_ID_ORBIT_FILE_DIR
-         << " " << orbit_file_dir_ << " " << PARAMETER_ID_SUBSWATH << " " << subswath_  << " "
-         << PARAMETER_ID_POLARIZATION << " " << polarization_
-         << " Main scene - " << main_scene_file_path_ << " Secondary scene - "
-         << secondary_scene_file_path_ << " " << PARAMETER_WRITE_INTERMEDIATE_FILES << " " << write_intermediate_files_;
+    LOGI << EXECUTOR_NAME << " processing parameters:"  << std::endl
+         << "Main scene - " << main_scene_file_path_ << std::endl
+         << "Secondary scene - " << secondary_scene_file_path_ << std::endl
+         << PARAMETER_ID_MAIN_SCENE_ORBIT_FILE << " - " << main_scene_orbit_file_ << std::endl
+         << PARAMETER_ID_SECONDARY_SCENE_ORBIT_FILE << " - " << secondary_scene_orbit_file_ << std::endl
+         << PARAMETER_ID_ORBIT_FILE_DIR << " - " << orbit_file_dir_ << std::endl
+         << PARAMETER_ID_SUBSWATH << " - " << subswath_ << std::endl
+         << PARAMETER_ID_POLARIZATION << " - " << polarization_ << std::endl
+         << PARAMETER_WRITE_INTERMEDIATE_FILES << " - " << write_intermediate_files_ << std::endl
+         << PARAMETER_ID_MAIN_SCENE_FIRST_BURST_INDEX << " - " << main_scene_first_burst_index_ << std::endl
+         << PARAMETER_ID_MAIN_SCENE_LAST_BURST_INDEX << " - " << main_scene_last_burst_index_ << std::endl
+         << PARAMETER_ID_SECONDARY_SCENE_FIRST_BURST_INDEX << " - " << secondary_scene_first_burst_index_ << std::endl
+         << PARAMETER_ID_SECONDARY_SCENE_LAST_BURST_INDEX << " - " << secondary_scene_last_burst_index_ << std::endl
+         << PARAMETER_ID_WKT_AOI << " - " << wkt_aoi_ << std::endl;
 }
 
 bool CoherenceEstimationRoutineExecute::IsSafeInput() const {

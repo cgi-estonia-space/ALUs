@@ -104,10 +104,6 @@ add_subdirectory(test/sar_geocoding)
 # Main terminal application
 add_subdirectory(app)
 
-# Tests
-message(STATUS "Enable testing: ${ENABLE_UNIT_TESTS}")
-message(STATUS "Integration tests enabled: ${ENABLE_INTEGRATION_TESTS}")
-
 include(FetchContent)
 
 FetchContent_Declare(
