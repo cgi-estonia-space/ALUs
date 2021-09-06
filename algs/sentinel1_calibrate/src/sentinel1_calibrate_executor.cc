@@ -33,6 +33,7 @@
 #include "sentinel1_calibrate.h"
 #include "snap-core/dataio/i_product_reader.h"
 #include "snap-core/datamodel/product.h"
+#include "topsar_split.h"
 
 namespace {
 const std::vector<std::string> ALLOWED_SUB_SWATHES{"IW1", "IW2", "IW3"};
@@ -76,14 +77,14 @@ int Sentinel1CalibrateExecutor::Execute() {
     try {
         ValidateParameters();
         alus::gdalmanagement::SetCacheMax(4e9); // GDAL Cache 4GB, enough for for whole swath input + output
-        const auto reader_plug_in = std::make_shared<s1tbx::Sentinel1ProductReaderPlugIn>();
-        const std::shared_ptr<snapengine::IProductReader> product_reader = reader_plug_in->CreateReaderInstance();
-        std::shared_ptr<snapengine::Product> input_product =
-            product_reader->ReadProductNodes(boost::filesystem::canonical(metadata_paths_.at(0)), nullptr);
-        const auto source_path = boost::filesystem::canonical(input_dataset_filenames_.at(0)).string();
 
-        Sentinel1Calibrator calibrator{input_product,
-                                       source_path,
+        alus::topsarsplit::TopsarSplit split_op(input_dataset_filenames_.at(0), sub_swaths_.at(0), *polarisations_.begin());
+        split_op.initialize();
+        auto split_product = split_op.GetTargetProduct();
+        Dataset<Iq16>* pixel_reader = split_op.GetPixelReader()->GetDataset();
+
+        Sentinel1Calibrator calibrator{split_product,
+                                       pixel_reader,
                                        sub_swaths_,
                                        polarisations_,
                                        calibration_bands_,
@@ -138,14 +139,10 @@ void Sentinel1CalibrateExecutor::ParseCalibrationType(std::string_view calibrati
         calibration_bands_.get_dn_lut = true;
     }
 }
-void Sentinel1CalibrateExecutor::ValidateParameters() {
-    try {
-        ValidateSubSwath();
-        ValidatePolarisation();
-        ValidateCalibrationType();
-    } catch (...) {
-        throw;
-    }
+void Sentinel1CalibrateExecutor::ValidateParameters() const {
+    ValidateSubSwath();
+    ValidatePolarisation();
+    ValidateCalibrationType();
 }
 bool Sentinel1CalibrateExecutor::DoesStringEqualAnyOf(std::string_view comparand,
                                                       const std::vector<std::string>& string_list) {
@@ -153,7 +150,7 @@ bool Sentinel1CalibrateExecutor::DoesStringEqualAnyOf(std::string_view comparand
                        [&comparand](std::string_view string) { return boost::iequals(comparand, string); });
 }
 
-void Sentinel1CalibrateExecutor::ValidateSubSwath() {
+void Sentinel1CalibrateExecutor::ValidateSubSwath() const {
     if (sub_swaths_.empty()) {
         throw std::invalid_argument("Missing parameter " + std::string(PARAMETER_SUB_SWATH));
     }
@@ -164,7 +161,7 @@ void Sentinel1CalibrateExecutor::ValidateSubSwath() {
         }
     }
 }
-void Sentinel1CalibrateExecutor::ValidatePolarisation() {
+void Sentinel1CalibrateExecutor::ValidatePolarisation() const {
     if (polarisations_.empty()) {
         throw std::invalid_argument("Missing parameter " + std::string(PARAMETER_POLARISATION));
     }
@@ -177,7 +174,7 @@ void Sentinel1CalibrateExecutor::ValidatePolarisation() {
         }
     }
 }
-void Sentinel1CalibrateExecutor::ValidateCalibrationType() {
+void Sentinel1CalibrateExecutor::ValidateCalibrationType() const {
     if (!(calibration_bands_.get_dn_lut || calibration_bands_.get_beta_lut || calibration_bands_.get_sigma_lut ||
           calibration_bands_.get_gamma_lut)) {
         throw std::invalid_argument("Missing parameter " + std::string(PARAMETER_CALIBRATION_TYPE));

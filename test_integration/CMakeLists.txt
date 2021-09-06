@@ -318,6 +318,7 @@ target_link_libraries(integration-test-sentinel1-calibrate
         Boost::iostreams
         alus-gmock-main
         sentinel1-calibrate-static
+        topsar-split-static
         cuda_util-static
         gdal-util-static
         )

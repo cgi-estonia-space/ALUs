@@ -44,7 +44,6 @@ namespace {
 // TODO share theese and some of the implemenation with sentinel_calibrate_executor.cc
 const std::vector<std::string> ALLOWED_SUB_SWATHES{"IW1", "IW2", "IW3"};
 const std::vector<std::string> ALLOWED_POLARISATIONS{"VV", "VH"};
-// const std::vector<std::string> ALLOWED_CALIBRATION_TYPES{"sigma", "beta", "gamma", "dn"};
 
 constexpr std::string_view PARAMETER_SUB_SWATH{"subswath"};
 constexpr std::string_view PARAMETER_POLARISATION{"polarisation"};
@@ -88,7 +87,6 @@ int CalibrationRoutine::Execute() {
     try {
         ValidateParameters();
 
-        const auto cal_start = std::chrono::steady_clock::now();
         const auto input_path = input_dataset_filenames_.at(0);
         const auto subswath = sub_swaths_.at(0);
         const auto polarization = *polarisations_.begin();
@@ -112,14 +110,16 @@ int CalibrationRoutine::Execute() {
         alus::topsarsplit::TopsarSplit split_op(input_path, subswath, polarization);
         split_op.initialize();
         auto split_product = split_op.GetTargetProduct();
+        Dataset<Iq16>* pixel_reader = split_op.GetPixelReader()->GetDataset();
 
         // calibration
 
+        const auto cal_start = std::chrono::steady_clock::now();
         std::shared_ptr<snapengine::Product> calibrated_product;
         std::shared_ptr<GDALDataset> calibrated_ds;
         std::string calibration_tmp_file;
         Sentinel1Calibrator calibrator{split_product,
-                                       input_path,
+                                       pixel_reader,
                                        sub_swaths_,
                                        polarisations_,
                                        calibration_bands_,
@@ -140,6 +140,10 @@ int CalibrationRoutine::Execute() {
             LOGI << "Calibration output @ " << calibration_tmp_file;
             GeoTiffWriteFile(calibrated_ds.get(), calibration_tmp_file);
         }
+
+        // start thread for srtm calculations parallel with CPU deburst
+        // rethink this part if we add support for larger GPUs with full chain on GPU processing
+        srtm3_manager_->HostToDevice();
 
         // deburst
         const auto deb_start = std::chrono::steady_clock::now();
@@ -173,7 +177,7 @@ int CalibrationRoutine::Execute() {
         // TC
         const auto tc_start = std::chrono::steady_clock::now();
         terraincorrection::Metadata metadata(debursted_product);
-        srtm3_manager_->HostToDevice();
+
         const auto* d_srtm_3_tiles = srtm3_manager_->GetSrtmBuffersInfo();
         const size_t srtm_3_tiles_length = srtm3_manager_->GetDeviceSrtm3TilesCount();
         const int selected_band{1};

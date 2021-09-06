@@ -23,6 +23,7 @@
 #include "product.h"
 #include "sentinel1_product_reader_plug_in.h"
 #include "test_utils.h"
+#include "topsar_split.h"
 
 namespace {
 
@@ -46,12 +47,14 @@ TEST_F(Sentinel1CalibrateTest, Virumaa) {
     std::remove(result_file.data());
     {
         ASSERT_THAT(boost::filesystem::exists(input_file_), ::testing::IsTrue());
-        const std::shared_ptr<snapengine::IProductReader> product_reader = reader_plug_in_->CreateReaderInstance();
-        std::shared_ptr<snapengine::Product> input_product =
-            product_reader->ReadProductNodes(boost::filesystem::canonical(input_file_), nullptr);
-        const auto source_path = boost::filesystem::canonical(input_file_).string();
 
-        Sentinel1Calibrator calibrator{input_product, source_path, {"IW1"}, {"VV"}, {true, false, false, false},
+        alus::topsarsplit::TopsarSplit split_op(input_file_.string(), "IW1", "VV");
+        split_op.initialize();
+        auto split_product = split_op.GetTargetProduct();
+        Dataset<Iq16>* pixel_reader = split_op.GetPixelReader()->GetDataset();
+
+
+        Sentinel1Calibrator calibrator{split_product, pixel_reader, {"IW1"}, {"VV"}, {true, false, false, false},
                                        "/tmp/",       false,       2000,    2000};
         calibrator.Execute();
 
@@ -64,5 +67,8 @@ TEST_F(Sentinel1CalibrateTest, Virumaa) {
     ASSERT_THAT(boost::filesystem::exists(result_file), ::testing::IsTrue());
     const std::string expected_md5{"d389aa9b7cefb448"};
     ASSERT_THAT(utils::test::HashFromBand(result_file), ::testing::Eq(expected_md5));
+    CHECK_CUDA_ERR(cudaGetLastError());
+    CHECK_CUDA_ERR(cudaDeviceSynchronize());
+    CHECK_CUDA_ERR(cudaDeviceReset());  // for cuda-memcheck --leak-check full
 }
 }  // namespace

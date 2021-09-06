@@ -169,11 +169,12 @@ void Dataset<BufferType>::ReadRectangle(Rectangle rectangle, int band_nr, Buffer
     if (rectangle.width == 0 || rectangle.height == 0) {
         throw DatasetError("Can not read a band with no numbers. ", this->dataset_->GetFileList()[0], 0);
     }
-
-    std::unique_lock lock(read_lock_);
+    
     if (!is_from_cache) {
         is_allowed_to_cache_ = false;
     }
+
+    std::unique_lock lock(read_lock_);
     if (cacher_exception != nullptr) {
         LOGE << "Rethrowing cacher exception" << std::endl;
         std::rethrow_exception(cacher_exception);
@@ -220,7 +221,7 @@ std::string_view Dataset<BufferType>::GetFilePath() {
 
 template <typename BufferType>
 void Dataset<BufferType>::CacheImage() {
-    int default_y = 1500;
+    int default_y = 100;
     int offset_y = 0;
     int actual_y = 0;
 
@@ -228,6 +229,8 @@ void Dataset<BufferType>::CacheImage() {
         int raster_y = dataset_->GetRasterYSize();
         int band_count = this->dataset_->GetRasterCount();
         std::vector<BufferType> temp_pile(dataset_->GetRasterYSize());
+
+        int cached_blocks = 0;
 
         for (int i = 1; i <= band_count; i++) {
             for (offset_y = 0; offset_y < raster_y; offset_y += default_y) {
@@ -237,12 +240,17 @@ void Dataset<BufferType>::CacheImage() {
                     actual_y = default_y;
                 }
                 ReadRectangle({0, offset_y, 1, actual_y}, i, temp_pile.data(), true);
+                cached_blocks++;
                 if (!is_allowed_to_cache_) {
                     break;
                 }
             }
         }
-    } catch (const std::exception& e) {
+
+        const int total_blocks = (raster_y + default_y - 1) / default_y;
+        const double percent = (100.0 * cached_blocks) / (band_count * total_blocks);
+        LOGD << "Dataset pre-cached " << percent << "% of file " << file_path_;
+    } catch (const std::exception&) {
         cacher_exception = std::current_exception();
     }
 }

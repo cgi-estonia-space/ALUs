@@ -26,9 +26,9 @@
 #include "calibration_type.h"
 #include "calibration_vector_computation.h"
 #include "dataset.h"
+#include "gdal_util.h"
 #include "metadata_element.h"
 #include "sentinel1_calibrate_kernel.h"
-#include "sentinel1_calibrate_safe_helper.h"
 #include "shapes.h"
 #include "snap-core/datamodel/band.h"
 #include "snap-core/datamodel/product.h"
@@ -46,7 +46,7 @@ struct SelectedCalibrationBands {
 
 class Sentinel1Calibrator {
 public:
-    Sentinel1Calibrator(std::shared_ptr<snapengine::Product> source_product, const std::string& src_path,
+    Sentinel1Calibrator(std::shared_ptr<snapengine::Product> source_product, Dataset<Iq16>* pixel_reader,
                         std::vector<std::string> selected_sub_swaths,
                         std::set<std::string, std::less<>> selected_polarisations,
                         SelectedCalibrationBands selected_calibration_bands, std::string_view output_path,
@@ -59,7 +59,7 @@ public:
 
     ~Sentinel1Calibrator();
 
-    std::shared_ptr<snapengine::Product> GetTargetProduct() { return target_product_; }
+    std::shared_ptr<snapengine::Product> GetTargetProduct() const { return target_product_; }
     std::string GetTargetPath(const std::string& swath) { return target_paths_.at(swath); }
     void Execute();
     std::map<std::string, std::shared_ptr<GDALDataset>, std::less<>> GetOutputDatasets() const;
@@ -87,7 +87,7 @@ private:
     std::map<std::string, std::string, std::less<>> target_paths_;
     std::string output_path_;
     std::vector<void*> cuda_arrays_to_clean_;
-    Sentinel1CalibrateSafeHelper safe_helper_;
+    Dataset<Iq16>* pixel_reader_;
 
     // Device variables
     std::map<std::string, CalibrationInfoComputation, std::less<>> target_band_to_d_calibration_info_;
