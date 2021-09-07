@@ -26,9 +26,17 @@ void GdalImageReader::ReadSubSampledData(const custom::Rectangle& rectangle, int
     if (data_.size() != static_cast<std::size_t>(rectangle.width * rectangle.height)) {
         data_.resize(rectangle.width * rectangle.height);
     }
-    CHECK_GDAL_ERROR(dataset_->GetRasterBand(band_indx)->RasterIO(GF_Read, rectangle.x, rectangle.y, rectangle.width,
-                                                                  rectangle.height, data_.data(), rectangle.width,
-                                                                  rectangle.height, GDALDataType::GDT_Float32, 0, 0));
+
+    // Sometimes SNAP might request to read data which is out of image bounds. This should resolve this issue.
+    const auto width = rectangle.x + rectangle.width > dataset_->GetRasterXSize()
+                           ? dataset_->GetRasterXSize() - rectangle.x
+                           : rectangle.width;
+    const auto height = rectangle.y + rectangle.height > dataset_->GetRasterYSize()
+                            ? dataset_->GetRasterYSize() - rectangle.y
+                            : rectangle.height;
+    CHECK_GDAL_ERROR(dataset_->GetRasterBand(band_indx)->RasterIO(GF_Read, rectangle.x, rectangle.y, width, height,
+                                                                  data_.data(), rectangle.width, rectangle.height,
+                                                                  GDALDataType::GDT_Float32, 0, 0));
 }
 
 void GdalImageReader::Open(std::string_view path_to_file, bool has_transform, bool has_correct_proj) {
@@ -86,8 +94,10 @@ void GdalImageReader::ReadSubSampledData(const std::shared_ptr<custom::Rectangle
                                         data.data(), rectangle->width, rectangle->height, GDALDataType::GDT_Int32, 1,
                                         nullptr, 0, 0, 0));
 }
-void GdalImageReader::ReleaseDataset() {
-    dataset_ = nullptr;
+void GdalImageReader::ReleaseDataset() { dataset_ = nullptr; }
+void GdalImageReader::ReadSubSampledData(const alus::Rectangle& rectangle, int band_indx) {
+    custom::Rectangle region(rectangle);
+    ReadSubSampledData(region, band_indx);
 }
 
 }  // namespace alus::snapengine::custom

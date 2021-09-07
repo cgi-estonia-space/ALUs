@@ -112,7 +112,7 @@ void Coregistration::Initialize(const Coregistration::Parameters& params) {
     out_ds_params.filename = params.output_file;
     out_ds_params.band_count = 4;
     out_ds_params.dataset_per_band = true;
-    out_ds_params.driver = GetGDALDriverManager()->GetDriverByName(utils::constants::GDAL_MEM_DRIVER);
+    out_ds_params.driver = GetGdalMemDriver();
     out_ds_params.dimension = master_temp->GetRasterDimensions();
     out_ds_params.transform = master_temp->GetTransform();
     out_ds_params.projectionRef = master_temp->GetGdalDataset()->GetProjectionRef();

@@ -43,6 +43,11 @@ public:
         tile_min_x_ = tile->GetMinX();
         tile_min_y_ = tile->GetMinY();
     }
+    explicit TileIndex(const ITile* tile)
+        : tile_offset_(tile->GetScanlineOffset()),
+          tile_stride_(tile->GetScanlineStride()),
+          tile_min_x_(tile->GetMinX()),
+          tile_min_y_(tile->GetMinY()) {}
 
     /**
      * calculates offset
@@ -50,14 +55,14 @@ public:
      * @param ty y pos
      * @return offset
      */
-    int CalculateStride(int ty) {
+    inline int CalculateStride(int ty) {
         offset_ = tile_min_x_ - (((ty - tile_min_y_) * tile_stride_) + tile_offset_);
         return offset_;
     }
 
-    [[nodiscard]] int GetOffset() const { return offset_; }
+    [[nodiscard]] inline int GetOffset() const { return offset_; }
 
-    [[nodiscard]] int GetIndex(int tx) const { return tx - offset_; }
+    [[nodiscard]] inline int GetIndex(int tx) const { return tx - offset_; }
 };
 
 }  // namespace alus::snapengine

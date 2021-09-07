@@ -17,6 +17,7 @@
 #include <memory>
 
 #include "../i_tile.h"
+#include "shapes.h"
 #include "snap-core/core/datamodel/product_data.h"
 #include "snap-core/core/datamodel/raster_data_node.h"
 
@@ -38,7 +39,21 @@ private:
     const std::shared_ptr<RasterDataNode>& raster_data_node_;
 
 public:
-    TileImpl(const std::shared_ptr<RasterDataNode>& raster_data_node, const custom::Rectangle& rectangle)
+    inline TileImpl(const std::shared_ptr<RasterDataNode>& raster_data_node, const custom::Rectangle& rectangle)
+        : min_x_{rectangle.x},
+          min_y_{rectangle.y},
+          max_x_{rectangle.x + rectangle.width - 1},
+          max_y_{rectangle.y + rectangle.height - 1},
+          width_{rectangle.width},
+          height_{rectangle.height},
+          raster_data_node_{raster_data_node} {
+        [[maybe_unused]] int sm_x0 =
+            rectangle.x;  //- raster.getSampleModelTranslateX(); (currently not supporting sampling)
+        [[maybe_unused]] int sm_y0 =
+            rectangle.y;            //- raster.getSampleModelTranslateY(); (currently not supporting sampling)
+        scanline_stride_ = width_;  // keeping it here in case we add more logic in the future (e.g subsampling)
+    }
+    inline TileImpl(const std::shared_ptr<RasterDataNode>& raster_data_node, const alus::Rectangle& rectangle)
         : min_x_{rectangle.x},
           min_y_{rectangle.y},
           max_x_{rectangle.x + rectangle.width - 1},
@@ -54,16 +69,19 @@ public:
     }
     ~TileImpl() override = default;
 
-    int GetMinX() const override { return min_x_; }
-    int GetMaxX() const override { return max_x_; }
-    int GetMinY() const override { return min_y_; }
-    int GetMaxY() const override { return max_y_; }
-    int GetScanlineOffset() const override { return scanline_offset_; }
-    int GetScanlineStride() const override { return scanline_stride_; }
+    inline int GetMinX() const override { return min_x_; }
+    inline int GetMaxX() const override { return max_x_; }
+    inline int GetMinY() const override { return min_y_; }
+    inline int GetMaxY() const override { return max_y_; }
+    inline int GetScanlineOffset() const override { return scanline_offset_; }
+    inline int GetScanlineStride() const override { return scanline_stride_; }
 
-    std::vector<float>& GetSimpleDataBuffer() override {
+    inline std::vector<float>& GetSimpleDataBuffer() override {
         simple_data_buffer_.resize(width_ * height_);
         return simple_data_buffer_;
+    }
+    inline int GetDataBufferIndex(int x, int y) override {
+        return scanline_offset_ + (x - min_x_) + (y - min_y_) * scanline_stride_;
     }
 };
 

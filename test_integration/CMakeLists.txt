@@ -101,6 +101,10 @@ add_custom_target(integration-test-prepare-data ALL
         # Topsar deburst data
         COMMAND test -d ${INTEGRATION_TEST_DATA_FOLDER}/topsar_deburst_op || unzip -qn ${ALUS_LFS_GOODS}/topsar_deburst_op.zip -d ${INTEGRATION_TEST_DATA_FOLDER}
 
+        # Topsar merge data
+        COMMAND mkdir -p ${INTEGRATION_TEST_DATA_FOLDER}/topsar_merge
+        COMMAND unzip -oq ${ALUS_LFS_GOODS}/topsar_merge_test_data.zip -d ${INTEGRATION_TEST_DATA_FOLDER}/topsar_merge
+
         VERBATIM
         )
 
@@ -321,6 +325,28 @@ target_link_libraries(integration-test-sentinel1-calibrate
 
 add_dependencies(integration-test-sentinel1-calibrate integration-test-prepare-data)
 
+#----------------TOPSAR Merge integration test--------------------------------------
+list(APPEND TEST_SOURCES_TOPSAR_MERGE
+        src/topsar_merge_test.cc
+        )
+
+add_executable(integration-test-topsar-merge ${TEST_SOURCES_TOPSAR_MERGE})
+
+target_include_directories(integration-test-topsar-merge PUBLIC ${TEST_INCLUDE})
+
+target_link_libraries(integration-test-topsar-merge
+        PRIVATE
+        crypto
+        common-util-static
+        topsar-merge-static
+        alus-gmock-main
+        Boost::filesystem
+        sentinel1-util-static
+        terrain-correction-static
+        )
+
+add_dependencies(integration-test-topsar-merge integration-test-prepare-data)
+
 #----------------Build all integration-tests----------------------------------------
 add_custom_target(integration-test-all)
 add_dependencies(integration-test-all
@@ -336,4 +362,5 @@ add_dependencies(integration-test-all
         integration-sentinel1_product_reader
         integration-test-sentinel1-calibrate
         integration-test-prepare-data
+        integration-test-topsar-merge
         )

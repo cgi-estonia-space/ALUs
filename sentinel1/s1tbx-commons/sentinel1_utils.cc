@@ -384,9 +384,10 @@ double* Sentinel1Utils::ComputeDerampDemodPhase(int subswath_index, int s_burst_
         for (x = x0; x < x_max; x++) {
             xx = x - x0;
             kt = subswath_.at(s)->doppler_rate_[s_burst_index][x];
-            deramp =
-                -alus::snapengine::eo::constants::PI * kt * pow(ta - subswath_.at(s)->reference_time_[s_burst_index][x], 2);
-            demod = -alus::snapengine::eo::constants::TWO_PI * subswath_.at(s)->doppler_centroid_[s_burst_index][x] * ta;
+            deramp = -alus::snapengine::eo::constants::PI * kt *
+                     pow(ta - subswath_.at(s)->reference_time_[s_burst_index][x], 2);
+            demod =
+                -alus::snapengine::eo::constants::TWO_PI * subswath_.at(s)->doppler_centroid_[s_burst_index][x] * ta;
             result[yy * w + xx] = deramp + demod;
         }
     }
@@ -447,7 +448,7 @@ void Sentinel1Utils::ComputeDopplerRate() {
     }
 }
 
-double Sentinel1Utils::GetSlantRangeTime(int x, int subswath_index) {
+double Sentinel1Utils::GetSlantRangeTime(int x, int subswath_index) const {
     return subswath_.at(subswath_index - 1)->slr_time_to_first_pixel_ +
            x * subswath_.at(subswath_index - 1)->range_pixel_spacing_ / snapengine::eo::constants::LIGHT_SPEED;
 }
@@ -671,22 +672,23 @@ void Sentinel1Utils::ComputeReferenceTime() {
     }
 }
 
-double Sentinel1Utils::GetLatitude(double azimuth_time, double slant_range_time, SubSwathInfo* subswath) {
+double Sentinel1Utils::GetLatitude(double azimuth_time, double slant_range_time, const SubSwathInfo* subswath) const {
     return GetLatitudeValue(ComputeIndex(azimuth_time, slant_range_time, subswath), subswath);
 }
-double Sentinel1Utils::GetLongitude(double azimuth_time, double slant_range_time, SubSwathInfo* subswath) {
+double Sentinel1Utils::GetLongitude(double azimuth_time, double slant_range_time, const SubSwathInfo* subswath) const {
     return GetLongitudeValue(ComputeIndex(azimuth_time, slant_range_time, subswath), subswath);
 }
 
-double Sentinel1Utils::GetSlantRangeTime(double azimuth_time, double slant_range_time, SubSwathInfo* subswath) {
+double Sentinel1Utils::GetSlantRangeTime(double azimuth_time, double slant_range_time, const SubSwathInfo* subswath) const {
     return GetSlantRangeTimeValue(ComputeIndex(azimuth_time, slant_range_time, subswath), subswath);
 }
 
-double Sentinel1Utils::GetIncidenceAngle(double azimuth_time, double slant_range_time, SubSwathInfo* subswath) {
+double Sentinel1Utils::GetIncidenceAngle(double azimuth_time, double slant_range_time, const SubSwathInfo* subswath) const {
     return GetIncidenceAngleValue(ComputeIndex(azimuth_time, slant_range_time, subswath), subswath);
 }
 
-Sentinel1Index Sentinel1Utils::ComputeIndex(double azimuth_time, double slant_range_time, SubSwathInfo* subswath) {
+Sentinel1Index Sentinel1Utils::ComputeIndex(double azimuth_time, double slant_range_time,
+                                            const SubSwathInfo* subswath) const {
     Sentinel1Index result;
     int j0 = -1, j1 = -1;
     double mu_x = 0;
@@ -737,7 +739,7 @@ Sentinel1Index Sentinel1Utils::ComputeIndex(double azimuth_time, double slant_ra
     return result;
 }
 
-double Sentinel1Utils::GetLatitudeValue(Sentinel1Index index, SubSwathInfo* subswath) {
+double Sentinel1Utils::GetLatitudeValue(const Sentinel1Index& index, const SubSwathInfo* subswath) const {
     double lat00 = subswath->latitude_[index.i0][index.j0];
     double lat01 = subswath->latitude_[index.i0][index.j1];
     double lat10 = subswath->latitude_[index.i1][index.j0];
@@ -747,7 +749,7 @@ double Sentinel1Utils::GetLatitudeValue(Sentinel1Index index, SubSwathInfo* subs
            index.mu_y * ((1 - index.mu_x) * lat10 + index.mu_x * lat11);
 }
 
-double Sentinel1Utils::GetLongitudeValue(Sentinel1Index index, SubSwathInfo* subswath) {
+double Sentinel1Utils::GetLongitudeValue(const Sentinel1Index& index, const SubSwathInfo* subswath) const {
     double lon00 = subswath->longitude_[index.i0][index.j0];
     double lon01 = subswath->longitude_[index.i0][index.j1];
     double lon10 = subswath->longitude_[index.i1][index.j0];
@@ -757,7 +759,7 @@ double Sentinel1Utils::GetLongitudeValue(Sentinel1Index index, SubSwathInfo* sub
            index.mu_y * ((1 - index.mu_x) * lon10 + index.mu_x * lon11);
 }
 
-double Sentinel1Utils::GetSlantRangeTimeValue(Sentinel1Index index, SubSwathInfo* subswath) {
+double Sentinel1Utils::GetSlantRangeTimeValue(const Sentinel1Index& index, const SubSwathInfo* subswath) const {
     double slrt00 = subswath->slant_range_time_[index.i0][index.j0];
     double slrt01 = subswath->slant_range_time_[index.i0][index.j1];
     double slrt10 = subswath->slant_range_time_[index.i1][index.j0];
@@ -767,7 +769,7 @@ double Sentinel1Utils::GetSlantRangeTimeValue(Sentinel1Index index, SubSwathInfo
            index.mu_y * ((1 - index.mu_x) * slrt10 + index.mu_x * slrt11);
 }
 
-double Sentinel1Utils::GetIncidenceAngleValue(Sentinel1Index index, SubSwathInfo* subswath) {
+double Sentinel1Utils::GetIncidenceAngleValue(const Sentinel1Index& index, const SubSwathInfo* subswath) const {
     double inc00 = subswath->incidence_angle_[index.i0][index.j0];
     double inc01 = subswath->incidence_angle_[index.i0][index.j1];
     double inc10 = subswath->incidence_angle_[index.i1][index.j0];
@@ -892,7 +894,7 @@ std::vector<CalibrationVector> Sentinel1Utils::GetCalibrationVectors(
 }
 const std::vector<std::string>& Sentinel1Utils::GetSubSwathNames() const { return sub_swath_names_; }
 const std::vector<std::string>& Sentinel1Utils::GetPolarizations() const { return polarizations_; }
-const std::vector<std::unique_ptr<SubSwathInfo>>& Sentinel1Utils::GetSubSwath() const { return subswath_; }
+const std::vector<std::shared_ptr<SubSwathInfo>>& Sentinel1Utils::GetSubSwath() const { return subswath_; }
 int Sentinel1Utils::GetNumOfSubSwath() const { return num_of_sub_swath_; }
 
 Sentinel1Utils::Sentinel1Utils(const std::shared_ptr<snapengine::Product>& product) : source_product_{product} {
@@ -1046,7 +1048,7 @@ void Sentinel1Utils::GetProductSubSwathNames() {
         for (const auto& band_name : source_band_names) {
             if (boost::algorithm::contains(band_name, acquisition_mode_)) {
                 auto idx = static_cast<int>(band_name.find(acquisition_mode_));
-                std::string sub_swath_name{band_name.substr(idx, idx + 3)};
+                std::string sub_swath_name{band_name.substr(idx, 3)};
                 if (std::find(sub_swath_name_list.begin(), sub_swath_name_list.end(), sub_swath_name) ==
                     sub_swath_name_list.end()) {
                     sub_swath_name_list.emplace_back(sub_swath_name);
@@ -1198,5 +1200,78 @@ void Sentinel1Utils::UpdateBandNames(std::shared_ptr<snapengine::MetadataElement
         }
     }
 }
+double Sentinel1Utils::GetLatitude(double azimuth_time, double slant_range_time) const {
+    const auto sub_swath_index = GetSubswathIndex(slant_range_time);
+    return GetLatitudeValue(ComputeIndex(azimuth_time, slant_range_time, sub_swath_index), sub_swath_index);
+}
+
+int Sentinel1Utils::GetSubswathIndex(double slant_range_time) const {
+    for (int i = 0; i < num_of_sub_swath_; i++) {
+        double start_time{};
+        double end_time{};
+
+        if (i == 0) {
+            start_time = subswath_.at(i)->slr_time_to_first_pixel_;
+        } else {
+            start_time =
+                0.5 * (subswath_.at(i)->slr_time_to_first_pixel_ + subswath_.at(i - 1)->slr_time_to_last_pixel_);
+        }
+
+        if (i == num_of_sub_swath_ - 1) {
+            end_time = subswath_.at(i)->slr_time_to_last_pixel_;
+        } else {
+            end_time = 0.5 * (subswath_.at(i)->slr_time_to_last_pixel_ + subswath_.at(i + 1)->slr_time_to_first_pixel_);
+        }
+
+        if (slant_range_time >= start_time && slant_range_time <= end_time) {
+            return i + 1;  // sub-swath index starts from 1
+        }
+    }
+
+    return 0;
+}
+Sentinel1Index Sentinel1Utils::ComputeIndex(double azimuth_time, double slant_range_time, int sub_swath_index) const {
+    const auto sub_swath = subswath_.at(sub_swath_index - 1);
+
+    return ComputeIndex(azimuth_time, slant_range_time, sub_swath.get());
+}
+double Sentinel1Utils::GetLatitudeValue(const Sentinel1Index& index, int sub_swath_index) const {
+    const auto sub_swath = subswath_.at(sub_swath_index - 1);
+
+    return GetLatitudeValue(index, sub_swath.get());
+}
+double Sentinel1Utils::GetLongitude(double azimuth_time, double slant_range_time) const {
+    const auto sub_swath_index = GetSubswathIndex(slant_range_time);
+
+    return GetLongitudeValue(ComputeIndex(azimuth_time, slant_range_time, sub_swath_index), sub_swath_index);
+}
+
+double Sentinel1Utils::GetLongitudeValue(const Sentinel1Index& index, int sub_swath_index) const {
+    const auto sub_swath = subswath_.at(sub_swath_index - 1);
+
+    return GetLongitudeValue(index, sub_swath.get());
+}
+
+double Sentinel1Utils::GetSlantRangeTime(double azimuth_time, double slant_range_time) const {
+    const auto sub_swath_index = GetSubswathIndex(slant_range_time);
+
+    return GetSlantRangeTimeValue(ComputeIndex(azimuth_time, slant_range_time, sub_swath_index), sub_swath_index);
+}
+double Sentinel1Utils::GetSlantRangeTimeValue(const Sentinel1Index& index, int sub_swath_index) const {
+    const auto sub_swath = subswath_.at(sub_swath_index - 1);
+
+    return GetSlantRangeTimeValue(index, sub_swath.get());
+}
+double Sentinel1Utils::GetIncidenceAngle(double azimuth_time, double slant_range_time) const {
+    const auto sub_swath_index = GetSubswathIndex(slant_range_time);
+
+    return GetIncidenceAngleValue(ComputeIndex(azimuth_time, slant_range_time, sub_swath_index), sub_swath_index);
+}
+double Sentinel1Utils::GetIncidenceAngleValue(const Sentinel1Index& index, int sub_swath_index) const {
+    const auto sub_swath = subswath_.at(sub_swath_index - 1);
+
+    return GetIncidenceAngleValue(index, sub_swath.get());
+}
+
 }  // namespace s1tbx
 }  // namespace alus

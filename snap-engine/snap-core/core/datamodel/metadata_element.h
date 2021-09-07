@@ -1,3 +1,4 @@
+
 /**
  * This file is a filtered duplicate of a SNAP's
  * org.esa.snap.core.datamodel.MetadataElement.java
@@ -88,6 +89,14 @@ public:
      * @throws IndexOutOfBoundsException if the index is out of bounds
      */
     std::shared_ptr<MetadataElement> GetElementAt(int index);
+
+    /**
+     * Returns a vector of strings containing the names of the groups contained in this element.
+     *
+     * @return a string vector containing the names of the groups contained in this element. If this element has no
+*         groups an empty vector is returned.
+     */
+    std::vector<std::string> GetElementNames() const;
 
     [[nodiscard]] std::vector<std::shared_ptr<MetadataAttribute>> GetAttributes();
 

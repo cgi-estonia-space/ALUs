@@ -42,6 +42,7 @@ list(APPEND TEST_SOURCES
         src/aoi_burst_extract_test.cc
         src/cuda_util_test.cc
         src/geotiff_write_test.cc
+        src/topsar_merge_test.cc
         )
 
 add_executable(unit_test ${TEST_SOURCES})
@@ -68,6 +69,7 @@ target_link_libraries(unit_test
         topsar-split-static
         crypto
         Boost::filesystem
+        topsar-merge-static
         )
 
 set_target_properties(unit_test

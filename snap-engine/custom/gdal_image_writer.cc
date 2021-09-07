@@ -31,12 +31,16 @@ void GdalImageWriter::WriteSubSampledData(const custom::Rectangle& rectangle, st
                                                                   rectangle.height, data.data(), rectangle.width,
                                                                   rectangle.height, GDALDataType::GDT_Float32, 0, 0));
 }
+void GdalImageWriter::WriteSubSampledData(const alus::Rectangle& rectangle, std::vector<float>& data, int band_indx) {
+    custom::Rectangle region(rectangle);
+    WriteSubSampledData(region, data, band_indx);
+}
 
 void GdalImageWriter::Open(std::string_view path_to_band_file, int raster_size_x, int raster_size_y,
                            std::vector<double> affine_geo_transform_out, const std::string_view data_projection_out,
                            bool in_memory_file) {
-    auto const po_driver = GetGDALDriverManager()->GetDriverByName(
-        in_memory_file ? utils::constants::GDAL_MEM_DRIVER : utils::constants::GDAL_GTIFF_DRIVER);
+    auto const po_driver =
+        in_memory_file ? GetGdalMemDriver() : GetGdalGeoTiffDriver();
 
     do_close_dataset_ = in_memory_file ? false : true;
     CHECK_GDAL_PTR(po_driver);

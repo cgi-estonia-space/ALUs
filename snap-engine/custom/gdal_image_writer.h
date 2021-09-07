@@ -51,6 +51,7 @@ public:
 
     // todo: add support for subsampling
     void WriteSubSampledData(const custom::Rectangle& rectangle, std::vector<float>& data, int band_indx) override;
+    void WriteSubSampledData(const alus::Rectangle& rectangle, std::vector<float>& data, int band_indx) override;
 
     void Close() override;
 };

@@ -574,14 +574,14 @@ void Sentinel1Calibrator::CreateDatasetsFromProduct(std::shared_ptr<snapengine::
                                std::string_view key) { return map.find(key.data()) != map.end(); };
 
     char** dataset_options = nullptr;
-    GDALDriver* driver = GetGDALDriverManager()->GetDriverByName(utils::constants::GDAL_MEM_DRIVER);
+    GDALDriver* driver = GetGdalMemDriver();
     if (!driver) {
         throw Sentinel1CalibrateException("could not create GDAL driver for " +
-                                          std::string(utils::constants::GDAL_MEM_DRIVER) + " format");
+                                          std::string(gdal::constants::GDAL_MEM_DRIVER) + " format");
     }
 
     if (!CSLFetchBoolean(driver->GetMetadata(), GDAL_DCAP_CREATE, FALSE)) {
-        throw Sentinel1CalibrateException("GDAL driver for " + std::string(utils::constants::GDAL_MEM_DRIVER) +
+        throw Sentinel1CalibrateException("GDAL driver for " + std::string(gdal::constants::GDAL_MEM_DRIVER) +
                                           " format does not support creating datasets.");
     }
     // End of placeholder

@@ -18,14 +18,14 @@
 #include <string_view>
 #include <vector>
 
-#include <boost/filesystem.hpp>
 #include <gdal_priv.h>
+#include <boost/filesystem.hpp>
 
 #include "gmock/gmock.h"
 
 #include "gdal_util.h"
-#include "test_utils.h"
 #include "general_constants.h"
+#include "test_utils.h"
 
 namespace {
 using namespace alus;
@@ -60,9 +60,7 @@ private:
     }
 
     void CreateInMemoryDataset() {
-        GDALDataset* temp = GetGDALDriverManager()
-                                ->GetDriverByName(utils::constants::GDAL_MEM_DRIVER)
-                                ->Create("/dev/null", width_, height_, 1, GDT_Float32, nullptr);
+        GDALDataset* temp = GetGdalMemDriver()->Create("/dev/null", width_, height_, 1, GDT_Float32, nullptr);
         mem_dataset_.reset(temp, [](auto dataset) { GDALClose(dataset); });
         CHECK_GDAL_ERROR(mem_dataset_->GetRasterBand(1)->RasterIO(
             GF_Write, 0, 0, width_, height_, in_memory_data_.data(), width_, height_, GDT_Float32, 0, 0));

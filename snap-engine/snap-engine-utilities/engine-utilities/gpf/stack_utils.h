@@ -18,16 +18,26 @@
  */
 #pragma once
 
-#include <string>
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "snap-core/core/datamodel/product.h"
 
-namespace alus::snapengine{
+namespace alus::snapengine {
 
-class StackUtils{
+class StackUtils {
 public:
     static std::string CreateBandTimeStamp(std::shared_ptr<Product>& product);
+    static bool IsMasterBand(std::string_view band_name, std::shared_ptr<Product> product);
+    static bool IsSlaveBand(std::string_view band_name, std::shared_ptr<Product> product);
+    static bool IsSlaveBand(std::string_view band_name, std::shared_ptr<Product> product, std::string_view slave_product_name);
+    static std::vector<std::string> GetSlaveProductNames(std::shared_ptr<Product> product);
+    static bool IsCoregisteredStack(std::shared_ptr<Product> product);
+
+private:
+    static constexpr std::string_view MST{"_mst"};
+    static constexpr std::string_view SLV{"_slv"};
 };
 
-}
+}  // namespace alus::snapengine

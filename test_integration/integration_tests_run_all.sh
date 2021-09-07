@@ -25,6 +25,8 @@ res8=$?
 res9=$?
 ./integration-test-coregistration "$result_output"
 res10=$?
+./integration-test-topsar-merge "$result_output"
+res11=$?
 
-exit_value=$((res1 | res2 | res3 | res4 | res5 | res6 | res7 | res8 | res9 | res10))
+exit_value=$((res1 | res2 | res3 | res4 | res5 | res6 | res7 | res8 | res9 | res10 | res11))
 exit $exit_value

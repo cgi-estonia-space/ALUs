@@ -273,12 +273,19 @@ public:
     static constexpr std::string_view INCIDENCE_ANGLE = "incidenceAngle";
     static constexpr std::string_view ELEVATION_ANGLE = "elevationAngle";
 
+    static constexpr std::string_view SLR_TIME_TO_FIRST_VALID_PIXEL{"slrTimeToFirstValidPixel"};
+    static constexpr std::string_view SLR_TIME_TO_LAST_VALID_PIXEL{"slrTimeToLastValidPixel"};
+    static constexpr std::string_view BURST_BOUNDARY{"BurstBoundary"};
+    static constexpr std::string_view ESD_MEASUREMENT{"ESD Measurement"};
+
     static std::vector<std::shared_ptr<MetadataElement>> GetBandAbsMetadataList(
         std::shared_ptr<MetadataElement> abs_root);
 
     static bool GetAttributeBoolean(const std::shared_ptr<MetadataElement>& element, std::string_view view);
 
     static double GetAttributeDouble(const std::shared_ptr<MetadataElement>& element, std::string_view view);
+
+    static int GetAttributeInt(const std::shared_ptr<MetadataElement>& element, std::string_view tag);
 
     static std::shared_ptr<Utc> ParseUtc(std::string_view time_str);
 
@@ -402,6 +409,14 @@ public:
 
     static std::shared_ptr<MetadataElement> GetBandAbsMetadata(
         const std::shared_ptr<snapengine::MetadataElement>& abs_root, const std::shared_ptr<snapengine::Band>& band);
+
+    /**
+     * Checks if abstracted metadata exists.
+     *
+     * @param source_product the product.
+     * @return true if abstracted metadata exists.
+     */
+    static bool HasAbstractedMetadata(std::shared_ptr<Product> source_product);
 };
 
 }  // namespace alus::snapengine

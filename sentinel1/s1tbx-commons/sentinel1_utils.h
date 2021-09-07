@@ -16,10 +16,10 @@
 #include <cmath>
 #include <fstream>
 #include <memory>
+#include <set>
 #include <string>
 #include <string_view>
 #include <vector>
-#include <set>
 
 #include "allocators.h"
 #include "comparators.h"
@@ -58,7 +58,7 @@ struct DCPolynomial {
 class Sentinel1Utils : public cuda::CudaFriendlyObject {
 public:
     //    todo: why public?
-    std::vector<std::unique_ptr<SubSwathInfo>> subswath_;
+    std::vector<std::shared_ptr<SubSwathInfo>> subswath_;
 
     double first_line_utc_{0.0};
     double last_line_utc_{0.0};
@@ -82,22 +82,27 @@ public:
     ~Sentinel1Utils();
 
     double* ComputeDerampDemodPhase(int subswath_index, int s_burst_index, Rectangle rectangle);
-    Sentinel1Index ComputeIndex(double azimuth_time, double slant_range_time, SubSwathInfo* subswath);
+    Sentinel1Index ComputeIndex(double azimuth_time, double slant_range_time, const SubSwathInfo* subswath) const;
+    Sentinel1Index ComputeIndex(double azimuth_time, double slant_range_time, int sub_swath_index) const;
 
     void ComputeReferenceTime();
     void ComputeDopplerCentroid();
     void ComputeRangeDependentDopplerRate();
     void ComputeDopplerRate();
-    double GetSlantRangeTime(int x, int subswath_index);
+    double GetSlantRangeTime(int x, int subswath_index) const;
 
     void HostToDevice() override;
     void DeviceToHost() override;
     void DeviceFree() override;
 
-    double GetLatitude(double azimuth_time, double slant_range_time, SubSwathInfo* subswath);
-    double GetLongitude(double azimuth_time, double slant_range_time, SubSwathInfo* subswath);
-    double GetSlantRangeTime(double azimuth_time, double slant_range_time, SubSwathInfo* subswath);
-    double GetIncidenceAngle(double azimuth_time, double slant_range_time, SubSwathInfo* subswath);
+    double GetLatitude(double azimuth_time, double slant_range_time, const SubSwathInfo* subswath) const;
+    double GetLatitude(double azimuth_time, double slant_range_time) const;
+    double GetLongitude(double azimuth_time, double slant_range_time, const SubSwathInfo* subswath) const;
+    double GetLongitude(double azimuth_time, double slant_range_time) const;
+    double GetSlantRangeTime(double azimuth_time, double slant_range_time) const;
+    double GetIncidenceAngle(double azimuth_time, double slant_range_time) const;
+    double GetSlantRangeTime(double azimuth_time, double slant_range_time, const SubSwathInfo* subswath) const;
+    double GetIncidenceAngle(double azimuth_time, double slant_range_time, const SubSwathInfo* subswath) const;
 
     alus::s1tbx::OrbitStateVectors* GetOrbitStateVectors() {
         if (is_orbit_available_) {
@@ -141,8 +146,16 @@ public:
      * @return The polarization array.
      */
     const std::vector<std::string>& GetPolarizations() const;
-    const std::vector<std::unique_ptr<SubSwathInfo>>& GetSubSwath() const;
+    const std::vector<std::shared_ptr<SubSwathInfo>>& GetSubSwath() const;
     int GetNumOfSubSwath() const;
+
+    /**
+     * Get sub-swath index for given slant range time.
+     *
+     * @param slant_range_time The given slant range time.
+     * @return The sub-swath index (start from 1).
+     */
+    int GetSubswathIndex(double slant_range_time) const;
 
     std::vector<float> GetCalibrationVector(int sub_swath_index, std::string_view polarization, int vector_index,
                                             std::string_view vector_name);
@@ -176,11 +189,15 @@ private:
     void GetProductOrbit();
     double GetVelocity(double time);
 
-    double GetLatitudeValue(Sentinel1Index index, SubSwathInfo* subswath);
-    double GetLongitudeValue(Sentinel1Index index, SubSwathInfo* subswath);
-    double GetSlantRangeTimeValue(Sentinel1Index index, SubSwathInfo* subswath);
-    double GetIncidenceAngleValue(Sentinel1Index index, SubSwathInfo* subswath);
-    void FillSubswathMetaData(std::shared_ptr<snapengine::MetadataElement> subswath_metadata, SubSwathInfo *subswath);
+    double GetLatitudeValue(const Sentinel1Index& index, const SubSwathInfo* subswath) const;
+    double GetLatitudeValue(const Sentinel1Index& index, int sub_swath_index) const;
+    double GetLongitudeValue(const Sentinel1Index& index, const SubSwathInfo* subswath) const;
+    double GetLongitudeValue(const Sentinel1Index& index, int sub_swath_index) const;
+    double GetSlantRangeTimeValue(const Sentinel1Index& index, const SubSwathInfo* subswath) const;
+    double GetIncidenceAngleValue(const Sentinel1Index& index, const SubSwathInfo* subswath) const;
+    double GetSlantRangeTimeValue(const Sentinel1Index& index, int sub_swath_index) const;
+    double GetIncidenceAngleValue(const Sentinel1Index& index, int sub_swath_index) const;
+    void FillSubswathMetaData(std::shared_ptr<snapengine::MetadataElement> subswath_metadata, SubSwathInfo* subswath);
     void FillUtilsMetadata();
     void GetMetadataRoot();
     void GetAbstractedMetadata();
@@ -228,7 +245,8 @@ private:
     std::shared_ptr<snapengine::MetadataElement> GetCalibrationVectorList(int sub_swath_index,
                                                                           std::string_view polarization);
 
-    std::shared_ptr<snapengine::Band> GetSourceBand(std::string_view sub_swath_name, std::string_view polarization) const;
+    std::shared_ptr<snapengine::Band> GetSourceBand(std::string_view sub_swath_name,
+                                                    std::string_view polarization) const;
 };
 }  // namespace s1tbx
 }  // namespace alus

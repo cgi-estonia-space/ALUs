@@ -71,6 +71,7 @@ public:
      * @param band_indx
      */
     void ReadSubSampledData(const custom::Rectangle& rectangle, int band_indx) override;
+    void ReadSubSampledData(const alus::Rectangle& rectangle, int band_indx) override;
     [[nodiscard]] std::string GetDataProjection() const;
     [[nodiscard]] std::vector<double> GetGeoTransform() const;
     [[nodiscard]] const std::vector<float>& GetData() const override { return data_; }

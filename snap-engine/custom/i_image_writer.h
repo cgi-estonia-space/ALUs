@@ -35,6 +35,7 @@ public:
      * @param data container into which data will be placed
      */
     virtual void WriteSubSampledData(const custom::Rectangle& rectangle, std::vector<float>& data, int band_indx) = 0;
+    virtual void WriteSubSampledData(const alus::Rectangle& rectangle, std::vector<float>& data, int band_indx) = 0;
 
     //    todo: virtual and generics do not match, might want to go through ProductData, currently not important to
     //    support more than float virtual void WriteSubSampledData(const std::shared_ptr<custom::Rectangle>& rectangle,

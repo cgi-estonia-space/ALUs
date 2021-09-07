@@ -49,8 +49,7 @@ void MetadataElement::AddElement(std::shared_ptr<MetadataElement> element) {
         return;
     }
     if (elements_ == nullptr) {
-        elements_ = std::make_shared<ProductNodeGroup<std::shared_ptr<MetadataElement>>>(
-            this, "elements", true);
+        elements_ = std::make_shared<ProductNodeGroup<std::shared_ptr<MetadataElement>>>(this, "elements", true);
     }
     elements_->Add(element);
 }
@@ -65,10 +64,7 @@ void MetadataElement::AddAttribute(std::shared_ptr<MetadataAttribute> attribute)
         return;
     }
     if (attributes_ == nullptr) {
-
-
-        attributes_ = std::make_shared<ProductNodeGroup<std::shared_ptr<MetadataAttribute>>>(
-            this, "attributes", true);
+        attributes_ = std::make_shared<ProductNodeGroup<std::shared_ptr<MetadataAttribute>>>(this, "attributes", true);
     }
     attributes_->Add(attribute);
 }
@@ -316,8 +312,7 @@ void MetadataElement::AddElementAt(const std::shared_ptr<MetadataElement>& eleme
         return;
     }
     if (elements_ == nullptr) {
-        elements_ = std::make_shared<ProductNodeGroup<std::shared_ptr<MetadataElement>>>(
-            this, "elements", true);
+        elements_ = std::make_shared<ProductNodeGroup<std::shared_ptr<MetadataElement>>>(this, "elements", true);
     }
     elements_->Add(index, element);
 }
@@ -361,6 +356,9 @@ void MetadataElement::Dispose() {
         elements_ = nullptr;
     }
     ProductNode::Dispose();
+}
+std::vector<std::string> MetadataElement::GetElementNames() const {
+    return elements_ ? elements_->GetNodeNames() : std::vector<std::string>(0);
 }
 
 }  // namespace snapengine

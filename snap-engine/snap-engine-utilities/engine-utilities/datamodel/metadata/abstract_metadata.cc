@@ -517,6 +517,20 @@ std::shared_ptr<MetadataElement> AbstractMetadata::GetBandAbsMetadata(
     }
     return nullptr;
 }
+int AbstractMetadata::GetAttributeInt(const std::shared_ptr<MetadataElement>& element, std::string_view tag) {
+    double val = element->GetAttributeInt(tag);
+    if (val == NO_METADATA) {
+        throw std::runtime_error("Metadata " + std::string(tag) + " has not been set");
+    }
+    return static_cast<int>(val);
+}
 
+bool AbstractMetadata::HasAbstractedMetadata(std::shared_ptr<Product> source_product) {
+    if (const auto root = source_product->GetMetadataRoot(); root) {
+        return root->GetElement(ABSTRACT_METADATA_ROOT) != nullptr;
+    }
+
+    return false;
+}
 }  // namespace snapengine
 }  // namespace alus

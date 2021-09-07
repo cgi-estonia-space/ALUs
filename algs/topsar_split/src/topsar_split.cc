@@ -128,7 +128,7 @@ void TopsarSplit::initialize() {
 
     // TODO: forget the index, find the pointer.
     s1_utils_ = std::make_unique<s1tbx::Sentinel1Utils>(source_product_);
-    const std::vector<std::unique_ptr<s1tbx::SubSwathInfo>>& subswath_info = s1_utils_->GetSubSwath();
+    const std::vector<std::shared_ptr<s1tbx::SubSwathInfo>>& subswath_info = s1_utils_->GetSubSwath();
     for (size_t i = 0; i < subswath_info.size(); i++) {
         if (subswath_info.at(i)->subswath_name_.find(subswath_) != std::string::npos) {
             selected_subswath_info_ = subswath_info.at(i).get();

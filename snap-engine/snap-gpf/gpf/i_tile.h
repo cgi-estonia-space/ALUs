@@ -116,6 +116,8 @@ public:
 
     virtual std::vector<float>& GetSimpleDataBuffer() = 0;
 
+    virtual int GetDataBufferIndex(int x, int y) = 0;
+
     virtual ~ITile() = default;
 };
 

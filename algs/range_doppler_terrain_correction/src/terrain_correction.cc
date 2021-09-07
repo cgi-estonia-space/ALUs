@@ -184,7 +184,7 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
                                                  size_t tile_height) {
     // Calculate target dimensions
     auto const ds_y_size{
-        static_cast<size_t>(input_ds_->GetRasterBand(utils::constants::GDAL_DEFAULT_RASTER_BAND)->GetYSize())};
+        static_cast<size_t>(input_ds_->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)->GetYSize())};
 
     snapengine::geocoding::TiePointGeocoding source_geocoding(lat_tie_point_grid_, lon_tie_point_grid_);
     snapengine::old::Product target_product = CreateTargetProduct(&source_geocoding, output_file_name);
@@ -351,8 +351,8 @@ snapengine::old::Product TerrainCorrection::CreateTargetProduct(
     target_crs.importFromEPSG(4326);
 
     std::vector<double> image_boundary = ComputeImageBoundary(
-        source_geocoding, input_ds_->GetRasterBand(utils::constants::GDAL_DEFAULT_RASTER_BAND)->GetXSize(),
-        input_ds_->GetRasterBand(utils::constants::GDAL_DEFAULT_RASTER_BAND)->GetYSize());
+        source_geocoding, input_ds_->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)->GetXSize(),
+        input_ds_->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)->GetYSize());
 
     double pixel_size_x = pixel_spacing_in_degree;
     double pixel_size_y = pixel_spacing_in_degree;
@@ -367,7 +367,7 @@ snapengine::old::Product TerrainCorrection::CreateTargetProduct(
         LOGE << "OGR ERROR: " << error;  // TODO: implement some real error (SNAPGPU-163)
     }
 
-    GDALDriver* output_driver = GetGDALDriverManager()->GetDriverByName(utils::constants::GDAL_GTIFF_DRIVER);
+    GDALDriver* output_driver = GetGdalGeoTiffDriver();
 
     CHECK_GDAL_PTR(output_driver);
 
@@ -442,7 +442,7 @@ void SetTileSourceCoordinates(TcTileCoordinates& tile_coordinates, const Rectang
 
 void TerrainCorrection::CalculateTile(TcTileCoordinates tile_coordinates, SharedThreadData* shared,
                                       PerThreadData* ctx) {
-    auto* band = shared->input_dataset->GetRasterBand(utils::constants::GDAL_DEFAULT_RASTER_BAND);
+    auto* band = shared->input_dataset->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND);
 
     GetSourceRectangleKernelArgs src_args = {};
     src_args.get_position_metadata = shared->terrain_correction->d_get_position_metadata_;
@@ -506,7 +506,7 @@ void TerrainCorrection::CalculateTile(TcTileCoordinates tile_coordinates, Shared
 
         {
             std::unique_lock lock(shared->gdal_read_mutex);
-            CHECK_GDAL_ERROR(shared->input_dataset->GetRasterBand(utils::constants::GDAL_DEFAULT_RASTER_BAND)
+            CHECK_GDAL_ERROR(shared->input_dataset->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)
                                  ->RasterIO(GF_Read, source_rectangle.x, source_rectangle.y, source_rectangle.width,
                                             source_rectangle.height, h_source_buffer, source_rectangle.width,
                                             source_rectangle.height, GDALDataType::GDT_Float32, 0, 0));

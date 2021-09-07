@@ -41,6 +41,7 @@ public:
     //    = 0;
 
     virtual void ReadSubSampledData(const custom::Rectangle& rectangle, int band_indx) = 0;
+    virtual void ReadSubSampledData(const alus::Rectangle& rectangle, int band_indx) = 0;
 
     virtual void Open(std::string_view path_to_band_file, bool has_transform, bool has_correct_proj) = 0;
 

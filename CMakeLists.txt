@@ -95,6 +95,7 @@ add_subdirectory(algs/coherence_estimation_routine)
 add_subdirectory(algs/coregistration)
 add_subdirectory(algs/topsar_split)
 add_subdirectory(algs/calibration_routine)
+add_subdirectory(algs/topsar_merge)
 
 # Test helpers
 add_subdirectory(test/range_doppler_geocoding)
