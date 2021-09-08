@@ -80,54 +80,6 @@ inline __device__ __host__ PositionVelocity GetPositionVelocity(double time,
     return result;
 }
 
-/**
- *  Important note, timeMap in the original code is just a cache to make things faster. We can't afford this on the gpu.
- * @param time          Line acquisition time.
- * @param orbit         An array of OrbitStateVectors.
- * @param numOrbitVec   Length of OrbitStateVectors Array.
- * @param dt            OrbitStateVectors.dt variable.
- * @param position      position of satellite. Will be filled.
- * @param velocity      velocity of satellite. Makes up the lagrange Interpolating Polynomial with position. Will be filled.
- */
-inline __device__ __host__ void GetPositionVelocity(double time,
-                                                    snapengine::OrbitStateVectorComputation *orbit,
-                                                    const int numOrbitVec,
-                                                    const double dt,
-                                                    snapengine::PosVector *position,
-                                                    snapengine::PosVector *velocity) {
-
-    int i_0{};
-    int i_n{};
-    if (numOrbitVec <= NV) {
-        i_0 = 0;
-        i_n = numOrbitVec - 1;
-    } else {
-        i_0 = std::max((int) ((time - orbit[0].timeMjd_) / dt) - NV / 2 + 1, 0);
-        i_n = std::min(i_0 + NV - 1, numOrbitVec - 1);
-        i_0 = (i_n < numOrbitVec - 1 ? i_0 : i_n - NV + 1);
-    }
-
-    for (int i = i_0; i <= i_n; ++i) {
-        snapengine::OrbitStateVectorComputation orbI = orbit[i];
-
-        double weight = 1;
-        for (int j = i_0; j <= i_n; ++j) {
-            if (j != i) {
-                const double time2 = orbit[j].timeMjd_;
-                weight *= (time - time2) / (orbI.timeMjd_ - time2);
-            }
-        }
-
-        position->x += weight * orbI.xPos_;
-        position->y += weight * orbI.yPos_;
-        position->z += weight * orbI.zPos_;
-
-        velocity->x += weight * orbI.xVel_;
-        velocity->y += weight * orbI.yVel_;
-        velocity->z += weight * orbI.zVel_;
-    }
-}
-
 inline __device__ __host__ snapengine::PosVector GetPositionImpl(
         double time, cuda::KernelArray<snapengine::OrbitStateVectorComputation> vectors) {
     const int nv{8};

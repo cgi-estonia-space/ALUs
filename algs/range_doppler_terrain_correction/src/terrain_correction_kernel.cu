@@ -45,8 +45,9 @@ __global__ void CalculateVelocitiesAndPositionsKernel(
     const double dt =
         (vectors.array[vectors.size - 1].timeMjd_ - vectors.array[0].timeMjd_) / static_cast<double>(vectors.size - 1);
 
-    s1tbx::orbitstatevectors::GetPositionVelocity(time, vectors.array, vectors.size, dt, &positions.array[index],
-                                                  &velocities.array[index]);
+    auto pos_vel = s1tbx::orbitstatevectors::GetPositionVelocity(time, vectors.array, vectors.size, dt);
+    positions.array[index] = pos_vel.position;
+    velocities.array[index] = pos_vel.velocity;
 }
 
 void CalculateVelocitiesAndPositions(const int source_image_height, const double first_line_utc,
