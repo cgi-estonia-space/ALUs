@@ -32,7 +32,7 @@ public:
                            [[maybe_unused]] const std::vector<std::string>& metadata_paths) override;
     void SetParameters(const app::AlgorithmParameters::Table& param_values) override;
     void SetSrtm3Manager(snapengine::Srtm3ElevationModel* manager) override;
-    void SetEgm96Manager(const snapengine::EarthGravitationalModel96* manager) override;
+    void SetEgm96Manager(snapengine::EarthGravitationalModel96* manager) override;
     void SetTileSize(size_t width, size_t height) override;
     void SetOutputFilename([[maybe_unused]] const std::string& output_name) override;
     int Execute() override;
@@ -51,7 +51,7 @@ private:
 
     bool use_elevation_mask_;
     snapengine::Srtm3ElevationModel* srtm3_manager_{};
-    const snapengine::EarthGravitationalModel96* egm96_manager_{};
+    snapengine::EarthGravitationalModel96* egm96_manager_{};
 };
 
 }  // namespace alus::backgeocoding

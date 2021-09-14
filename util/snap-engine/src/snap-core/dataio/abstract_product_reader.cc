@@ -20,10 +20,10 @@
 
 #include <any>
 #include <chrono>
-#include <iostream>
 #include <stdexcept>
 #include <unordered_map>
 
+#include "alus_log.h"
 #include "ceres-core/i_progress_monitor.h"
 #include "guardian.h"
 #include "snap-core/datamodel/band.h"
@@ -73,7 +73,7 @@ void AbstractProductReader::ReadBandRasterData(std::shared_ptr<Band> dest_band, 
 }
 
 void AbstractProductReader::Close() {
-    std::cerr << "AbstractProductReader.close(): " << ToString() << std::endl;
+    LOGV << "AbstractProductReader.close(): " << ToString();
     input_ = nullptr;
     subset_def_ = nullptr;
 }
@@ -101,8 +101,8 @@ std::shared_ptr<Product> AbstractProductReader::ReadProductNodes(std::any input,
 
     //    todo: do we want these logs? also class name might not be correct, might need more work based on intentsions
     auto start = std::chrono::high_resolution_clock::now();
-    std::cerr << "Start reading the product from input '" << input.type().name() << "' using the '"
-              << typeid(*this).name() << "' reader class. The subset is '" << subset_def << "'." << std::endl;
+    LOGD << "Start reading the product from input '" << input.type().name() << "' using the '"
+              << typeid(*this).name() << "' reader class. The subset is '" << subset_def << "'.";
 
     std::shared_ptr<Product> product = ReadProductNodesImpl();
     ConfigurePreferredTileSize(product);
@@ -113,9 +113,9 @@ std::shared_ptr<Product> AbstractProductReader::ReadProductNodes(std::any input,
 
     auto stop = std::chrono::high_resolution_clock::now();
     auto elapsed_seconds = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-    std::cerr << "Finish reading the product from input '" << input.type().name() << "' using the '"
+    LOGD << "Finish reading the product from input '" << input.type().name() << "' using the '"
               << typeid(*this).name() << "' reader class. The time elapsed is " << elapsed_seconds.count()
-              << " milliseconds." << std::endl;
+              << " milliseconds.";
 
     return product;
 }
@@ -145,14 +145,12 @@ void AbstractProductReader::ConfigurePreferredTileSize(const std::shared_ptr<Pro
         std::shared_ptr<custom::Dimension> old_size = product->GetPreferredTileSize();
         if (old_size == nullptr) {
             product->SetPreferredTileSize(new_size);
-            std::cerr << "Product '" << std::static_pointer_cast<ProductNode>(product)->GetName()
-                      << "': tile size set to " << new_size->width << " x " << new_size->height << " pixels"
-                      << std::endl;
+            LOGV << "Product '" << std::static_pointer_cast<ProductNode>(product)->GetName() << "': tile size set to "
+                 << new_size->width << " x " << new_size->height << " pixels";
         } else if (old_size != new_size) {
             product->SetPreferredTileSize(new_size);
-            std::cerr << "Product '" << std::static_pointer_cast<ProductNode>(product)->GetName()
-                      << "': tile size set to " << new_size->width << " x " << new_size->height << " pixels"
-                      << std::endl;
+            LOGV << "Product '" << std::static_pointer_cast<ProductNode>(product)->GetName() << "': tile size set to "
+                 << new_size->width << " x " << new_size->height << " pixels";
         }
     }
 }
@@ -190,12 +188,12 @@ int AbstractProductReader::ParseTileSize(std::string_view size_str, int max_size
                 size = stoi(std::string(size_str));
             } catch (std::invalid_argument& e) {
                 // ignore
-                std::cerr << "ParseTileSize string to integer operation got invalid argument exception, used parameter "
-                          << size_str << ", returned error message: " << e.what() << std::endl;
+                LOGW << "ParseTileSize string to integer operation got invalid argument exception, used parameter "
+                          << size_str << ", returned error message: " << e.what();
             } catch (std::out_of_range& e) {
                 // ignore
-                std::cerr << "ParseTileSize string to integer operation got out of range exception, used parameter "
-                          << size_str << ", returned error message: " << e.what() << std::endl;
+                LOGW << "ParseTileSize string to integer operation got out of range exception, used parameter "
+                          << size_str << ", returned error message: " << e.what();
             }
         }
     }

@@ -33,7 +33,6 @@ void Sentinel1CalibrateSafeHelper::ReadSubDatasets() {
 }
 Sentinel1CalibrateSafeHelper::Sentinel1CalibrateSafeHelper(std::string_view safe_directory_path)
     : safe_directory_path_(safe_directory_path) {
-    GDALAllRegister();
     ReadSubDatasets();
 }
 

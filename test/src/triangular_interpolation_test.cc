@@ -258,7 +258,7 @@ const std::string TriangularInterpolationTester::triangles_data_file_ =
     "./goods/backgeocoding/masterTrianglesTestData.txt";
 
 void PrepareParams(TriangularInterpolationTester *tester,
-                   alus::snapengine::triangularinterpolation::InterpolationParams *params,
+                   alus::snapengine::triangularinterpolation::TriangleInterpolationParams*params,
                    alus::snapengine::triangularinterpolation::Window *window,
                    alus::snapengine::triangularinterpolation::Zdata *zdata) {
     window->linelo = 17000;
@@ -317,7 +317,7 @@ TEST(TriangularInterpolation, InterpolationTest) {
     TriangularInterpolationTester tester;
     tester.HostToDevice();
 
-    alus::snapengine::triangularinterpolation::InterpolationParams params;
+    alus::snapengine::triangularinterpolation::TriangleInterpolationParams params;
     alus::snapengine::triangularinterpolation::Window window;
     alus::snapengine::triangularinterpolation::Zdata zdata[alus::backgeocoding::Z_DATA_SIZE];
     alus::snapengine::triangularinterpolation::Zdata *device_zdata;
@@ -340,17 +340,19 @@ TEST(TriangularInterpolation, InterpolationTest) {
     tester.DeviceToHost();
 
     const size_t size = window.lines * window.pixels;
-    size_t slave_az_count = alus::EqualsArraysd(tester.results_az_array_.data(), tester.az_array_.data(), size, 0.00001);
-    EXPECT_EQ(slave_az_count, 0) << "Slave azimuth results do not match. Mismatches: " << slave_az_count << '\n';
+    size_t slave_az_count =
+        alus::EqualsArraysd(tester.results_az_array_.data(), tester.az_array_.data(), size, 0.00001);
+    EXPECT_EQ(slave_az_count, 0) << "Slave azimuth results do not match. Mismatches: " << slave_az_count << std::endl;
 
-    size_t slave_rg_count = alus::EqualsArraysd(tester.results_rg_array_.data(), tester.rg_array_.data(), size, 0.00001);
-    EXPECT_EQ(slave_rg_count, 0) << "Slave range results do not match. Mismatches: " << slave_rg_count << '\n';
+    size_t slave_rg_count =
+        alus::EqualsArraysd(tester.results_rg_array_.data(), tester.rg_array_.data(), size, 0.00001);
+    EXPECT_EQ(slave_rg_count, 0) << "Slave range results do not match. Mismatches: " << slave_rg_count << std::endl;
 
     size_t lats_count = alus::EqualsArraysd(tester.results_lat_array_.data(), tester.lat_array_.data(), size, 0.00001);
-    EXPECT_EQ(lats_count, 0) << "Latitude results do not match. Mismatches: " << lats_count << '\n';
+    EXPECT_EQ(lats_count, 0) << "Latitude results do not match. Mismatches: " << lats_count << std::endl;
 
     size_t lons_count = alus::EqualsArraysd(tester.results_lon_array_.data(), tester.lon_array_.data(), size, 0.00001);
-    EXPECT_EQ(lons_count, 0) << "Longitude results do not match. Mismatches: " << lons_count << '\n';
+    EXPECT_EQ(lons_count, 0) << "Longitude results do not match. Mismatches: " << lons_count << std::endl;
 
     CHECK_CUDA_ERR(cudaFree(device_zdata));
 }
@@ -365,13 +367,12 @@ TEST(DelaunayTest, BigCPUTriangulationTest) {
                                  TriangularInterpolationTester::RG_AZ_RATIO,
                                  tester.az_rg_width_ * tester.az_rg_height_,
                                  alus::backgeocoding::INVALID_INDEX);
-    std::cout << "nr of triangles: " << triangulator.triangle_count_ << std::endl;
 
     size_t count = alus::EqualsTriangles(triangulator.host_triangles_.data(),
                                          tester.triangles_.data(),
                                          triangulator.triangle_count_,
                                          0.00001);
-    EXPECT_EQ(count, 0) << "Triangle results do not match. Mismatches: " << count << '\n';
+    EXPECT_EQ(count, 0) << "Triangle results do not match. Mismatches: " << count << std::endl;
 }
 
 TEST(TriangularInterpolation, InterpolationAndTriangulation) {
@@ -379,7 +380,7 @@ TEST(TriangularInterpolation, InterpolationAndTriangulation) {
 
     alus::delaunay::DelaunayTriangulator triangulator;
 
-    alus::snapengine::triangularinterpolation::InterpolationParams params;
+    alus::snapengine::triangularinterpolation::TriangleInterpolationParams params;
     alus::snapengine::triangularinterpolation::Window window;
     alus::snapengine::triangularinterpolation::Zdata zdata[alus::backgeocoding::Z_DATA_SIZE];
     alus::snapengine::triangularinterpolation::Zdata *device_zdata;

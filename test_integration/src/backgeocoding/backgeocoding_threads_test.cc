@@ -15,8 +15,9 @@
 
 #include <vector>
 
-#include "dataset.h"
 #include "gmock/gmock.h"
+
+#include "dataset.h"
 #include "target_dataset.h"
 #include "dem_assistant.h"
 

@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/grappler/libmutable_graph_view.pic.a
-bazel-out/host/bin/tensorflow/core/grappler/_objs/mutable_graph_view/mutable_graph_view.pic.o

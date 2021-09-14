@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/grappler/optimizers/libgraph_optimizer_stage.pic.a
-bazel-out/host/bin/tensorflow/core/grappler/optimizers/_objs/graph_optimizer_stage/graph_optimizer_stage.pic.o

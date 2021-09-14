@@ -18,8 +18,6 @@
 
 #include <cuda_runtime.h>
 
-#include "cuda_util.h"
-
 namespace alus {
 namespace cuda {
 
@@ -176,10 +174,6 @@ __device__ GpuGridRange<T> GpuGridRangeZ(T count) {
     return GpuGridRange<T>(blockIdx.z * blockDim.z + threadIdx.z,
                                    gridDim.z * blockDim.z, count);
 }
-
-#define PRINT_DEVICE_FUNC_OCCUPANCY(dev_func, block_size)                                                         \
-    std::cout << #dev_func << " occupancy " << alus::cuda::GetOccupancyPercentageFor(dev_func, block_size) << "%" \
-              << std::endl
 
 }  // namespace cuda
 }  // namespace alus

@@ -23,17 +23,17 @@
 #include "../goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_rectangles.h"
 #include "crs_geocoding.h"
 #include "cuda_util.h"
-#include "gdal_util.h"
-#include "general_constants.h"
+#include "gdal_management.h"
 #include "get_position.h"
 #include "position_data.h"
+#include "snap-engine-utilities/eo/constants.h"
 #include "srtm3_elevation_model.h"
 #include "srtm3_elevation_model_constants.h"
 #include "tc_tile.h"
 #include "terrain_correction.h"
 #include "terrain_correction_kernel.h"
 #include "terrain_correction_metadata.h"
-#include "tests_common.hpp"
+#include "tests_common.h"
 #include "tie_point_geocoding.h"
 
 namespace alus::tests {
@@ -66,12 +66,12 @@ public:
         metadata_ = std::make_optional<Metadata>(main_metadata_file_, lat_tie_points_file_, lon_tie_points_file_);
         tc_metadata_ = metadata_->GetMetadata();
 
-        egm_96_ = std::make_unique<EarthGravitationalModel96>();
+        egm_96_ = std::make_shared<EarthGravitationalModel96>();
         egm_96_->HostToDevice();
 
         std::vector<std::string> files{"./goods/srtm_41_01.tif", "./goods/srtm_42_01.tif"};
         srtm_3_model_ = std::make_unique<Srtm3ElevationModel>(files);
-        srtm_3_model_->ReadSrtmTiles(egm_96_.get());
+        srtm_3_model_->ReadSrtmTiles(egm_96_);
         srtm_3_model_->HostToDevice();
     }
 
@@ -81,7 +81,7 @@ public:
     std::optional<Metadata> metadata_;
     std::optional<RangeDopplerTerrainMetadata> tc_metadata_;
     std::unique_ptr<Srtm3ElevationModel> srtm_3_model_;
-    std::unique_ptr<EarthGravitationalModel96> egm_96_;
+    std::shared_ptr<EarthGravitationalModel96> egm_96_;
     const size_t srtm_3_tiles_length_{2};
 
 protected:
@@ -96,79 +96,6 @@ private:
         ".data/tie_point_grids/longitude.img"};
 };
 
-ComputationMetadata CreateComputationMetadata(RangeDopplerTerrainMetadata metadata,
-                                              std::vector<OrbitStateVectorComputation>& computation_orbit) {
-    ComputationMetadata md{};
-
-    for (auto&& orbit : metadata.orbit_state_vectors2) {
-        computation_orbit.push_back(
-            {orbit.time_mjd_, orbit.x_pos_, orbit.y_pos_, orbit.z_pos_, orbit.x_vel_, orbit.y_vel_, orbit.z_vel_});
-    }
-
-    cuda::KernelArray<OrbitStateVectorComputation> kernel_orbits{nullptr, computation_orbit.size()};
-    CHECK_CUDA_ERR(
-        cudaMalloc(&kernel_orbits.array, sizeof(OrbitStateVectorComputation) * kernel_orbits.size));
-    CHECK_CUDA_ERR(cudaMemcpy(kernel_orbits.array, computation_orbit.data(),
-                              sizeof(OrbitStateVectorComputation) * kernel_orbits.size,
-                              cudaMemcpyHostToDevice));
-
-    md.orbit_state_vectors = kernel_orbits;
-    md.first_line_time_mjd = metadata.first_line_time->GetMjd();
-    md.last_line_time_mjd = metadata.last_line_time->GetMjd();
-    md.first_near_lat = metadata.first_near_lat;
-    md.first_near_long = metadata.first_near_long;
-    md.first_far_lat = metadata.first_far_lat;
-    md.first_far_long = metadata.first_far_long;
-    md.last_near_lat = metadata.last_near_lat;
-    md.last_near_long = metadata.last_near_long;
-    md.last_far_lat = metadata.last_far_lat;
-    md.last_far_long = metadata.last_far_long;
-    md.radar_frequency = metadata.radar_frequency;
-    md.range_spacing = metadata.range_spacing;
-    md.line_time_interval = metadata.line_time_interval;
-    md.avg_scene_height = metadata.avg_scene_height;
-    md.slant_range_to_first_pixel = metadata.slant_range_to_first_pixel;
-    md.first_valid_pixel = metadata.first_valid_pixel;
-    md.last_valid_pixel = metadata.last_valid_pixel;
-    md.first_valid_line_time = metadata.first_valid_line_time;
-    md.last_valid_line_time = metadata.last_valid_line_time;
-
-    return md;
-}
-
-void FillGetPositionMetadata(GetPositionMetadata& get_position_metadata,
-                             const ComputationMetadata& computation_metadata, int height) {
-    cuda::KernelArray<PosVector> sensor_position{nullptr, SENSOR_POSITION.size()};
-
-    CHECK_CUDA_ERR(cudaMalloc(&sensor_position.array, sizeof(PosVector) * sensor_position.size));
-    CHECK_CUDA_ERR(cudaMemcpy(sensor_position.array, SENSOR_POSITION.data(), sizeof(PosVector) * sensor_position.size,
-                              cudaMemcpyHostToDevice));
-
-    get_position_metadata.sensor_position = sensor_position;
-
-    cuda::KernelArray<PosVector> sensor_velocity{nullptr, SENSOR_VELOCITY.size()};
-
-    CHECK_CUDA_ERR(cudaMalloc(&sensor_velocity.array, sizeof(PosVector) * sensor_velocity.size));
-    CHECK_CUDA_ERR(cudaMemcpy(sensor_velocity.array, SENSOR_VELOCITY.data(), sizeof(PosVector) * sensor_velocity.size,
-                              cudaMemcpyHostToDevice));
-
-    get_position_metadata.sensor_velocity = sensor_velocity;
-    get_position_metadata.orbit_state_vectors = computation_metadata.orbit_state_vectors;
-    get_position_metadata.first_line_utc = computation_metadata.first_line_time_mjd;
-    get_position_metadata.line_time_interval =
-        (computation_metadata.last_line_time_mjd - computation_metadata.first_line_time_mjd) / (height - 1);
-    get_position_metadata.wavelength =
-        constants::lightSpeed / (computation_metadata.radar_frequency * constants::oneMillion);
-    get_position_metadata.range_spacing = computation_metadata.range_spacing;
-    get_position_metadata.near_edge_slant_range = computation_metadata.slant_range_to_first_pixel;
-}
-
-void FreeMetadata(GetPositionMetadata& get_position_metadata, ComputationMetadata& comp_metadata) {
-    CHECK_CUDA_ERR(cudaFree(comp_metadata.orbit_state_vectors.array));
-    CHECK_CUDA_ERR(cudaFree(get_position_metadata.sensor_position.array));
-    CHECK_CUDA_ERR(cudaFree(get_position_metadata.sensor_velocity.array));
-}
-
 TEST_F(TerrainCorrectionTest, getPositionTrueScenario) {
     std::vector<double> const LATS_TRUE{58.52938269941166, 58.52938269941166, 58.52938269941166, 58.52938269941166,
                                         58.52938269941166, 58.52938269941166, 58.52938269941166, 58.52938269941166,
@@ -179,57 +106,56 @@ TEST_F(TerrainCorrectionTest, getPositionTrueScenario) {
     std::vector<double> const ALTS_TRUE{26.655392062820304, 26.766483052830047, 26.877574042861347, 26.98866503287109,
                                         27.099756022880833, 27.16567189351999,  27.204560294821366, 27.243448696122737,
                                         27.28233709742411,  25.688039075802656};
-    std::vector<s1tbx::PositionData> const POS_DATA_TRUE{
-        {{3069968.8651965917, 1310368.109966936, 5416775.0928144},
-         {3658851.937123117, 1053331.0349233549, 5954284.711984713},
-         1499.0,
-         16489.057561014797,
-         837715.8951871425},
-        {{3069966.060764159, 1310374.8279885752, 5416775.187564795},
-         {3658851.937123117, 1053331.0349233549, 5954284.711984713},
-         1499.0,
-         16490.76257450734,
-         837719.8671217842},
-        {{3069963.2563170255, 1310381.546004214, 5416775.282315189},
-         {3658851.937123117, 1053331.0349233549, 5954284.711984713},
-         1499.0,
-         16492.467610722975,
-         837723.8391093608},
-        {{3069960.4518551915, 1310388.2640138534, 5416775.377065584},
-         {3658851.937123117, 1053331.0349233549, 5954284.711984713},
-         1499.0,
-         16494.172669660762,
-         837727.81114987},
-        {{3069957.6473786565, 1310394.9820174929, 5416775.471815978},
-         {3658851.937123117, 1053331.0349233549, 5954284.711984713},
-         1499.0,
-         16495.87775132104,
-         837731.7832433127},
-        {{3069954.8211966213, 1310401.6907564746, 5416775.528036151},
-         {3658851.9375350126, 1053331.0352269127, 5954284.711678611},
-         1498.9999618226757,
-         16497.598793672605,
-         837735.7925181753},
-        {{3069951.9820227185, 1310408.3939500444, 5416775.56120438},
-         {3658851.9375350126, 1053331.0352269127, 5954284.711678611},
-         1498.9999618226757,
-         16499.329393917273,
-         837739.8240587425},
-        {{3069949.1428341805, 1310415.0971374626, 5416775.594372609},
-         {3658851.937946909, 1053331.0355304708, 5954284.7113725105},
-         1498.9999236453511,
-         16501.060016592295,
-         837743.8556515626},
-        {{3069946.303631006, 1310421.8003187296, 5416775.627540837},
-         {3658851.937946909, 1053331.0355304708, 5954284.7113725105},
-         1498.9999236453511,
-         16502.790661701973,
-         837747.8872966456},
-        {{3070007.895933579, 1310305.6188605186, 5416767.001437339},
-         {3658851.937123117, 1053331.0349233549, 5954284.711984713},
-         1499.0,
-         16471.278523574896,
-         837674.477817126}};
+    std::vector<s1tbx::PositionData> const POS_DATA_TRUE{{{3069968.8651965917, 1310368.109966936, 5416775.0928144},
+                                                          {3658851.937123117, 1053331.0349233549, 5954284.711984713},
+                                                          1499.0,
+                                                          16489.057561014797,
+                                                          837715.8951871425},
+                                                         {{3069966.060764159, 1310374.8279885752, 5416775.187564795},
+                                                          {3658851.937123117, 1053331.0349233549, 5954284.711984713},
+                                                          1499.0,
+                                                          16490.76257450734,
+                                                          837719.8671217842},
+                                                         {{3069963.2563170255, 1310381.546004214, 5416775.282315189},
+                                                          {3658851.937123117, 1053331.0349233549, 5954284.711984713},
+                                                          1499.0,
+                                                          16492.467610722975,
+                                                          837723.8391093608},
+                                                         {{3069960.4518551915, 1310388.2640138534, 5416775.377065584},
+                                                          {3658851.937123117, 1053331.0349233549, 5954284.711984713},
+                                                          1499.0,
+                                                          16494.172669660762,
+                                                          837727.81114987},
+                                                         {{3069957.6473786565, 1310394.9820174929, 5416775.471815978},
+                                                          {3658851.937123117, 1053331.0349233549, 5954284.711984713},
+                                                          1499.0,
+                                                          16495.87775132104,
+                                                          837731.7832433127},
+                                                         {{3069954.8211966213, 1310401.6907564746, 5416775.528036151},
+                                                          {3658851.9375350126, 1053331.0352269127, 5954284.711678611},
+                                                          1498.9999618226757,
+                                                          16497.598793672605,
+                                                          837735.7925181753},
+                                                         {{3069951.9820227185, 1310408.3939500444, 5416775.56120438},
+                                                          {3658851.9375350126, 1053331.0352269127, 5954284.711678611},
+                                                          1498.9999618226757,
+                                                          16499.329393917273,
+                                                          837739.8240587425},
+                                                         {{3069949.1428341805, 1310415.0971374626, 5416775.594372609},
+                                                          {3658851.937946909, 1053331.0355304708, 5954284.7113725105},
+                                                          1498.9999236453511,
+                                                          16501.060016592295,
+                                                          837743.8556515626},
+                                                         {{3069946.303631006, 1310421.8003187296, 5416775.627540837},
+                                                          {3658851.937946909, 1053331.0355304708, 5954284.7113725105},
+                                                          1498.9999236453511,
+                                                          16502.790661701973,
+                                                          837747.8872966456},
+                                                         {{3070007.895933579, 1310305.6188605186, 5416767.001437339},
+                                                          {3658851.937123117, 1053331.0349233549, 5954284.711984713},
+                                                          1499.0,
+                                                          16471.278523574896,
+                                                          837674.477817126}};
 
     std::vector<OrbitStateVectorComputation> comp_orbits;
     for (auto&& o : ORBIT_STATE_VECTORS) {
@@ -242,8 +168,13 @@ TEST_F(TerrainCorrectionTest, getPositionTrueScenario) {
                                                  SENSOR_POSITION.size()};
     const KernelArray<PosVector> sensorVelocity{const_cast<PosVector*>(SENSOR_VELOCITY.data()), SENSOR_VELOCITY.size()};
 
+    std::vector<double> osv_lookup = CalculateOrbitStateVectorLUT(comp_orbits);
+
+    KernelArray<double> osv_lut = { osv_lookup.data(), osv_lookup.size()};
+
+
     const GetPositionMetadata metadata{7135.669951395567, 2.3822903166873924E-8, 0.05546576,     2.329562,
-                                       799303.6132771898, sensorPositions,       sensorVelocity, orbitStateVectors};
+                                       799303.6132771898, sensorPositions,       sensorVelocity, orbitStateVectors, osv_lut};
     const auto series_size = POS_DATA_TRUE.size();
     for (size_t i = 0; i < series_size; i++) {
         s1tbx::PositionData pos_data{};
@@ -294,8 +225,12 @@ TEST_F(TerrainCorrectionTest, getPositionFalseScenario) {
                                                  SENSOR_POSITION.size()};
     const KernelArray<PosVector> sensorVelocity{const_cast<PosVector*>(SENSOR_VELOCITY.data()), SENSOR_VELOCITY.size()};
 
+    std::vector<double> osv_lookup = CalculateOrbitStateVectorLUT(comp_orbits);
+
+    KernelArray<double> osv_lut = { osv_lookup.data(), osv_lookup.size()};
+
     const GetPositionMetadata metadata{7135.669951395567, 2.3822903166873924E-8, 0.05546576,     2.329562,
-                                       799303.6132771898, sensorPositions,       sensorVelocity, orbitStateVectors};
+                                       799303.6132771898, sensorPositions,       sensorVelocity, orbitStateVectors, osv_lut};
     const auto series_size = POS_DATA_FALSE.size();
     for (size_t i = 0; i < series_size; i++) {
         s1tbx::PositionData pos_data{};
@@ -323,60 +258,59 @@ TEST_F(TerrainCorrectionTest, getPositionTrueScenarioKernel) {
     std::vector<double> const ALTS_TRUE{26.655392062820304, 26.766483052830047, 26.877574042861347, 26.98866503287109,
                                         27.099756022880833, 27.16567189351999,  27.204560294821366, 27.243448696122737,
                                         27.28233709742411,  25.688039075802656};
-    std::vector<s1tbx::PositionData> const POS_DATA_TRUE{
-        {{3069968.8651965917, 1310368.109966936, 5416775.0928144},
-         {3658851.937123117, 1053331.0349233549, 5954284.711984713},
-         1499.0,
-         16489.057561014797,
-         837715.8951871425},
-        {{3069966.060764159, 1310374.8279885752, 5416775.187564795},
-         {3658851.937123117, 1053331.0349233549, 5954284.711984713},
-         1499.0,
-         16490.76257450734,
-         837719.8671217842},
-        {{3069963.2563170255, 1310381.546004214, 5416775.282315189},
-         {3658851.937123117, 1053331.0349233549, 5954284.711984713},
-         1499.0,
-         16492.467610722975,
-         837723.8391093608},
-        {{3069960.4518551915, 1310388.2640138534, 5416775.377065584},
-         {3658851.937123117, 1053331.0349233549, 5954284.711984713},
-         1499.0,
-         16494.172669660762,
-         837727.81114987},
-        {{3069957.6473786565, 1310394.9820174929, 5416775.471815978},
-         {3658851.937123117, 1053331.0349233549, 5954284.711984713},
-         1499.0,
-         16495.87775132104,
-         837731.7832433127},
-        {{3069954.8211966213, 1310401.6907564746, 5416775.528036151},
-         {3658851.9375350126, 1053331.0352269127, 5954284.711678611},
-         1498.9999618226757,
-         16497.598793672605,
-         837735.7925181753},
-        {{3069951.9820227185, 1310408.3939500444, 5416775.56120438},
-         {3658851.9375350126, 1053331.0352269127, 5954284.711678611},
-         1498.9999618226757,
-         16499.329393917273,
-         837739.8240587425},
-        {{3069949.1428341805, 1310415.0971374626, 5416775.594372609},
-         {3658851.937946909, 1053331.0355304708, 5954284.7113725105},
-         1498.9999236453511,
-         16501.060016592295,
-         837743.8556515626},
-        {{3069946.303631006, 1310421.8003187296, 5416775.627540837},
-         {3658851.937946909, 1053331.0355304708, 5954284.7113725105},
-         1498.9999236453511,
-         16502.790661701973,
-         837747.8872966456},
-        {{3070007.895933579, 1310305.6188605186, 5416767.001437339},
-         {3658851.937123117, 1053331.0349233549, 5954284.711984713},
-         1499.0,
-         16471.278523574896,
-         837674.477817126}};
+    std::vector<s1tbx::PositionData> const POS_DATA_TRUE{{{3069968.8651965917, 1310368.109966936, 5416775.0928144},
+                                                          {3658851.937123117, 1053331.0349233549, 5954284.711984713},
+                                                          1499.0,
+                                                          16489.057561014797,
+                                                          837715.8951871425},
+                                                         {{3069966.060764159, 1310374.8279885752, 5416775.187564795},
+                                                          {3658851.937123117, 1053331.0349233549, 5954284.711984713},
+                                                          1499.0,
+                                                          16490.76257450734,
+                                                          837719.8671217842},
+                                                         {{3069963.2563170255, 1310381.546004214, 5416775.282315189},
+                                                          {3658851.937123117, 1053331.0349233549, 5954284.711984713},
+                                                          1499.0,
+                                                          16492.467610722975,
+                                                          837723.8391093608},
+                                                         {{3069960.4518551915, 1310388.2640138534, 5416775.377065584},
+                                                          {3658851.937123117, 1053331.0349233549, 5954284.711984713},
+                                                          1499.0,
+                                                          16494.172669660762,
+                                                          837727.81114987},
+                                                         {{3069957.6473786565, 1310394.9820174929, 5416775.471815978},
+                                                          {3658851.937123117, 1053331.0349233549, 5954284.711984713},
+                                                          1499.0,
+                                                          16495.87775132104,
+                                                          837731.7832433127},
+                                                         {{3069954.8211966213, 1310401.6907564746, 5416775.528036151},
+                                                          {3658851.9375350126, 1053331.0352269127, 5954284.711678611},
+                                                          1498.9999618226757,
+                                                          16497.598793672605,
+                                                          837735.7925181753},
+                                                         {{3069951.9820227185, 1310408.3939500444, 5416775.56120438},
+                                                          {3658851.9375350126, 1053331.0352269127, 5954284.711678611},
+                                                          1498.9999618226757,
+                                                          16499.329393917273,
+                                                          837739.8240587425},
+                                                         {{3069949.1428341805, 1310415.0971374626, 5416775.594372609},
+                                                          {3658851.937946909, 1053331.0355304708, 5954284.7113725105},
+                                                          1498.9999236453511,
+                                                          16501.060016592295,
+                                                          837743.8556515626},
+                                                         {{3069946.303631006, 1310421.8003187296, 5416775.627540837},
+                                                          {3658851.937946909, 1053331.0355304708, 5954284.7113725105},
+                                                          1498.9999236453511,
+                                                          16502.790661701973,
+                                                          837747.8872966456},
+                                                         {{3070007.895933579, 1310305.6188605186, 5416767.001437339},
+                                                          {3658851.937123117, 1053331.0349233549, 5954284.711984713},
+                                                          1499.0,
+                                                          16471.278523574896,
+                                                          837674.477817126}};
 
-    const GetPositionMetadata metadata{
-        7135.669951395567, 2.3822903166873924E-8, 0.05546576, 2.329562, 799303.6132771898, {}, {}, {}};
+    GetPositionMetadata metadata{
+        7135.669951395567, 2.3822903166873924E-8, 0.05546576, 2.329562, 799303.6132771898, {}, {}, {}, {}};
 
     std::vector<OrbitStateVectorComputation> comp_orbits;
     for (auto&& o : ORBIT_STATE_VECTORS) {
@@ -480,211 +414,19 @@ TEST_F(TerrainCorrectionTest, CreateTargetProduct) {
     geocoding::TiePointGeocoding source_geocoding(lat_grid, lon_grid);
     auto coh_dataset = Dataset<double>(COH_1_TIF);
     coh_dataset.LoadRasterBand(1);
-    TerrainCorrection terrain_correction(
-        std::move(coh_dataset), metadata_.value().GetMetadata(), metadata_.value().GetLatTiePointGrid(),
-        metadata_.value().GetLonTiePointGrid(), srtm_3_model_->GetSrtmBuffersInfo(), srtm_3_tiles_length_);
+    TerrainCorrection terrain_correction(coh_dataset.GetGdalDataset(), metadata_.value().GetMetadata(),
+                                         metadata_.value().GetLatTiePointGrid(), metadata_.value().GetLonTiePointGrid(),
+                                         srtm_3_model_->GetSrtmBuffersInfo(), srtm_3_tiles_length_);
     auto target = terrain_correction.CreateTargetProduct(&source_geocoding, TC_OUTPUT);
     double target_geo_transform[6];
-    target.dataset_.GetGdalDataset()->GetGeoTransform(target_geo_transform);
+    target.dataset_->GetGeoTransform(target_geo_transform);
 
-    EXPECT_EQ(EXPECTED_HEIGHT, target.dataset_.GetRasterSizeY());
-    EXPECT_EQ(EXPECTED_WIDTH, target.dataset_.GetRasterSizeX());
+    EXPECT_EQ(EXPECTED_HEIGHT, target.dataset_->GetRasterYSize());
+    EXPECT_EQ(EXPECTED_WIDTH, target.dataset_->GetRasterXSize());
     for (int i = 0; i < 6; ++i) {
         EXPECT_NEAR(EXPECTED_GEOTRANSFORM[i], target_geo_transform[i], ERROR_MARGIN);
     }
     remove(TC_OUTPUT.c_str());
-}
-
-TEST_F(TerrainCorrectionTest, DISABLED_GetNonBorderSourceRectangle) {
-    assert(SOURCE_RECTANGLES.size() == EXPECTED_RECTANGLES.size());
-
-    std::vector<Rectangle> calculated_rectangles;
-    calculated_rectangles.reserve(EXPECTED_RECTANGLES.size());
-
-    const GeoTransformParameters target_geo_transform{21.908443888855807, 58.57642850390358, 1.2495565602102545e-4,
-                                                      -1.2495565602102545e-4};
-
-    std::vector<OrbitStateVectorComputation> computation_orbit;
-    ComputationMetadata computation_metadata =
-        CreateComputationMetadata(metadata_.value().GetMetadata(), computation_orbit);
-
-    GetPositionMetadata get_position_metadata{};
-    FillGetPositionMetadata(get_position_metadata, computation_metadata, coh_ds_->GetYSize());
-
-    for (auto&& source_tile : SOURCE_RECTANGLES) {
-        TcTile tile{};
-        tile.tc_tile_coordinates.target_x_0 = source_tile.x;
-        tile.tc_tile_coordinates.target_y_0 = source_tile.y;
-        tile.tc_tile_coordinates.target_width = source_tile.width;
-        tile.tc_tile_coordinates.target_height = source_tile.height;
-        Rectangle calculated_rectangle{};
-        const PointerArray srtm_3_tiles{srtm_3_model_->GetSrtmBuffersInfo(), srtm_3_model_->GetDeviceSrtm3TilesCount()};
-        TerrainCorrectionKernelArgs args{static_cast<unsigned int>(coh_ds_->GetXSize()),
-                                         static_cast<unsigned int>(coh_ds_->GetYSize()),
-                                         srtm3elevationmodel::NO_DATA_VALUE,
-                                         0,
-                                         metadata_->GetMetadata().avg_scene_height,
-                                         target_geo_transform,
-                                         false,
-                                         0,
-                                         {},
-                                         get_position_metadata,
-                                         {},
-                                         {},
-                                         srtm_3_tiles,
-                                         {}};
-        bool valid = GetNonBorderSourceRectangle(tile, args, calculated_rectangle);
-        calculated_rectangles.push_back(
-            {calculated_rectangle.x, calculated_rectangle.y, calculated_rectangle.width, calculated_rectangle.height});
-        EXPECT_THAT(valid, ::testing::IsTrue());
-    }
-
-    for (size_t i = 0; i < EXPECTED_RECTANGLES.size(); ++i) {
-        const Rectangle& expected_rectangle = EXPECTED_RECTANGLES[i];
-        const Rectangle& calculated_rectangle = calculated_rectangles[i];
-
-        EXPECT_THAT(calculated_rectangles.size(), ::testing::Eq(EXPECTED_RECTANGLES.size()));
-        EXPECT_THAT(calculated_rectangle.x, ::testing::Eq(expected_rectangle.x));
-        EXPECT_THAT(calculated_rectangle.y, ::testing::Eq(expected_rectangle.y));
-        EXPECT_THAT(calculated_rectangle.width, ::testing::Eq(expected_rectangle.width));
-        EXPECT_THAT(calculated_rectangle.height, ::testing::Eq(expected_rectangle.height));
-    }
-
-    FreeMetadata(get_position_metadata, computation_metadata);
-}
-
-TEST_F(TerrainCorrectionTest, GetInvalidSourceRectangle) {
-    const GeoTransformParameters target_geo_transform{21.908443888855807, 58.57642850390358, 1.2495565602102545e-4,
-                                                      -1.2495565602102545e-4};
-
-    std::vector<OrbitStateVectorComputation> computation_orbit;
-    ComputationMetadata computation_metadata =
-        CreateComputationMetadata(metadata_.value().GetMetadata(), computation_orbit);
-
-    GetPositionMetadata get_position_metadata{};
-    FillGetPositionMetadata(get_position_metadata, computation_metadata, coh_ds_->GetYSize());
-
-    for (auto&& source_tile : INVALID_SOURCE_RECTANGLES) {
-        TcTile tile{};
-        tile.tc_tile_coordinates.target_x_0 = source_tile.x;
-        tile.tc_tile_coordinates.target_y_0 = source_tile.y;
-        tile.tc_tile_coordinates.target_width = source_tile.width;
-        tile.tc_tile_coordinates.target_height = source_tile.height;
-        Rectangle calculated_rectangle{};
-        const PointerArray srtm_3_tiles{srtm_3_model_->GetSrtmBuffersInfo(), srtm_3_model_->GetDeviceSrtm3TilesCount()};
-        TerrainCorrectionKernelArgs args{static_cast<unsigned int>(coh_ds_->GetXSize()),
-                                         static_cast<unsigned int>(coh_ds_->GetYSize()),
-                                         srtm3elevationmodel::NO_DATA_VALUE,
-                                         0,
-                                         metadata_->GetMetadata().avg_scene_height,
-                                         target_geo_transform,
-                                         false,
-                                         0,
-                                         {},
-                                         get_position_metadata,
-                                         {},
-                                         {},
-                                         srtm_3_tiles,
-                                         {}};
-        bool valid = GetNonBorderSourceRectangle(tile, args, calculated_rectangle);
-        EXPECT_THAT(valid, ::testing::IsFalse());
-    }
-
-    FreeMetadata(get_position_metadata, computation_metadata);
-}
-
-TEST_F(TerrainCorrectionTest, GetSourceRectangleWithAverageHeight) {
-    assert(SOURCE_RECTANGLES_FOR_AVERAGE_HEIGHT.size() == EXPECTED_RECTANGLES_WITH_AVERAGE_HEIGHT.size());
-
-    std::vector<Rectangle> calculated_rectangles;
-    const GeoTransformParameters target_geo_transform{21.908443888855807, 58.57642850390358, 1.2495565602102545e-4,
-                                                      -1.2495565602102545e-4};
-
-    std::vector<OrbitStateVectorComputation> computation_orbit;
-    ComputationMetadata computation_metadata =
-        CreateComputationMetadata(metadata_.value().GetMetadata(), computation_orbit);
-    GetPositionMetadata get_position_metadata{};
-    FillGetPositionMetadata(get_position_metadata, computation_metadata, coh_ds_->GetYSize());
-    PointerArray srtm_3_tiles{};
-    TerrainCorrectionKernelArgs args{static_cast<unsigned int>(coh_ds_->GetXSize()),
-                                     static_cast<unsigned int>(coh_ds_->GetYSize()),
-                                     srtm3elevationmodel::NO_DATA_VALUE,
-                                     0,
-                                     metadata_->GetMetadata().avg_scene_height,
-                                     target_geo_transform,
-                                     true,
-                                     0,
-                                     {},
-                                     get_position_metadata,
-                                     {},
-                                     {},
-                                     srtm_3_tiles,
-                                     {}};
-    std::for_each(SOURCE_RECTANGLES_FOR_AVERAGE_HEIGHT.begin(), SOURCE_RECTANGLES_FOR_AVERAGE_HEIGHT.end(),
-                  [&](auto source_tile) {
-                      TcTile tile{};
-                      tile.tc_tile_coordinates.target_x_0 = source_tile.x;
-                      tile.tc_tile_coordinates.target_y_0 = source_tile.y;
-                      tile.tc_tile_coordinates.target_width = source_tile.width;
-                      tile.tc_tile_coordinates.target_height = source_tile.height;
-                      Rectangle calculated_rectangle{};
-                      bool valid = GetNonBorderSourceRectangle(tile, args, calculated_rectangle);
-                      calculated_rectangles.push_back({calculated_rectangle.x, calculated_rectangle.y,
-                                                       calculated_rectangle.width, calculated_rectangle.height});
-                      EXPECT_THAT(valid, ::testing::IsTrue());
-                  });
-
-    for (size_t i = 0; i < EXPECTED_RECTANGLES_WITH_AVERAGE_HEIGHT.size(); ++i) {
-        const Rectangle& expected_rectangle = EXPECTED_RECTANGLES_WITH_AVERAGE_HEIGHT[i];
-        const Rectangle& calculated_rectangle = calculated_rectangles[i];
-
-        EXPECT_THAT(calculated_rectangles.size(), ::testing::Eq(EXPECTED_RECTANGLES_WITH_AVERAGE_HEIGHT.size()));
-        EXPECT_THAT(calculated_rectangle.x, ::testing::Eq(expected_rectangle.x));
-        EXPECT_THAT(calculated_rectangle.y, ::testing::Eq(expected_rectangle.y));
-        EXPECT_THAT(calculated_rectangle.width, ::testing::Eq(expected_rectangle.width));
-        EXPECT_THAT(calculated_rectangle.height, ::testing::Eq(expected_rectangle.height));
-    }
-
-    FreeMetadata(get_position_metadata, computation_metadata);
-}
-
-TEST_F(TerrainCorrectionTest, GetSourceRectangleWithAverageHeightInvalid) {
-    const GeoTransformParameters target_geo_transform{21.908443888855807, 58.57642850390358, 1.2495565602102545e-4,
-                                                      -1.2495565602102545e-4};
-
-    std::vector<OrbitStateVectorComputation> computation_orbit;
-    ComputationMetadata computation_metadata =
-        CreateComputationMetadata(metadata_.value().GetMetadata(), computation_orbit);
-    GetPositionMetadata get_position_metadata{};
-    FillGetPositionMetadata(get_position_metadata, computation_metadata, coh_ds_->GetYSize());
-
-    PointerArray srtm_3_tiles{};
-    TerrainCorrectionKernelArgs args{static_cast<unsigned int>(coh_ds_->GetXSize()),
-                                     static_cast<unsigned int>(coh_ds_->GetYSize()),
-                                     srtm3elevationmodel::NO_DATA_VALUE,
-                                     0,
-                                     metadata_->GetMetadata().avg_scene_height,
-                                     target_geo_transform,
-                                     true,
-                                     0,
-                                     {},
-                                     get_position_metadata,
-                                     {},
-                                     {},
-                                     srtm_3_tiles,
-                                     {}};
-    std::for_each(INVALID_SOURCE_RECTANGLES_AVERAGE_HEIGHT.begin(), INVALID_SOURCE_RECTANGLES_AVERAGE_HEIGHT.end(),
-                  [&](auto source_tile) {
-                      TcTile tile{};
-                      tile.tc_tile_coordinates.target_x_0 = source_tile.x;
-                      tile.tc_tile_coordinates.target_y_0 = source_tile.y;
-                      tile.tc_tile_coordinates.target_width = source_tile.width;
-                      tile.tc_tile_coordinates.target_height = source_tile.height;
-                      Rectangle calculated_rectangle{};
-                      bool valid = GetNonBorderSourceRectangle(tile, args, calculated_rectangle);
-                      EXPECT_THAT(valid, ::testing::IsFalse());
-                  });
-    FreeMetadata(get_position_metadata, computation_metadata);
 }
 
 TEST_F(TerrainCorrectionTest, MetadataConstructionSucceedsOnValidFiles) {
@@ -710,9 +452,15 @@ TEST_F(TerrainCorrectionTest, MetadataConstructionThrowsWhenConstructedWithInval
         "goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb"
         ".data/tie_point_grids/longitude.img"};
 
-    EXPECT_THROW(Metadata("invalid file", LAT_TIE_POINTS_FILE, LON_TIE_POINTS_FILE), std::runtime_error);
-    EXPECT_THROW(Metadata(MAIN_METADATA_FILE, "invalid lat", LON_TIE_POINTS_FILE), std::runtime_error);
-    EXPECT_THROW(Metadata(MAIN_METADATA_FILE, LAT_TIE_POINTS_FILE, "invalid_lon"), std::runtime_error);
+    auto gdalErrorCount{0};
+    alus::gdalmanagement::ErrorCallback gdalErrorCountCallback = [&](std::string_view) { gdalErrorCount++; };
+    {
+        auto guard = alus::gdalmanagement::SetErrorHandle(gdalErrorCountCallback);
+        EXPECT_THROW(Metadata("invalid file", LAT_TIE_POINTS_FILE, LON_TIE_POINTS_FILE), std::runtime_error);
+        EXPECT_THROW(Metadata(MAIN_METADATA_FILE, "invalid lat", LON_TIE_POINTS_FILE), std::runtime_error);
+        EXPECT_THROW(Metadata(MAIN_METADATA_FILE, LAT_TIE_POINTS_FILE, "invalid_lon"), std::runtime_error);
+    }
+    EXPECT_EQ(gdalErrorCount, 4);
 }
 
 }  // namespace

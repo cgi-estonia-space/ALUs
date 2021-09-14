@@ -157,7 +157,7 @@ double RasterDataNode::ScaleInverse(double v) {
 }
 std::shared_ptr<IGeoCoding> RasterDataNode::GetGeoCoding() {
     if (geo_coding_ == nullptr) {
-        std::shared_ptr<Product> product = GetProduct();
+        auto product = GetProduct();
         if (product) {
             return product->GetSceneGeoCoding();
         }
@@ -175,7 +175,7 @@ void RasterDataNode::SetGeoCoding(const std::shared_ptr<IGeoCoding>& geo_coding)
         geo_coding_ = geo_coding;
         // If our product has no geo-coding yet, it is set to the current one, if any
         if (geo_coding_) {
-            std::shared_ptr<Product> product = GetProduct();
+            auto product = GetProduct();
             if (product && product->GetSceneGeoCoding() == nullptr &&
                 product->GetSceneRasterSize() == GetRasterSize()) {
                 product->SetSceneGeoCoding(geo_coding_);

@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/lib/io/libinputbuffer.pic.lo
-bazel-out/host/bin/tensorflow/core/lib/io/_objs/inputbuffer/inputbuffer.pic.o

@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/platform/libsetround.pic.a
-bazel-out/host/bin/tensorflow/core/platform/_objs/setround/setround.pic.o

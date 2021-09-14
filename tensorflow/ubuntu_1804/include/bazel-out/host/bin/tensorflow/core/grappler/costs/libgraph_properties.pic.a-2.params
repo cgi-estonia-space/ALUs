@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/grappler/costs/libgraph_properties.pic.a
-bazel-out/host/bin/tensorflow/core/grappler/costs/_objs/graph_properties/graph_properties.pic.o

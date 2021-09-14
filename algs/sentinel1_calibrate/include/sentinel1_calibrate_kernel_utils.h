@@ -25,41 +25,5 @@
 namespace alus {
 namespace sentinel1calibrate {
 size_t GetCalibrationVectorIndex(int y, int count, const int* line_values);
-
-void SetupTileLine(int y, CalibrationKernelArgs& args,
-                                              CalibrationLineParameters& line_parameters);
-
-int64_t GetPixelIndex(int x, const s1tbx::CalibrationVectorComputation* calibration_vector);
-
-double CalculateLutVal(CalibrationLineParameters& line_parameters,
-                                                  CalibrationPixelParameters& pixel_parameters);
-
-void CalculatePixelParams(int x, int y, CalibrationKernelArgs& args,
-                                                     CalibrationLineParameters& line_parameters,
-                                                     CalibrationPixelParameters& pixel_parameters);
-
-void AdjustDn(double dn, double& calibration_value, double calibration_factor);
-
-void CalculateAmplitude(CalibrationPixelParameters& parameters, double& calibration_value);
-
-void CalculateIntensityWithRetro(CalibrationLineParameters& line_parameters,
-                                                            CalibrationPixelParameters& pixel_parameters,
-                                                            double& calibration_value);
-
-void CalculateIntensityWithoutRetro(CalibrationPixelParameters& pixel_parameters,
-                                                               double& calibration_value);
-
-void CalculateReal(CalibrationKernelArgs args, CalibrationPixelParameters& parameters,
-                                              double& calibration_value);
-
-void CalculateImaginary(CalibrationKernelArgs args, CalibrationPixelParameters& parameters,
-                                                   double& calibration_value);
-
-void CalculateComplexIntensity(CalibrationKernelArgs args,
-                                                          CalibrationPixelParameters& parameters,
-                                                          double& calibration_value);
-
-void CalculateIntensityDB(CalibrationPixelParameters& parameters,
-                                                     double& calibration_value);
 }  // namespace sentinel1calibrate
 }  // namespace alus

@@ -22,7 +22,6 @@
 #include "cuda_util.h"
 #include "earth_gravitational_model96.h"
 #include "pointer_holders.h"
-#include "shapes.h"
 #include "srtm3_elevation_model.h"
 
 namespace {
@@ -63,12 +62,12 @@ TEST(SRTM3, tileFormating) {
     SRTM3TileTester tester("./goods/tileFormatTestData.txt");
     tester.ReadTestData();
 
-    alus::snapengine::EarthGravitationalModel96 egm_96{};
-    egm_96.HostToDevice();
+    std::shared_ptr<alus::snapengine::EarthGravitationalModel96> egm_96 = std::make_shared<alus::snapengine::EarthGravitationalModel96>();
+    egm_96->HostToDevice();
 
     std::vector<std::string> files{"./goods/srtm_41_01.tif", "./goods/srtm_42_01.tif"};
     alus::snapengine::Srtm3ElevationModel srtm_3_dem(files);
-    srtm_3_dem.ReadSrtmTiles(&egm_96);
+    srtm_3_dem.ReadSrtmTiles(egm_96);
     srtm_3_dem.HostToDevice();
 
     std::vector<float> end_tile;
@@ -90,7 +89,6 @@ TEST(SRTM3, tileFormating) {
         end_results.at(i) = end_tile.at(tester.xs_.at(i) + tile_x_size * tester.ys_.at(i));
     }
 
-    std::cout<<"tester size: " << tester.size_ << std::endl;
     size_t count = alus::EqualsArrays(end_results.data(), tester.results_.data(), tester.size_, 0.0000001);
     EXPECT_EQ(count,0) << "SRTM3 tiling test results do not match. Mismatches: " <<count << '\n';
 

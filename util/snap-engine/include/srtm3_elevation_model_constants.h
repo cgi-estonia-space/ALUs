@@ -30,9 +30,9 @@ constexpr int16_t NO_DATA_VALUE{-32768};
 constexpr int RASTER_WIDTH{NUM_X_TILES * NUM_PIXELS_PER_TILE};
 constexpr int RASTER_HEIGHT{NUM_Y_TILES * NUM_PIXELS_PER_TILE};
 
-constexpr double NUM_PIXELS_PER_TILEinv{1.0 / (double)NUM_PIXELS_PER_TILE};
-constexpr double DEGREE_RES_BY_NUM_PIXELS_PER_TILE{DEGREE_RES / (double)NUM_PIXELS_PER_TILE};
-constexpr double DEGREE_RES_BY_NUM_PIXELS_PER_TILEinv{1.0 / DEGREE_RES_BY_NUM_PIXELS_PER_TILE};
+constexpr double NUM_PIXELS_PER_TILE_INVERTED{1.0 / static_cast<double>(NUM_PIXELS_PER_TILE)};
+constexpr double DEGREE_RES_BY_NUM_PIXELS_PER_TILE{static_cast<double>(DEGREE_RES) / static_cast<double>(NUM_PIXELS_PER_TILE)};
+constexpr double DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED{1.0 / DEGREE_RES_BY_NUM_PIXELS_PER_TILE};
 
 }  // namespace srtm3elevationmodel
 }  // namespace snapengine

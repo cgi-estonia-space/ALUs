@@ -37,9 +37,9 @@ private:
 
 public:
     PugixmlMetaDataWriter() = default;
-    explicit PugixmlMetaDataWriter(const std::shared_ptr<Product>& product);
+    explicit PugixmlMetaDataWriter(Product* product);
     void Write() override;
-    void SetProduct(const std::shared_ptr<Product>& product) override;
+    void SetProduct(Product* product) override;
     ~PugixmlMetaDataWriter() override = default;
 };
 

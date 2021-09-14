@@ -22,6 +22,7 @@
 #include <boost/program_options.hpp>
 
 #include "algorithm_parameters.h"
+#include "alus_log.h"
 #include "backgeocoding_controller.h"
 #include "dataset.h"
 #include "earth_gravitational_model96.h"
@@ -32,12 +33,11 @@ namespace {
 constexpr std::string_view PARAMETER_MASTER_PATH{"master"};
 constexpr std::string_view PARAMETER_MASTER_METADATA{"master_metadata"};
 constexpr std::string_view PARAMETER_MASK_ELEVATION{"mask_elevation"};  // TODO: this will be used some day
-}
+}  // namespace
 
 namespace alus::backgeocoding {
 
 void BackgeocodingBond::SetParameters(const app::AlgorithmParameters::Table& param_values) {
-
     if (auto master_input_dataset = param_values.find(std::string(PARAMETER_MASTER_PATH));
         master_input_dataset != param_values.end()) {
         master_dataset_arg_ = master_input_dataset->second;
@@ -49,16 +49,14 @@ void BackgeocodingBond::SetParameters(const app::AlgorithmParameters::Table& par
     }
 }
 
-void BackgeocodingBond::SetSrtm3Manager(snapengine::Srtm3ElevationModel* manager) {
-    srtm3_manager_ = manager;
-}
+void BackgeocodingBond::SetSrtm3Manager(snapengine::Srtm3ElevationModel* manager) { srtm3_manager_ = manager; }
 
-void BackgeocodingBond::SetEgm96Manager(const snapengine::EarthGravitationalModel96* manager) {
+void BackgeocodingBond::SetEgm96Manager(snapengine::EarthGravitationalModel96* manager) {
     egm96_manager_ = manager;
 }
 
 void BackgeocodingBond::SetTileSize(size_t /*width*/, size_t /*height*/) {
-    std::cout << "Backgeocoding does not support custom tile sizes at the moment. Ignoring this" << std::endl;
+    LOGI << "Backgeocoding does not support custom tile sizes at the moment. Ignoring this";
 }
 
 void BackgeocodingBond::SetOutputFilename([[maybe_unused]] const std::string& output_name) {
@@ -67,24 +65,23 @@ void BackgeocodingBond::SetOutputFilename([[maybe_unused]] const std::string& ou
 
 int BackgeocodingBond::Execute() {
     try {
-
         if (input_dataset_filenames_.size() != 2 || input_metadata_filenames_.size() != 2) {
-            std::cerr << "Backgeocoding requires exactly 2 input datasets and 2 metadata files." << std::endl;
+            LOGE << "Backgeocoding requires exactly 2 input datasets and 2 metadata files.";
             return 3;
         }
 
         if (srtm3_manager_ == nullptr) {
-            std::cerr << "SRTM3 manager not set for backgeocoding." << std::endl;
+            LOGE << "SRTM3 manager not set for backgeocoding.";
             return 3;
         }
 
         if (egm96_manager_ == nullptr) {
-            std::cerr << "EGM96 manager not set for backgeocoding." << std::endl;
+            LOGE << "EGM96 manager not set for backgeocoding.";
             return 3;
         }
 
         if (master_dataset_arg_.empty()) {
-            std::cerr << "Master dataset argument is empty." << std::endl;
+            LOGE << "Master dataset argument is empty.";
             return 3;
         }
 
@@ -99,13 +96,12 @@ int BackgeocodingBond::Execute() {
         }
 
         if (master_input_dataset_filename.empty()) {
-            std::cerr << "Cannot determine master dataset path (" << master_dataset_arg_ << " is missing in inputs)."
-                      << std::endl;
+            LOGE << "Cannot determine master dataset path (" << master_dataset_arg_ << " is missing in inputs).";
             return 3;
         }
 
         if (master_metadata_arg_.empty()) {
-            std::cerr << "Master metadata argument is empty." << std::endl;
+            LOGE << "Master metadata argument is empty.";
             return 3;
         }
 
@@ -120,8 +116,7 @@ int BackgeocodingBond::Execute() {
         }
 
         if (master_input_metadata_filename.empty()) {
-            std::cerr << "Cannot determine master metadata path (" << master_metadata_arg_ << " is missing in inputs)."
-                      << std::endl;
+            LOGE << "Cannot determine master metadata path (" << master_metadata_arg_ << " is missing in inputs).";
             return 3;
         }
 
@@ -141,17 +136,16 @@ int BackgeocodingBond::Execute() {
         auto controller =
             std::make_unique<BackgeocodingController>(master_input_dataset, slave_input_dataset, output_dataset,
                                                       master_input_metadata_filename, slave_input_metadata_filename);
-        controller->PrepareToCompute(
-            egm96_manager_->GetDeviceValues(),
-            {srtm3_manager_->GetSrtmBuffersInfo(), srtm3_manager_->GetDeviceSrtm3TilesCount()});
+        controller->PrepareToCompute(egm96_manager_->GetDeviceValues(), {srtm3_manager_->GetSrtmBuffersInfo(),
+                                                                         srtm3_manager_->GetDeviceSrtm3TilesCount()});
         controller->DoWork();
 
         srtm3_manager_->DeviceFree();
     } catch (const std::exception& e) {
-        std::cerr << "Exception caught while running Backgeocoding - " << e.what() << std::endl;
+        LOGE << "Exception caught while running Backgeocoding - " << e.what();
         return 1;
     } catch (...) {
-        std::cerr << "Unknown exception caught while running Backgeocoding" << std::endl;
+        LOGE << "Unknown exception caught while running Backgeocoding";
         return 2;
     }
 

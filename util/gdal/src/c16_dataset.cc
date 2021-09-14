@@ -54,6 +54,11 @@ void C16Dataset<BufferType>::ReadRectangle(Rectangle rectangle, std::map<int, Bu
 }
 
 template <typename BufferType>
+void C16Dataset<BufferType>::TryToCacheImage(){
+    dataset_->TryToCacheImage();
+}
+
+template <typename BufferType>
 void C16Dataset<BufferType>::LoadRasterBand(int /*band_nr*/) {
     throw std::runtime_error("Loading raster bands is disabled on C16 dataset.");
 }

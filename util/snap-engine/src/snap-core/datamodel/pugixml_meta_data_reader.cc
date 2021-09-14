@@ -14,7 +14,6 @@
 #include "pugixml_meta_data_reader.h"
 
 #include <ios>
-#include <iostream>
 #include <optional>
 #include <sstream>
 #include <stdexcept>
@@ -23,6 +22,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 
+#include "alus_log.h"
 #include "dimap_product_constants.h"
 #include "metadata_attribute.h"
 #include "metadata_element.h"
@@ -35,7 +35,7 @@
 namespace alus {
 namespace snapengine {
 
-PugixmlMetaDataReader::PugixmlMetaDataReader(const std::shared_ptr<Product>& product) : IMetaDataReader(product) {}
+PugixmlMetaDataReader::PugixmlMetaDataReader(Product* product) : IMetaDataReader(product) {}
 PugixmlMetaDataReader::PugixmlMetaDataReader(const std::string_view file_name) : IMetaDataReader(file_name) {}
 
 std::shared_ptr<MetadataElement> PugixmlMetaDataReader::Read(std::string_view element_name) {
@@ -260,7 +260,7 @@ std::shared_ptr<MetadataElement> PugixmlMetaDataReader::ImplToModel(std::string_
                         try {
                             utc = Utc::Parse(att_value);
                         } catch (const std::exception& e) {
-                            std::cerr << e.what();
+                            LOGW << e.what();
                         }
                         data = utc;
                     }
@@ -301,7 +301,7 @@ std::shared_ptr<MetadataElement> PugixmlMetaDataReader::ImplToModel(std::string_
     return start_element;
 }
 
-void PugixmlMetaDataReader::SetProduct(const std::shared_ptr<Product>& product) { product_ = product; }
+void PugixmlMetaDataReader::SetProduct(Product* product) { product_ = product; }
 
 PugixmlMetaDataReader::~PugixmlMetaDataReader() = default;
 }  // namespace snapengine

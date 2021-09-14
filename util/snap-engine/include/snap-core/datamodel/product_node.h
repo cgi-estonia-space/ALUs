@@ -38,14 +38,15 @@ class Product;
 class IProductReader;
 class IProductWriter;
 class ProductSubsetDef;
-class ProductNode : public std::enable_shared_from_this<ProductNode> {
+class ProductNode {
 private:
     std::string name_{};
     std::optional<std::string> description_;
-    std::shared_ptr<ProductNode> owner_;
+    ProductNode* owner_ = nullptr;
     // transient in java version
-    bool modified_;
-    std::shared_ptr<Product> product_;
+    bool modified_ = false;
+    // non-owning pointer to parent, as there are fundamental problems porting snaps tree model to C++ smart pointers
+    Product* product_ = nullptr;
 
 protected:
     ProductNode() = default;
@@ -68,8 +69,6 @@ protected:
      */
     ProductNode(std::string_view name, const std::optional<std::string_view>& description);
 
-    template <typename T>
-    std::shared_ptr<T> SharedFromBase();
 
     void SetNodeName(std::string_view trimmed_name, bool silent);
 
@@ -104,7 +103,7 @@ public:
     /**
      * @return The owner node of this node.
      */
-    [[nodiscard]] std::shared_ptr<ProductNode> GetOwner() { return owner_; }
+    [[nodiscard]] ProductNode* GetOwner() { return owner_; }
 
     /**
      * Sets the the owner node of this node.
@@ -112,7 +111,7 @@ public:
      *
      * @param owner the new owner
      */
-    void SetOwner(const std::shared_ptr<ProductNode>& owner);
+    void SetOwner(ProductNode* owner);
 
     /**
      * Returns this node's display name. The display name is the product reference string with the node name appended.
@@ -167,7 +166,7 @@ public:
      * @return the product, or <code>null</code> if this node was not owned by a product at the time this method was
      * called
      */
-    std::shared_ptr<Product> GetProduct();
+    Product* GetProduct();
 
     /**
      * Returns the product reader for the product to which this node belongs to.
@@ -215,14 +214,6 @@ public:
     virtual uint64_t GetRawStorageSize(const std::shared_ptr<ProductSubsetDef>& subset_def) = 0;
 };
 
-////////////////////////////////////////////////////////////////////////
-/////TEMPLATED IMPLEMENTATION NEEDS TO BE IN THE SAME FILE
-////////////////////////////////////////////////////////////////////////
-
-template <typename T>
-std::shared_ptr<T> ProductNode::SharedFromBase() {
-    return std::dynamic_pointer_cast<T>(shared_from_this());
-}
 
 }  // namespace snapengine
 }  // namespace alus

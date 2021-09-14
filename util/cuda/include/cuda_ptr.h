@@ -28,7 +28,10 @@ namespace cuda {
 template <typename T>
 class CudaPtr {
 public:
-    explicit CudaPtr(size_t elem_count) { CHECK_CUDA_ERR(cudaMalloc((void**)&device_ptr_, elem_count*sizeof(T))); }
+    explicit CudaPtr(size_t elem_count) : elem_count_(elem_count) {
+        CHECK_CUDA_ERR(cudaMalloc((void**)&device_ptr_, elem_count * sizeof(T)));
+    }
+    CudaPtr() = default;
     ~CudaPtr() { free(); }
     CudaPtr(const CudaPtr&) = delete;  // class does not support copying(and moving)
     CudaPtr& operator=(const CudaPtr&) = delete;
@@ -37,19 +40,22 @@ public:
         if (device_ptr_ != nullptr) {
             cudaFree(device_ptr_);
             device_ptr_ = nullptr;
+            elem_count_ = 0;
         }
     }
 
+    size_t GetElemCount() const { return elem_count_; }
+
     void Reallocate(size_t size) {
         free();
-        CHECK_CUDA_ERR(cudaMalloc((void**)&device_ptr_, size));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&device_ptr_, size * sizeof(T)));
+        elem_count_ = size;
     }
-    T* Get(){
-        return device_ptr_;
-    }
+    T* Get() { return device_ptr_; }
 
 private:
     T* device_ptr_ = nullptr;
+    size_t elem_count_ = 0;
 };
 
 }  // namespace cuda

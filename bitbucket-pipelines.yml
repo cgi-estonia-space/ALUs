@@ -56,6 +56,8 @@ pipelines:
                 - build-wrapper-linux-x86-64 --out-dir $BW_OUTPUT make -j8
                 - cd $BITBUCKET_CLONE_DIR
                 - sonar-scanner -Dsonar.cfamily.build-wrapper-output=$BW_OUTPUT -Dsonar.sources=algs,app,util -Dsonar.tests=test,test_integration -Dsonar.exclusions=tensorflow/**,external/**,build/**,.git/** -Dsonar.test.exclusions=tensorflow/**,external/**,build/**,.git/** -X
+              artifacts:
+                - sonar-cfamily-reproducer.zip
 
   custom:
     nightly-release: #name of this pipeline
@@ -94,7 +96,7 @@ pipelines:
               script:
                 - git submodule update --init --recursive
                 - build_dir="build-nightly"
-                - cmake . -B${build_dir} -DENABLE_UNIT_TESTS=false -DENABLE_INTEGRATION_TESTS=false -DCUDA_ARCH="50;60;70;75"
+                - cmake . -B${build_dir} -DENABLE_TESTS=false -DCUDA_ARCH="50;60;70;75"
                 - cmake --build $build_dir --target all -- -j 8
                 - cd $build_dir
                 - date_stamp=$(date +"%Y_%m_%d_%H%M")
@@ -109,7 +111,6 @@ pipelines:
                 - build-nightly/*.tar.gz
                 - build-automation/execute_nightly.sh
                 - build-automation/run_beirut_disaster_test.sh
-                - build-automation/run_virumaa_calibration_test.sh
                 - build-automation/run_virumaa_calibration_chain_test.sh
                 - build-automation/compare_alus_output.py
       - step:
@@ -124,23 +125,23 @@ pipelines:
             - echo "[profile sid_man]" > config
             - echo "aws_access_key_id = $SID_MAN_ACCESS_KEY_ID" >> config
             - echo "aws_secret_access_key = $SID_MAN_SECRET_ACCESS_KEY" >> config
-            - echo "region = eu-central-1" >> config
+            - echo "region = eu-west-1" >> config
             - echo "output = json" >> config
-            - aws ec2 start-instances --instance-ids $P3_2xLARGE_INSTANCE_ID --profile sid_man
+            - aws ec2 start-instances --instance-ids $P3_2X_LARGE_IRELAND_INSTANCE_ID --profile sid_man
             - sleep 60
-            - ip_address=$(aws ec2 describe-instances --instance-ids $P3_2xLARGE_INSTANCE_ID --profile sid_man | grep PublicDnsName | head -1 | awk -F'[:]' '{print $2}' | xargs)
+            - ip_address=$(aws ec2 describe-instances --instance-ids $P3_2X_LARGE_IRELAND_INSTANCE_ID --profile sid_man | grep PublicDnsName | head -1 | awk -F'[:]' '{print $2}' | xargs)
             - ip_address=${ip_address%?}
             - echo $ip_address
             - cd $BITBUCKET_CLONE_DIR
             - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "mkdir /tmp/nightly_builds"
-            - scp -oStrictHostKeyChecking=no build-automation/execute_nightly.sh build-automation/run_beirut_disaster_test.sh build-automation/compare_alus_output.py build-automation/run_virumaa_calibration_test.sh build-automation/run_virumaa_calibration_chain_test.sh ubuntu@$ip_address:/tmp/nightly_builds
+            - scp -oStrictHostKeyChecking=no build-automation/execute_nightly.sh build-automation/run_beirut_disaster_test.sh build-automation/compare_alus_output.py build-automation/run_virumaa_calibration_chain_test.sh ubuntu@$ip_address:/tmp/nightly_builds
             - cd build-nightly
             - build_filename=$(basename *.tar.gz)
             - build_id="${build_filename%%.*}"
             - scp -r -oStrictHostKeyChecking=no *.tar.gz ubuntu@$ip_address:/tmp/nightly_builds
             - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "cd /tmp/nightly_builds; ./execute_nightly.sh ${build_id} /home/ubuntu/nightly_datasets/beirut_dimap/ /home/ubuntu/nightly_aux/ /home/ubuntu/nightly_datasets/virumaa/"
           after-script:
-            - aws ec2 stop-instances --instance-ids $P3_2xLARGE_INSTANCE_ID --profile sid_man 
+            - aws ec2 stop-instances --instance-ids $P3_2X_LARGE_IRELAND_INSTANCE_ID --profile sid_man
     nightly-binary-check: # Duplicate of nightly-build except no CI check
       - step:
           name: 'Build Alus release package'
@@ -152,7 +153,7 @@ pipelines:
           script:
             - git submodule update --init --recursive
             - build_dir="build-nightly"
-            - cmake . -B${build_dir} -DENABLE_UNIT_TESTS=false -DENABLE_INTEGRATION_TESTS=false -DCUDA_ARCH="50;60;70;75"
+            - cmake . -B${build_dir} -DENABLE_TESTS=false -DCUDA_ARCH="50;60;70;75"
             - cmake --build $build_dir --target all -- -j 8
             - cd $build_dir
             - date_stamp=$(date +"%Y_%m_%d_%H%M")
@@ -168,7 +169,6 @@ pipelines:
             - build-automation/execute_nightly.sh
             - build-automation/run_beirut_disaster_test.sh
             - build-automation/run_virumaa_calibration_chain_test.sh
-            - build-automation/run_virumaa_calibration_test.sh
             - build-automation/compare_alus_output.py
       - step:
           name: 'End to end tests and publish'
@@ -182,21 +182,21 @@ pipelines:
             - echo "[profile sid_man]" > config
             - echo "aws_access_key_id = $SID_MAN_ACCESS_KEY_ID" >> config
             - echo "aws_secret_access_key = $SID_MAN_SECRET_ACCESS_KEY" >> config
-            - echo "region = eu-central-1" >> config
+            - echo "region = eu-west-1" >> config
             - echo "output = json" >> config
-            - aws ec2 start-instances --instance-ids $P3_2xLARGE_INSTANCE_ID --profile sid_man
+            - aws ec2 start-instances --instance-ids $P3_2X_LARGE_IRELAND_INSTANCE_ID --profile sid_man
             - sleep 60
-            - ip_address=$(aws ec2 describe-instances --instance-ids $P3_2xLARGE_INSTANCE_ID --profile sid_man | grep PublicDnsName | head -1 | awk -F'[:]' '{print $2}' | xargs)
+            - ip_address=$(aws ec2 describe-instances --instance-ids $P3_2X_LARGE_IRELAND_INSTANCE_ID --profile sid_man | grep PublicDnsName | head -1 | awk -F'[:]' '{print $2}' | xargs)
             - ip_address=${ip_address%?}
             - echo $ip_address
             - cd $BITBUCKET_CLONE_DIR
             - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "mkdir /tmp/nightly_builds"
-            - scp -oStrictHostKeyChecking=no build-automation/execute_nightly.sh build-automation/run_beirut_disaster_test.sh build-automation/compare_alus_output.py build-automation/run_virumaa_calibration_test.sh build-automation/run_virumaa_calibration_chain_test.sh ubuntu@$ip_address:/tmp/nightly_builds
+            - scp -oStrictHostKeyChecking=no build-automation/execute_nightly.sh build-automation/run_beirut_disaster_test.sh build-automation/compare_alus_output.py build-automation/run_virumaa_calibration_chain_test.sh ubuntu@$ip_address:/tmp/nightly_builds
             - cd build-nightly
             - build_filename=$(basename *.tar.gz)
             - build_id="${build_filename%%.*}"
             - scp -r -oStrictHostKeyChecking=no *.tar.gz ubuntu@$ip_address:/tmp/nightly_builds
             - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "cd /tmp/nightly_builds; ./execute_nightly.sh ${build_id} /home/ubuntu/nightly_datasets/beirut_dimap/ /home/ubuntu/nightly_aux/ /home/ubuntu/nightly_datasets/virumaa/"
           after-script:
-            - aws ec2 stop-instances --instance-ids $P3_2xLARGE_INSTANCE_ID --profile sid_man
+            - aws ec2 stop-instances --instance-ids $P3_2X_LARGE_IRELAND_INSTANCE_ID --profile sid_man
 

@@ -22,45 +22,41 @@
 
 namespace alus {
 namespace snapengine {
-class Constants {
-public:
-    static constexpr double SECONDS_IN_DAY = 86400.0;
-    static constexpr double LIGHT_SPEED = 299792458.0;  //  m / s
-    static constexpr double HALF_LIGHT_SPEED = LIGHT_SPEED / 2.0;
-    static constexpr double LIGHT_SPEED_IN_METERS_PER_DAY = LIGHT_SPEED * SECONDS_IN_DAY;
+namespace eo {
+namespace constants {
+constexpr double SECONDS_IN_DAY = 86400.0;
+constexpr double LIGHT_SPEED = 299792458.0;  //  m / s
+constexpr double HALF_LIGHT_SPEED = LIGHT_SPEED / 2.0;
+constexpr double LIGHT_SPEED_IN_METERS_PER_DAY = LIGHT_SPEED * SECONDS_IN_DAY;
 
-    // todo::add if needed
-    static constexpr double SEMI_MAJOR_AXIS = WGS84::a; // in m, WGS84 semi-major axis of Earth
-    static constexpr double SEMI_MINOR_AXIS = WGS84::b; // in m, WGS84 semi-minor axis of Earth
+// todo::add if needed
+constexpr double SEMI_MAJOR_AXIS = WGS84::A;  // in m, WGS84 semi-major axis of Earth
+constexpr double SEMI_MINOR_AXIS = WGS84::B;  // in m, WGS84 semi-minor axis of Earth
 
-    static constexpr double MEAN_EARTH_RADIUS = 6371008.7714;  // in m (WGS84)
+constexpr double MEAN_EARTH_RADIUS = 6371008.7714;  // in m (WGS84)
 
-    static constexpr double ONE_MILLION = 1000000.0;
-    static constexpr double TEN_MILLION = 10000000.0;
-    static constexpr double ONE_BILLION = 1000000000.0;
-    static constexpr double ONE_BILLIONTH = 1.0 / ONE_BILLION;
+constexpr double ONE_MILLION = 1000000.0;
+constexpr double TEN_MILLION = 10000000.0;
+constexpr double ONE_BILLION = 1000000000.0;
+constexpr double ONE_BILLIONTH = 1.0 / ONE_BILLION;
 
-    static constexpr double PI = 3.14159265358979323846264338327950288;
-    static constexpr double _PI =
-        3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348;
-    static constexpr double TWO_PI = 2.0 * PI;
-    static constexpr double HALF_PI = PI * 0.5;
-    static constexpr double _TWO_PI = 2.0 * _PI;
-    // todo::add if needed
-    // static constexpr double SQRT2 = std::sqrt(2);
+constexpr double PI =
+    3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348;
+constexpr double HALF_PI = PI * 0.5;
+constexpr double TWO_PI = 2.0 * PI;
+// todo::add if needed
+// static constexpr double SQRT2 = std::sqrt(2);
 
-    static constexpr double DTOR = PI / 180.0;
-    static constexpr double RTOD = 180.0 / PI;
+constexpr double DTOR = PI / 180.0;
+constexpr double RTOD = 180.0 / PI;
 
-    static constexpr double _DTOR = _PI / 180.0;
-    static constexpr double _RTOD = 180.0 / _PI;
+constexpr double EPS = 1e-15;
 
-    static constexpr double EPS = 1e-15;
+constexpr double NO_DATA_VALUE = -99999.0;
 
-    static constexpr double NO_DATA_VALUE = -99999.0;
-
-    static constexpr double STONS = ONE_BILLION;    // s to ns
-    static constexpr double NSTOS = ONE_BILLIONTH;  // ns to s
-};
+constexpr double S_TO_NS = ONE_BILLION;    // s to ns
+constexpr double NS_TO_S = ONE_BILLIONTH;  // ns to s
+}  // namespace constants
+}  // namespace eo
 }  // namespace snapengine
 }  // namespace alus

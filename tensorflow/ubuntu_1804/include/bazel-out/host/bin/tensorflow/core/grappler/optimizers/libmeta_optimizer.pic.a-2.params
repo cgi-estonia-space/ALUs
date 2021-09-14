@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/grappler/optimizers/libmeta_optimizer.pic.a
-bazel-out/host/bin/tensorflow/core/grappler/optimizers/_objs/meta_optimizer/meta_optimizer.pic.o

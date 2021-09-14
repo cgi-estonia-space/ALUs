@@ -19,7 +19,7 @@ class ComputeBurstOffsetTest : public ::testing::Test {
     backgeocoding::BurstOffsetKernelArgs args_{};
 
    private:
-    std::unique_ptr<snapengine::EarthGravitationalModel96> egm_96_;
+    std::shared_ptr<snapengine::EarthGravitationalModel96> egm_96_;
     std::unique_ptr<snapengine::Srtm3ElevationModel> srtm_3_dem_;
     s1tbx::DeviceSentinel1Utils *master_utils_{};
     s1tbx::DeviceSentinel1Utils *slave_utils_{};
@@ -35,12 +35,12 @@ class ComputeBurstOffsetTest : public ::testing::Test {
     snapengine::OrbitStateVectorComputation *d_slave_orbit_state_vector_{nullptr};
 
     void PrepareSrtm3Data() {
-        egm_96_ = std::make_unique<snapengine::EarthGravitationalModel96>();
+        egm_96_ = std::make_shared<snapengine::EarthGravitationalModel96>();
         egm_96_->HostToDevice();
 
         std::vector<std::string> files{"./goods/srtm_41_01.tif", "./goods/srtm_42_01.tif"};
         srtm_3_dem_ = std::make_unique<snapengine::Srtm3ElevationModel>(files);
-        srtm_3_dem_->ReadSrtmTiles(egm_96_.get());
+        srtm_3_dem_->ReadSrtmTiles(egm_96_);
         srtm_3_dem_->HostToDevice();
     }
     void PrepareMasterSentinelUtils() {
@@ -119,6 +119,10 @@ class ComputeBurstOffsetTest : public ::testing::Test {
         geo_location_reader.close();
         master_width_ = num_of_geo_points_per_line;
         master_height_ = num_of_geo_lines;
+
+        Deallocate2DArray(azimuth_time);
+        Deallocate2DArray(slant_range_time);
+        Deallocate2DArray(incidence_angle);
     }
 
     void ReadMasterOrbit() {
@@ -240,6 +244,9 @@ class ComputeBurstOffsetTest : public ::testing::Test {
     }
 
     ~ComputeBurstOffsetTest() override {
+
+        Deallocate2DArray(latitude_);
+        Deallocate2DArray(longitude_);
         cudaFree(d_master_orbit_state_vector_);
         cudaFree(d_slave_orbit_state_vector_);
         cudaFree(master_utils_);

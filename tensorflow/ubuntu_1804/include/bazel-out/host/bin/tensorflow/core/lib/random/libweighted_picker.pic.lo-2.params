@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/lib/random/libweighted_picker.pic.lo
-bazel-out/host/bin/tensorflow/core/lib/random/_objs/weighted_picker/weighted_picker.pic.o

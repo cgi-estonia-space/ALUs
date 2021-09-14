@@ -18,6 +18,11 @@ target_include_directories(alg-bond-static
         ${ALGORITHM_BOND_INCLUDES}
         )
 
+target_link_libraries(alg-bond-static
+        PUBLIC
+        common-util-static
+        )
+
 set_target_properties(alg-bond-static
         PROPERTIES
         OUTPUT_NAME alg-bond

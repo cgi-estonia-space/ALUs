@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/grappler/optimizers/libmemory_optimizer.pic.a
-bazel-out/host/bin/tensorflow/core/grappler/optimizers/_objs/memory_optimizer/memory_optimizer.pic.o

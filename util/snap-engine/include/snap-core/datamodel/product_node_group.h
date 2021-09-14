@@ -57,7 +57,7 @@ public:
      * @param name                    The group name.
      * @param takingOverNodeOwnership If {@code true}, child nodes will have this group as owner after adding.
      */
-    ProductNodeGroup(const std::shared_ptr<ProductNode>& owner, std::string_view name, bool taking_over_node_ownership);
+    ProductNodeGroup(ProductNode* owner, std::string_view name, bool taking_over_node_ownership);
 
     /**
      * Adds the given node to this group.

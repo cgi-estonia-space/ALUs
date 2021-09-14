@@ -30,23 +30,23 @@ public:
     class ArgumentsExtract final {
     public:
         bool static IsValid(std::string_view dem_file);
-        std::vector<std::string> static ExtractSrtm3Files(std::vector<std::string> cmd_line_arguments);
+        std::vector<std::string> static ExtractSrtm3Files(const std::vector<std::string>& cmd_line_arguments);
     };
 
     DemAssistant() = delete;
     DemAssistant(std::vector<std::string> srtm3_files);
 
     static std::shared_ptr<DemAssistant> CreateFormattedSrtm3TilesOnGpuFrom(
-        std::vector<std::string> cmd_line_arguments);
+        const std::vector<std::string>& cmd_line_arguments);
 
     snapengine::Srtm3ElevationModel* GetSrtm3Manager() { return &model_; }
-    const snapengine::EarthGravitationalModel96* GetEgm96Manager() const { return &egm96_; }
+    snapengine::EarthGravitationalModel96* GetEgm96Manager() { return egm96_.get(); }
 
     ~DemAssistant() = default;
 
 private:
 
     snapengine::Srtm3ElevationModel model_;
-    snapengine::EarthGravitationalModel96 egm96_;
+    std::shared_ptr<snapengine::EarthGravitationalModel96> egm96_;
 };
 }

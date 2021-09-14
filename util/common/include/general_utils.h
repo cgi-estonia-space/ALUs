@@ -18,6 +18,8 @@
 #include <sstream>
 #include <string_view>
 
+#include "alus_log.h"
+
 namespace alus::utils::general {
 
 // TODO: maybe remove inline and create a library?
@@ -26,7 +28,7 @@ inline void MeasureExecutionTime(std::string_view message, const std::function<v
     code_block();
     const auto end = std::chrono::steady_clock::now();
     const auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    std::cout << message << " " << elapsed_time << " ms" << std::endl;
+    LOGV << message << " " << elapsed_time << " ms";
 }
 
 inline void DisplayProgressBar(size_t counter, size_t total_size, const std::function<void()>& code_block) {
@@ -35,18 +37,18 @@ inline void DisplayProgressBar(size_t counter, size_t total_size, const std::fun
     const int bar_width_in_symbols{70};
     auto position = static_cast<int>(bar_width_in_symbols * progress);
 
-    std::cout << "[";
+    LOGV << "[";
     for (int i = 0; i < bar_width_in_symbols; ++i) {
         if (i < position) {
-            std::cout << "=";
+            LOGV << "=";
         } else if (i == position) {
-            std::cout << ">";
+            LOGV << ">";
         } else {
-            std::cout << " ";
+            LOGV << " ";
         }
     }
-    std::cout << "] " << static_cast<int>(progress * 100.0) << "%\r";
-    std::cout.flush();
+    LOGV << "] " << static_cast<int>(progress * 100.0) << "%\r";
+    LOGV.flush();
 }
 
 inline bool DoesStringContain(std::string_view string, std::string_view key) {

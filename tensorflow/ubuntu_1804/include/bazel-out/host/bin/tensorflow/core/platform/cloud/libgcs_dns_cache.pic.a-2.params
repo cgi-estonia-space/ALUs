@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/platform/cloud/libgcs_dns_cache.pic.a
-bazel-out/host/bin/tensorflow/core/platform/cloud/_objs/gcs_dns_cache/gcs_dns_cache.pic.o

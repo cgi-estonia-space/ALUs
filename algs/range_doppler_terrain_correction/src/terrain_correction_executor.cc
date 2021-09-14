@@ -15,7 +15,6 @@
 #include "terrain_correction_executor.h"
 
 #include <exception>
-#include <iostream>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -24,59 +23,79 @@
 #include <vector>
 
 #include "alg_bond.h"
+#include "alus_log.h"
 #include "srtm3_elevation_model.h"
 #include "terrain_correction.h"
 #include "terrain_correction_metadata.h"
 
 namespace {
-constexpr std::string_view PARAMETER_ID_AVG_SCENE_HEIGHT{"avg_scene_height"};
-constexpr uint32_t AVG_SCENE_HEIGHT_NOT_USED_VALUE{0};
+constexpr std::string_view PARAMETER_ID_AVG_SCENE_HEIGHT{"use_avg_scene_height"};
+constexpr bool AVG_SCENE_HEIGHT_NOT_USED_VALUE{false};
 }  // namespace
 
 namespace alus::terraincorrection {
-TerrainCorrectionExecutor::TerrainCorrectionExecutor() : avg_scene_height_{AVG_SCENE_HEIGHT_NOT_USED_VALUE} {}
+TerrainCorrectionExecutor::TerrainCorrectionExecutor() : use_avg_scene_height_{AVG_SCENE_HEIGHT_NOT_USED_VALUE} {}
 
 int TerrainCorrectionExecutor::Execute() {
     try {
+        const int default_band_id{1};
         PrintProcessingParameters();
-
-        if (srtm3_manager_ == nullptr /*&& avg_scene_height_ == AVG_SCENE_HEIGHT_NOT_USED_VALUE*/) {
-            std::cerr << "SRTM3 manager is not supplied, for running Range Doppler Terrain Correction with DEM it must "
-                         "be supplied"
-                      << std::endl;
-            return 1;
-        }
-
-        srtm3_manager_->HostToDevice();
-        const auto srtm3_buffers = srtm3_manager_->GetSrtmBuffersInfo();
-        const auto srtm3_buffers_length = srtm3_manager_->GetDeviceSrtm3TilesCount();
 
         const auto metadata_dim_file = metadata_dim_files_.at(0);
         metadata_dimap_data_path_ = metadata_dim_file.substr(0, metadata_dim_file.length() - 4) + ".data";
         Metadata metadata(metadata_dim_file, metadata_dimap_data_path_ + "/tie_point_grids/latitude.img",
                           metadata_dimap_data_path_ + "/tie_point_grids/longitude.img");
 
-        std::unique_ptr<TerrainCorrection> tc{nullptr};
-        if (input_datasets_.size() == 1 && input_datasets_.at(0) != nullptr) {
-            Dataset<double> input(this->input_datasets_.at(0));
-            tc = std::make_unique<TerrainCorrection>(std::move(input), metadata.GetMetadata(),
-                                                     metadata.GetLatTiePointGrid(), metadata.GetLonTiePointGrid(),
-                                                     srtm3_buffers, srtm3_buffers_length);
+        if (srtm3_manager_ == nullptr && !use_avg_scene_height_) {
+            LOGE << "SRTM3 manager is not supplied and average scene height is not enabled, for running Range Doppler "
+                    "Terrain Correction with DEM it must "
+                    "be supplied";
+            return 1;
+        }
+        if (srtm3_manager_ == nullptr) {
+            std::unique_ptr<TerrainCorrection> tc{nullptr};
+            if (input_datasets_.size() == 1 && input_datasets_.at(0) != nullptr) {
+                Dataset<double> input(this->input_datasets_.at(0));
+                tc = std::make_unique<TerrainCorrection>(input.GetGdalDataset(), metadata.GetMetadata(),
+                                                         metadata.GetLatTiePointGrid(), metadata.GetLonTiePointGrid(),
+                                                         nullptr, 0, default_band_id, use_avg_scene_height_);
+            } else {
+                Dataset<double> input(this->input_dataset_names_.at(0));
+                tc = std::make_unique<TerrainCorrection>(input.GetGdalDataset(), metadata.GetMetadata(),
+                                                         metadata.GetLatTiePointGrid(), metadata.GetLonTiePointGrid(),
+                                                         nullptr, 0, default_band_id, use_avg_scene_height_);
+            }
+
+            tc->ExecuteTerrainCorrection(output_file_name_, tile_width_, tile_height_);
         } else {
-            Dataset<double> input(this->input_dataset_names_.at(0));
-            tc = std::make_unique<TerrainCorrection>(std::move(input), metadata.GetMetadata(),
-                                                     metadata.GetLatTiePointGrid(), metadata.GetLonTiePointGrid(),
-                                                     srtm3_buffers, srtm3_buffers_length);
+            srtm3_manager_->HostToDevice();
+            auto* const srtm3_buffers = srtm3_manager_->GetSrtmBuffersInfo();
+            const auto srtm3_buffers_length = srtm3_manager_->GetDeviceSrtm3TilesCount();
+
+            std::unique_ptr<TerrainCorrection> tc{nullptr};
+            if (input_datasets_.size() == 1 && input_datasets_.at(0) != nullptr) {
+                Dataset<double> input(this->input_datasets_.at(0));
+                tc = std::make_unique<TerrainCorrection>(input.GetGdalDataset(), metadata.GetMetadata(),
+                                                         metadata.GetLatTiePointGrid(), metadata.GetLonTiePointGrid(),
+                                                         srtm3_buffers, srtm3_buffers_length, default_band_id,
+                                                         use_avg_scene_height_);
+            } else {
+                Dataset<double> input(this->input_dataset_names_.at(0));
+                tc = std::make_unique<TerrainCorrection>(input.GetGdalDataset(), metadata.GetMetadata(),
+                                                         metadata.GetLatTiePointGrid(), metadata.GetLonTiePointGrid(),
+                                                         srtm3_buffers, srtm3_buffers_length, default_band_id,
+                                                         use_avg_scene_height_);
+            }
+
+            tc->ExecuteTerrainCorrection(output_file_name_, tile_width_, tile_height_);
+            srtm3_manager_->DeviceFree();
         }
 
-        tc->ExecuteTerrainCorrection(output_file_name_, tile_width_, tile_height_);
-        srtm3_manager_->DeviceFree();
-
     } catch (const std::exception& e) {
-        std::cerr << "Exception caught while running Range Doppler Terrain Correction - " << e.what() << std::endl;
+        LOGE << "Exception caught while running Range Doppler Terrain Correction - " << e.what();
         return 1;
     } catch (...) {
-        std::cerr << "Unknown exception caught while running Range Doppler Terrain Correction" << std::endl;
+        LOGE << "Unknown exception caught while running Range Doppler Terrain Correction";
         return 2;
     }
 
@@ -96,6 +115,10 @@ void TerrainCorrectionExecutor::SetInputDataset(const std::vector<GDALDataset*>&
 }
 
 void TerrainCorrectionExecutor::SetParameters(const app::AlgorithmParameters::Table& param_values) {
+    if (const auto use_avg_scene_height = param_values.find(PARAMETER_ID_AVG_SCENE_HEIGHT.data());
+        use_avg_scene_height != param_values.end()) {
+        use_avg_scene_height_ = std::stoi(use_avg_scene_height->second) != 0;
+    }
     (void)param_values;
 }
 
@@ -110,20 +133,20 @@ void TerrainCorrectionExecutor::SetOutputFilename(const std::string& output_name
 
 std::string TerrainCorrectionExecutor::GetArgumentsHelp() const {
     std::stringstream help_stream;
-    help_stream << "Range Doppler Terrain Correction configurable parameters:" << std::endl
-                << PARAMETER_ID_AVG_SCENE_HEIGHT
-                << " - average scene height to be used instead SRTM3 DEM values (default:"
-                << AVG_SCENE_HEIGHT_NOT_USED_VALUE << " - not used)" << std::endl;
+    help_stream << "Range Doppler Terrain Correction configurable parameters: " << PARAMETER_ID_AVG_SCENE_HEIGHT
+                << " - use average scene height instead of SRTM3 DEM values (default: not used)\n";
     return help_stream.str();
 }
 
 void TerrainCorrectionExecutor::PrintProcessingParameters() const {
-    std::cout << "Range Doppler Terrain Correction parameters:" << std::endl << PARAMETER_ID_AVG_SCENE_HEIGHT << " ";
-    if (avg_scene_height_ == AVG_SCENE_HEIGHT_NOT_USED_VALUE) {
-        std::cout << "not used" << std::endl;
+    std::string processing_params_message{"Range Doppler Terrain Correction parameters: "};
+    processing_params_message += PARAMETER_ID_AVG_SCENE_HEIGHT;
+    if (use_avg_scene_height_ == AVG_SCENE_HEIGHT_NOT_USED_VALUE) {
+        processing_params_message += " not used";
     } else {
-        std::cout << avg_scene_height_ << std::endl;
+        processing_params_message += " used";
     }
+    LOGI << processing_params_message;
 }
 
 }  // namespace alus::terraincorrection

@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/c/kernels/libbitcast_op_lib.lo
-bazel-out/host/bin/tensorflow/c/kernels/_objs/bitcast_op_lib/bitcast.o

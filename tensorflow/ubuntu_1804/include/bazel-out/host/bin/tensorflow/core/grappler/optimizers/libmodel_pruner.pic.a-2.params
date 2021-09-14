@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/grappler/optimizers/libmodel_pruner.pic.a
-bazel-out/host/bin/tensorflow/core/grappler/optimizers/_objs/model_pruner/model_pruner.pic.o

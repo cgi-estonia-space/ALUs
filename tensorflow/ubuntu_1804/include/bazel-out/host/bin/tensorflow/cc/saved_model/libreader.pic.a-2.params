@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/cc/saved_model/libreader.pic.a
-bazel-out/host/bin/tensorflow/cc/saved_model/_objs/reader/reader.pic.o

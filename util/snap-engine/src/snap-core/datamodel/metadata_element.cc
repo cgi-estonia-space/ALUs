@@ -20,6 +20,7 @@
 
 #include <stdexcept>
 
+#include "alus_log.h"
 #include "guardian.h"
 #include "product_node_group.h"
 #include "snap-core/dataio/product_subset_def.h"
@@ -49,7 +50,7 @@ void MetadataElement::AddElement(std::shared_ptr<MetadataElement> element) {
     }
     if (elements_ == nullptr) {
         elements_ = std::make_shared<ProductNodeGroup<std::shared_ptr<MetadataElement>>>(
-            SharedFromBase<MetadataElement>(), "elements", true);
+            this, "elements", true);
     }
     elements_->Add(element);
 }
@@ -64,8 +65,10 @@ void MetadataElement::AddAttribute(std::shared_ptr<MetadataAttribute> attribute)
         return;
     }
     if (attributes_ == nullptr) {
+
+
         attributes_ = std::make_shared<ProductNodeGroup<std::shared_ptr<MetadataAttribute>>>(
-            SharedFromBase<MetadataElement>(), "attributes", true);
+            this, "attributes", true);
     }
     attributes_->Add(attribute);
 }
@@ -200,7 +203,7 @@ std::shared_ptr<Utc> MetadataElement::GetAttributeUtc(std::string_view name, std
             return Utc::Parse(attribute->GetData()->GetElemString());
         }
     } catch (const std::exception& e) {
-        std::cerr << e.what();
+        LOGW << e.what();
         // continue
     }
     return default_value;
@@ -314,7 +317,7 @@ void MetadataElement::AddElementAt(const std::shared_ptr<MetadataElement>& eleme
     }
     if (elements_ == nullptr) {
         elements_ = std::make_shared<ProductNodeGroup<std::shared_ptr<MetadataElement>>>(
-            SharedFromBase<MetadataElement>(), "elements", true);
+            this, "elements", true);
     }
     elements_->Add(index, element);
 }

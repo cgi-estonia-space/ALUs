@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/compiler/jit/libcommon.pic.a
-bazel-out/host/bin/tensorflow/compiler/jit/_objs/common/defs.pic.o

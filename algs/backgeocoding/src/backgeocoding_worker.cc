@@ -14,13 +14,15 @@
 #include "backgeocoding_controller.h"
 
 #include <vector>
+
+#include "alus_log.h"
 #include "cuda_ptr.h"
 #include "cuda_util.h"
 
 namespace alus::backgeocoding {
 
 BackgeocodingController::BackgeocodingWorker::~BackgeocodingWorker() {
-    std::cout << "Death of worker: " << params_.index << std::endl;
+    LOGV << "Death of worker: " << params_.index;
 }
 
 void BackgeocodingController::BackgeocodingWorker::Work() {
@@ -34,10 +36,10 @@ void BackgeocodingController::BackgeocodingWorker::Work() {
     lk.unlock();
 
     if (!controller_->exceptions_thrown_) {
-        std::cout << "I am now working. Worker: " << params_.index << std::endl;
+        LOGV << "I am now working. Worker: " << params_.index;
     } else {
-        std::cout << "Worker " << params_.index
-                  << " has detected that exceptions were thrown elsewhere and is shutting down." << std::endl;
+        LOGW << "Worker " << params_.index
+                  << " has detected that exceptions were thrown elsewhere and is shutting down.";
         controller_->RegisterThreadEnd();
     }
 
@@ -128,11 +130,10 @@ void BackgeocodingController::BackgeocodingWorker::Work() {
         controller_->WriteOutputs(params_.master_input_area, out_master_tile_i.data(), out_master_tile_q.data(),
                                   i_results.data(), q_results.data());
     } catch (const std::exception& e) {
-        std::cerr << "Thread nr " << params_.index << " covering master recangle " << params_.master_input_area.x << " "
+        LOGE << "Thread nr " << params_.index << " covering master recangle " << params_.master_input_area.x << " "
                   << params_.master_input_area.y << " " << params_.master_input_area.width << " "
-                  << params_.master_input_area.height << " has caught exception " << std::endl
-                  << e.what() << std::endl;
-        std::cout << "Registered exception: " << e.what() << std::endl;
+                  << params_.master_input_area.height << " has caught exception "
+                  << e.what();
         controller_->RegisterException(std::current_exception());
         controller_->RegisterThreadEnd();
     }

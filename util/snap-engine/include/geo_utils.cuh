@@ -15,10 +15,11 @@
 
 #include <cmath>
 
+#include "general_constants.h"
 #include "geo_utils.h"
 #include "pos_vector.h"
-#include "general_constants.h"
-
+#include "snap-core/util/geo_utils.h"
+#include "snap-engine-utilities/eo/constants.h"
 
 namespace alus {
 namespace snapengine {
@@ -35,19 +36,29 @@ namespace geoutils {
  * @param altitude  The altitude of the given pixel (in m)
  * @param xyz       The xyz coordinates of the given pixel.
  */
+
 inline __device__ __host__ void Geo2xyzWgs84Impl(double latitude, double longitude, double altitude, PosVector& xyz) {
-    double const lat = latitude * constants::DTOR;
-    double const lon = longitude * constants::DTOR;
+    double const lat = latitude * eo::constants::DTOR;
+    double const lon = longitude * eo::constants::DTOR;
 
-    double const sinLat = sin(lat);
-    double const N = (WGS84::a / sqrt(1.0 - WGS84::e2 * sinLat * sinLat));
-    double const NcosLat = (N + altitude) * cos(lat);
+    double sin_lat;
+    double cos_lat;
+    sincos(lat, &sin_lat, &cos_lat);
 
-    xyz.x = NcosLat * cos(lon);  // in m
-    xyz.y = NcosLat * sin(lon);  // in m
-    xyz.z = (N + altitude - WGS84::e2 * N) * sinLat;
+    double const sinLat = sin_lat;
+
+    double const N = (snapengine::WGS84::A / sqrt(1.0 - snapengine::WGS84::E2 * sinLat * sinLat));
+    double const NcosLat = (N + altitude) * cos_lat;
+
+    double sin_lon;
+    double cos_lon;
+    sincos(lon, &sin_lon, &cos_lon);
+
+    xyz.x = NcosLat * cos_lon;  // in m
+    xyz.y = NcosLat * sin_lon;  // in m
+    xyz.z = (N + altitude - snapengine::WGS84::E2 * N) * sinLat;
     // xyz.z = (WGS84.e2inv * N  + altitude) * sinLat;
 }
 }  // namespace geoutils
-}  // namespace snapEngine
+}  // namespace snapengine
 }  // namespace alus

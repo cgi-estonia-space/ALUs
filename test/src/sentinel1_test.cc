@@ -12,163 +12,22 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 #include <cstddef>
-#include <fstream>
 #include <memory>
-#include <stdexcept>
 #include <string_view>
 #include <vector>
 
 #include "../goods/sentinel1_calibrate_data.h"
 
 #include "abstract_metadata.h"
-#include "allocators.h"
 #include "comparators.h"
 #include "gmock/gmock.h"
 #include "metadata_element.h"
 #include "product_data_utc.h"
 #include "sentinel1_utils.h"
-#include "tests_common.hpp"
+#include "sentinel1_utils_tester.h"
 #include "subswath_info.h"
 
-using namespace alus::tests;
-
 namespace {
-
-class Sentinel1UtilsTester {
-public:
-    double** doppler_rate_2_{nullptr};
-    double** doppler_centroid_2_{nullptr};
-    double** reference_time_2_{nullptr};
-    double** range_depend_doppler_rate_2_{nullptr};
-
-    std::vector<std::unique_ptr<alus::s1tbx::SubSwathInfo>> subswath_;
-
-    void Read4Arrays() {
-        std::ifstream doppler_rate_reader("./goods/backgeocoding/slaveDopplerRate.txt");
-        std::ifstream doppler_centroid_reader("./goods/backgeocoding/slaveDopplerCentroid.txt");
-        std::ifstream range_depend_doppler_rate_reader("./goods/backgeocoding/slaveRangeDependDopplerRate.txt");
-        std::ifstream reference_time_reader("./goods/backgeocoding/slaveReferenceTime.txt");
-
-        int x, y, i, j;
-        doppler_rate_reader >> x >> y;
-        doppler_rate_2_ = alus::Allocate2DArray<double>(x, y);
-
-        for (i = 0; i < x; i++) {
-            for (j = 0; j < y; j++) {
-                doppler_rate_reader >> doppler_rate_2_[i][j];
-            }
-        }
-
-        doppler_centroid_reader >> x >> y;
-        doppler_centroid_2_ = alus::Allocate2DArray<double>(x, y);
-        for (i = 0; i < x; i++) {
-            for (j = 0; j < y; j++) {
-                doppler_centroid_reader >> doppler_centroid_2_[i][j];
-            }
-        }
-
-        range_depend_doppler_rate_reader >> x >> y;
-        range_depend_doppler_rate_2_ = alus::Allocate2DArray<double>(x, y);
-        for (i = 0; i < x; i++) {
-            for (j = 0; j < y; j++) {
-                range_depend_doppler_rate_reader >> range_depend_doppler_rate_2_[i][j];
-            }
-        }
-
-        reference_time_reader >> x >> y;
-        reference_time_2_ = alus::Allocate2DArray<double>(x, y);
-        for (i = 0; i < x; i++) {
-            for (j = 0; j < y; j++) {
-                reference_time_reader >> reference_time_2_[i][j];
-            }
-        }
-
-        doppler_rate_reader.close();
-        doppler_centroid_reader.close();
-        range_depend_doppler_rate_reader.close();
-        reference_time_reader.close();
-    }
-
-    void ReadOriginalPlaceHolderFiles(){
-        int size;
-        std::ifstream burst_line_time_reader("./goods/backgeocoding/slaveBurstLineTimes.txt");
-        if(!burst_line_time_reader.is_open()){
-            throw std::ios::failure("Burst Line times file not open.");
-        }
-        burst_line_time_reader >> size;
-        subswath_.push_back(std::make_unique<alus::s1tbx::SubSwathInfo>());
-        subswath_.at(0)->num_of_geo_lines_ = 21;
-        subswath_.at(0)->num_of_geo_points_per_line_ = 21;
-
-        subswath_.at(0)->burst_first_line_time_.resize(size);
-        subswath_.at(0)->burst_last_line_time_.resize(size);
-
-        for(int i=0; i<size; i++){
-            burst_line_time_reader >> subswath_.at(0)->burst_first_line_time_.at(i);
-        }
-        for(int i=0; i<size; i++){
-            burst_line_time_reader >> subswath_.at(0)->burst_last_line_time_.at(i);
-        }
-
-        burst_line_time_reader.close();
-
-
-
-        std::ifstream geo_location_reader("./goods/backgeocoding/slaveGeoLocation.txt");
-        if(!geo_location_reader.is_open()){
-            throw std::ios::failure("Geo Location file not open.");
-        }
-        int num_of_geo_lines2;
-        int num_of_geo_points_per_line2;
-
-        geo_location_reader >> num_of_geo_lines2 >> num_of_geo_points_per_line2;
-        if((num_of_geo_lines2 != subswath_.at(0)->num_of_geo_lines_) || (num_of_geo_points_per_line2 != subswath_.at(0)->num_of_geo_points_per_line_)){
-            geo_location_reader.close();
-            throw std::runtime_error("Geo lines and Geo points per lines are not equal to ones in the file.");
-        }
-        subswath_.at(0)->azimuth_time_ = alus::Allocate2DArray<double>(num_of_geo_lines2, num_of_geo_points_per_line2);
-        subswath_.at(0)->slant_range_time_ = alus::Allocate2DArray<double>(num_of_geo_lines2, num_of_geo_points_per_line2);
-        subswath_.at(0)->latitude_ = alus::Allocate2DArray<double>(num_of_geo_lines2, num_of_geo_points_per_line2);
-        subswath_.at(0)->longitude_ = alus::Allocate2DArray<double>(num_of_geo_lines2, num_of_geo_points_per_line2);
-        subswath_.at(0)->incidence_angle_ = alus::Allocate2DArray<double>(num_of_geo_lines2, num_of_geo_points_per_line2);
-
-        for(int i=0; i< num_of_geo_lines2; i++){
-            for(int j=0; j< num_of_geo_points_per_line2; j++){
-                geo_location_reader >> subswath_.at(0)->azimuth_time_[i][j];
-            }
-        }
-        for(int i=0; i< num_of_geo_lines2; i++){
-            for(int j=0; j< num_of_geo_points_per_line2; j++){
-                geo_location_reader >> subswath_.at(0)->slant_range_time_[i][j];
-            }
-        }
-        for(int i=0; i< num_of_geo_lines2; i++){
-            for(int j=0; j< num_of_geo_points_per_line2; j++){
-                geo_location_reader >> subswath_.at(0)->latitude_[i][j];
-            }
-        }
-        for(int i=0; i< num_of_geo_lines2; i++){
-            for(int j=0; j< num_of_geo_points_per_line2; j++){
-                geo_location_reader >> subswath_.at(0)->longitude_[i][j];
-            }
-        }
-        for(int i=0; i< num_of_geo_lines2; i++){
-            for(int j=0; j< num_of_geo_points_per_line2; j++){
-                geo_location_reader >> subswath_.at(0)->incidence_angle_[i][j];
-            }
-        }
-
-        geo_location_reader.close();
-    }
-
-    Sentinel1UtilsTester() {}
-    ~Sentinel1UtilsTester() {
-        alus::Deallocate2DArray(doppler_rate_2_);
-        alus::Deallocate2DArray(doppler_centroid_2_);
-        alus::Deallocate2DArray(range_depend_doppler_rate_2_);
-        alus::Deallocate2DArray(reference_time_2_);
-    }
-};
 
 /**
  * Important. Perform test with slave data as master does not have these 5 arrays.
@@ -176,12 +35,14 @@ public:
 TEST(sentinel1, utils) {
     alus::s1tbx::Sentinel1Utils utils("./goods/slave_metadata.dim");
     Sentinel1UtilsTester tester;
-    tester.Read4Arrays();
+    tester.Read4Arrays("./goods/backgeocoding/slaveDopplerRate.txt",
+                       "./goods/backgeocoding/slaveDopplerCentroid.txt",
+                       "./goods/backgeocoding/slaveRangeDependDopplerRate.txt",
+                       "./goods/backgeocoding/slaveReferenceTime.txt");
 
     utils.ComputeDopplerRate();
     utils.ComputeReferenceTime();
 
-    std::cout << "starting comparisons." << '\n';
     ASSERT_TRUE(utils.subswath_.at(0)->doppler_centroid_ != nullptr);
     ASSERT_TRUE(tester.doppler_centroid_2_ != nullptr);
 
@@ -273,8 +134,7 @@ void PrepareFirstCalibrationVector(
     gamma_element->SetAttributeInt(alus::snapengine::AbstractMetadata::COUNT,
                                    alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_GAMMA_COUNT);
 
-    const auto dn_element =
-        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::AbstractMetadata::DN);
+    const auto dn_element = std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::AbstractMetadata::DN);
     first_calibration_vector_element->AddElement(dn_element);
     dn_element->SetAttributeString(alus::snapengine::AbstractMetadata::DN,
                                    alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_DN_STRING);
@@ -322,8 +182,7 @@ void PrepareSecondCalibrationVector(
     gamma_element->SetAttributeInt(alus::snapengine::AbstractMetadata::COUNT,
                                    alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_GAMMA_COUNT);
 
-    const auto dn_element =
-        std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::AbstractMetadata::DN);
+    const auto dn_element = std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::AbstractMetadata::DN);
     second_calibration_vector_element->AddElement(dn_element);
     dn_element->SetAttributeString(alus::snapengine::AbstractMetadata::DN,
                                    alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_DN_STRING);
@@ -374,29 +233,28 @@ TEST(Sentinel1Utils, GetCalibrationVectors) {
     }
 }
 
-//Array comparisons omitted on purpose. They are not used on master.
-TEST(Sentinel1Utils, MasterTest){
+// Array comparisons omitted on purpose. They are not used on master.
+TEST(Sentinel1Utils, MasterTest) {
     alus::s1tbx::Sentinel1Utils master_utils("./goods/master_metadata.dim");
 
-    alus::s1tbx::SubSwathInfo *subswath = master_utils.subswath_.at(0).get();
-    
-    EXPECT_DOUBLE_EQ(subswath->azimuth_time_interval_,0.002055556299999998);
-    EXPECT_EQ(subswath->num_of_bursts_,19);
-    EXPECT_EQ(subswath->lines_per_burst_,1503);
+    alus::s1tbx::SubSwathInfo* subswath = master_utils.subswath_.at(0).get();
+
+    EXPECT_DOUBLE_EQ(subswath->azimuth_time_interval_, 0.002055556299999998);
+    EXPECT_EQ(subswath->num_of_bursts_, 19);
+    EXPECT_EQ(subswath->lines_per_burst_, 1503);
     EXPECT_EQ(subswath->samples_per_burst_, 21401);
     EXPECT_EQ(subswath->first_valid_pixel_, 267);
     EXPECT_EQ(subswath->last_valid_pixel_, 20431);
     EXPECT_DOUBLE_EQ(subswath->range_pixel_spacing_, 2.329562);
     EXPECT_DOUBLE_EQ(subswath->slr_time_to_first_pixel_, 0.002679737321566982);
     EXPECT_DOUBLE_EQ(subswath->slr_time_to_last_pixel_, 0.0028460277850849134);
-    //subswath->subswath_name_ = "IW1";  //TODO: come back to this after band names become important
+    // subswath->subswath_name_ = "IW1";  //TODO: come back to this after band names become important
     EXPECT_DOUBLE_EQ(subswath->first_line_time_, 5.49734137546908E8);
     EXPECT_DOUBLE_EQ(subswath->last_line_time_, 5.49734190282205E8);
     EXPECT_DOUBLE_EQ(subswath->radar_frequency_, 5.40500045433435E9);
     EXPECT_DOUBLE_EQ(subswath->azimuth_steering_rate_, 1.590368784);
     EXPECT_EQ(subswath->num_of_geo_lines_, 21);
     EXPECT_EQ(subswath->num_of_geo_points_per_line_, 21);
-
 
     EXPECT_DOUBLE_EQ(master_utils.first_line_utc_, 6362.663629015139);
     EXPECT_DOUBLE_EQ(master_utils.last_line_utc_, 6362.664239377373);
@@ -410,16 +268,16 @@ TEST(Sentinel1Utils, MasterTest){
     EXPECT_EQ(master_utils.source_image_height_, 28557);
     EXPECT_EQ(master_utils.near_range_on_left_, 1);
     EXPECT_EQ(master_utils.srgr_flag_, 0);
-
 }
 
-TEST(Sentinel1Utils, SlaveTest){
+TEST(Sentinel1Utils, SlaveTest) {
     alus::s1tbx::Sentinel1Utils slave_utils("./goods/slave_metadata.dim");
     Sentinel1UtilsTester tester;
-    tester.ReadOriginalPlaceHolderFiles();
+    tester.ReadOriginalPlaceHolderFiles("./goods/backgeocoding/slaveBurstLineTimes.txt",
+                                        "./goods/backgeocoding/slaveGeoLocation.txt", 21, 21);
 
-    alus::s1tbx::SubSwathInfo *subswath = slave_utils.subswath_.at(0).get();
-    alus::s1tbx::SubSwathInfo *tester_subswath = tester.subswath_.at(0).get();
+    alus::s1tbx::SubSwathInfo* subswath = slave_utils.subswath_.at(0).get();
+    alus::s1tbx::SubSwathInfo* tester_subswath = tester.subswath_.at(0).get();
 
     EXPECT_DOUBLE_EQ(subswath->azimuth_time_interval_, 0.002055556299999998);
     EXPECT_EQ(subswath->num_of_bursts_, 19);
@@ -430,7 +288,7 @@ TEST(Sentinel1Utils, SlaveTest){
     EXPECT_DOUBLE_EQ(subswath->range_pixel_spacing_, 2.329562);
     EXPECT_DOUBLE_EQ(subswath->slr_time_to_first_pixel_, 0.002679737321566982);
     EXPECT_DOUBLE_EQ(subswath->slr_time_to_last_pixel_, 0.0028460277850849134);
-    //subswath->subswath_name_ = "IW1";
+    // subswath->subswath_name_ = "IW1";
     EXPECT_DOUBLE_EQ(subswath->first_line_time_, 5.50770938201763E8);
     EXPECT_DOUBLE_EQ(subswath->last_line_time_, 5.50770990939114E8);
     EXPECT_DOUBLE_EQ(subswath->radar_frequency_, 5.40500045433435E9);
@@ -451,8 +309,8 @@ TEST(Sentinel1Utils, SlaveTest){
     EXPECT_EQ(slave_utils.near_range_on_left_, 1);
     EXPECT_EQ(slave_utils.srgr_flag_, 0);
 
-    for(int i=0; i<subswath->num_of_geo_lines_; i++){
-        for(int j=0; i<subswath->num_of_geo_points_per_line_; i++){
+    for (int i = 0; i < subswath->num_of_geo_lines_; i++) {
+        for (int j = 0; j < subswath->num_of_geo_points_per_line_; j++) {
             EXPECT_DOUBLE_EQ(subswath->azimuth_time_[i][j], tester_subswath->azimuth_time_[i][j]);
             EXPECT_DOUBLE_EQ(subswath->slant_range_time_[i][j], tester_subswath->slant_range_time_[i][j]);
             EXPECT_DOUBLE_EQ(subswath->latitude_[i][j], tester_subswath->latitude_[i][j]);
@@ -464,15 +322,13 @@ TEST(Sentinel1Utils, SlaveTest){
     EXPECT_EQ(subswath->burst_first_line_time_.size(), tester_subswath->burst_first_line_time_.size());
     EXPECT_EQ(subswath->burst_last_line_time_.size(), tester_subswath->burst_last_line_time_.size());
 
-    for(size_t i=0; i<subswath->burst_first_line_time_.size(); i++){
+    for (size_t i = 0; i < subswath->burst_first_line_time_.size(); i++) {
         EXPECT_DOUBLE_EQ(subswath->burst_first_line_time_.at(i), tester_subswath->burst_first_line_time_.at(i));
     }
 
-    for(size_t i=0; i<subswath->burst_last_line_time_.size(); i++){
+    for (size_t i = 0; i < subswath->burst_last_line_time_.size(); i++) {
         EXPECT_DOUBLE_EQ(subswath->burst_last_line_time_.at(i), tester_subswath->burst_last_line_time_.at(i));
     }
-
-
 }
 
 }  // namespace

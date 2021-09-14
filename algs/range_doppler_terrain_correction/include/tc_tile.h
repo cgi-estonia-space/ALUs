@@ -32,6 +32,6 @@ struct TcTileCoordinates {
 
 struct TcTile {
     TcTileCoordinates tc_tile_coordinates;
-    cuda::KernelArray<double> target_tile_data_buffer;
+    cuda::KernelArray<float> target_tile_data_buffer;
 };
 }

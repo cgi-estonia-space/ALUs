@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/framework/libop_def_util.pic.a
-bazel-out/host/bin/tensorflow/core/framework/_objs/op_def_util/op_def_util.pic.o

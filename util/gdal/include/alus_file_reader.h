@@ -33,6 +33,7 @@ class AlusFileReader {
     virtual BufferType *GetDeviceDataBuffer() = 0;
     virtual long unsigned int GetBufferByteSize() = 0;
     virtual size_t GetBufferElemCount() = 0;
+    virtual void TryToCacheImage() = 0;
 };
 
 }

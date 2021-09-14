@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/platform/default/libload_library.pic.a
-bazel-out/host/bin/tensorflow/core/platform/default/_objs/load_library/load_library.pic.o

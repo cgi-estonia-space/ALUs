@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/grappler/optimizers/libshape_optimizer.pic.a
-bazel-out/host/bin/tensorflow/core/grappler/optimizers/_objs/shape_optimizer/shape_optimizer.pic.o

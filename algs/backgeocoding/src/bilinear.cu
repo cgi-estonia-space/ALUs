@@ -13,6 +13,7 @@
  */
 #include "bilinear_computation.h"
 
+#include "cuda_util.h"
 #include "bilinear_interpolation.cuh"
 #include "pointer_holders.h"
 #include "backgeocoding_constants.h"

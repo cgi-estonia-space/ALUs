@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/stream_executor/gpu/libgpu_stream.pic.a
-bazel-out/host/bin/tensorflow/stream_executor/gpu/_objs/gpu_stream/gpu_stream.pic.o

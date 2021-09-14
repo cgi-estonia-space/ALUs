@@ -19,7 +19,6 @@
 #pragma once
 
 #include <cstdint>
-#include <iostream>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -28,8 +27,8 @@
 #include <boost/filesystem.hpp>
 
 // TEMPORARY// todo: move readers writers behind IProductReader/writer interface
-#include "../../../../../algs/coherence/include/i_data_tile_reader.h"
-#include "../../../../../algs/coherence/include/i_data_tile_writer.h"
+#include "../../../../../algs/coherence_cuda/include/i_data_tile_reader.h"
+#include "../../../../../algs/coherence_cuda/include/i_data_tile_writer.h"
 
 #include "custom/dimension.h"
 //#include "custom/i_image_reader.h"
@@ -155,7 +154,29 @@ private:
      * @param product
      * @return
      */
-    static std::shared_ptr<Product> InitProductMembers(const std::shared_ptr<Product>& product);
+    static void InitProductMembers(Product* product);
+    /**
+     * Creates a new product without any reader (in-memory product)
+     *
+     * @param name              the product name
+     * @param type              the product type
+     * @param sceneRasterWidth  the scene width in pixels for this data product
+     * @param sceneRasterHeight the scene height in pixels for this data product
+     */
+    Product(std::string_view name, std::string_view type, int scene_raster_width, int scene_raster_height);
+
+    /**
+     * Constructs a new product with the given name and the given reader.
+     *
+     * @param name              the product identifier
+     * @param type              the product type
+     * @param sceneRasterWidth  the scene width in pixels for this data product
+     * @param sceneRasterHeight the scene height in pixels for this data product
+     * @param reader            the reader used to create this product and read data from it.
+     * @see ProductReader
+     */
+    Product(std::string_view name, std::string_view type, int scene_raster_width, int scene_raster_height,
+            const std::shared_ptr<IProductReader>& reader);
 
     /**
      * Constructs a new product with the given name and type.
@@ -187,6 +208,7 @@ private:
     static bool EqualsOrNaN(double v1, double v2, float eps);
 
 public:
+    ~Product() override;
     static constexpr std::string_view TIE_POINT_GRID_DIR_NAME = "tie_point_grids";
 
     static constexpr std::string_view METADATA_ROOT_NAME = "metadata";
@@ -222,29 +244,6 @@ public:
     const std::shared_ptr<IMetaDataWriter>& GetMetadataWriter() const;
     void SetMetadataWriter(const std::shared_ptr<IMetaDataWriter>& metadata_writer);
     bool HasMetaDataReader() const;
-
-    /**
-     * Creates a new product without any reader (in-memory product)
-     *
-     * @param name              the product name
-     * @param type              the product type
-     * @param sceneRasterWidth  the scene width in pixels for this data product
-     * @param sceneRasterHeight the scene height in pixels for this data product
-     */
-    Product(std::string_view name, std::string_view type, int scene_raster_width, int scene_raster_height);
-
-    /**
-     * Constructs a new product with the given name and the given reader.
-     *
-     * @param name              the product identifier
-     * @param type              the product type
-     * @param sceneRasterWidth  the scene width in pixels for this data product
-     * @param sceneRasterHeight the scene height in pixels for this data product
-     * @param reader            the reader used to create this product and read data from it.
-     * @see ProductReader
-     */
-    Product(std::string_view name, std::string_view type, int scene_raster_width, int scene_raster_height,
-            const std::shared_ptr<IProductReader>& reader);
 
     /**
      * Workaround static function which calls constructor with same parameters and also inits members which need
@@ -846,7 +845,7 @@ public:
      * @param eps     the maximum lat/lon error in degree
      * @return {@code false} if the scene dimensions or geocoding are different, {@code true} otherwise.
      */
-    bool IsCompatibleProduct(const std::shared_ptr<Product>& product, float eps);
+    bool IsCompatibleProduct(Product* product, float eps);
 
     /**
      * Closes and clears this product's reader (if any).

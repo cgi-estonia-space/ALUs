@@ -13,6 +13,10 @@
  */
 #pragma once
 
+#include <condition_variable>
+#include <mutex>
+#include <thread>
+
 #include "cuda_friendly_object.h"
 
 /** EXPLANATION FROM ESA SNAP
@@ -46,22 +50,37 @@ namespace alus::snapengine {
  */
 class EarthGravitationalModel96 : public cuda::CudaFriendlyObject {
 private:
+    void FetchGridValuesThread();
+    void HostToDeviceThread();
     void FetchGridValues();
 
     float** egm_{nullptr};
     float* device_egm_{nullptr};
-public:
+    bool is_inited_{false};
+    bool is_on_device_{false};
+    std::mutex init_mutex_;
+    std::mutex host_mutex_;
+    std::mutex device_mutex_;
+    std::condition_variable init_var_;
+    std::condition_variable copy_var_;
 
+    std::exception_ptr egm_exception_{nullptr};
+    std::thread init_thread_;
+    std::thread copy_thread_;
+
+public:
     EarthGravitationalModel96();
 
-    float** GetHostValues() const { return egm_; }
-    const float* GetDeviceValues() const { return device_egm_; }
+    [[nodiscard]] float** GetHostValues();
+    [[nodiscard]] const float* GetDeviceValues();
 
     void HostToDevice() override;
     void DeviceToHost() override;
     void DeviceFree() override;
 
     ~EarthGravitationalModel96();
+    EarthGravitationalModel96(const EarthGravitationalModel96&) = delete;  // class does not support copying(and moving)
+    EarthGravitationalModel96& operator=(const EarthGravitationalModel96&) = delete;
 };
 
 }  // namespace alus::snapengine

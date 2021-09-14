@@ -14,7 +14,6 @@
 #pragma once
 
 #include <fstream>
-#include <iostream>
 #include <vector>
 
 #include "cuda_friendly_object.h"

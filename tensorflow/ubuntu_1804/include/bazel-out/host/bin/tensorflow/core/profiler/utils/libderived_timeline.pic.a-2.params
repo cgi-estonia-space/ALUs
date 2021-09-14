@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/profiler/utils/libderived_timeline.pic.a
-bazel-out/host/bin/tensorflow/core/profiler/utils/_objs/derived_timeline/derived_timeline.pic.o

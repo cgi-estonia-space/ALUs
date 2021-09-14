@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/platform/cloud/libcurl_http_request.pic.a
-bazel-out/host/bin/tensorflow/core/platform/cloud/_objs/curl_http_request/curl_http_request.pic.o

@@ -16,7 +16,6 @@
 #include <sentinel1_utils.h>
 #include <memory>
 #include <string>
-#include <string_view>
 
 #include "c16_dataset.h"
 #include "s1tbx-io/sentinel1/sentinel1_product_reader.h"
@@ -41,7 +40,7 @@ private:
     std::shared_ptr<snapengine::Product> source_product_;
     std::shared_ptr<snapengine::Product> target_product_;
     std::unique_ptr<s1tbx::Sentinel1Utils> s1_utils_;
-    std::unique_ptr<snapengine::SplitProductSubsetBuilder> subset_builder_;
+    std::shared_ptr<snapengine::SplitProductSubsetBuilder> subset_builder_;
     std::shared_ptr<C16Dataset<double>> pixel_reader_;
 
     std::string subswath_;

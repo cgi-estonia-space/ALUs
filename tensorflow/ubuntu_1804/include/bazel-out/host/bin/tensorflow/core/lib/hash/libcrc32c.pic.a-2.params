@@ -1,4 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/lib/hash/libcrc32c.pic.a
-bazel-out/host/bin/tensorflow/core/lib/hash/_objs/crc32c/crc32c.pic.o
-bazel-out/host/bin/tensorflow/core/lib/hash/_objs/crc32c/crc32c_accelerate.pic.o

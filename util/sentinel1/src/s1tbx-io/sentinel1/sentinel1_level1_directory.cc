@@ -18,9 +18,7 @@
  */
 #include "s1tbx-io/sentinel1/sentinel1_level1_directory.h"
 
-#include <sstream>
 #include <stdexcept>
-#include <utility>
 #include <vector>
 
 #include <boost/algorithm/string/predicate.hpp>
@@ -29,6 +27,7 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/tokenizer.hpp>
 
+#include "alus_log.h"
 #include "general_constants.h"
 #include "s1tbx-commons/io/image_i_o_file.h"
 #include "s1tbx-commons/io/sar_reader.h"
@@ -47,6 +46,7 @@
 #include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
 #include "snap-engine-utilities/datamodel/metadata/abstract_metadata_i_o.h"
 #include "snap-engine-utilities/datamodel/unit.h"
+#include "snap-engine-utilities/eo/constants.h"
 #include "snap-engine-utilities/gpf/operator_utils.h"
 #include "snap-engine-utilities/gpf/reader_utils.h"
 
@@ -282,7 +282,7 @@ void Sentinel1Level1Directory::AddTiePointGrids(const std::shared_ptr<snapengine
         incidence_angle_list.at(i) = gg_point->GetAttributeDouble("incidenceAngle", 0);
         elev_angle_list.at(i) = gg_point->GetAttributeDouble("elevationAngle", 0);
         range_time_list.at(i) =
-            gg_point->GetAttributeDouble("slantRangeTime", 0) * alus::snapengine::constants::oneBillion;  // s to ns
+            gg_point->GetAttributeDouble("slantRangeTime", 0) * snapengine::eo::constants::ONE_BILLION;  // s to ns
 
         x.at(i) = static_cast<int>(gg_point->GetAttributeDouble("pixel", 0));
         y.at(i) = static_cast<int>(gg_point->GetAttributeDouble("line", 0));
@@ -487,7 +487,7 @@ void Sentinel1Level1Directory::AddImageFile(std::string_view img_path,
             band_image_file_map_.emplace(img->GetName(), img);
             //            }
         } catch (const std::exception& e) {
-            std::cerr << img_path << " not found" << std::endl;
+            LOGE << img_path << " not found";
         }
     }
 }
@@ -609,7 +609,7 @@ void Sentinel1Level1Directory::AddGeoCoding(const std::shared_ptr<snapengine::Pr
                 product->SetSceneGeoCoding(tp_geo_coding);
             }
         } catch (const std::exception& e) {
-            std::cerr << "Unable to add tpg geocoding " << e.what() << std::endl;
+            LOGE << "Unable to add tpg geocoding " << e.what();
         }
     }
 }
@@ -841,7 +841,7 @@ void Sentinel1Level1Directory::AddProductInfoJSON(const std::shared_ptr<snapengi
             //            }
         } catch (const std::exception& e) {
             //            todo: not sure why snap had throw commented out, I will just log atm
-            std::cerr << "Unable to read productInfo " << e.what() << std::endl;
+            LOGE << "Unable to read productInfo " << e.what();
         }
     }
 }
@@ -959,16 +959,16 @@ void Sentinel1Level1Directory::AddBandAbstractedMetadata(
 
             snapengine::AbstractMetadata::SetAttribute(
                 abs_root, snapengine::AbstractMetadata::RANGE_SAMPLING_RATE,
-                product_information->GetAttributeDouble("rangeSamplingRate") / snapengine::constants::oneMillion);
+                product_information->GetAttributeDouble("rangeSamplingRate") / snapengine::eo::constants::ONE_MILLION);
             snapengine::AbstractMetadata::SetAttribute(
                 abs_root, snapengine::AbstractMetadata::RADAR_FREQUENCY,
-                product_information->GetAttributeDouble("radarFrequency") / snapengine::constants::oneMillion);
+                product_information->GetAttributeDouble("radarFrequency") / snapengine::eo::constants::ONE_MILLION);
             snapengine::AbstractMetadata::SetAttribute(abs_root, snapengine::AbstractMetadata::LINE_TIME_INTERVAL,
                                                        image_information->GetAttributeDouble("azimuthTimeInterval"));
 
             snapengine::AbstractMetadata::SetAttribute(
                 abs_root, snapengine::AbstractMetadata::SLANT_RANGE_TO_FIRST_PIXEL,
-                image_information->GetAttributeDouble("slantRangeTime") * snapengine::constants::halfLightSpeed);
+                image_information->GetAttributeDouble("slantRangeTime") * snapengine::eo::constants::HALF_LIGHT_SPEED);
 
             const std::shared_ptr<snapengine::MetadataElement> downlink_information_list =
                 general_annotation->GetElement("downlinkInformationList");
@@ -981,7 +981,7 @@ void Sentinel1Level1Directory::AddBandAbstractedMetadata(
 
             snapengine::AbstractMetadata::SetAttribute(
                 abs_root, snapengine::AbstractMetadata::RANGE_BANDWIDTH,
-                range_processing->GetAttributeDouble("processingBandwidth") / snapengine::constants::oneMillion);
+                range_processing->GetAttributeDouble("processingBandwidth") / snapengine::eo::constants::ONE_MILLION);
             snapengine::AbstractMetadata::SetAttribute(abs_root, snapengine::AbstractMetadata::AZIMUTH_BANDWIDTH,
                                                        azimuth_processing->GetAttributeDouble("processingBandwidth"));
 
@@ -1005,9 +1005,12 @@ void Sentinel1Level1Directory::AddBandAbstractedMetadata(
         ++num_bands;
         //        }
     }
-    snapengine::AbstractMetadata::SetAttribute(abs_root, snapengine::AbstractMetadata::RANGE_SPACING, range_spacing_total / num_bands);
-    snapengine::AbstractMetadata::SetAttribute(abs_root, snapengine::AbstractMetadata::AZIMUTH_SPACING, azimuth_spacing_total / num_bands);
-    snapengine::AbstractMetadata::SetAttribute(abs_root, snapengine::AbstractMetadata::AVG_SCENE_HEIGHT, height_sum / filenames.size());
+    snapengine::AbstractMetadata::SetAttribute(abs_root, snapengine::AbstractMetadata::RANGE_SPACING,
+                                               range_spacing_total / num_bands);
+    snapengine::AbstractMetadata::SetAttribute(abs_root, snapengine::AbstractMetadata::AZIMUTH_SPACING,
+                                               azimuth_spacing_total / num_bands);
+    snapengine::AbstractMetadata::SetAttribute(abs_root, snapengine::AbstractMetadata::AVG_SCENE_HEIGHT,
+                                               height_sum / filenames.size());
     snapengine::AbstractMetadata::SetAttribute(abs_root, snapengine::AbstractMetadata::BISTATIC_CORRECTION_APPLIED, 1);
 }
 

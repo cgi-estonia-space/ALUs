@@ -74,7 +74,7 @@ struct PointInTriangle {
     double xtd0, xtd1, xtd2, ytd0, ytd1, ytd2;
 };
 
-struct InterpolationParams {
+struct TriangleInterpolationParams {
     size_t triangle_count;
     size_t z_data_count;
     double xy_ratio;
@@ -85,7 +85,29 @@ struct InterpolationParams {
     Window window;
 };
 
-cudaError_t LaunchInterpolation(delaunay::DelaunayTriangle2D *triangles, Zdata *zdata, InterpolationParams params);
+struct InterpolationParams{
+    size_t z_data_count;
+    double x_scale;
+    double y_scale;
+    double offset;
+    size_t accepted_triangles;
+    Window window;
+};
+
+struct TriangleDto {
+    PointInTriangle point_in_triangle;
+    long i_min;
+    long i_max;
+    long j_min;
+    long j_max;
+    double xp;
+    double yp;
+    double vx[3];
+    double vy[3];
+};
+
+cudaError_t LaunchInterpolation(delaunay::DelaunayTriangle2D *triangles, Zdata* zdata,
+                                TriangleInterpolationParams params);
 
 }  // namespace triangularinterpolation
 }  // namespace snapengine

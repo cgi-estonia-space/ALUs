@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/stream_executor/libplugin.a
-bazel-out/host/bin/tensorflow/stream_executor/_objs/plugin/plugin.o

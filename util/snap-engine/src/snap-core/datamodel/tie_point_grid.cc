@@ -20,8 +20,8 @@
 
 #include <algorithm>
 #include <cmath>
-#include <iostream>
 
+#include "alus_log.h"
 #include "ceres-core/ceres_assert.h"
 #include "snap-core/dataio/product_subset_def.h"
 #include "snap-core/datamodel/product_data.h"
@@ -83,9 +83,7 @@ std::shared_ptr<ProductData> TiePointGrid::GetGridData() {
         try {
             SetData(ReadGridData());
         } catch (std::exception& e) {
-            //                    todo:decide if LOG(INFO) or not
-            //                    LOG(ERROR) << "Unable to load TPG: " << e.what();
-            std::cerr << "Unable to load TPG: " << e.what() << std::endl;
+            LOGW << "Unable to load TPG: " << e.what();
         }
     }
     return GetData();
@@ -167,7 +165,7 @@ double TiePointGrid::Interpolate(double wi, double wj, int i0, int j0) {
 }
 
 void TiePointGrid::InitDiscont() {
-    auto base = SharedFromBase<TiePointGrid>();
+    auto base = this;
     std::vector<float> tie_points = base->GetTiePoints();
     std::vector<float> sin_tie_points(tie_points.size());
     std::vector<float> cos_tie_points(tie_points.size());
@@ -301,23 +299,26 @@ int TiePointGrid::GetDiscontinuity(std::vector<float> tie_points) {
 }
 
 int TiePointGrid::GetRasterHeight() {
-    if (GetProduct() != nullptr) {
-        return GetProduct()->GetSceneRasterHeight();
+    auto product = GetProduct();
+    if (product != nullptr) {
+        return product->GetSceneRasterHeight();
     }
     return static_cast<int>(round((GetGridHeight() - 1) * GetSubSamplingY() + 1));
 }
 
 int TiePointGrid::GetRasterWidth() {
-    if (GetProduct() != nullptr) {
-        return GetProduct()->GetSceneRasterWidth();
+    auto product = GetProduct();
+    if (product != nullptr) {
+        return product->GetSceneRasterWidth();
     }
     return static_cast<int>(round((GetGridWidth() - 1) * GetSubSamplingX() + 1));
 }
 std::shared_ptr<ProductData> TiePointGrid::ReadGridData() {
     std::shared_ptr<ProductData> product_data = CreateCompatibleRasterData(GetGridWidth(), GetGridHeight());
-    GetProductReader()->ReadTiePointGridRasterData(SharedFromBase<TiePointGrid>(), 0, 0, GetGridWidth(),
-                                                   GetGridHeight(), product_data, nullptr);
-    return product_data;
+    throw std::runtime_error("ReadGridData not implemented");
+    //GetProductReader()->ReadTiePointGridRasterData(this, 0, 0, GetGridWidth(),
+    //                                               GetGridHeight(), product_data, nullptr);
+    return product_data; //NOSONAR
 }
 
 std::shared_ptr<TiePointGrid> TiePointGrid::CreateSubset(const std::shared_ptr<TiePointGrid>& source_tie_point_grid,

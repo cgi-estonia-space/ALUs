@@ -15,7 +15,6 @@
 
 #include <cstddef>
 #include <memory>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -27,23 +26,25 @@
 
 #include "alg_bond.h"
 #include "algorithm_parameters.h"
+#include "alus_log.h"
 #include "custom/gdal_image_reader.h"
 #include "custom/gdal_image_writer.h"
 #include "dataset.h"
+#include "gdal_management.h"
+
 #include "sentinel1_calibrate.h"
 #include "snap-core/datamodel/product.h"
 #include "srtm3_elevation_model.h"
-#include "topsar_split.h"
-#include "topsar_deburst_op.h"
 #include "terrain_correction.h"
 #include "terrain_correction_metadata.h"
-
+#include "topsar_deburst_op.h"
+#include "topsar_split.h"
 
 namespace {
-//TODO share theese and some of the implemenation with sentinel_calibrate_executor.cc
+// TODO share theese and some of the implemenation with sentinel_calibrate_executor.cc
 const std::vector<std::string> ALLOWED_SUB_SWATHES{"IW1", "IW2", "IW3"};
 const std::vector<std::string> ALLOWED_POLARISATIONS{"VV", "VH"};
-//const std::vector<std::string> ALLOWED_CALIBRATION_TYPES{"sigma", "beta", "gamma", "dn"};
+// const std::vector<std::string> ALLOWED_CALIBRATION_TYPES{"sigma", "beta", "gamma", "dn"};
 
 constexpr std::string_view PARAMETER_SUB_SWATH{"subswath"};
 constexpr std::string_view PARAMETER_POLARISATION{"polarisation"};
@@ -53,6 +54,7 @@ constexpr std::string_view PARAMETER_VALUE_BETA{"beta"};
 constexpr std::string_view PARAMETER_VALUE_SIGMA{"sigma"};
 constexpr std::string_view PARAMETER_VALUE_GAMMA{"gamma"};
 constexpr std::string_view PARAMETER_VALUE_DN{"dn"};
+constexpr std::string_view PARAMETER_WRITE_INTERMEDIATE_FILES("wif");
 }  // namespace
 
 namespace alus::sentinel1calibrate {
@@ -71,6 +73,10 @@ void CalibrationRoutine::SetParameters(const app::AlgorithmParameters::Table& pa
         calibration_type != param_values.end()) {
         ParseCalibrationType(calibration_type->second);
     }
+    if (const auto write_intermediate_files = param_values.find(PARAMETER_WRITE_INTERMEDIATE_FILES.data());
+        write_intermediate_files != param_values.end()) {
+        write_intermediate_files_ = boost::iequals(write_intermediate_files->second, "true");
+    }
 }
 
 void CalibrationRoutine::SetTileSize(size_t width, size_t height) {
@@ -82,8 +88,9 @@ int CalibrationRoutine::Execute() {
     try {
         ValidateParameters();
 
+        const auto cal_start = std::chrono::steady_clock::now();
         const auto input_path = input_dataset_filenames_.at(0);
-        const auto subswath =  sub_swaths_.at(0);
+        const auto subswath = sub_swaths_.at(0);
         const auto polarization = *polarisations_.begin();
         std::string output_dir;
         std::string final_path;
@@ -97,74 +104,100 @@ int CalibrationRoutine::Execute() {
             final_path = output_path_;
         }
 
-        GDALSetCacheMax64(4e9); // GDAL Cache 4GB, enough for for whole swath input + out
+        // SLC input x 1 = ~1.25GB
+        // TC ouput = ~1GB
+        alus::gdalmanagement::SetCacheMax(4e9);
+
         // split
         alus::topsarsplit::TopsarSplit split_op(input_path, subswath, polarization);
         split_op.initialize();
         auto split_product = split_op.GetTargetProduct();
 
         // calibration
+
         std::shared_ptr<snapengine::Product> calibrated_product;
-        std::string calibration_tmp_file; //TODO calibration api should support skipping temporary files
-        {
-            Sentinel1Calibrator calibrator{split_product,
-                                           input_path,
-                                           sub_swaths_,
-                                           polarisations_,
-                                           calibration_bands_,
-                                           output_dir,
-                                           false,
-                                           static_cast<int>(tile_width_),
-                                           static_cast<int>(tile_height_)};
-            calibrator.Execute();
-            calibrated_product = calibrator.GetTargetProduct();
-            calibration_tmp_file = calibrator.GetTargetPath(subswath);
+        std::shared_ptr<GDALDataset> calibrated_ds;
+        std::string calibration_tmp_file;
+        Sentinel1Calibrator calibrator{split_product,
+                                       input_path,
+                                       sub_swaths_,
+                                       polarisations_,
+                                       calibration_bands_,
+                                       output_dir,
+                                       false,
+                                       static_cast<int>(tile_width_),
+                                       static_cast<int>(tile_height_)};
+        calibrator.Execute();
+        calibrated_product = calibrator.GetTargetProduct();
+        calibration_tmp_file = calibrator.GetTargetPath(subswath);
+        calibrated_ds = calibrator.GetOutputDatasets().begin()->second;
+
+        LOGI << "Sentinel1 calibration done - "
+             << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - cal_start)
+                 .count() << "ms";
+
+        if(write_intermediate_files_) {
+            LOGI << "Calibration output @ " << calibration_tmp_file;
+            GeoTiffWriteFile(calibrated_ds.get(), calibration_tmp_file);
         }
 
-        auto last = cudaGetLastError();
-        (void)last;
-        //TODO calibration leave cuda in error state
-        // printf("calibration err = %d\n", last);
-
         // deburst
+        const auto deb_start = std::chrono::steady_clock::now();
         auto data_reader = std::make_shared<alus::snapengine::custom::GdalImageReader>();
-        data_reader->Open(calibration_tmp_file, true, true);
+        data_reader->TakeExternalDataset(calibrated_ds.get());
+        calibrated_ds.reset();
+
         calibrated_product->SetImageReader(data_reader);
         auto data_writer = std::make_shared<alus::snapengine::custom::GdalImageWriter>();
         auto deburst_op = alus::s1tbx::TOPSARDeburstOp::CreateTOPSARDeburstOp(calibrated_product);
-        auto debursted_product =  deburst_op->GetTargetProduct();
+        auto debursted_product = deburst_op->GetTargetProduct();
 
-        //TODO deburst does not yet support skipping temp files
-        const auto deburst_tmp_path = boost::filesystem::change_extension(calibration_tmp_file, "").string() + "_deb.tif";
-        data_writer->Open(deburst_tmp_path,
-                          deburst_op->GetTargetProduct()->GetSceneRasterWidth(), deburst_op->GetTargetProduct()->GetSceneRasterHeight(),
-                          data_reader->GetGeoTransform(), data_reader->GetDataProjection());
+        const auto deburst_tmp_path =
+            boost::filesystem::change_extension(calibration_tmp_file, "").string() + "_deb.tif";
+        data_writer->Open(deburst_tmp_path, deburst_op->GetTargetProduct()->GetSceneRasterWidth(),
+                          deburst_op->GetTargetProduct()->GetSceneRasterHeight(), data_reader->GetGeoTransform(),
+                          data_reader->GetDataProjection(), true);
         debursted_product->SetImageWriter(data_writer);
         deburst_op->Compute();
 
+        LOGI << "TOPSAR Deburst done - "
+             << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - deb_start)
+                 .count() << "ms";
+        data_reader->ReleaseDataset();
+
+        if(write_intermediate_files_) {
+            LOGI << "Deburst output @ " << deburst_tmp_path;
+            GeoTiffWriteFile(data_writer->GetDataset(), deburst_tmp_path);
+        }
 
         // TC
+        const auto tc_start = std::chrono::steady_clock::now();
         terraincorrection::Metadata metadata(debursted_product);
-        Dataset<double> tc_dataset(deburst_tmp_path);
         srtm3_manager_->HostToDevice();
         const auto* d_srtm_3_tiles = srtm3_manager_->GetSrtmBuffersInfo();
         const size_t srtm_3_tiles_length = srtm3_manager_->GetDeviceSrtm3TilesCount();
         const int selected_band{1};
-        terraincorrection::TerrainCorrection tc(std::move(tc_dataset), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
-                                                metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length, selected_band);
+        terraincorrection::TerrainCorrection tc(data_writer->GetDataset(), metadata.GetMetadata(),
+                                                metadata.GetLatTiePointGrid(), metadata.GetLonTiePointGrid(),
+                                                d_srtm_3_tiles, srtm_3_tiles_length, selected_band);
 
-        std::string tc_output_file = final_path.empty()
-                                     ? boost::filesystem::change_extension(deburst_tmp_path, "").string() + "_tc.tif"
-                                     : final_path;
+        std::string tc_output_file =
+            final_path.empty() ? boost::filesystem::change_extension(deburst_tmp_path, "").string() + "_tc.tif"
+                               : final_path;
         tc.ExecuteTerrainCorrection(tc_output_file, tile_width_, tile_height_);
 
-        std::cout << "Algorithm completed, output file @ " << tc_output_file << "\n";
+        LOGI << "Terrain correction done - "
+             << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - tc_start)
+                 .count() << "ms";
 
+
+
+        LOGI << "Algorithm completed, output file @ " << tc_output_file;
     } catch (const std::exception& e) {
-        std::cerr << "Exception caught while running Sentinel-1 Calibration - " << e.what() << std::endl;
+        LOGE << "Exception caught while running Sentinel-1 Calibration - " << e.what();
         return 1;
     } catch (...) {
-        std::cerr << "Unknown exception caught while running Sentinel-1 Calibration." << std::endl;
+        LOGE << "Unknown exception caught while running Sentinel-1 Calibration.";
         return 2;
     }
 
@@ -174,18 +207,18 @@ std::string CalibrationRoutine::GetArgumentsHelp() const {
     boost::program_options::options_description options("Sentinel1 Calibration routine argument list");
     options.add_options()(PARAMETER_SUB_SWATH.data(),
                           "Subswath for which the calibration will be performed (IW1, IW2, IW3)")(
-        PARAMETER_POLARISATION.data(),
-        "Polarisation for which the calibration will be performed (VV or VH)")(PARAMETER_CALIBRATION_TYPE.data(),
-                                                                               "Type of calibration (sigma, beta, "
-                                                                               "gamma, dn)");
-
+        PARAMETER_POLARISATION.data(), "Polarisation for which the calibration will be performed (VV or VH)")(
+        PARAMETER_CALIBRATION_TYPE.data(),
+        "Type of calibration (sigma, beta, "
+        "gamma, dn)")(PARAMETER_WRITE_INTERMEDIATE_FILES.data(),
+                      "write intermediate files - true/false (default:false)");
     std::stringstream result;
     result << options;
     return boost::algorithm::replace_all_copy(result.str(), "--", "");
 }
 
 void sentinel1calibrate::CalibrationRoutine::SetInputFilenames(const std::vector<std::string>& input_datasets,
-                                                                       const std::vector<std::string>&) {
+                                                               const std::vector<std::string>&) {
     input_dataset_filenames_ = input_datasets;
 }
 void sentinel1calibrate::CalibrationRoutine::SetOutputFilename(const std::string& output_name) {
@@ -205,23 +238,20 @@ void CalibrationRoutine::ParseCalibrationType(std::string_view calibration_strin
         calibration_bands_.get_dn_lut = true;
     }
 }
-void CalibrationRoutine::ValidateParameters() {
-
-    if(!srtm3_manager_ || !egm96_manager_){
+void CalibrationRoutine::ValidateParameters() const {
+    if (!srtm3_manager_ || !egm96_manager_) {
         throw std::invalid_argument("Missing parameter --dem");
     }
     ValidateSubSwath();
     ValidatePolarisation();
     ValidateCalibrationType();
-
 }
-bool CalibrationRoutine::DoesStringEqualAnyOf(std::string_view comparand,
-                                                      const std::vector<std::string>& string_list) {
+bool CalibrationRoutine::DoesStringEqualAnyOf(std::string_view comparand, const std::vector<std::string>& string_list) {
     return std::any_of(string_list.begin(), string_list.end(),
                        [&comparand](std::string_view string) { return boost::iequals(comparand, string); });
 }
 
-void CalibrationRoutine::ValidateSubSwath() {
+void CalibrationRoutine::ValidateSubSwath() const {
     if (sub_swaths_.empty()) {
         throw std::invalid_argument("Missing parameter " + std::string(PARAMETER_SUB_SWATH));
     }
@@ -232,7 +262,7 @@ void CalibrationRoutine::ValidateSubSwath() {
         }
     }
 }
-void CalibrationRoutine::ValidatePolarisation() {
+void CalibrationRoutine::ValidatePolarisation() const {
     if (polarisations_.empty()) {
         throw std::invalid_argument("Missing parameter " + std::string(PARAMETER_POLARISATION));
     }
@@ -245,23 +275,20 @@ void CalibrationRoutine::ValidatePolarisation() {
         }
     }
 }
-void CalibrationRoutine::ValidateCalibrationType() {
+void CalibrationRoutine::ValidateCalibrationType() const {
     if (!(calibration_bands_.get_dn_lut || calibration_bands_.get_beta_lut || calibration_bands_.get_sigma_lut ||
           calibration_bands_.get_gamma_lut)) {
         throw std::invalid_argument("Missing parameter " + std::string(PARAMETER_CALIBRATION_TYPE));
     }
 }
 
-void CalibrationRoutine::SetSrtm3Manager(snapengine::Srtm3ElevationModel* manager) {
-    srtm3_manager_ = manager;
-}
+void CalibrationRoutine::SetSrtm3Manager(snapengine::Srtm3ElevationModel* manager) { srtm3_manager_ = manager; }
 
-void CalibrationRoutine::SetEgm96Manager(const snapengine::EarthGravitationalModel96* manager) {
+void CalibrationRoutine::SetEgm96Manager(snapengine::EarthGravitationalModel96* manager) {
     egm96_manager_ = manager;
 }
 
 }  // namespace alus::sentinel1calibrate
-
 
 extern "C" {
 alus::AlgBond* CreateAlgorithm() { return new alus::sentinel1calibrate::CalibrationRoutine(); }  // NOSONAR

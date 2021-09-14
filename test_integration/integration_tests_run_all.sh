@@ -7,7 +7,7 @@ set -x
 
 ./integration-test-backgeocoding "$result_output"
 res1=$?
-./integration-test-coherence "$result_output"
+./integration-test-coherence-cuda "$result_output"
 res2=$?
 ./integration-test-snap-engine "$result_output"
 res3=$?
@@ -21,6 +21,10 @@ res6=$?
 res7=$?
 ./integration-test-sentinel1-calibrate "$result_output"
 res8=$?
+./integration-test-topsar-split "$result_output"
+res9=$?
+./integration-test-coregistration "$result_output"
+res10=$?
 
-exit_value=$((res1 | res2 | res3 | res4 | res5 | res6 | res7 | res8))
+exit_value=$((res1 | res2 | res3 | res4 | res5 | res6 | res7 | res8 | res9 | res10))
 exit $exit_value

@@ -18,7 +18,6 @@
  */
 #include <cstdint>
 #include <fstream>
-#include <iostream>
 #include <limits>
 #include <memory>
 #include <stdexcept>
@@ -313,7 +312,7 @@ TEST_F(ProductTest, testAddAndRemoveGroup) {
     ASSERT_TRUE(groups);
 
     int node_count_0 = groups->GetNodeCount();
-    auto spectra = std::make_shared<ProductNodeGroup<std::shared_ptr<MetadataElement>>>(p, "spectra", true);
+    auto spectra = std::make_shared<ProductNodeGroup<std::shared_ptr<MetadataElement>>>(p.get(), "spectra", true);
     groups->Add(spectra);
     ASSERT_EQ(groups->GetNodeCount(), node_count_0 + 1);
 

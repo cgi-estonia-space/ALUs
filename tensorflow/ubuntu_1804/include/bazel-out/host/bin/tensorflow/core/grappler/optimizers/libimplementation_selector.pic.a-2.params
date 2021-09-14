@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/grappler/optimizers/libimplementation_selector.pic.a
-bazel-out/host/bin/tensorflow/core/grappler/optimizers/_objs/implementation_selector/implementation_selector.pic.o

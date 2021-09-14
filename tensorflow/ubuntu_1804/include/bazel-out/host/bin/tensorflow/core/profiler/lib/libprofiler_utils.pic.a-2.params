@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/profiler/lib/libprofiler_utils.pic.a
-bazel-out/host/bin/tensorflow/core/profiler/lib/_objs/profiler_utils/profiler_utils.pic.o

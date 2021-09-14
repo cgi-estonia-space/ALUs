@@ -20,18 +20,18 @@
 
 #include <cstddef>
 #include <exception>
-#include <iostream>
 
+#include "alus_log.h"
 #include "gdal_data_copy.h"
 #include "general_constants.h"
+#include "snap-engine-utilities/eo/constants.h"
 #include "io/orbits/sentinel1/sentinel_p_o_d_orbit_file.h"
 #include "orbit_state_vector.h"
 #include "product_data_utc.h"
 #include "product_utils.h"
 #include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
 
-namespace alus {
-namespace s1tbx {
+namespace alus::s1tbx {
 
 ApplyOrbitFileOp::ApplyOrbitFileOp(const std::shared_ptr<snapengine::Product>& source_product)
     : source_product_(source_product) {}
@@ -92,8 +92,7 @@ void ApplyOrbitFileOp::Initialize() {
                 UpdateOrbits();
             } catch (const std::exception& e) {
                 if (continue_on_fail_) {
-                    //                    LOG(WARNING) << "ApplyOrbit ignoring error and continuing: " << e.what();
-                    std::cerr << "ApplyOrbit ignoring error and continuing: " << e.what() << std::endl;
+                    LOGW << "ApplyOrbit ignoring error and continuing: " << e.what();
                     product_updated_ = true;
                 } else {
                     throw e;
@@ -114,8 +113,7 @@ void ApplyOrbitFileOp::UpdateOrbits() {
     try {
         orbit_provider_->RetrieveOrbitFile(orbit_type_);
     } catch (std::exception& e) {
-        //        LOG(WARNING) << e.what();
-        std::cerr << e.what() << std::endl;
+        LOGW << e.what();
         // try other orbit file types
         bool try_another_type = false;
         for (std::string type : orbit_provider_->GetAvailableOrbitTypes()) {
@@ -125,9 +123,7 @@ void ApplyOrbitFileOp::UpdateOrbits() {
                 } catch (std::exception& e2) {
                     throw e;
                 }
-                //                LOG(WARNING) << "Using " + type + ' ' << orbit_provider_->GetOrbitFile() << "
-                //                instead";
-                std::cerr << "Using " << type << ' ' << orbit_provider_->GetOrbitFile() << " instead" << std::endl;
+                LOGI << "Using " << type << ' ' << orbit_provider_->GetOrbitFile() << " instead";
                 try_another_type = true;
             }
         }
@@ -148,7 +144,7 @@ void ApplyOrbitFileOp::UpdateOrbitStateVectors() {
                                abs_root_->GetAttributeString(snapengine::AbstractMetadata::LAST_LINE_TIME))
                                ->GetMjd();  // in days
 
-    double delta = 1.0 / snapengine::constants::secondsInDay;  // time interval = 1s
+    double delta = 1.0 / snapengine::eo::constants::SECONDS_IN_DAY;  // time interval = 1s
 
     int num_extra_vectors = 10;  // # of vectors before and after acquisition period
 
@@ -231,5 +227,4 @@ void ApplyOrbitFileOp::WriteProductFiles(std::shared_ptr<snapengine::IMetaDataWr
     target_product_->GetMetadataWriter()->Write();
 }
 
-}  // namespace s1tbx
-}  // namespace alus
+}  // namespace alus::s1tbx

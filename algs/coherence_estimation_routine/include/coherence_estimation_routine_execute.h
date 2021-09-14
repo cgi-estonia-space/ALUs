@@ -33,7 +33,7 @@ public:
                            const std::vector<std::string>& metadata_paths) override;
     void SetParameters(const app::AlgorithmParameters::Table& param_values) override;
     void SetSrtm3Manager(snapengine::Srtm3ElevationModel* manager) override;
-    void SetEgm96Manager(const snapengine::EarthGravitationalModel96* manager) override;
+    void SetEgm96Manager(snapengine::EarthGravitationalModel96* manager) override;
     void SetTileSize(size_t width, size_t height) override;
     void SetOutputFilename(const std::string& output_name) override;
     int Execute() override;
@@ -47,15 +47,17 @@ private:
 
     bool IsSafeInput() const;
     int ExecuteSafe();
-    int ExecuteGeoTiffAndBeamDimap();
-
+    void ParseCoherenceParams();
+    void ParseOutputParams();
+    std::string GetCoherenceHelp() const;
 
     std::vector<std::string> input_datasets_{};
     std::vector<std::string> metadata_paths_{};
     snapengine::Srtm3ElevationModel* srtm3_manager_{};
-    const snapengine::EarthGravitationalModel96* egm96_manager_{};
+    snapengine::EarthGravitationalModel96* egm96_manager_{};
     size_t tile_width_{};
     size_t tile_height_{};
+    bool write_intermediate_files_{};
     std::string output_name_{};
     app::AlgorithmParameters::Table alg_params_;
     std::string main_scene_file_id_{};
@@ -67,5 +69,11 @@ private:
     std::string coherence_terrain_correction_metadata_param_{};
     std::string main_scene_file_path_{};
     std::string secondary_scene_file_path_{};
+    int srp_number_points_{501};
+    int srp_polynomial_degree_{5};
+    bool subtract_flat_earth_phase_{true};
+    int coherence_window_range_{15};
+    int coherence_window_azimuth_{0}; // if left as zero, derived from range window
+    int orbit_degree_{3};
 };
 }

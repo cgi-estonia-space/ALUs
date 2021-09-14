@@ -30,18 +30,9 @@ list(APPEND APPLY_ORBIT_FILE_OP_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/../../common/include
         )
 
-add_library(apply-orbit-file-op-obj
-        OBJECT
-        ${APPLY_ORBIT_FILE_OP_SOURCES}
-        )
-target_include_directories(apply-orbit-file-op-obj
-        PRIVATE
-        ${APPLY_ORBIT_FILE_OP_INCLUDE_DIRS}
-        )
-
 add_library(apply-orbit-file-op-static
         STATIC
-        $<TARGET_OBJECTS:apply-orbit-file-op-obj>
+        ${APPLY_ORBIT_FILE_OP_SOURCES}
         )
 target_include_directories(apply-orbit-file-op-static
         PUBLIC
@@ -58,5 +49,6 @@ target_link_libraries(apply-orbit-file-op-static
         sentinel1-util-static
         exotic_operations-static
         pugixml-static
+        common-util-static
         )
 

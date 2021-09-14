@@ -18,7 +18,6 @@
 #include "dataset.h"
 #include "gdal_util.h"
 #include "resampling.h"
-#include "tests_common.hpp"
 
 #include "range_doppler_geocoding_test.cuh"
 
@@ -38,7 +37,7 @@ class RangeDopplerGeocodingTest : public ::testing::Test {
     Dataset<double> dataset_{
         "./goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb.tif"};
     std::vector<double> tile_data_;
-    double *d_tile_data_;
+    float *d_tile_data_;
 
    protected:
     double range_index_;
@@ -62,15 +61,15 @@ class RangeDopplerGeocodingTest : public ::testing::Test {
                                                                                tile_data_.data(),
                                                                                source_rectangle.width,
                                                                                source_rectangle.height,
-                                                                               GDALDataType::GDT_Float64,
+                                                                               GDALDataType::GDT_Float32,
                                                                                0,
                                                                                0));
     }
 
     void HostToDevice() {
-        CHECK_CUDA_ERR(cudaMalloc(&d_tile_data_, sizeof(double) * tile_data_.size()));
+        CHECK_CUDA_ERR(cudaMalloc(&d_tile_data_, sizeof(float ) * tile_data_.size()));
         CHECK_CUDA_ERR(
-            cudaMemcpy(d_tile_data_, tile_data_.data(), sizeof(double) * tile_data_.size(), cudaMemcpyHostToDevice));
+            cudaMemcpy(d_tile_data_, tile_data_.data(), sizeof(float) * tile_data_.size(), cudaMemcpyHostToDevice));
         source_tile_.data_buffer = d_tile_data_;
 
         CHECK_CUDA_ERR(cudaMalloc(&d_source_tile_, sizeof(Tile)));

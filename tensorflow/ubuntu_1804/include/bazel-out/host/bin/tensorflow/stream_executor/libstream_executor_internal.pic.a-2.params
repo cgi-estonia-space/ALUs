@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/stream_executor/libstream_executor_internal.pic.a
-bazel-out/host/bin/tensorflow/stream_executor/_objs/stream_executor_internal/stream_executor_internal.pic.o

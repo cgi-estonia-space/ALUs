@@ -14,6 +14,7 @@
 #include "sentinel1_calibrate.h"
 #include "gmock/gmock.h"
 
+#include <cstdio>
 #include <memory>
 
 #include <boost/filesystem.hpp>
@@ -31,28 +32,37 @@ using namespace alus::sentinel1calibrate;
 class Sentinel1CalibrateTest : public ::testing::Test {
 protected:
     boost::filesystem::path input_file_{
-        "./goods/sentinel1_calibrate/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563.SAFE"};
+        "./goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6_thin.SAFE"};
 
     const std::shared_ptr<s1tbx::Sentinel1ProductReaderPlugIn> reader_plug_in_ =
         std::make_shared<s1tbx::Sentinel1ProductReaderPlugIn>();
 };
 
 TEST_F(Sentinel1CalibrateTest, Virumaa) {
-    GDALSetCacheMax64(4e9); // GDAL Cache 4GB, enough for for whole swath input + output
-    ASSERT_THAT(boost::filesystem::exists(input_file_), ::testing::IsTrue());
-    const std::shared_ptr<snapengine::IProductReader> product_reader = reader_plug_in_->CreateReaderInstance();
-    std::shared_ptr<snapengine::Product> input_product =
-        product_reader->ReadProductNodes(boost::filesystem::canonical(input_file_), nullptr);
-    const auto source_path = boost::filesystem::canonical(input_file_).string();
+    // Scope for forcing destruction of Sentinel1Calibrator
 
-    Sentinel1Calibrator calibrator{
-        input_product, source_path, {"IW1"}, {"VV"}, {false, true, false, false}, "/tmp/", false, 5000, 5000};
-    calibrator.Execute();
     const std::string result_file{
-        "/tmp/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_Cal_IW1.tif"};
+        "/tmp/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6_THIN_Cal_IW1.tif"};
+    std::remove(result_file.data());
+    {
+        ASSERT_THAT(boost::filesystem::exists(input_file_), ::testing::IsTrue());
+        const std::shared_ptr<snapengine::IProductReader> product_reader = reader_plug_in_->CreateReaderInstance();
+        std::shared_ptr<snapengine::Product> input_product =
+            product_reader->ReadProductNodes(boost::filesystem::canonical(input_file_), nullptr);
+        const auto source_path = boost::filesystem::canonical(input_file_).string();
+
+        Sentinel1Calibrator calibrator{input_product, source_path, {"IW1"}, {"VV"}, {true, false, false, false},
+                                       "/tmp/",       false,       2000,    2000};
+        calibrator.Execute();
+
+        const auto outputs = calibrator.GetOutputDatasets();
+        for (const auto& output : outputs) {
+            GeoTiffWriteFile(output.second.get(), output.first);
+        }
+    }
+
     ASSERT_THAT(boost::filesystem::exists(result_file), ::testing::IsTrue());
-    const std::string expected_md5{"c48e18d4ab4c9760"};
+    const std::string expected_md5{"d389aa9b7cefb448"};
     ASSERT_THAT(utils::test::HashFromBand(result_file), ::testing::Eq(expected_md5));
 }
-
 }  // namespace

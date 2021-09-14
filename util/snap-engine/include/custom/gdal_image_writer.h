@@ -28,12 +28,13 @@ namespace alus::snapengine::custom {
 class GdalImageWriter : public IImageWriter {
 private:
     GDALDataset* dataset_{};
+    bool do_close_dataset_ = false;
 
 public:
     /**
      * avoid tight coupling to data... (swappable sources, targets, types etc..)
      */
-    GdalImageWriter();
+    GdalImageWriter() = default;
     GdalImageWriter(const GdalImageWriter&) = delete;
     GdalImageWriter& operator=(const GdalImageWriter&) = delete;
     ~GdalImageWriter() override;
@@ -43,7 +44,10 @@ public:
      * @param path_to_band_file
      */
     void Open(std::string_view path_to_band_file, int raster_size_x, int raster_size_y,
-              std::vector<double> affine_geo_transform_out, const std::string_view data_projection_out) override;
+              std::vector<double> affine_geo_transform_out, const std::string_view data_projection_out, bool in_memory_file) override;
+
+    //TODO internal dataset exposed to work together with different GDAL wrappers in the project
+    GDALDataset* GetDataset() { return dataset_; }
 
     // todo: add support for subsampling
     void WriteSubSampledData(const custom::Rectangle& rectangle, std::vector<float>& data, int band_indx) override;

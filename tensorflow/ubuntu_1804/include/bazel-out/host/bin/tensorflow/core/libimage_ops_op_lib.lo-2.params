@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/libimage_ops_op_lib.lo
-bazel-out/host/bin/tensorflow/core/_objs/image_ops_op_lib/image_ops.o

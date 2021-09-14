@@ -25,6 +25,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
+#include "alus_log.h"
 #include "snap-core/datamodel/band.h"
 #include "snap-core/datamodel/metadata_element.h"
 #include "snap-core/datamodel/product.h"
@@ -95,7 +96,7 @@ std::shared_ptr<Band> ReaderUtils::CreateVirtualIntensityBand(const std::shared_
     virt_band->SetDescription(std::make_optional<std::string>("Intensity from complex data"));
     virt_band->SetNoDataValueUsed(true);
     virt_band->SetNoDataValue(nodatavalue_i);
-    virt_band->SetOwner(product);
+    virt_band->SetOwner(product.get());
     product->AddBand(virt_band);
 
     if (band_i->GetGeoCoding() != product->GetSceneGeoCoding()) {
@@ -234,7 +235,7 @@ std::optional<boost::filesystem::path> ReaderUtils::GetPathFromInput(const std::
         auto str = std::string(std::any_cast<std::string_view>(input));
         return std::make_optional<boost::filesystem::path>(boost::filesystem::path(str));
     }
-    std::cerr << "Unable to convert std::any to path. input typeid:" << input.type().name() << std::endl;
+    LOGE << "Unable to convert std::any to path. input typeid:" << input.type().name();
     return std::nullopt;
 }
 
@@ -252,7 +253,7 @@ std::shared_ptr<Band> ReaderUtils::CreateVirtualPhaseBand(const std::shared_ptr<
         virt_band->SetNoDataValueUsed(true);
         virt_band->SetNoDataValue(band_i->GetNoDataValue());
     }
-    virt_band->SetOwner(product);
+    virt_band->SetOwner(product.get());
     product->AddBand(virt_band);
     return virt_band;
 }

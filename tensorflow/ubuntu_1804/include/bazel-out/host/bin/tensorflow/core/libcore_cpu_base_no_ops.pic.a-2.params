@@ -1,8 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/libcore_cpu_base_no_ops.pic.a
-bazel-out/host/bin/tensorflow/core/_objs/core_cpu_base_no_ops/eval_const_tensor.pic.o
-bazel-out/host/bin/tensorflow/core/_objs/core_cpu_base_no_ops/scoped_allocator.pic.o
-bazel-out/host/bin/tensorflow/core/_objs/core_cpu_base_no_ops/scoped_allocator_mgr.pic.o
-bazel-out/host/bin/tensorflow/core/_objs/core_cpu_base_no_ops/shape_refiner.pic.o
-bazel-out/host/bin/tensorflow/core/_objs/core_cpu_base_no_ops/graph_constructor.pic.o
-bazel-out/host/bin/tensorflow/core/_objs/core_cpu_base_no_ops/graph_def_builder_util.pic.o

@@ -34,6 +34,7 @@ target_link_libraries(calibration-routine-shared
         sentinel1-calibrate-static
         topsar-deburst-op-static
         topsar-split-static
+        common-util-static
         )
 
 set_target_properties(calibration-routine-shared

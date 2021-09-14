@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/util/libeinsum_op_util.pic.a
-bazel-out/host/bin/tensorflow/core/util/_objs/einsum_op_util/einsum_op_util.pic.o

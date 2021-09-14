@@ -41,6 +41,7 @@ set_target_properties(coregistration-static
         )
 target_link_libraries(coregistration-static
         PUBLIC
+        gdal
         gdal-util-static
         backgeocoding-static
         topsar-split-static

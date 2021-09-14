@@ -23,6 +23,7 @@
 
 #include <boost/algorithm/string.hpp>
 
+#include "alus_log.h"
 #include "snap-core/datamodel/band.h"
 #include "snap-core/datamodel/geo_pos.h"
 #include "snap-core/datamodel/pixel_pos.h"
@@ -97,8 +98,7 @@ void SARReader::HandleReaderException(const std::exception& e) {
     if (e.what()) {
         message += e.what();
     }
-    // todo: replace if we get logging system decided
-    std::cerr << message << std::endl;
+    LOGE << message;
     throw std::runtime_error(message);
 }
 

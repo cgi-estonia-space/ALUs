@@ -13,25 +13,19 @@
  */
 #include "terrain_correction.h"
 
-#include <openssl/md5.h>
-
-#include <boost/container_hash/hash.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/iostreams/device/mapped_file.hpp>
-
 #include <array>
-#include <chrono>
 #include <cstddef>
 #include <memory>
-#include <numeric>
 #include <string_view>
 #include <vector>
 
-#include "gdal.h"
+#include <gdal.h>
+#include <boost/filesystem.hpp>
+
 #include "gmock/gmock.h"
 
-#include "gdal_util.h"
 #include "srtm3_elevation_model.h"
+#include "test_utils.h"
 
 namespace {
 
@@ -40,34 +34,6 @@ using ::testing::IsTrue;
 
 using namespace alus;
 using namespace alus::terraincorrection;
-
-std::string Md5FromFile(const std::string& path) {
-    unsigned char result[MD5_DIGEST_LENGTH];
-    boost::iostreams::mapped_file_source src(path);
-    MD5(reinterpret_cast<const unsigned char*>(src.data()), src.size(), result);
-    std::ostringstream sout;
-    sout << std::hex << std::setfill('0');
-    for (auto c : result) sout << std::setw(2) << static_cast<int>(c);
-    return sout.str();
-}
-
-std::string HashFromBand(std::string_view file_path) {
-    auto* const dataset = static_cast<GDALDataset*>(GDALOpen(file_path.data(), GA_ReadOnly));
-    const auto x_size = dataset->GetRasterXSize();
-    const auto y_size = dataset->GetRasterYSize();
-
-    std::vector<float> raster_data(x_size * y_size);
-    auto error = dataset->GetRasterBand(1)->RasterIO(GF_Read, 0, 0, x_size, y_size, raster_data.data(), x_size, y_size,
-                                                     GDALDataType::GDT_Float32, 0, 0);
-    CHECK_GDAL_ERROR(error);
-    GDALClose(dataset);
-
-    std::ostringstream s_out;
-    s_out << std::hex << std::setfill('0')
-          << boost::hash<std::vector<float>>{}(raster_data);
-
-    return s_out.str();
-}
 
 class TerrainCorrectionIntegrationTest : public ::testing::Test {
 public:
@@ -96,16 +62,16 @@ protected:
 TEST_F(TerrainCorrectionIntegrationTest, Saaremaa1) {
     const int selected_band{1};
     std::string const coh_1_tif{
-        "./goods/"
-        "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_"
-        "Stack_coh_deb.tif"};
+        "./goods/terrain_correction/"
+        "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_data/"
+        "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb.tif"};
     std::string const coh_1_data{
-        "./goods/"
-        "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_"
-        "Stack_coh_deb.data"};
+        "./goods/terrain_correction/"
+        "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_data"};
 
-    Metadata metadata(coh_1_data.substr(0, coh_1_data.length() - 5) + ".dim",
-                      coh_1_data + "/tie_point_grids/latitude.img", coh_1_data + "/tie_point_grids/longitude.img");
+    Metadata metadata(
+        coh_1_data + "/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb.dim",
+        coh_1_data + "/latitude.img", coh_1_data + "/longitude.img");
     Dataset<double> input(coh_1_tif);
 
     auto egm_96 = std::make_shared<snapengine::EarthGravitationalModel96>();
@@ -113,45 +79,88 @@ TEST_F(TerrainCorrectionIntegrationTest, Saaremaa1) {
 
     std::vector<std::string> files{"./goods/srtm_41_01.tif", "./goods/srtm_42_01.tif"};
     auto srtm_3_model = std::make_unique<snapengine::Srtm3ElevationModel>(files);
-    srtm_3_model->ReadSrtmTiles(egm_96.get());
+    srtm_3_model->ReadSrtmTiles(egm_96);
     srtm_3_model->HostToDevice();
 
     const auto* d_srtm_3_tiles = srtm_3_model->GetSrtmBuffersInfo();
     const size_t srtm_3_tiles_length{2};
 
-    const std::string output_path{"/tmp/tc_test.tif"};
-    auto const main_alg_start = std::chrono::steady_clock::now();
+    const std::string output_path{"/tmp/tc_saaremaa.tif"};
 
-    TerrainCorrection tc(std::move(input), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
-                         metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length, selected_band);
-    tc.ExecuteTerrainCorrection(output_path, 420, 416);
-
-    auto const main_alg_stop = std::chrono::steady_clock::now();
-    std::cout << "ALG spent "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(main_alg_stop - main_alg_start).count() << "ms"
-              << std::endl;
+    {
+        TerrainCorrection tc(input.GetGdalDataset(), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
+                             metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length, selected_band);
+        tc.ExecuteTerrainCorrection(output_path, 1000, 1000);
+        const auto output = tc.GetOutputDataset();
+    }
 
     ASSERT_THAT(boost::filesystem::exists(output_path), IsTrue());
-    const std::string expected_md5{"67458d461c814e4b00f894956c08285a"};
-    ASSERT_THAT(Md5FromFile(output_path), Eq(expected_md5));
+
+    const std::string expected_hash{"f85d9adb013ba1a3"};
+    ASSERT_THAT(utils::test::HashFromBand(output_path), ::testing::Eq(expected_hash));
 
     CompareGeocoding(
-        "./goods/"
+        "./goods/terrain_correction/"
+        "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_data/"
         "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_TC.tif",
         output_path);
+
+    CHECK_CUDA_ERR(cudaGetLastError());
+    srtm_3_model->DeviceFree();
+    egm_96->DeviceFree();
+    cudaDeviceReset();  // for cuda-memcheck --leak-check full
+}
+
+TEST_F(TerrainCorrectionIntegrationTest, SaaremaaAverageSceneHeight) {
+    const int selected_band{1};
+    const bool use_avg_scene_height{true};
+    std::string const coh_1_tif{
+        "./goods/terrain_correction/"
+        "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_data/"
+        "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb.tif"};
+    std::string const coh_1_data{
+        "./goods/terrain_correction/"
+        "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_data"};
+
+    Metadata metadata(
+        coh_1_data + "/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb.dim",
+        coh_1_data + "/latitude.img", coh_1_data + "/longitude.img");
+    Dataset<double> input(coh_1_tif);
+
+    const std::string output_path{"/tmp/tc_saaremaa_avg.tif"};
+
+    {
+        TerrainCorrection tc(input.GetGdalDataset(), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
+                             metadata.GetLonTiePointGrid(), nullptr, 0, selected_band,
+                             use_avg_scene_height);
+        tc.ExecuteTerrainCorrection(output_path, 1000, 1000);
+    }
+
+    ASSERT_THAT(boost::filesystem::exists(output_path), IsTrue());
+    const std::string expected_hash{"88c9ce152a75bde"};
+    ASSERT_THAT(utils::test::HashFromBand(output_path), ::testing::Eq(expected_hash));
+
+    CompareGeocoding(
+        "./goods/terrain_correction/"
+        "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_data/"
+        "S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_TC.tif",
+        output_path);
+
+    CHECK_CUDA_ERR(cudaGetLastError());
+    cudaDeviceReset();  // for cuda-memcheck --leak-check full
 }
 
 TEST_F(TerrainCorrectionIntegrationTest, BeirutExplosion) {
     const int selected_band{1};
     std::string const coh_1_tif{
-        "./goods/terrain_correction/"
+        "./goods/terrain_correction/Beirut_IW1_6_VH_orb_stack_cor_deb_coh_data/"
         "Beirut_IW1_6_VH_orb_stack_cor_deb_coh.tif"};
     std::string const coh_1_data{
         "./goods/terrain_correction/"
-        "Beirut_IW1_6_VH_orb_stack_cor_deb_coh.data"};
+        "Beirut_IW1_6_VH_orb_stack_cor_deb_coh_data"};
 
-    Metadata metadata(coh_1_data.substr(0, coh_1_data.length() - 5) + ".dim",
-                      coh_1_data + "/tie_point_grids/latitude.img", coh_1_data + "/tie_point_grids/longitude.img");
+    Metadata metadata(coh_1_data + "/Beirut_IW1_6_VH_orb_stack_cor_deb_coh.dim", coh_1_data + "/latitude.img",
+                      coh_1_data + "/longitude.img");
     Dataset<double> input(coh_1_tif);
 
     auto egm_96 = std::make_shared<snapengine::EarthGravitationalModel96>();
@@ -159,31 +168,33 @@ TEST_F(TerrainCorrectionIntegrationTest, BeirutExplosion) {
 
     std::vector<std::string> files{"./goods/srtm_43_06.tif", "./goods/srtm_44_06.tif"};
     auto srtm_3_model = std::make_unique<snapengine::Srtm3ElevationModel>(files);
-    srtm_3_model->ReadSrtmTiles(egm_96.get());
+    srtm_3_model->ReadSrtmTiles(egm_96);
     srtm_3_model->HostToDevice();
 
     const auto* d_srtm_3_tiles = srtm_3_model->GetSrtmBuffersInfo();
     const size_t srtm_3_tiles_length{2};
 
     const std::string output_path{"/tmp/tc_beirut_test.tif"};
-    auto const main_alg_start = std::chrono::steady_clock::now();
 
-    TerrainCorrection tc(std::move(input), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
-                         metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length, selected_band);
-    tc.ExecuteTerrainCorrection(output_path, 420, 416);
-
-    auto const main_alg_stop = std::chrono::steady_clock::now();
-    std::cout << "ALG spent "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(main_alg_stop - main_alg_start).count() << "ms"
-              << std::endl;
+    {
+        TerrainCorrection tc(input.GetGdalDataset(), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
+                             metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length, selected_band);
+        tc.ExecuteTerrainCorrection(output_path, 1000, 1000);
+    }
 
     ASSERT_THAT(boost::filesystem::exists(output_path), IsTrue());
     CompareGeocoding(
-        "./goods/terrain_correction/"
+        "./goods/terrain_correction/Beirut_IW1_6_VH_orb_stack_cor_deb_coh_data/"
         "Beirut_IW1_6_VH_orb_stack_cor_deb_coh_TC.tif",
         output_path);
 
-    const std::string expected_boost_hash{"fa952a77788339ee"};
-    ASSERT_THAT(HashFromBand(output_path), ::testing::Eq(expected_boost_hash));
+    const std::string expected_boost_hash{"ac15c62a7e5f6fe9"};
+    ASSERT_THAT(utils::test::HashFromBand(output_path), ::testing::Eq(expected_boost_hash));
+
+    CHECK_CUDA_ERR(cudaGetLastError());
+    srtm_3_model->DeviceFree();
+    egm_96->DeviceFree();
+
+    cudaDeviceReset();  // for cuda-memcheck --leak-check full
 }
 }  // namespace

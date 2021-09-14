@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/platform/cloud/liboauth_client.pic.a
-bazel-out/host/bin/tensorflow/core/platform/cloud/_objs/oauth_client/oauth_client.pic.o

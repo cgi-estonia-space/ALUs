@@ -30,8 +30,8 @@ namespace sentinel1calibrate {
 inline __host__ __device__ size_t GetCalibrationVectorIndexImpl(int y, int count, const int* line_values) {
     const auto index = mathutils::FindFirstGreaterElement(y, count, line_values);
 
-    return mathutils::ChooseOne(index == snapengine::constants::INVALID_INDEX, static_cast<int64_t>(snapengine::constants::INVALID_INDEX),
-                                index - 1);
+    return mathutils::ChooseOne(index == utils::constants::INVALID_INDEX,
+                                static_cast<int64_t>(utils::constants::INVALID_INDEX), index - 1);
 }
 
 inline __device__ __host__ void SetupTileLineImpl(int y, CalibrationKernelArgs& args,
@@ -59,44 +59,19 @@ inline __device__ __host__ int64_t GetPixelIndexImpl(int x,
     return index;
 }
 
-inline __device__ __host__ double CalculateLutValImpl(CalibrationLineParameters& line_parameters,
-                                                      CalibrationPixelParameters& pixel_parameters) {
-    const auto& mu_x = pixel_parameters.mu_x;
-    const auto& mu_y = line_parameters.mu_y;
-    const auto& pixel_index = pixel_parameters.pixel_index;
+inline __device__ __host__ double CalculateLutValImpl(const CalibrationLineParameters& line_parameters, double mu_x,
+                                                      int64_t pixel_index) {
     const auto* vec_0_lut = line_parameters.vector_0_lut;
     const auto* vec_1_lut = line_parameters.vector_1_lut;
+    const auto& mu_y = line_parameters.mu_y;
 
     return (1 - mu_y) * ((1 - mu_x) * vec_0_lut[pixel_index] + mu_x * vec_0_lut[pixel_index + 1]) +
            mu_y * ((1 - mu_x) * vec_1_lut[pixel_index] + mu_x * vec_1_lut[pixel_index + 1]);
 }
 
-inline __device__ __host__ void CalculatePixelParamsImpl(int x, int y, CalibrationKernelArgs& args,
-                                                         CalibrationLineParameters& line_parameters,
-                                                         CalibrationPixelParameters& pixel_parameters) {
-    const auto pixel_index =
-        (x - args.target_rectangle.x) + (y - args.target_rectangle.y) * args.target_rectangle.width;
-    pixel_parameters.source_index = pixel_index;
-    pixel_parameters.dn = args.source_data_1.array[pixel_index];
-    pixel_parameters.pixel_index = GetPixelIndexImpl(x, line_parameters.calibration_vector_0);
-    pixel_parameters.mu_x =
-        (x - line_parameters.calibration_vector_0->pixels[pixel_parameters.pixel_index]) /
-        static_cast<double>(line_parameters.calibration_vector_0->pixels[pixel_parameters.pixel_index + 1] -
-                            line_parameters.calibration_vector_0->pixels[pixel_parameters.pixel_index]);
-    if (isinf(pixel_parameters.mu_x)) {
-        pixel_parameters.mu_x =
-            (x - line_parameters.calibration_vector_0->pixels[pixel_parameters.pixel_index]) /
-            static_cast<double>(line_parameters.calibration_vector_0->pixels[pixel_parameters.pixel_index + 1] -
-                                line_parameters.calibration_vector_0->pixels[pixel_parameters.pixel_index]);
-    }
-    pixel_parameters.lut_val = CalculateLutValImpl(line_parameters, pixel_parameters);
-    pixel_parameters.lut_val = CalculateLutValImpl(line_parameters, pixel_parameters);
-    pixel_parameters.calibration_factor = 1.0 / (pixel_parameters.lut_val * pixel_parameters.lut_val);
-}
-
 inline __device__ __host__ void AdjustDnImpl(double dn, double& calibration_value, double calibration_factor) {
     // TODO: think about the way to avoid this if-clause
-    if (dn == snapengine::constants::THERMAL_NOISE_TRG_FLOOR_VALUE) {
+    if (dn == utils::constants::THERMAL_NOISE_TRG_FLOOR_VALUE) {
         while (calibration_value < 0.00001) {
             dn *= 2;
             calibration_value = dn * calibration_factor;
@@ -104,84 +79,49 @@ inline __device__ __host__ void AdjustDnImpl(double dn, double& calibration_valu
     }
 }
 
-inline __device__ __host__ void CalculateAmplitudeImpl(CalibrationPixelParameters& parameters,
-                                                       double& calibration_value) {
-    parameters.dn *= parameters.dn;
-    calibration_value = parameters.dn * parameters.calibration_factor;
-    AdjustDnImpl(parameters.dn, calibration_value, parameters.calibration_factor);
-}
-
-inline __device__ __host__ void CalculateIntensityWithRetroImpl(CalibrationLineParameters& line_parameters,
-                                                                CalibrationPixelParameters& pixel_parameters,
-                                                                double& calibration_value) {
-    const auto& mu_x = pixel_parameters.mu_x;
-    const auto& mu_y = line_parameters.mu_y;
-    const auto& pixel_index = pixel_parameters.pixel_index;
-    auto* const retro_vec_0_lut = line_parameters.retro_vector_0_lut;
-    auto* const retro_vec_1_lut = line_parameters.retor_vector_1_lut;
-
-    const auto retro_lut_val =
-        (1 - mu_y) * ((1 - mu_x) * retro_vec_0_lut[pixel_index] + mu_x * retro_vec_0_lut[pixel_index + 1]) +
-        mu_y * ((1 - mu_x) * retro_vec_1_lut[pixel_index] + mu_x * retro_vec_1_lut[pixel_index + 1]);
-
-    pixel_parameters.calibration_factor *= retro_lut_val;
-    calibration_value = pixel_parameters.dn * pixel_parameters.calibration_factor;
-    AdjustDnImpl(pixel_parameters.dn, calibration_value, pixel_parameters.calibration_factor);
-}
-
-inline __device__ __host__ void CalculateIntensityWithoutRetroImpl(CalibrationPixelParameters& pixel_parameters,
-                                                                   double& calibration_value) {
-    pixel_parameters.calibration_factor *= pixel_parameters.retro_lut_val;
-    calibration_value = pixel_parameters.dn * pixel_parameters.calibration_factor;
-    AdjustDnImpl(pixel_parameters.dn, calibration_value, pixel_parameters.calibration_factor);
-}
-
-inline __device__ __host__ void CalculateRealImpl(CalibrationKernelArgs args, CalibrationPixelParameters& parameters,
-                                                  double& calibration_value) {
-    const auto i = parameters.dn;
-    const auto q = args.source_data_2.array[parameters.source_index];
-    parameters.dn = i * i + q * q;
-    if (parameters.dn > 0.0) {
-        parameters.phase_term = i / std::sqrt(parameters.dn);
-    } else {
-        parameters.phase_term = 0.0;
+inline __device__ __host__ double CalculateMuX(const CalibrationLineParameters& line_parameters, int x,
+                                               int pixel_index) {
+    auto mu_x = (x - line_parameters.calibration_vector_0->pixels[pixel_index]) /
+                static_cast<double>(line_parameters.calibration_vector_0->pixels[pixel_index + 1] -
+                                    line_parameters.calibration_vector_0->pixels[pixel_index]);
+    if (isinf(mu_x)) {
+        mu_x = (x - line_parameters.calibration_vector_0->pixels[pixel_index]) /
+               static_cast<double>(line_parameters.calibration_vector_0->pixels[pixel_index + 1] -
+                                   line_parameters.calibration_vector_0->pixels[pixel_index]);
     }
-    calibration_value = parameters.dn * parameters.calibration_factor;
-    AdjustDnImpl(parameters.dn, calibration_value, parameters.calibration_factor);
+
+    return mu_x;
 }
 
-inline __device__ __host__ void CalculateImaginaryImpl(CalibrationKernelArgs args,
-                                                       CalibrationPixelParameters& parameters,
-                                                       double& calibration_value) {
-    const auto i = parameters.dn;
-    const auto q = args.source_data_2.array[parameters.source_index];
-    parameters.dn = i * i + q * q;
-    if (parameters.dn > 0.0) {
-        parameters.phase_term = q / std::sqrt(parameters.dn);
-    } else {
-        parameters.phase_term = 0;
-    }
-    calibration_value = parameters.dn * parameters.calibration_factor;
-    AdjustDnImpl(parameters.dn, calibration_value, parameters.calibration_factor);
+inline __device__ __host__ int CalculateSrcIndex(int x, int y, const Rectangle& target_rectangle) {
+    return (x - target_rectangle.x) + (y - target_rectangle.y) * target_rectangle.width;
 }
 
-inline __device__ __host__ void CalculateComplexIntensityImpl(CalibrationKernelArgs args,
-                                                              CalibrationPixelParameters& parameters,
-                                                              double& calibration_value) {
-    const auto i = parameters.dn;
-    const auto q = args.source_data_2.array[parameters.source_index];
-    parameters.dn = i * i + q * q;
-    parameters.phase_term = 0;
-
-    calibration_value = parameters.dn * parameters.calibration_factor;
-    AdjustDnImpl(parameters.dn, calibration_value, parameters.calibration_factor);
+inline __device__ __host__ double CalculateCalibrationFactor(int x, const CalibrationLineParameters& line_parameters) {
+    const auto pixel_index = GetPixelIndexImpl(x, line_parameters.calibration_vector_0);
+    const auto mu_x = CalculateMuX(line_parameters, x, pixel_index);
+    const auto lut_val = CalculateLutValImpl(line_parameters, mu_x, pixel_index);
+    return 1.0 / (lut_val * lut_val);
 }
 
-inline __device__ __host__ void CalculateIntensityDBImpl(CalibrationPixelParameters& parameters,
-                                                         double& calibration_value) {
-    parameters.dn = std::pow(10, parameters.dn / 10.0);
-    calibration_value = parameters.dn * parameters.calibration_factor;
-    AdjustDnImpl(parameters.dn, calibration_value, parameters.calibration_factor);
+
+
+
+
+inline __device__ __host__ void CalculateComplexIntensityImpl(int x, int y, CalibrationKernelArgs args, cuda::KernelArray<ComplexIntensityData> pixel_data) {
+    const auto source_index = CalculateSrcIndex(x, y, args.target_rectangle);
+
+    const double i = pixel_data.array[source_index].input.i;
+    const double q = pixel_data.array[source_index].input.q;
+    const double  dn = i * i + q * q;
+
+    const auto calibration_factor =
+        CalculateCalibrationFactor(x, args.line_parameters_array.array[y - args.target_rectangle.y]);
+    double calibration_value = dn * calibration_factor;
+    AdjustDnImpl(dn, calibration_value, calibration_factor);
+    pixel_data.array[source_index].output = calibration_value;
 }
+
+
 }  // namespace sentinel1calibrate
 }  // namespace alus

@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/libgpu_bfc_allocator.pic.a
-bazel-out/host/bin/tensorflow/core/_objs/gpu_bfc_allocator/gpu_bfc_allocator.pic.o

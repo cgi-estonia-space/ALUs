@@ -13,6 +13,8 @@
  */
 #pragma once
 
+#include <vector>
+
 #include "kernel_array.h"
 #include "orbit_state_vector_computation.h"
 #include "pos_vector.h"
@@ -30,6 +32,7 @@ struct GetPositionMetadata {
     cuda::KernelArray<snapengine::PosVector> sensor_position;
     cuda::KernelArray<snapengine::PosVector> sensor_velocity;
     cuda::KernelArray<snapengine::OrbitStateVectorComputation> orbit_state_vectors;
+    cuda::KernelArray<double> orbit_state_vector_lut;
 };
 
 /**
@@ -48,6 +51,28 @@ struct GetPositionMetadata {
  * @return
  */
 bool GetPosition(double lat, double lon, double alt, s1tbx::PositionData& satellite_pos, const GetPositionMetadata& metadata);
+
+/**
+ * Calculates a lookup table for the orbit state interpolation, this can be used to turn a divide into a multiply
+ * @param[in] orbit_state_vector
+ * @return 2d array with precalculated coefficients
+ */
+inline std::vector<double> CalculateOrbitStateVectorLUT(const std::vector<alus::snapengine::OrbitStateVectorComputation>& comp_orbits) {
+    const auto& osv = comp_orbits;
+    std::vector<double> h_lut;
+    for (size_t i = 0; i < osv.size(); i++) {
+        for (size_t j = 0; j < osv.size(); j++) {
+            double timei = osv[i].timeMjd_;
+            double timej = osv[j].timeMjd_;
+            if (timei != timej) {
+                h_lut.push_back(1 / (timei - timej));
+            } else {
+                h_lut.push_back(0);
+            }
+        }
+    }
+    return h_lut;
+}
 
 }  // namespace terraincorrection
 }  // namespace alus

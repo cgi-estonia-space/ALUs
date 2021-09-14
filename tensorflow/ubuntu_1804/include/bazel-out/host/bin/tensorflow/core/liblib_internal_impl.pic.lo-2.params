@@ -1,6 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/liblib_internal_impl.pic.lo
-bazel-out/host/bin/tensorflow/core/_objs/lib_internal_impl/android_armv7a_cpu_utils_helper.pic.o
-bazel-out/host/bin/tensorflow/core/_objs/lib_internal_impl/clock_cycle_profiler.pic.o
-bazel-out/host/bin/tensorflow/core/_objs/lib_internal_impl/cpu_utils.pic.o
-bazel-out/host/bin/tensorflow/core/_objs/lib_internal_impl/wav_io.pic.o

@@ -15,9 +15,10 @@
 
 #include <dlfcn.h>
 #include <cassert>
-#include <iostream>
 #include <string>
 #include <string_view>
+
+#include "alus_log.h"
 
 namespace alus {
 
@@ -67,7 +68,7 @@ AlgorithmLoadGuard::~AlgorithmLoadGuard() {
     if (lib_handle_ != nullptr) {
         const auto result = dlclose(lib_handle_);
         if (result != 0) {
-            std::cerr << "Failure to unload shared library - " << dlerror() << std::endl;
+            LOGE << "Failure to unload shared library - " << dlerror();
         }
     }
 }

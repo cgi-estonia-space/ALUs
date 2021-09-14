@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/kernels/libinitializable_lookup_table.pic.a
-bazel-out/host/bin/tensorflow/core/kernels/_objs/initializable_lookup_table/initializable_lookup_table.pic.o

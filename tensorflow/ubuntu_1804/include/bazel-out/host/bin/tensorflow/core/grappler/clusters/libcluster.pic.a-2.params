@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/grappler/clusters/libcluster.pic.a
-bazel-out/host/bin/tensorflow/core/grappler/clusters/_objs/cluster/cluster.pic.o

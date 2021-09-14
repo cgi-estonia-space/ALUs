@@ -92,7 +92,7 @@ void TOPSARDeburstOp::ComputeTargetStartEndTime() {
 void TOPSARDeburstOp::ComputeTargetSlantRangeTimeToFirstAndLastPixels() {
     target_slant_range_time_to_first_pixel_ = su_->subswath_.at(0)->slr_time_to_first_pixel_;
     target_slant_range_time_to_last_pixel_ = su_->subswath_.at(num_of_sub_swath_ - 1)->slr_time_to_last_pixel_;
-    target_delta_slant_range_time_ = su_->subswath_.at(0)->range_pixel_spacing_ / snapengine::Constants::LIGHT_SPEED;
+    target_delta_slant_range_time_ = su_->subswath_.at(0)->range_pixel_spacing_ / snapengine::eo::constants::LIGHT_SPEED;
 }
 
 void TOPSARDeburstOp::ComputeTargetWidthAndHeight() {
@@ -193,9 +193,9 @@ void TOPSARDeburstOp::CreateTargetProduct() {
     snapengine::ProductUtils::CopyFlagCodings(source_product_, target_product_);
     //        snapengine::ProductUtils::CopyQuicklookBandName(source_product_, target_product_);
     target_product_->SetStartTime(
-        std::make_shared<snapengine::Utc>(target_first_line_time_ / snapengine::Constants::SECONDS_IN_DAY));
+        std::make_shared<snapengine::Utc>(target_first_line_time_ / snapengine::eo::constants::SECONDS_IN_DAY));
     target_product_->SetEndTime(
-        std::make_shared<snapengine::Utc>(target_last_line_time_ / snapengine::Constants::SECONDS_IN_DAY));
+        std::make_shared<snapengine::Utc>(target_last_line_time_ / snapengine::eo::constants::SECONDS_IN_DAY));
     target_product_->SetDescription(source_product_->GetDescription());
 
     CreateTiePointGrids();
@@ -280,7 +280,7 @@ void TOPSARDeburstOp::CreateTiePointGrids() {
             lat_list.at(k) = static_cast<float>(su_->GetLatitude(az_time, slr_time, su_->subswath_.at(0).get()));
             lon_list.at(k) = static_cast<float>(su_->GetLongitude(az_time, slr_time, su_->subswath_.at(0).get()));
             slrt_list.at(k) = static_cast<float>(su_->GetSlantRangeTime(az_time, slr_time, su_->subswath_.at(0).get()) *
-                                                 2 * snapengine::Constants::ONE_BILLION);  // 2-way ns
+                                                 2 * snapengine::eo::constants::ONE_BILLION);  // 2-way ns
             inc_list.at(k) = static_cast<float>(su_->GetIncidenceAngle(az_time, slr_time, su_->subswath_.at(0).get()));
             k++;
         }
@@ -329,11 +329,11 @@ void TOPSARDeburstOp::UpdateAbstractMetadata() {
                                                target_width_);
     abs_tgt->SetAttributeUtc(
         snapengine::AbstractMetadata::FIRST_LINE_TIME,
-        std::make_shared<snapengine::Utc>(target_first_line_time_ / snapengine::Constants::SECONDS_IN_DAY));
+        std::make_shared<snapengine::Utc>(target_first_line_time_ / snapengine::eo::constants::SECONDS_IN_DAY));
 
     abs_tgt->SetAttributeUtc(
         snapengine::AbstractMetadata::LAST_LINE_TIME,
-        std::make_shared<snapengine::Utc>(target_last_line_time_ / snapengine::Constants::SECONDS_IN_DAY));
+        std::make_shared<snapengine::Utc>(target_last_line_time_ / snapengine::eo::constants::SECONDS_IN_DAY));
     abs_tgt->SetAttributeDouble(snapengine::AbstractMetadata::LINE_TIME_INTERVAL, target_line_time_interval_);
 
     std::shared_ptr<snapengine::TiePointGrid> lat_grid =
@@ -361,7 +361,7 @@ void TOPSARDeburstOp::UpdateAbstractMetadata() {
 
     snapengine::AbstractMetadata::SetAttribute(
         abs_tgt, snapengine::AbstractMetadata::SLANT_RANGE_TO_FIRST_PIXEL,
-        target_slant_range_time_to_first_pixel_ * snapengine::Constants::LIGHT_SPEED);
+        target_slant_range_time_to_first_pixel_ * snapengine::eo::constants::LIGHT_SPEED);
 
     AddBurstBoundary(abs_tgt);
 
@@ -1055,10 +1055,6 @@ void TOPSARDeburstOp::Compute() {
         }
         ComputeTileStack(target_tiles, rect, std::make_shared<ceres::NullProgressMonitor>());
     }
-
-    // before closing dataset we don't see image... if used differently we can avoid explicit call since destructor will
-    // also close
-    target_product_->GetImageWriter()->Close();
 }
 
 const std::shared_ptr<snapengine::Product>& TOPSARDeburstOp::GetTargetProduct() const { return target_product_; }

@@ -15,8 +15,11 @@
 
 #include <memory>
 
+#include "gdal_priv.h"
+
 #include "apply_orbit_file_op.h"
 #include "backgeocoding_controller.h"
+#include "general_constants.h"
 #include "snap-core/util/alus_utils.h"
 #include "snap-core/util/system_utils.h"
 #include "target_dataset.h"
@@ -52,15 +55,16 @@ void Coregistration::Initialize(std::string master_file, std::string slave_file,
     alus::TargetDatasetParams params;
     params.filename = output_file;
     params.band_count = 4;
-    params.driver = master_temp->GetGdalDataset()->GetDriver();
+    params.driver = GetGDALDriverManager()->GetDriverByName(utils::constants::GDAL_MEM_DRIVER);
     params.dimension = master_temp->GetRasterDimensions();
     params.transform = master_temp->GetTransform();
     params.projectionRef = master_temp->GetGdalDataset()->GetProjectionRef();
 
-    std::shared_ptr<AlusFileWriter<float>> output_writer = std::make_shared<alus::TargetDataset<float>>(params);
+
+    target_dataset_ = std::make_shared<alus::TargetDataset<float>>(params);
 
     backgeocoding_ = std::make_unique<backgeocoding::BackgeocodingController>(
-        master_reader, split_slave_->GetPixelReader(), output_writer, split_master_->GetTargetProduct(),
+        master_reader, split_slave_->GetPixelReader(), target_dataset_, split_master_->GetTargetProduct(),
         split_slave_->GetTargetProduct());
 }
 

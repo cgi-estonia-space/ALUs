@@ -14,11 +14,11 @@
 #include "topsar_split.h"
 
 #include <memory>
-#include <string_view>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 
+#include "alus_log.h"
 #include "c16_dataset.h"
 #include "general_constants.h"
 #include "s1tbx-io/sentinel1/sentinel1_product_reader_plug_in.h"
@@ -31,6 +31,7 @@
 #include "snap-core/datamodel/tie_point_grid.h"
 #include "snap-core/subset/pixel_subset_region.h"
 #include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
+#include "snap-engine-utilities/eo/constants.h"
 #include "snap-engine-utilities/gpf/input_product_validator.h"
 #include "split_product_subset_builder.h"
 #include "subswath_info.h"
@@ -56,8 +57,9 @@ TopsarSplit::TopsarSplit(std::string filename, std::string selected_subswath, st
             std::string current_file = itr->path().string();
             if (current_file.find(low_subswath) != std::string::npos &&
                 current_file.find(low_polarisation) != std::string::npos) {
-                std::cout << "Selecting tif for reading: " << current_file << std::endl;
+                LOGV << "Selecting tif for reading: " << current_file;
                 pixel_reader_ = std::make_shared<C16Dataset<double>>(current_file);
+                pixel_reader_->TryToCacheImage();
                 found_it = true;
                 break;
             }
@@ -65,10 +67,8 @@ TopsarSplit::TopsarSplit(std::string filename, std::string selected_subswath, st
     }
 
     if (!found_it) {
-        std::stringstream stream;
-        stream << "SAFE file does not contain a tif file for subswath " << selected_subswath << " and polarisation "
-               << selected_polarisation << std::endl;
-        throw std::runtime_error(stream.str());
+        throw std::runtime_error("SAFE file does not contain GeoTIFF file for subswath '" + selected_subswath +
+                                 "' and polarisation '" + selected_polarisation + "'");
     }
 }
 
@@ -95,9 +95,7 @@ void TopsarSplit::initialize() {
     std::shared_ptr<snapengine::MetadataElement> abs_root =
         snapengine::AbstractMetadata::GetAbstractedMetadata(source_product_);
     if (subswath_.empty()) {
-        std::stringstream ss;
-        ss << abs_root->GetAttributeString(snapengine::AbstractMetadata::ACQUISITION_MODE) << "1";
-        subswath_ = ss.str();
+        subswath_ = abs_root->GetAttributeString(snapengine::AbstractMetadata::ACQUISITION_MODE) + "1";
     }
 
     // TODO: forget the index, find the pointer.
@@ -110,9 +108,7 @@ void TopsarSplit::initialize() {
         }
     }
     if (selected_subswath_info_ == nullptr) {
-        std::stringstream ss;
-        ss << "Topsar split did not find your subswath named " << subswath_ << std::endl;
-        throw std::runtime_error(ss.str());
+        throw std::runtime_error("Topsar split did not find subswath named " + subswath_);
     }
 
     if (selected_polarisations_.empty()) {
@@ -213,30 +209,31 @@ void TopsarSplit::UpdateAbstractedMetadata() {
     abs_tgt->SetAttributeUtc(
         snapengine::AbstractMetadata::FIRST_LINE_TIME,
         std::make_shared<snapengine::Utc>(selected_subswath_info_->burst_first_line_time_[first_burst_index_ - 1] /
-                                          snapengine::constants::secondsInDay));
+                                          snapengine::eo::constants::SECONDS_IN_DAY));
 
     abs_tgt->SetAttributeUtc(
         snapengine::AbstractMetadata::LAST_LINE_TIME,
         std::make_shared<snapengine::Utc>(selected_subswath_info_->burst_last_line_time_[last_burst_index_ - 1] /
-                                          snapengine::constants::secondsInDay));
+                                          snapengine::eo::constants::SECONDS_IN_DAY));
 
     abs_tgt->SetAttributeDouble(snapengine::AbstractMetadata::LINE_TIME_INTERVAL,
-                               selected_subswath_info_->azimuth_time_interval_);
+                                selected_subswath_info_->azimuth_time_interval_);
 
-    abs_tgt->SetAttributeDouble(snapengine::AbstractMetadata::SLANT_RANGE_TO_FIRST_PIXEL,
-                               selected_subswath_info_->slr_time_to_first_pixel_ * snapengine::constants::lightSpeed);
+    abs_tgt->SetAttributeDouble(
+        snapengine::AbstractMetadata::SLANT_RANGE_TO_FIRST_PIXEL,
+        selected_subswath_info_->slr_time_to_first_pixel_ * snapengine::eo::constants::LIGHT_SPEED);
 
     abs_tgt->SetAttributeDouble(snapengine::AbstractMetadata::RANGE_SPACING,
-                               selected_subswath_info_->range_pixel_spacing_);
+                                selected_subswath_info_->range_pixel_spacing_);
 
     abs_tgt->SetAttributeDouble(snapengine::AbstractMetadata::AZIMUTH_SPACING,
-                               selected_subswath_info_->azimuth_pixel_spacing_);
+                                selected_subswath_info_->azimuth_pixel_spacing_);
 
     abs_tgt->SetAttributeInt(snapengine::AbstractMetadata::NUM_OUTPUT_LINES,
-                            selected_subswath_info_->lines_per_burst_ * (last_burst_index_ - first_burst_index_ + 1));
+                             selected_subswath_info_->lines_per_burst_ * (last_burst_index_ - first_burst_index_ + 1));
 
     abs_tgt->SetAttributeInt(snapengine::AbstractMetadata::NUM_SAMPLES_PER_LINE,
-                            selected_subswath_info_->num_of_samples_);
+                             selected_subswath_info_->num_of_samples_);
 
     int cols = selected_subswath_info_->num_of_geo_points_per_line_;
 
@@ -319,14 +316,12 @@ void TopsarSplit::UpdateAbstractedMetadata() {
 
     int num_orbit_vectors = src_orbit_vectors_elem->GetNumElements();
     for (int i = 1; i <= num_orbit_vectors; ++i) {
-        std::stringstream ss;
-        ss << snapengine::AbstractMetadata::ORBIT_VECTOR << i;
-        std::string elem_name = ss.str();
+        const auto elem_name = std::string(snapengine::AbstractMetadata::ORBIT_VECTOR) + std::to_string(i);
         std::shared_ptr<snapengine::MetadataElement> orb_elem = src_orbit_vectors_elem->GetElement(elem_name);
         std::shared_ptr<snapengine::Utc> time =
             orb_elem->GetAttributeUtc(snapengine::AbstractMetadata::ORBIT_VECTOR_TIME);
         tgt_orbit_vectors_elem->GetElement(elem_name)->SetAttributeUtc(snapengine::AbstractMetadata::ORBIT_VECTOR_TIME,
-                                                                    time);
+                                                                       time);
     }
 }
 
@@ -404,14 +399,14 @@ void TopsarSplit::UpdateImageInformation(std::shared_ptr<snapengine::MetadataEle
 
         std::shared_ptr<snapengine::Utc> first_line_time_utc =
             std::make_shared<snapengine::Utc>(selected_subswath_info_->burst_first_line_time_[first_burst_index_ - 1] /
-                                              snapengine::constants::secondsInDay);
+                                              snapengine::eo::constants::SECONDS_IN_DAY);
 
         image_information->SetAttributeString("productFirstLineUtcTime",
                                               first_line_time_utc->Format("%Y-%m-%d %H:%M:%S"));
 
         std::shared_ptr<snapengine::Utc> last_line_time_utc =
             std::make_shared<snapengine::Utc>(selected_subswath_info_->burst_last_line_time_[last_burst_index_ - 1] /
-                                              snapengine::constants::secondsInDay);
+                                              snapengine::eo::constants::SECONDS_IN_DAY);
 
         image_information->SetAttributeString("productLastLineUtcTime",
                                               last_line_time_utc->Format("%Y-%m-%d %H:%M:%S"));

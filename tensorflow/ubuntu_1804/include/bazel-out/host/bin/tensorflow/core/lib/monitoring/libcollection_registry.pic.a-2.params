@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/lib/monitoring/libcollection_registry.pic.a
-bazel-out/host/bin/tensorflow/core/lib/monitoring/_objs/collection_registry/collection_registry.pic.o

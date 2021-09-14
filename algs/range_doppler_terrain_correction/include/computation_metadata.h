@@ -44,7 +44,6 @@ struct ComputationMetadata {
     int last_valid_pixel;
     double first_valid_line_time;
     double last_valid_line_time;
-    alus::cuda::KernelArray<alus::snapengine::OrbitStateVectorComputation> orbit_state_vectors;
 };
 
 }  // namespace terraincorrection

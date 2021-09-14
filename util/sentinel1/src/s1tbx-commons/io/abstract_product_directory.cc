@@ -19,7 +19,6 @@
 #include "abstract_product_directory.h"
 
 #include <algorithm>
-#include <iostream>
 #include <optional>
 #include <stdexcept>
 #include <unordered_set>
@@ -30,6 +29,7 @@
 #include "zipper/unzipper.h"
 #include "zipper/zipper.h"
 
+#include "alus_log.h"
 #include "ceres-core/i_virtual_dir.h"
 #include "guardian.h"
 #include "s1tbx-commons/io/band_info.h"
@@ -81,7 +81,7 @@ std::string AbstractProductDirectory::FindRootFolder() {
             root_folder = snapengine::ZipUtils::GetRootFolder(base_dir_, GetHeaderFileName());
         }
     } catch (const std::exception& e) {
-        std::cerr << "Unable to get root path from zip file " << e.what() << std::endl;
+        LOGW << "Unable to get root path from zip file " << e.what();
     }
     return root_folder;
 }
@@ -94,7 +94,7 @@ void AbstractProductDirectory::FindImages(std::string_view parent_path,
     try {
         listing = GetProductDir()->List(parent_path);
     } catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
+        LOGW << e.what();
         // just prevent exception to be thrown and continue
     }
     if (!listing.empty()) {
@@ -168,7 +168,7 @@ std::vector<std::string> AbstractProductDirectory::FindFilesContaining(std::stri
             }
         }
     } catch (const std::exception& e) {
-        std::cerr << "Error listing files in " << path << std::endl;
+        LOGW << "Error listing files in " << path;
     }
     return list;
 }

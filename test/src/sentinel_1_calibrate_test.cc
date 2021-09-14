@@ -406,7 +406,7 @@ TEST_F(Sentinel1CalibrateTest, GetCalibrationInfoList) {
 TEST_F(Sentinel1CalibrateTest, GetNumOfLines) {
     const auto expeceted_iw2_vv_num_of_lines = calibrationdata::SECOND_CALIBRATION_NUMBER_OF_LINES;
     const auto expeceted_iw1_vh_num_of_lines = calibrationdata::FIRST_CALIBRATION_NUMBER_OF_LINES;
-    const auto expected_invalid_number_of_lines = constants::INVALID_INDEX;
+    const auto expected_invalid_number_of_lines = utils::constants::INVALID_INDEX;
 
     const auto iw1_vh_lines = GetNumOfLines(original_product_metadata_, "vH", "Iw1");
     ASSERT_THAT(iw1_vh_lines, ::testing::Eq(expeceted_iw1_vh_num_of_lines));

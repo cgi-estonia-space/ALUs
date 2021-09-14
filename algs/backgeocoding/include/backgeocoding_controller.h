@@ -15,7 +15,6 @@
 
 #include <atomic>
 #include <condition_variable>
-#include <iostream>
 #include <memory>
 #include <mutex>
 #include <string_view>
@@ -92,9 +91,7 @@ private:
     std::shared_ptr<snapengine::Product> target_product_;
 
     std::mutex register_mutex_;
-    std::mutex master_read_mutex_;
     std::mutex position_compute_mutex_;
-    std::mutex slave_read_mutex_;
     std::mutex core_compute_mutex_;
     std::mutex output_write_mutex_;
     std::mutex exception_mutex_;

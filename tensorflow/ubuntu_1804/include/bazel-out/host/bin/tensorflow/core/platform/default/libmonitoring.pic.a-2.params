@@ -1,3 +1,0 @@
-rcsD
-bazel-out/host/bin/tensorflow/core/platform/default/libmonitoring.pic.a
-bazel-out/host/bin/tensorflow/core/platform/default/_objs/monitoring/monitoring.pic.o
