@@ -20,6 +20,8 @@ tar -xzvf ${build_id}.tar.gz
 # Run scripts of different cases
 mv run_beirut_disaster_test.sh ${build_id}
 mv run_virumaa_calibration_chain_test.sh ${build_id}
+mv alus_result_check.py ${build_id}
+mv gdalcompare.py ${build_id}
 
 cd ${build_id}
 

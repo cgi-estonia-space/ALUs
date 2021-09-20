@@ -112,7 +112,7 @@ pipelines:
                 - build-automation/execute_nightly.sh
                 - build-automation/run_beirut_disaster_test.sh
                 - build-automation/run_virumaa_calibration_chain_test.sh
-                - build-automation/compare_alus_output.py
+                - build-automation/*.py
       - step:
           name: 'End to end tests and publish'
           image: cgialus/alus-ci:latest
@@ -134,12 +134,12 @@ pipelines:
             - echo $ip_address
             - cd $BITBUCKET_CLONE_DIR
             - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "mkdir /tmp/nightly_builds"
-            - scp -oStrictHostKeyChecking=no build-automation/execute_nightly.sh build-automation/run_beirut_disaster_test.sh build-automation/compare_alus_output.py build-automation/run_virumaa_calibration_chain_test.sh ubuntu@$ip_address:/tmp/nightly_builds
+            - scp -oStrictHostKeyChecking=no build-automation/execute_nightly.sh build-automation/run_beirut_disaster_test.sh build-automation/*.py build-automation/run_virumaa_calibration_chain_test.sh ubuntu@$ip_address:/tmp/nightly_builds
             - cd build-nightly
             - build_filename=$(basename *.tar.gz)
             - build_id="${build_filename%%.*}"
             - scp -r -oStrictHostKeyChecking=no *.tar.gz ubuntu@$ip_address:/tmp/nightly_builds
-            - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "cd /tmp/nightly_builds; ./execute_nightly.sh ${build_id} /home/ubuntu/nightly_datasets/beirut_dimap/ /home/ubuntu/nightly_aux/ /home/ubuntu/nightly_datasets/virumaa/"
+            - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "export NIGHTLY_GOLDEN_DIR=$NIGHTLY_GOLDEN_DIR; cd /tmp/nightly_builds; ./execute_nightly.sh ${build_id} /home/ubuntu/nightly_datasets/beirut_dimap/ /home/ubuntu/nightly_aux/ /home/ubuntu/nightly_datasets/virumaa/"
           after-script:
             - aws ec2 stop-instances --instance-ids $P3_2X_LARGE_IRELAND_INSTANCE_ID --profile sid_man
     nightly-binary-check: # Duplicate of nightly-build except no CI check
@@ -169,7 +169,7 @@ pipelines:
             - build-automation/execute_nightly.sh
             - build-automation/run_beirut_disaster_test.sh
             - build-automation/run_virumaa_calibration_chain_test.sh
-            - build-automation/compare_alus_output.py
+            - build-automation/*.py
       - step:
           name: 'End to end tests and publish'
           image: cgialus/alus-ci:latest
@@ -191,12 +191,12 @@ pipelines:
             - echo $ip_address
             - cd $BITBUCKET_CLONE_DIR
             - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "mkdir /tmp/nightly_builds"
-            - scp -oStrictHostKeyChecking=no build-automation/execute_nightly.sh build-automation/run_beirut_disaster_test.sh build-automation/compare_alus_output.py build-automation/run_virumaa_calibration_chain_test.sh ubuntu@$ip_address:/tmp/nightly_builds
+            - scp -oStrictHostKeyChecking=no build-automation/execute_nightly.sh build-automation/run_beirut_disaster_test.sh build-automation/*.py build-automation/run_virumaa_calibration_chain_test.sh ubuntu@$ip_address:/tmp/nightly_builds
             - cd build-nightly
             - build_filename=$(basename *.tar.gz)
             - build_id="${build_filename%%.*}"
             - scp -r -oStrictHostKeyChecking=no *.tar.gz ubuntu@$ip_address:/tmp/nightly_builds
-            - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "cd /tmp/nightly_builds; ./execute_nightly.sh ${build_id} /home/ubuntu/nightly_datasets/beirut_dimap/ /home/ubuntu/nightly_aux/ /home/ubuntu/nightly_datasets/virumaa/"
+            - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "export NIGHTLY_GOLDEN_DIR=$NIGHTLY_GOLDEN_DIR; cd /tmp/nightly_builds; ./execute_nightly.sh ${build_id} /home/ubuntu/nightly_datasets/beirut_dimap/ /home/ubuntu/nightly_aux/ /home/ubuntu/nightly_datasets/virumaa/"
           after-script:
             - aws ec2 stop-instances --instance-ids $P3_2X_LARGE_IRELAND_INSTANCE_ID --profile sid_man
 

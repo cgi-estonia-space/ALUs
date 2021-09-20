@@ -1,4 +1,5 @@
 cmake-build*
 build
 .idea
-/venv/
+venv
+__pycache__
