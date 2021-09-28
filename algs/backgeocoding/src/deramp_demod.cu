@@ -24,7 +24,7 @@
 namespace alus {
 namespace backgeocoding {
 
-__global__ void DerampDemod(alus::Rectangle rectangle, double* slave_i, double* slave_q, double* demod_phase,
+__global__ void DerampDemod(alus::Rectangle rectangle, int16_t* slave_i, int16_t* slave_q, double* demod_phase,
                             double* demod_i, double* demod_q, alus::s1tbx::DeviceSubswathInfo* sub_swath,
                             int s_burst_index) {
     const int idx = threadIdx.x + (blockDim.x * blockIdx.x);
@@ -49,16 +49,15 @@ __global__ void DerampDemod(alus::Rectangle rectangle, double* slave_i, double* 
 
     demod_phase[global_index] = value_phase;
 
-    value_i = slave_i[global_index];
-    value_q = slave_q[global_index];
+    value_i = static_cast<double>(slave_i[global_index]);
+    value_q = static_cast<double>(slave_q[global_index]);
 
-    cos_phase = cos(value_phase);
-    sin_phase = sin(value_phase);
+    sincos(value_phase, &sin_phase, &cos_phase);
     demod_i[global_index] = value_i * cos_phase - value_q * sin_phase;
     demod_q[global_index] = value_i * sin_phase + value_q * cos_phase;
 }
 
-cudaError_t LaunchDerampDemod(alus::Rectangle rectangle, double* slave_i, double* slave_q, double* demod_phase,
+cudaError_t LaunchDerampDemod(alus::Rectangle rectangle, int16_t* slave_i, int16_t* slave_q, double* demod_phase,
                               double* demod_i, double* demod_q, alus::s1tbx::DeviceSubswathInfo* sub_swath,
                               int s_burst_index) {
     dim3 block_size(24, 24);

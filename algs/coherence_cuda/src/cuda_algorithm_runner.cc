@@ -13,6 +13,7 @@
  */
 #include "cuda_algorithm_runner.h"
 
+#include <array>
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -24,7 +25,6 @@ struct CUDAAlgorithmRunner::ThreadParams
     std::vector<CohTile> tiles;
     std::mutex tiles_mutex;
     size_t read_tile_count = 0;
-    std::mutex read_mutex;
     std::mutex write_mutex;
     std::mutex exception_mutex;
     std::exception_ptr exception;
@@ -33,9 +33,8 @@ struct CUDAAlgorithmRunner::ThreadParams
 
 void CUDAAlgorithmRunner::ThreadRun(CUDAAlgorithmRunner* algo, ThreadParams* params){
     try {
-        std::vector<float> data_in;
+        std::array<std::vector<float>, 4> data_in;
         std::vector<float> data_out;
-        const int band_count = algo->tile_reader_->GetBandCount();
         while (true) {
             {
                 std::unique_lock l(params->exception_mutex);
@@ -51,11 +50,18 @@ void CUDAAlgorithmRunner::ThreadRun(CUDAAlgorithmRunner* algo, ThreadParams* par
             }
             const auto& tile_in = tile.GetTileIn();
             const auto& tile_out = tile.GetTileOut();
-            data_in.resize(tile_in.GetXSize() * tile_in.GetYSize() * band_count);
             data_out.resize(tile_out.GetXSize() * tile_out.GetYSize());
+            const size_t tile_sz = tile_in.GetXSize() * tile_in.GetYSize();
+            if(tile_sz > data_in.at(0).size())
             {
-                std::unique_lock l(params->read_mutex);
-                algo->tile_reader_->ReadTile(tile_in, data_in.data());
+                for(auto& vec : data_in) {
+                    vec.resize(tile_sz);
+                }
+            }
+
+            for(int band_nr = 1 ; band_nr <= 4; band_nr++)
+            {
+                algo->tile_reader_->ReadTile(tile_in, data_in.at(band_nr - 1).data(), band_nr);
             }
             algo->algo_->TileCalc(tile, data_in, data_out);
             {
@@ -79,12 +85,10 @@ void CUDAAlgorithmRunner::Run() {
     algo_->PreTileCalc();
 
     std::vector<std::thread> thread_vec;
-    constexpr size_t N_EXTRA_THREADS = 3;
+    constexpr size_t N_EXTRA_THREADS = 4;
     for(size_t i = 0; i < N_EXTRA_THREADS; i++){
         thread_vec.emplace_back(ThreadRun, this, &params);
     }
-
-    ThreadRun(this, &params);
 
     for(auto& t : thread_vec){
         t.join();
@@ -95,7 +99,7 @@ void CUDAAlgorithmRunner::Run() {
     }
 }
 
-CUDAAlgorithmRunner::CUDAAlgorithmRunner(IDataTileReader* tile_reader, IDataTileWriter* tile_writer,
+CUDAAlgorithmRunner::CUDAAlgorithmRunner(GdalTileReader* tile_reader, IDataTileWriter* tile_writer,
                                          ITileProvider* tile_provider, IAlgoCuda* algorithm)
     : tile_reader_{tile_reader}, tile_writer_{tile_writer}, tile_provider_{tile_provider}, algo_{algorithm} {}
 

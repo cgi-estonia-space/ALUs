@@ -15,25 +15,29 @@ struct DeviceSubswathInfo {
     double radar_frequency;
     double azimuth_steering_rate;
 
-    double *device_burst_first_line_time = nullptr;
-    double *device_burst_last_line_time = nullptr;
+    double *device_burst_first_line_time;
+    double *device_burst_last_line_time;
     size_t burst_line_times_count;
 
-    double *device_doppler_rate = nullptr;
-    double *device_doppler_centroid = nullptr;
-    double *device_reference_time = nullptr;
-    double *device_range_depend_doppler_rate = nullptr;
-
+    double *device_doppler_rate;
+    double *device_doppler_centroid;
+    double *device_reference_time;
+    double *device_range_depend_doppler_rate;
     int doppler_size_x, doppler_size_y;
+
+    double* device_subswath_azimuth_times;
+    double* device_subswath_slant_range_times ;
+    double* device_latidudes;
+    double* device_longitudes;
+    // GeoLocationGridPoint
+    int num_of_geo_lines;
+    int num_of_geo_points_per_line;
 
     // bursts info
     int lines_per_burst;
     int num_of_bursts;
     int samples_per_burst;
 
-    // GeoLocationGridPoint
-    int num_of_geo_lines;
-    int num_of_geo_points_per_line;
 };
 }  // namespace s1tbx
 }  // namespace alus

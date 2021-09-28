@@ -111,8 +111,7 @@ __global__ void BilinearInterpolation(double *x_pixels,
             &p_array, &index, raster_width, params.no_data_value, use_no_data_q, GetSamples);
 
         if (!params.disable_reramp) {
-            cos_phase = cos(sample_phase);
-            sin_phase = sin(sample_phase);
+            sincos(sample_phase, &sin_phase, &cos_phase);
             reramp_remod_i = sample_i * cos_phase + sample_q * sin_phase;
             reramp_remod_q = -sample_i * sin_phase + sample_q * cos_phase;
             results_i[thread_data_index] = reramp_remod_i;

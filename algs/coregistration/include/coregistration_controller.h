@@ -53,8 +53,7 @@ public:
     std::shared_ptr<snapengine::Product> GetMasterProduct() { return split_master_->GetTargetProduct(); }
     std::shared_ptr<snapengine::Product> GetSlaveProduct() { return split_slave_->GetTargetProduct(); }
 
-    GDALDataset* GetOutputDataset() { return target_dataset_->GetDataset(); }
-    void ReleaseOutputDataset() { target_dataset_->ReleaseDataset(); }
+    std::shared_ptr<alus::TargetDataset<float>> GetTargetDataset() { return target_dataset_; }
 
     ~Coregistration() = default;
 

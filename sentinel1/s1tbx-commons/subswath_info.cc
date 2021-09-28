@@ -14,15 +14,13 @@
 #include "s1tbx-commons/subswath_info.h"
 
 #include "allocators.h"
+#include "cuda_copies.h"
 
 namespace alus {
 namespace s1tbx {
 
-SubSwathInfo::SubSwathInfo(){
-
-}
-SubSwathInfo::~SubSwathInfo(){
-
+SubSwathInfo::SubSwathInfo() {}
+SubSwathInfo::~SubSwathInfo() {
     Deallocate2DArray<double>(doppler_rate_);
     Deallocate2DArray<double>(doppler_centroid_);
     Deallocate2DArray<double>(range_depend_doppler_rate_);
@@ -36,32 +34,25 @@ SubSwathInfo::~SubSwathInfo(){
     DeviceFree();
 }
 
-void SubSwathInfo::HostToDevice(){
+void SubSwathInfo::HostToDevice() {
     int doppler_size_x = this->num_of_bursts_;
     int doppler_size_y = this->samples_per_burst_;
     int elems = doppler_size_x * doppler_size_y;
     DeviceSubswathInfo temp_pack;
 
-    //TODO: before copy make sure to check if these are even available. In our demo these are forced available
-    CHECK_CUDA_ERR(cudaMalloc((void**)&temp_pack.device_doppler_rate, elems*sizeof(double)));
+    // TODO: before copy make sure to check if these are even available. In our demo these are forced available
+    CHECK_CUDA_ERR(cudaMalloc((void**)&temp_pack.device_doppler_rate, elems * sizeof(double)));
 
-    CHECK_CUDA_ERR(cudaMalloc((void**)&temp_pack.device_doppler_centroid, elems*sizeof(double)));
+    CHECK_CUDA_ERR(cudaMalloc((void**)&temp_pack.device_doppler_centroid, elems * sizeof(double)));
 
-    CHECK_CUDA_ERR(cudaMalloc((void**)&temp_pack.device_reference_time, elems*sizeof(double)));
+    CHECK_CUDA_ERR(cudaMalloc((void**)&temp_pack.device_reference_time, elems * sizeof(double)));
 
-    CHECK_CUDA_ERR(cudaMalloc((void**)&temp_pack.device_range_depend_doppler_rate, elems*sizeof(double)));
+    CHECK_CUDA_ERR(cudaMalloc((void**)&temp_pack.device_range_depend_doppler_rate, elems * sizeof(double)));
 
-
-    CHECK_CUDA_ERR(cudaMemcpy(
-        temp_pack.device_doppler_rate, this->doppler_rate_[0], elems*sizeof(double),cudaMemcpyHostToDevice));
-
-    CHECK_CUDA_ERR(cudaMemcpy(
-        temp_pack.device_doppler_centroid, this->doppler_centroid_[0], elems*sizeof(double),cudaMemcpyHostToDevice));
-
-    CHECK_CUDA_ERR(cudaMemcpy(
-        temp_pack.device_reference_time, this->reference_time_[0], elems*sizeof(double),cudaMemcpyHostToDevice));
-
-    CHECK_CUDA_ERR(cudaMemcpy(temp_pack.device_range_depend_doppler_rate, this->range_depend_doppler_rate_[0], elems*sizeof(double),cudaMemcpyHostToDevice));
+    cuda::copyArrayH2D(temp_pack.device_doppler_rate, doppler_rate_[0], elems);
+    cuda::copyArrayH2D(temp_pack.device_doppler_centroid, doppler_centroid_[0], elems);
+    cuda::copyArrayH2D(temp_pack.device_reference_time, reference_time_[0], elems);
+    cuda::copyArrayH2D(temp_pack.device_range_depend_doppler_rate, range_depend_doppler_rate_[0], elems);
 
     temp_pack.first_valid_pixel = this->first_valid_pixel_;
     temp_pack.last_valid_pixel = this->last_valid_pixel_;
@@ -85,64 +76,80 @@ void SubSwathInfo::HostToDevice(){
     temp_pack.num_of_geo_points_per_line = this->num_of_geo_points_per_line_;
 
     temp_pack.burst_line_times_count = this->burst_first_line_time_.size();
-    CHECK_CUDA_ERR(cudaMalloc((void**)&temp_pack.device_burst_first_line_time, temp_pack.burst_line_times_count*sizeof(double)));
-    CHECK_CUDA_ERR(cudaMalloc((void**)&temp_pack.device_burst_last_line_time, temp_pack.burst_line_times_count*sizeof(double)));
+    CHECK_CUDA_ERR(
+        cudaMalloc((void**)&temp_pack.device_burst_first_line_time, temp_pack.burst_line_times_count * sizeof(double)));
+    CHECK_CUDA_ERR(
+        cudaMalloc((void**)&temp_pack.device_burst_last_line_time, temp_pack.burst_line_times_count * sizeof(double)));
 
+    cuda::copyArrayH2D(temp_pack.device_burst_first_line_time, burst_first_line_time_.data(), temp_pack.burst_line_times_count);
+    cuda::copyArrayH2D(temp_pack.device_burst_last_line_time, burst_last_line_time_.data(), temp_pack.burst_line_times_count);
 
-    CHECK_CUDA_ERR(cudaMemcpy(temp_pack.device_burst_first_line_time,
-                              this->burst_first_line_time_.data(),
-                              temp_pack.burst_line_times_count*sizeof(double),
-                              cudaMemcpyHostToDevice));
+    const int subswath_geo_grid_size = num_of_geo_lines_ * num_of_geo_points_per_line_;
+    CHECK_CUDA_ERR(cudaMalloc(&temp_pack.device_subswath_azimuth_times, sizeof(double) * subswath_geo_grid_size));
+    CHECK_CUDA_ERR(cudaMalloc(&temp_pack.device_subswath_slant_range_times, sizeof(double) * subswath_geo_grid_size));
+    CHECK_CUDA_ERR(cudaMalloc(&temp_pack.device_longitudes, sizeof(double) * subswath_geo_grid_size));
+    CHECK_CUDA_ERR(cudaMalloc(&temp_pack.device_latidudes, sizeof(double) * subswath_geo_grid_size));
 
-    CHECK_CUDA_ERR(cudaMemcpy(temp_pack.device_burst_last_line_time,
-                              this->burst_last_line_time_.data(),
-                              temp_pack.burst_line_times_count*sizeof(double),
-                              cudaMemcpyHostToDevice));
+    cuda::copyArrayH2D(temp_pack.device_subswath_azimuth_times, azimuth_time_[0], subswath_geo_grid_size);
+    cuda::copyArrayH2D(temp_pack.device_subswath_slant_range_times, slant_range_time_[0], subswath_geo_grid_size);
+    cuda::copyArrayH2D(temp_pack.device_longitudes, longitude_[0], subswath_geo_grid_size);
+    cuda::copyArrayH2D(temp_pack.device_latidudes, latitude_[0], subswath_geo_grid_size);
 
     this->devicePointersHolder = temp_pack;
 
     CHECK_CUDA_ERR(cudaMalloc((void**)&this->device_subswath_info_, sizeof(DeviceSubswathInfo)));
-    CHECK_CUDA_ERR(cudaMemcpy(this->device_subswath_info_, &temp_pack, sizeof(DeviceSubswathInfo),cudaMemcpyHostToDevice));
+    cuda::copyH2D(device_subswath_info_, &temp_pack);
 }
-void SubSwathInfo::DeviceToHost(){
-
-    CHECK_CUDA_ERR(cudaErrorNotYetImplemented);
-
-}
-void SubSwathInfo::DeviceFree(){
-    if(this->devicePointersHolder.device_burst_first_line_time != nullptr){
+void SubSwathInfo::DeviceToHost() { CHECK_CUDA_ERR(cudaErrorNotYetImplemented); }
+void SubSwathInfo::DeviceFree() {
+    if (this->devicePointersHolder.device_burst_first_line_time != nullptr) {
         cudaFree(this->devicePointersHolder.device_burst_first_line_time);
         this->devicePointersHolder.device_burst_first_line_time = nullptr;
     }
-    if(this->devicePointersHolder.device_burst_last_line_time != nullptr){
+    if (this->devicePointersHolder.device_burst_last_line_time != nullptr) {
         cudaFree(this->devicePointersHolder.device_burst_last_line_time);
         this->devicePointersHolder.device_burst_last_line_time = nullptr;
     }
 
-    if(this->devicePointersHolder.device_doppler_rate != nullptr){
+    if (this->devicePointersHolder.device_doppler_rate != nullptr) {
         cudaFree(this->devicePointersHolder.device_doppler_rate);
         this->devicePointersHolder.device_doppler_rate = nullptr;
     }
-    if(this->devicePointersHolder.device_doppler_centroid != nullptr){
+    if (this->devicePointersHolder.device_doppler_centroid != nullptr) {
         cudaFree(this->devicePointersHolder.device_doppler_centroid);
         this->devicePointersHolder.device_doppler_centroid = nullptr;
     }
-    if(this->devicePointersHolder.device_reference_time != nullptr){
+    if (this->devicePointersHolder.device_reference_time != nullptr) {
         cudaFree(this->devicePointersHolder.device_reference_time);
         this->devicePointersHolder.device_reference_time = nullptr;
     }
-    if(this->devicePointersHolder.device_range_depend_doppler_rate != nullptr){
+    if (this->devicePointersHolder.device_range_depend_doppler_rate != nullptr) {
         cudaFree(this->devicePointersHolder.device_range_depend_doppler_rate);
         this->devicePointersHolder.device_range_depend_doppler_rate = nullptr;
     }
 
-    if(this->device_subswath_info_ != nullptr){
+    if (devicePointersHolder.device_subswath_azimuth_times) {
+        cudaFree(devicePointersHolder.device_subswath_azimuth_times);
+        devicePointersHolder.device_subswath_azimuth_times = nullptr;
+    }
+    if (devicePointersHolder.device_subswath_slant_range_times) {
+        cudaFree(devicePointersHolder.device_subswath_slant_range_times);
+        devicePointersHolder.device_subswath_slant_range_times = nullptr;
+    }
+    if (devicePointersHolder.device_longitudes) {
+        cudaFree(devicePointersHolder.device_longitudes);
+        devicePointersHolder.device_longitudes = nullptr;
+    }
+    if (devicePointersHolder.device_latidudes) {
+        cudaFree(devicePointersHolder.device_latidudes);
+        devicePointersHolder.device_latidudes = nullptr;
+    }
+
+    if (this->device_subswath_info_ != nullptr) {
         cudaFree(this->device_subswath_info_);
         this->device_subswath_info_ = nullptr;
     }
-
-
 }
 
-}//namespace
-}//namespace
+}  // namespace s1tbx
+}  // namespace alus

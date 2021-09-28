@@ -86,7 +86,7 @@ struct TriangleInterpolationParams {
 };
 
 struct InterpolationParams{
-    size_t z_data_count;
+    int z_data_count;
     double x_scale;
     double y_scale;
     double offset;

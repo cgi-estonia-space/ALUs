@@ -68,7 +68,7 @@ public:
         i_phase_stream.close();
     }
 
-    void ReadTile(alus::Rectangle area, double* tile_i, double* tile_q) {
+    void ReadTile(alus::Rectangle area, int16_t* tile_i, int16_t* tile_q) {
         std::ifstream slave_i_stream(i_tile_file_);
         std::ifstream slave_q_stream(q_tile_file_);
         if (!slave_i_stream.is_open()) {
@@ -79,10 +79,13 @@ public:
         }
 
         const size_t size = area.width * area.height;
+        double di,dq;
 
         for (size_t i = 0; i < size; i++) {
-            slave_i_stream >> tile_i[i];
-            slave_q_stream >> tile_q[i];
+            slave_i_stream >> di;
+            slave_q_stream >> dq;
+            tile_i[i] = static_cast<int16_t>(di);
+            tile_q[i] = static_cast<int16_t>(dq);
         }
 
         slave_i_stream.close();
@@ -105,18 +108,18 @@ bool RunBackgeocoding(alus::backgeocoding::Backgeocoding* backgeocoding, Backgeo
     if (core_params.slave_rectangle.width != 0 && core_params.slave_rectangle.height != 0) {
         core_params.demod_size = core_params.slave_rectangle.width * core_params.slave_rectangle.height;
 
-        std::vector<double> slave_tile_i(core_params.demod_size);
-        std::vector<double> slave_tile_q(core_params.demod_size);
+        std::vector<int16_t> slave_tile_i(core_params.demod_size);
+        std::vector<int16_t> slave_tile_q(core_params.demod_size);
 
         tester->ReadTile(core_params.slave_rectangle, slave_tile_i.data(), slave_tile_q.data());
 
-        CHECK_CUDA_ERR(cudaMalloc((void**)&core_params.device_slave_i, core_params.demod_size * sizeof(double)));
-        CHECK_CUDA_ERR(cudaMalloc((void**)&core_params.device_slave_q, core_params.demod_size * sizeof(double)));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&core_params.device_slave_i, core_params.demod_size * sizeof(int16_t)));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&core_params.device_slave_q, core_params.demod_size * sizeof(int16_t)));
 
         CHECK_CUDA_ERR(cudaMemcpy(core_params.device_slave_i, slave_tile_i.data(),
-                                  core_params.demod_size * sizeof(double), cudaMemcpyHostToDevice));
+                                  core_params.demod_size * sizeof(int16_t), cudaMemcpyHostToDevice));
         CHECK_CUDA_ERR(cudaMemcpy(core_params.device_slave_q, slave_tile_q.data(),
-                                  core_params.demod_size * sizeof(double), cudaMemcpyHostToDevice));
+                                  core_params.demod_size * sizeof(int16_t), cudaMemcpyHostToDevice));
 
         core_params.s_burst_index = s_burst_index;
         core_params.target_area = target_area;

@@ -92,7 +92,7 @@ void Coregistration::Initialize(const Coregistration::Parameters& params) {
     }
 
     split_master_->initialize();
-    std::shared_ptr<C16Dataset<double>> master_reader = split_master_->GetPixelReader();
+    std::shared_ptr<C16Dataset<int16_t>> master_reader = split_master_->GetPixelReader();
     if (!params.main_orbit_file.empty()) {
         snapengine::AlusUtils::SetOrbitFilePath(params.main_orbit_file);
     }
@@ -111,6 +111,7 @@ void Coregistration::Initialize(const Coregistration::Parameters& params) {
     alus::TargetDatasetParams out_ds_params;
     out_ds_params.filename = params.output_file;
     out_ds_params.band_count = 4;
+    out_ds_params.dataset_per_band = true;
     out_ds_params.driver = GetGDALDriverManager()->GetDriverByName(utils::constants::GDAL_MEM_DRIVER);
     out_ds_params.dimension = master_temp->GetRasterDimensions();
     out_ds_params.transform = master_temp->GetTransform();

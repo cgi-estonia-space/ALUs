@@ -48,10 +48,10 @@ TEST(DISABLED_backgeocoding, ThreadTest) {
                                                             output_dataset, "./goods/master_metadata.dim",
     "./goods/slave_metadata.dim"); controller.PrepareToCompute(); controller.DoWork();*/
 
-    std::shared_ptr<alus::Dataset<double>> master_input_dataset =
-        std::make_shared<alus::Dataset<double>>("/home/erik/snapDebusTests/georgTestMaster_Orb.tif");
-    std::shared_ptr<alus::Dataset<double>> slave_input_dataset =
-        std::make_shared<alus::Dataset<double>>("/home/erik/snapDebusTests/georgTestSlave_Orb.tif");
+    std::shared_ptr<alus::Dataset<int16_t>> master_input_dataset =
+        std::make_shared<alus::Dataset<int16_t>>("/home/erik/snapDebusTests/georgTestMaster_Orb.tif");
+    std::shared_ptr<alus::Dataset<int16_t>> slave_input_dataset =
+        std::make_shared<alus::Dataset<int16_t>>("/home/erik/snapDebusTests/georgTestSlave_Orb.tif");
 
     alus::TargetDatasetParams params;
     params.filename = "/home/erik/snapDebusTests/alusTest2.tif";

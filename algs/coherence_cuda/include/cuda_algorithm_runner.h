@@ -14,7 +14,7 @@
 #pragma once
 
 #include "i_algo_cuda.h"
-#include "i_data_tile_reader.h"
+#include "gdal_tile_reader.h"
 #include "i_data_tile_writer.h"
 #include "i_tile_provider.h"
 
@@ -22,7 +22,7 @@ namespace alus {
 namespace coherence_cuda {
 class CUDAAlgorithmRunner {
 private:
-    IDataTileReader* tile_reader_;
+    GdalTileReader* tile_reader_;
     IDataTileWriter* tile_writer_;
     ITileProvider* tile_provider_;
     IAlgoCuda* algo_;
@@ -32,7 +32,7 @@ private:
 
 public:
     CUDAAlgorithmRunner() = delete;
-    CUDAAlgorithmRunner(IDataTileReader* tile_reader, IDataTileWriter* tile_writer, ITileProvider* tile_provider,
+    CUDAAlgorithmRunner(GdalTileReader* tile_reader, IDataTileWriter* tile_writer, ITileProvider* tile_provider,
                         IAlgoCuda* algorithm);
     void Run();
 };

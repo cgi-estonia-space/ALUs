@@ -128,9 +128,7 @@ void CohCuda::CoherencePreTileCalc() {
     coherence_computation_.LaunchCoherencePreTileCalc(x_pows, y_pows, position_lines_pixels, generate_y, band_params_);
 }
 
-// todo: use CPU threads and default stream per thread option
-void CohCuda::TileCalc(CohTile& tile, const std::vector<float>& data, std::vector<float>& data_out) {
-    //    todo: change this to accept IoTile (basically need to use IoTile things only)
+void CohCuda::TileCalc(CohTile& tile, const std::array<std::vector<float>, 4>& data, std::vector<float>& data_out) {
     coherence_computation_.LaunchCoherence(tile, data, data_out, coh_win_, band_params_);
 }
 

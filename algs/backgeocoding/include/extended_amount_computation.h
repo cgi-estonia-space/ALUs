@@ -22,15 +22,18 @@
 namespace alus {
 namespace backgeocoding {
 struct AzimuthAndRangeBounds {
-    double azimuth_min;
-    double azimuth_max;
-    double range_min;
-    double range_max;
+    int azimuth_min;
+    int azimuth_max;
+    int range_min;
+    int range_max;
 };
 
-cudaError_t LaunchComputeExtendedAmount(Rectangle bounds, AzimuthAndRangeBounds& extended_amount,
-                                        const snapengine::OrbitStateVectorComputation* vectors, size_t nr_of_vectors,
-                                        double vectors_dt, const s1tbx::SubSwathInfo& subswath_info,
+cudaError_t LaunchComputeExtendedAmount(Rectangle bounds,
+                                        AzimuthAndRangeBounds &extended_amount,
+                                        snapengine::OrbitStateVectorComputation* d_orbit_state_vectors,
+                                        size_t nr_of_vectors,
+                                        double vectors_dt,
+                                        const s1tbx::SubSwathInfo& subswath_info,
                                         s1tbx::DeviceSentinel1Utils* d_sentinel_1_utils,
                                         s1tbx::DeviceSubswathInfo* d_subswath_info, const PointerArray& tiles,
                                         float* egm);

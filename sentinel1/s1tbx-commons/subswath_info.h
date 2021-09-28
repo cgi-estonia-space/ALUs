@@ -28,36 +28,34 @@ namespace s1tbx {
  * This class refers to SubSwathInfo private class from Sentinel1Utils class from s1tbx module
  */
 class SubSwathInfo : public cuda::CudaFriendlyObject {
-private:
-    DeviceSubswathInfo devicePointersHolder;
-
 public:
+    DeviceSubswathInfo devicePointersHolder = {};
     // subswath info
-    int first_valid_pixel_;
-    int last_valid_pixel_;
-    double first_line_time_;
-    double last_line_time_;
-    double first_valid_line_time_;
-    double last_valid_line_time_;
-    double slr_time_to_first_pixel_;
-    double slr_time_to_last_pixel_;
-    double slr_time_to_first_valid_pixel_;
-    double slr_time_to_last_valid_pixel_;
-    double range_pixel_spacing_;
-    double range_sampling_rate_;
-    double azimuth_pixel_spacing_;
-    double azimuth_time_interval_;
-    double radar_frequency_;
-    double azimuth_steering_rate_;
-    double ascending_node_time_;
+    int first_valid_pixel_ = 0;
+    int last_valid_pixel_ = 0;
+    double first_line_time_ = 0.0;
+    double last_line_time_ = 0.0;
+    double first_valid_line_time_ = 0.0;
+    double last_valid_line_time_ = 0.0;
+    double slr_time_to_first_pixel_ = 0.0;
+    double slr_time_to_last_pixel_ = 0.0;
+    double slr_time_to_first_valid_pixel_ = 0.0;
+    double slr_time_to_last_valid_pixel_ = 0.0;
+    double range_pixel_spacing_ = 0.0;
+    double range_sampling_rate_ = 0.0;
+    double azimuth_pixel_spacing_ = 0.0;
+    double azimuth_time_interval_ = 0.0;
+    double radar_frequency_ = 0.0;
+    double azimuth_steering_rate_ = 0.0;
+    double ascending_node_time_ = 0.0;
     std::string subswath_name_;
 
     // bursts info
-    int lines_per_burst_;
-    int num_of_bursts_;
-    int samples_per_burst_;
-    int num_of_samples_;
-    int num_of_lines_;
+    int lines_per_burst_ = 0;
+    int num_of_bursts_ = 0;
+    int samples_per_burst_ = 0;
+    int num_of_samples_ = 0;
+    int num_of_lines_ = 0;
     std::vector<double> burst_first_line_time_;  // placeholder
     std::vector<double> burst_last_line_time_;   // placeholder
     // Be careful. The inner vectors can have differing lengths. This is not an orderly matrix
@@ -79,8 +77,8 @@ public:
     std::vector<std::vector<double>> ap_elevation_angle_;
 
     // GeoLocationGridPoint
-    int num_of_geo_lines_;
-    int num_of_geo_points_per_line_;
+    int num_of_geo_lines_ = 0;
+    int num_of_geo_points_per_line_ = 0;
     double** azimuth_time_ = nullptr;      // placeholder
     double** slant_range_time_ = nullptr;  // placeholder
     double** latitude_ = nullptr;          // placeholder

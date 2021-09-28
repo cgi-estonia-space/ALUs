@@ -128,7 +128,7 @@ public:
      * @param coh_window coherence azimuth and range
      * @param band_params
      */
-    void LaunchCoherence(const CohTile& tile, const std::vector<float>& data, std::vector<float>& data_out,
+    void LaunchCoherence(const CohTile& tile, const std::array<std::vector<float>, 4>& data, std::vector<float>& data_out,
                          const CohWindow& coh_window, const BandParams& band_params);
 };
 }  // namespace coherence_cuda

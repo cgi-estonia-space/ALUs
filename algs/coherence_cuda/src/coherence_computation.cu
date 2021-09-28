@@ -359,7 +359,7 @@ void CoherenceComputation::LaunchCoherencePreTileCalc(
     //    }
 }
 
-void CoherenceComputation::LaunchCoherence(const CohTile& tile, const std::vector<float>& data,
+void CoherenceComputation::LaunchCoherence(const CohTile& tile, const std::array<std::vector<float>, 4>& data,
                                            std::vector<float>& data_out, const CohWindow& coh_window,
                                            const BandParams& band_params) {
     int input_tile_width = tile.GetTileIn().GetXSize();
@@ -367,23 +367,12 @@ void CoherenceComputation::LaunchCoherence(const CohTile& tile, const std::vecto
     int output_tile_width = tile.GetTileOut().GetXSize();
     int output_tile_height = tile.GetTileOut().GetYSize();
 
-    // GET DATA
-    //    todo: get band_nr-s from band_params which should get these from product (after product integration)
-    int band_nr = 1;
+    // todo: hard coded band ordering
     auto tile_size = input_tile_width * input_tile_height;
-    thrust::device_vector<float> d_band_master_real(
-        data.begin() + ((band_nr - 1) * tile_size), data.begin() + ((band_nr - 1) * tile_size) + tile_size);
-    band_nr = 2;
-    thrust::device_vector<float> d_band_master_imag(
-        data.begin() + ((band_nr - 1) * tile_size), data.begin() + ((band_nr - 1) * tile_size) + tile_size);
-    band_nr = 3;
-
-    thrust::device_vector<float> d_band_slave_real(
-        data.begin() + ((band_nr - 1) * tile_size), data.begin() + ((band_nr - 1) * tile_size) + tile_size);
-
-    band_nr = 4;
-    thrust::device_vector<float> d_band_slave_imag(
-        data.begin() + ((band_nr - 1) * tile_size), data.begin() + ((band_nr - 1) * tile_size) + tile_size);
+    thrust::device_vector<float> d_band_master_real(data.at(0).begin(), data.at(0).begin() + tile_size);
+    thrust::device_vector<float> d_band_master_imag(data.at(1).begin(), data.at(1).begin() + tile_size);
+    thrust::device_vector<float> d_band_slave_real(data.at(2).begin(), data.at(2).begin() + tile_size);
+    thrust::device_vector<float> d_band_slave_imag(data.at(3).begin(), data.at(3).begin() + tile_size);
 
     // how threads are in block
     //    dim3 threads_per_block(32, 32, 1);  // this should be 32 <= x*y*z <=1024 & warp size based (multiple of 32)

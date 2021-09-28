@@ -13,16 +13,18 @@
  */
 #pragma once
 
+#include "shapes.h"
+
 namespace alus {
 
-template<typename OutputType>
+template <typename OutputType>
 class AlusFileWriter {
-   public:
-    virtual void WriteRectangle(OutputType *from, Rectangle area, int band_nr) = 0;
+public:
+    virtual void WriteRectangle(OutputType* from, Rectangle area, int band_nr) = 0;
     AlusFileWriter() = default;
     AlusFileWriter(const AlusFileWriter&) = delete;
     AlusFileWriter& operator=(const AlusFileWriter&) = delete;
     virtual ~AlusFileWriter() = default;
 };
 
-}
+}  // namespace alus

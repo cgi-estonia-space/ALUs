@@ -48,7 +48,7 @@ TEST(topsar_split, s1utils_slave) {
 
     alus::topsarsplit::TopsarSplit split_slave(slave_file, subswath_name, polarisation);
     split_slave.initialize();
-    std::shared_ptr<alus::C16Dataset<double>> master_reader = split_slave.GetPixelReader();
+    std::shared_ptr<alus::C16Dataset<int16_t>> master_reader = split_slave.GetPixelReader();
     alus::s1tbx::ApplyOrbitFileOp orbit_file_slave(split_slave.GetTargetProduct(), true);
     orbit_file_slave.Initialize();
 
@@ -207,7 +207,7 @@ TEST(topsar_split, s1utils_slave_cut) {
 
     alus::topsarsplit::TopsarSplit split_slave(slave_file, subswath_name, polarisation, 4, 6);
     split_slave.initialize();
-    std::shared_ptr<alus::C16Dataset<double>> master_reader = split_slave.GetPixelReader();
+    std::shared_ptr<alus::C16Dataset<int16_t>> master_reader = split_slave.GetPixelReader();
     alus::s1tbx::ApplyOrbitFileOp orbit_file_slave(split_slave.GetTargetProduct(), true);
     orbit_file_slave.Initialize();
 
@@ -320,7 +320,7 @@ TEST(topsar_split, s1utils_master) {
         "./goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD.SAFE";
     alus::topsarsplit::TopsarSplit split_master(master_file, subswath_name, polarisation);
     split_master.initialize();
-    std::shared_ptr<alus::C16Dataset<double>> master_reader = split_master.GetPixelReader();
+    std::shared_ptr<alus::C16Dataset<int16_t>> master_reader = split_master.GetPixelReader();
     alus::s1tbx::ApplyOrbitFileOp orbit_file_master(split_master.GetTargetProduct(), true);
     orbit_file_master.Initialize();
 

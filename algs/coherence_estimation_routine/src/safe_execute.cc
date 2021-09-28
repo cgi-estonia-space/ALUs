@@ -54,10 +54,10 @@ int CoherenceEstimationRoutineExecute::ExecuteSafe() {
             result_stem = boost::filesystem::path(output_name_).stem().string();
         }
 
-        std::string cor_output_file = output_folder + result_stem + "_Orb_Stack.tif";
+        std::string cor_output_file = output_folder + result_stem + "_Orb_Stack";
         std::shared_ptr<snapengine::Product> main_product{};
         std::shared_ptr<snapengine::Product> secondary_product{};
-        GDALDataset* coreg_dataset = nullptr;
+        std::vector<GDALDataset*> coreg_output_datasets;
         {
             const auto coreg_start = std::chrono::steady_clock::now();
 
@@ -81,16 +81,20 @@ int CoherenceEstimationRoutineExecute::ExecuteSafe() {
                          {srtm3_manager_->GetSrtmBuffersInfo(), srtm3_manager_->GetDeviceSrtm3TilesCount()});
             main_product = coreg.GetMasterProduct();
             secondary_product = coreg.GetSlaveProduct();
-            coreg_dataset = coreg.GetOutputDataset();
-            coreg.ReleaseOutputDataset();
+            auto coreg_target_dataset = coreg.GetTargetDataset();
+            coreg_output_datasets = coreg_target_dataset->GetDataset();
+            coreg_target_dataset->ReleaseDataset();
             LOGI << "S-1 TOPS Coregistration done - "
                  << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() -
                                                                           coreg_start)
                         .count()
                  << "ms";
             if (write_intermediate_files_) {
-                LOGI << "Coregstration output @ " << cor_output_file;
-                GeoTiffWriteFile(coreg_dataset, cor_output_file);
+                LOGI << "Coregstration output base @ " << cor_output_file;
+                GeoTiffWriteFile(coreg_output_datasets.at(0), cor_output_file + "_mst_I");
+                GeoTiffWriteFile(coreg_output_datasets.at(1), cor_output_file + "_mst_Q");
+                GeoTiffWriteFile(coreg_output_datasets.at(2), cor_output_file + "_slave_I");
+                GeoTiffWriteFile(coreg_output_datasets.at(3), cor_output_file + "_slave_Q");
             }
         }
         // do not clear srtm from gpu as TC use it, and the new coherence takes less gpu memory
@@ -109,9 +113,7 @@ int CoherenceEstimationRoutineExecute::ExecuteSafe() {
                 near_range_on_left, snapengine::AbstractMetadata::GetAbstractedMetadata(secondary_product),
                 orbit_degree_};
 
-            std::vector<int> band_map{1, 2, 3, 4};
             std::vector<int> band_map_out{1};
-            int band_count_in = 4;
             int band_count_out = 1;
 
             if (coherence_window_azimuth_ == 0) {
@@ -126,7 +128,7 @@ int CoherenceEstimationRoutineExecute::ExecuteSafe() {
                      << orbit_degree_;
             }
 
-            alus::coherence_cuda::GdalTileReader coh_data_reader{coreg_dataset, band_map, band_count_in, true};
+            alus::coherence_cuda::GdalTileReader coh_data_reader{coreg_output_datasets};
 
             alus::BandParams band_params{band_map_out,
                                          band_count_out,
@@ -136,8 +138,7 @@ int CoherenceEstimationRoutineExecute::ExecuteSafe() {
                                          coh_data_reader.GetBandYMin()};
 
             alus::coherence_cuda::GdalTileWriter coh_data_writer{GetGDALDriverManager()->GetDriverByName("MEM"),
-                                                                 band_params, coh_data_reader.GetGeoTransform(),
-                                                                 coh_data_reader.GetDataProjection()};
+                                                                 band_params, {}, {}};
 
             alus::coherence_cuda::CohTilesGenerator tiles_generator{
                 coh_data_reader.GetBandXSize(), coh_data_reader.GetBandYSize(), static_cast<int>(tile_width_),

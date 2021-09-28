@@ -22,7 +22,7 @@
 
 namespace alus {
 namespace coherence_cuda {
-MetaData::MetaData(IDataTileReader* incidence_angle_reader, std::shared_ptr<snapengine::MetadataElement> element,
+MetaData::MetaData(GdalTileReader* incidence_angle_reader, std::shared_ptr<snapengine::MetadataElement> element,
                    int orbit_degree) : MetaData(IsNearRangeOnLeft(incidence_angle_reader), element, orbit_degree){
 }
 
@@ -86,7 +86,7 @@ MetaData::MetaData(bool is_near_range_on_left, std::shared_ptr<snapengine::Metad
 }
 
 // todo: how should we tie this to specific product in our logic?
-bool MetaData::IsNearRangeOnLeft(IDataTileReader* incidence_angle_reader) {
+bool MetaData::IsNearRangeOnLeft(GdalTileReader* incidence_angle_reader) {
     const double INCIDENCE_ANGLE_TO_FIRST_PIXEL = incidence_angle_reader->GetValueAtXy(
         incidence_angle_reader->GetBandXMin(), incidence_angle_reader->GetBandYMin());
     const double INCIDENCE_ANGLE_TO_LAST_PIXEL = incidence_angle_reader->GetValueAtXy(

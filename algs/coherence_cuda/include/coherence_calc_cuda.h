@@ -13,6 +13,7 @@
  */
 #pragma once
 
+#include <array>
 #include <tuple>
 #include <vector>
 
@@ -52,7 +53,7 @@ public:
             int orbit_degree, MetaData& meta_master, MetaData& meta_slave);
     void CoherencePreTileCalc();
     void PreTileCalc() override;
-    void TileCalc(CohTile& tile, const std::vector<float>& data, std::vector<float>& data_out) override;
+    void TileCalc(CohTile& tile, const std::array<std::vector<float>, 4>& data, std::vector<float>& data_out) override;
     void Cleanup() override;
 };
 }  // namespace coherence_cuda

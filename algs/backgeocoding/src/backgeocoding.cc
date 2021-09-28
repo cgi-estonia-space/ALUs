@@ -138,7 +138,7 @@ Rectangle Backgeocoding::PositionCompute(int m_burst_index, int s_burst_index, R
     return source_rectangle;
 }
 
-void Backgeocoding::CoreCompute(CoreComputeParams params) {
+void Backgeocoding::CoreCompute(const CoreComputeParams& params) const {
     CHECK_CUDA_ERR(LaunchDerampDemod(params.slave_rectangle, params.device_slave_i, params.device_slave_q,
                                      params.device_demod_phase, params.device_demod_i, params.device_demod_q,
                                      slave_utils_->subswath_.at(0)->device_subswath_info_, params.s_burst_index));
@@ -161,8 +161,6 @@ void Backgeocoding::CoreCompute(CoreComputeParams params) {
     CHECK_CUDA_ERR(LaunchBilinearInterpolation(params.device_x_points, params.device_y_points,
                                                params.device_demod_phase, params.device_demod_i, params.device_demod_q,
                                                bilinear_params, params.device_i_results, params.device_q_results));
-
-    LOGV << "all computations ended.";
 }
 
 bool Backgeocoding::ComputeSlavePixPos(int m_burst_index, int s_burst_index, Rectangle master_area,
@@ -451,9 +449,7 @@ AzimuthAndRangeBounds Backgeocoding::ComputeExtendedAmount(int x_0, int y_0, int
     AzimuthAndRangeBounds extended_amount{};
 
     CHECK_CUDA_ERR(LaunchComputeExtendedAmount(
-        {x_0, y_0, w, h}, extended_amount,
-        master_utils_->GetOrbitStateVectors()->orbit_state_vectors_computation_.data(),
-        master_utils_->GetOrbitStateVectors()->orbit_state_vectors_computation_.size(),
+        {x_0, y_0, w, h}, extended_amount, d_master_orbit_vectors_.array, d_master_orbit_vectors_.size,
         master_utils_->GetOrbitStateVectors()->GetDt(), *master_utils_->subswath_.at(0),
         master_utils_->device_sentinel_1_utils_, master_utils_->subswath_.at(0)->device_subswath_info_, srtm3_tiles_,
         const_cast<float*>(egm96_device_array_)));

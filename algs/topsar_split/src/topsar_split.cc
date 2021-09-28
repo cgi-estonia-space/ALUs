@@ -86,7 +86,7 @@ void TopsarSplit::LoadInputDataset(std::string_view filename) {
             if (current_file.find(low_subswath) != std::string::npos &&
                 current_file.find(low_polarisation) != std::string::npos) {
                 LOGV << "Selecting tif for reading: " << current_file;
-                pixel_reader_ = std::make_shared<C16Dataset<double>>(current_file);
+                pixel_reader_ = std::make_shared<C16Dataset<int16_t>>(current_file);
                 pixel_reader_->TryToCacheImage();
                 found_it = true;
                 break;
@@ -117,7 +117,6 @@ void TopsarSplit::initialize() {
     snapengine::InputProductValidator validator(source_product_);
     validator.CheckIfSARProduct();
     validator.CheckIfSentinel1Product();
-    validator.CheckIfMultiSwathTOPSARProduct();
     validator.CheckProductType({"SLC"});
     validator.CheckAcquisitionMode({"IW", "EW"});
 

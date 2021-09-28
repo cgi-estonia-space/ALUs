@@ -40,7 +40,7 @@ public:
 
     void initialize();
     std::shared_ptr<snapengine::Product> GetTargetProduct() const { return target_product_; }
-    [[nodiscard]] const std::shared_ptr<C16Dataset<double>>& GetPixelReader() const { return pixel_reader_; }
+    [[nodiscard]] const std::shared_ptr<C16Dataset<int16_t>>& GetPixelReader() const { return pixel_reader_; }
 
     constexpr static int BURST_INDEX_OFFSET{1};
 
@@ -50,7 +50,7 @@ private:
     std::shared_ptr<snapengine::Product> target_product_;
     std::unique_ptr<s1tbx::Sentinel1Utils> s1_utils_;
     std::shared_ptr<snapengine::SplitProductSubsetBuilder> subset_builder_;
-    std::shared_ptr<C16Dataset<double>> pixel_reader_;
+    std::shared_ptr<C16Dataset<int16_t>> pixel_reader_;
 
     std::string subswath_;
     std::vector<std::string> selected_polarisations_;

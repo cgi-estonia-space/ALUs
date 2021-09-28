@@ -31,8 +31,8 @@ struct CoreComputeParams {
     int s_burst_index;
     Rectangle target_area;
     size_t demod_size;
-    double* device_slave_i;
-    double* device_slave_q;
+    int16_t* device_slave_i;
+    int16_t* device_slave_q;
 
     double* device_demod_i;
     double* device_demod_q;
@@ -60,7 +60,7 @@ public:
     void PrepareToCompute(std::shared_ptr<snapengine::Product> master_product,
                           std::shared_ptr<snapengine::Product> slave_product);
 
-    void CoreCompute(CoreComputeParams params);
+    void CoreCompute(const CoreComputeParams& params) const;
     Rectangle PositionCompute(int m_burst_index, int s_burst_index, Rectangle master_area, double* device_x_points,
                               double* device_y_points);
 

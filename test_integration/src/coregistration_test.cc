@@ -21,7 +21,7 @@
 #include "coregistration_controller.h"
 #include "dataset.h"
 #include "dem_assistant.h"
-#include "rectangle.h"
+#include "gdal_util.h"
 
 namespace {
 
@@ -71,13 +71,16 @@ public:
     }
 };
 
-TEST(coregistration, full3) {
-    std::vector<std::string> srtm3_files{"./goods/srtm_43_06.tif", "./goods/srtm_44_06.tif"};
-    std::shared_ptr<alus::app::DemAssistant> dem_assistant =
-        alus::app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(std::move(srtm3_files));
-    dem_assistant->GetSrtm3Manager()->HostToDevice();
+// TODO at very least full3 and split cut should test both slave bands
 
-    const std::string_view output_file{"./goods/beirut_images/coregistration_test.tif"};
+TEST(coregistration, full3) {
+    {
+        std::vector<std::string> srtm3_files{"./goods/srtm_43_06.tif", "./goods/srtm_44_06.tif"};
+        std::shared_ptr<alus::app::DemAssistant> dem_assistant =
+            alus::app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(std::move(srtm3_files));
+        dem_assistant->GetSrtm3Manager()->HostToDevice();
+
+        const std::string_view output_file{"./goods/beirut_images/coregistration_test.tif"};
 
     std::unique_ptr<alus::coregistration::Coregistration> cor =
         std::make_unique<alus::coregistration::Coregistration>("./goods/apply_orbit_file_op/orbit-files/");
@@ -90,75 +93,90 @@ TEST(coregistration, full3) {
                 {dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo(),
                  dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()});
 
-    alus::GeoTiffWriteFile(cor->GetOutputDataset(), output_file.data());
+        auto target_datasets = cor->GetTargetDataset()->GetDataset();
 
-    CoregTester tester("./goods/coregistration_strips.txt");
+        CoregTester tester("./goods/coregistration_strips.txt");
 
-    alus::Dataset<double> test_set(output_file.data());
-    alus::Rectangle rectangle{1000, 10000, 1, 100};
-    alus::Rectangle rectangle2{7436, 6293, 1, 100};
-    alus::Rectangle rectangle3{15576, 4440, 1, 100};
-    std::vector<double> data_buf(100);
-    test_set.ReadRectangle(rectangle, 3, data_buf.data());
+        const std::string_view output_slave_I{"./goods/beirut_images/coregistration_test_slave_I.tif"};
+        const std::string_view output_slave_Q{"./goods/beirut_images/coregistration_test_slave_Q.tif"};
+        alus::GeoTiffWriteFile(target_datasets.at(2), output_slave_I);
+        alus::GeoTiffWriteFile(target_datasets.at(3), output_slave_Q);
 
-    size_t count_land = alus::EqualsArraysd(data_buf.data(), tester.land_strip_.data(), 100, 0.001);
-    EXPECT_EQ(count_land, 0) << "Land results I do not match. Mismatches: " << count_land << '\n';
+        alus::Dataset<double> test_set(output_slave_I);
+        alus::Rectangle rectangle{1000, 10000, 1, 100};
+        alus::Rectangle rectangle2{7436, 6293, 1, 100};
+        alus::Rectangle rectangle3{15576, 4440, 1, 100};
+        std::vector<double> data_buf(100);
+        test_set.ReadRectangle(rectangle, 1, data_buf.data());
 
-    test_set.ReadRectangle(rectangle2, 3, data_buf.data());
+        size_t count_land = alus::EqualsArraysd(data_buf.data(), tester.land_strip_.data(), 100, 0.001);
+        EXPECT_EQ(count_land, 0) << "Land results I do not match. Mismatches: " << count_land << '\n';
 
-    size_t count_coast = alus::EqualsArraysd(data_buf.data(), tester.coast_strip_.data(), 100, 0.001);
-    EXPECT_EQ(count_coast, 0) << "Land results I do not match. Mismatches: " << count_coast << '\n';
+        test_set.ReadRectangle(rectangle2, 1, data_buf.data());
 
-    test_set.ReadRectangle(rectangle3, 3, data_buf.data());
+        size_t count_coast = alus::EqualsArraysd(data_buf.data(), tester.coast_strip_.data(), 100, 0.001);
+        EXPECT_EQ(count_coast, 0) << "Land results I do not match. Mismatches: " << count_coast << '\n';
 
-    size_t count_sea = alus::EqualsArraysd(data_buf.data(), tester.sea_strip_.data(), 100, 0.001);
-    EXPECT_EQ(count_sea, 0) << "Land results I do not match. Mismatches: " << count_sea << '\n';
+        test_set.ReadRectangle(rectangle3, 1, data_buf.data());
 
+        size_t count_sea = alus::EqualsArraysd(data_buf.data(), tester.sea_strip_.data(), 100, 0.001);
+        EXPECT_EQ(count_sea, 0) << "Land results I do not match. Mismatches: " << count_sea << '\n';
+    }
+    CHECK_CUDA_ERR(cudaGetLastError());
+    CHECK_CUDA_ERR(cudaDeviceSynchronize());
+    CHECK_CUDA_ERR(cudaDeviceReset());  // for cuda-memcheck --leak-check full
 }
 
-TEST(coregistration, split_cut){
-    std::vector<std::string> srtm3_files{"./goods/srtm_43_06.tif", "./goods/srtm_44_06.tif"};
-    std::shared_ptr<alus::app::DemAssistant> dem_assistant =
-        alus::app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(std::move(srtm3_files));
-    dem_assistant->GetSrtm3Manager()->HostToDevice();
-    const std::string_view output_file_cut{"./goods/beirut_images/coregistration_test_cut.tif"};
+TEST(coregistration, split_cut) {
+    {
+        std::vector<std::string> srtm3_files{"./goods/srtm_43_06.tif", "./goods/srtm_44_06.tif"};
+        std::shared_ptr<alus::app::DemAssistant> dem_assistant =
+            alus::app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(std::move(srtm3_files));
+        dem_assistant->GetSrtm3Manager()->HostToDevice();
+        const std::string_view output_file_cut{"./goods/beirut_images/coregistration_test_cut.tif"};
 
-    std::unique_ptr<alus::coregistration::Coregistration> cor =
-        std::make_unique<alus::coregistration::Coregistration>("goods/apply_orbit_file_op/orbit-files/");
+        std::unique_ptr<alus::coregistration::Coregistration> cor =
+            std::make_unique<alus::coregistration::Coregistration>("goods/apply_orbit_file_op/orbit-files/");
 
     cor->Initialize(
     "goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD.SAFE",
     "goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.SAFE",
     output_file_cut.data(), "IW1", "VV", 4, 6);
 
-    dem_assistant->GetSrtm3Manager()->HostToDevice();
+        cor->DoWork(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
+                    {dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo(),
+                     dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()});
 
-    cor->DoWork(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
-    {dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo(),
-    dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()});
+        auto target_datasets = cor->GetTargetDataset()->GetDataset();
+        const std::string_view output_slave_I{"./goods/beirut_images/coregistration_test_slave_I_cut.tif"};
+        const std::string_view output_slave_Q{"./goods/beirut_images/coregistration_test_slave_Q_cut.tif"};
+        alus::GeoTiffWriteFile(target_datasets.at(2), output_slave_I);
+        alus::GeoTiffWriteFile(target_datasets.at(3), output_slave_Q);
 
-    alus::GeoTiffWriteFile(cor->GetOutputDataset(), output_file_cut.data());
+        CoregTester tester("./goods/coregistration_strips_cut.txt");
+        alus::Dataset<double> test_set(output_slave_I);
+        alus::Rectangle rectangle{3991, 1620, 1, 100};
+        alus::Rectangle rectangle2{5350, 1531, 100, 1};
+        alus::Rectangle rectangle3{5457, 1602, 100, 1};
+        std::vector<double> data_buf(100);
+        test_set.ReadRectangle(rectangle, 1, data_buf.data());
 
-    CoregTester tester("./goods/coregistration_strips_cut.txt");
-    alus::Dataset<double> test_set(output_file_cut.data());
-    alus::Rectangle rectangle{3991, 1620, 1, 100};
-    alus::Rectangle rectangle2{5350, 1531, 100, 1};
-    alus::Rectangle rectangle3{5457, 1602, 100, 1};
-    std::vector<double> data_buf(100);
-    test_set.ReadRectangle(rectangle, 3, data_buf.data());
+        size_t count_land = alus::EqualsArraysd(data_buf.data(), tester.land_strip_.data(), 100, 0.001);
+        EXPECT_EQ(count_land, 0) << "Land results I do not match. Mismatches: " << count_land << '\n';
 
-    size_t count_land = alus::EqualsArraysd(data_buf.data(), tester.land_strip_.data(), 100, 0.001);
-    EXPECT_EQ(count_land, 0) << "Land results I do not match. Mismatches: " << count_land << '\n';
+        test_set.ReadRectangle(rectangle2, 1, data_buf.data());
 
-    test_set.ReadRectangle(rectangle2, 3, data_buf.data());
+        size_t count_coast = alus::EqualsArraysd(data_buf.data(), tester.coast_strip_.data(), 100, 0.001);
+        EXPECT_EQ(count_coast, 0) << "Land results I do not match. Mismatches: " << count_coast << '\n';
 
-    size_t count_coast = alus::EqualsArraysd(data_buf.data(), tester.coast_strip_.data(), 100, 0.001);
-    EXPECT_EQ(count_coast, 0) << "Land results I do not match. Mismatches: " << count_coast << '\n';
+        test_set.ReadRectangle(rectangle3, 1, data_buf.data());
 
-    test_set.ReadRectangle(rectangle3, 3, data_buf.data());
-
-    size_t count_sea = alus::EqualsArraysd(data_buf.data(), tester.sea_strip_.data(), 100, 0.001);
-    EXPECT_EQ(count_sea, 0) << "Land results I do not match. Mismatches: " << count_sea << '\n';
+        size_t count_sea = alus::EqualsArraysd(data_buf.data(), tester.sea_strip_.data(), 100, 0.001);
+        EXPECT_EQ(count_sea, 0) << "Land results I do not match. Mismatches: " << count_sea << '\n';
+    }
+    CHECK_CUDA_ERR(cudaGetLastError());
+    CHECK_CUDA_ERR(cudaDeviceSynchronize());
+    CHECK_CUDA_ERR(cudaDeviceReset());  // for cuda-memcheck --leak-check full
 }
 
 }  // namespace

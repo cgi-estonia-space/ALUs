@@ -20,66 +20,65 @@
 #include <gdal.h>
 
 #include "gdal_util.h"
-#include "i_data_tile_read_write_base.h"
 
 namespace alus {
 namespace coherence_cuda {
-GdalTileReader::GdalTileReader(const std::string_view file_name, const std::vector<int>& band_map, int band_count,
-                               bool has_transform)
-    : IDataTileReader(file_name, band_map, band_count), do_close_dataset_{true} {
-    dataset_ = static_cast<GDALDataset*>(GDALOpen(file_name.data(), GA_ReadOnly));
-    CHECK_GDAL_PTR(dataset_);
-    InitializeDatasetProperties(dataset_, has_transform);
+GdalTileReader::GdalTileReader(const std::string_view file_name) : do_close_dataset_{true} {
+    auto* dataset = static_cast<GDALDataset*>(GDALOpen(file_name.data(), GA_ReadOnly));
+    CHECK_GDAL_PTR(dataset);
+    mutexes_.resize(1);
+    datasets_.push_back(dataset);
+    affine_geo_transform_.resize(6);
+    if(dataset->GetGeoTransform(affine_geo_transform_.data()) != CE_None) {
+        affine_geo_transform_.clear();
+    }
+    data_projection_ = dataset->GetProjectionRef();
 }
 
-GdalTileReader::GdalTileReader(GDALDataset* dataset, const std::vector<int>& band_map, int band_count,
-                               bool has_transform)
-    : IDataTileReader("", band_map, band_count), dataset_{dataset}, do_close_dataset_{false} {
-    CHECK_GDAL_PTR(dataset_);
-    InitializeDatasetProperties(dataset_, has_transform);
+GdalTileReader::GdalTileReader(const std::vector<GDALDataset*>& datasets)
+    : datasets_{datasets}, do_close_dataset_{false} {
+    mutexes_.resize(datasets_.size());
 }
 
-void GdalTileReader::ReadTile(const Tile& tile) {
-    data_.resize(tile.GetXSize() * tile.GetYSize() * GetBandCount());
-    CHECK_GDAL_ERROR(dataset_->RasterIO(GF_Read, tile.GetXMin(), tile.GetYMin(), tile.GetXSize(), tile.GetYSize(),
-                                        data_.data(), tile.GetXSize(), tile.GetYSize(), GDALDataType::GDT_Float32,
-                                        GetBandCount(), GetBandMap(), 0, 0, 0));
-}
+void GdalTileReader::ReadTile(const Tile& tile, float* data, int band_nr) {
 
-void GdalTileReader::ReadTile(const Tile& tile, float* data) {
-    CHECK_GDAL_ERROR(dataset_->RasterIO(GF_Read, tile.GetXMin(), tile.GetYMin(), tile.GetXSize(), tile.GetYSize(),
-                                        data, tile.GetXSize(), tile.GetYSize(), GDALDataType::GDT_Float32,
-                                        GetBandCount(), GetBandMap(), 0, 0, 0));
+    std::mutex* mutex = nullptr;
+    GDALRasterBand* band = nullptr;
+
+    if(datasets_.size() == 1)
+    {
+        mutex = &mutexes_.at(0);
+        band = datasets_.at(0)->GetRasterBand(band_nr);
+    }
+    else
+    {
+        mutex = &mutexes_.at(band_nr - 1);
+        band = datasets_.at(band_nr - 1)->GetRasterBand(1);
+    }
+
+    std::unique_lock lock(*mutex);
+    CHECK_GDAL_ERROR(band->RasterIO(GF_Read, tile.GetXMin(), tile.GetYMin(), tile.GetXSize(), tile.GetYSize(), data,
+                                        tile.GetXSize(), tile.GetYSize(), GDALDataType::GDT_Float32, 0, 0));
 }
 
 void GdalTileReader::CloseDataSet() {
-    if (dataset_ && do_close_dataset_) {
-        GDALClose(dataset_);
-        dataset_ = nullptr;
+    if (do_close_dataset_) {
+        for(auto*& dataset : datasets_){
+            GDALClose(dataset);
+        }
+        datasets_.clear();
     }
 }
 
-double GdalTileReader::GetValueAtXy(int x, int y) const { return data_.at(GetBandXSize() * y + x); }
-
-void GdalTileReader::InitializeDatasetProperties(GDALDataset* dataset, bool has_transform) {
-    SetBandCount(dataset->GetRasterCount());
-    SetBandXSize(dataset->GetRasterXSize());
-    SetBandYSize(dataset->GetRasterYSize());
-    SetDataProjection(dataset->GetProjectionRef());
-    if (has_transform) {
-        GetGeoTransform().resize(6);
-        const auto result = dataset->GetGeoTransform(GetGeoTransform().data());
-        // Fetching transform has been requested, but dataset's transform is invalid.
-        if (result != CE_None) {
-            // TODO: Use logging system to log this message.
-            std::cout << "Geo transform parameters are missing in input dataset - " << GetFileName() << std::endl;
-            GetGeoTransform().clear();
-        }
-    }
+double GdalTileReader::GetValueAtXy(int x, int y)
+{
+    //TODO refactor, this function is only needed for coherence integration test, when reading beam dimap
+    float val = 0;
+    CHECK_GDAL_ERROR(datasets_.at(0)->GetRasterBand(1)->RasterIO(GF_Read, x, y, 1, 1, &val, 1, 1, GDT_Float32, 0 ,0));
+    return val;
 }
 
 GdalTileReader::~GdalTileReader() { CloseDataSet(); }
-const std::vector<float>& GdalTileReader::GetData() const { return data_; }
 
 }  // namespace coherence_cuda
 }  // namespace alus

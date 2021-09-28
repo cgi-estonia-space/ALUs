@@ -23,7 +23,7 @@ namespace snapengine {
  */
 namespace triangularinterpolation {
 
-inline __device__ int test(double x, double y, double *xt, double *yt, PointInTriangle pit) {
+inline __device__ int test(double x, double y, double* xt, double* yt, PointInTriangle pit) {
     int iRet0 = (pit.xtd0 * (y - yt[0])) > ((x - xt[0]) * pit.ytd0);
     int iRet1 = (pit.xtd1 * (y - yt[1])) > ((x - xt[1]) * pit.ytd1);
     int iRet2 = (pit.xtd2 * (y - yt[2])) > ((x - xt[2]) * pit.ytd2);
@@ -31,16 +31,8 @@ inline __device__ int test(double x, double y, double *xt, double *yt, PointInTr
     return (iRet0 != 0 && iRet1 != 0 && iRet2 != 0) || (iRet0 == 0 && iRet1 == 0 && iRet2 == 0);
 }
 
-inline __device__ Zdataabc GetABC(double *vx,
-                                  double *vy,
-                                  double *vz,
-                                  Zdata data,
-                                  Zdataabc abc,
-                                  const double f,
-                                  const double xkj,
-                                  const double ykj,
-                                  const double xlj,
-                                  const double ylj) {
+inline __device__ Zdataabc GetABC(double* vx, double* vy, double* vz, Zdata data, Zdataabc abc, const double f,
+                                  const double xkj, const double ykj, const double xlj, const double ylj) {
     double zj, zk, zl;
 
     const int i0 = (int)(vz[0] / data.input_height);
@@ -65,19 +57,14 @@ inline __device__ Zdataabc GetABC(double *vx,
     return abc;
 }
 
-inline __device__ long CoordToIndex(const double coord,
-                                    const double coord0,
-                                    const double deltaCoord,
+inline __device__ long CoordToIndex(const double coord, const double coord0, const double deltaCoord,
                                     const double offset) {
     return (long)floor((((coord - coord0) / (deltaCoord)) - offset) + 0.5);
 }
 
-__global__ void FindValidTriangles(delaunay::DelaunayTriangle2D *triangles, TriangleInterpolationParams params,
-                                   Zdata *zdata,
-                                   Zdataabc *abc,
-                                   TriangleDto* dtos,
-                                   int *selected_triangles,
-                                   unsigned int *amount_of_triangles){
+__global__ void FindValidTriangles(delaunay::DelaunayTriangle2D* triangles, TriangleInterpolationParams params,
+                                   Zdata* zdata, Zdataabc* abc, TriangleDto* dtos, int* selected_triangles,
+                                   unsigned int* amount_of_triangles) {
     const size_t idx = threadIdx.x + (blockDim.x * blockIdx.x);
     size_t accepted_index;
     size_t abc_index;
@@ -163,7 +150,6 @@ __global__ void FindValidTriangles(delaunay::DelaunayTriangle2D *triangles, Tria
         abc[abc_index + i] = GetABC(dto.vx, dto.vy, vz, zdata[i], abc[abc_index + i], f, xkj, ykj, xlj, ylj);
     }
 
-
     dto.point_in_triangle.xtd0 = dto.vx[2] - dto.vx[0];
     dto.point_in_triangle.xtd1 = dto.vx[0] - dto.vx[1];
     dto.point_in_triangle.xtd2 = dto.vx[1] - dto.vx[2];
@@ -174,7 +160,7 @@ __global__ void FindValidTriangles(delaunay::DelaunayTriangle2D *triangles, Tria
     dtos[accepted_index] = dto;
 }
 
-__global__ void Interpolate(Zdata *zdata, Zdataabc *abc, TriangleDto* dtos, InterpolationParams params){
+__global__ void Interpolate(Zdata* zdata, Zdataabc* abc, TriangleDto* dtos, InterpolationParams params) {
     const unsigned int index = blockIdx.x + (blockIdx.y * gridDim.x);
     const size_t abc_index = index * params.z_data_count;
     TriangleDto dto;
@@ -186,45 +172,45 @@ __global__ void Interpolate(Zdata *zdata, Zdataabc *abc, TriangleDto* dtos, Inte
     }
     dto = dtos[index];
 
-    for (int i = (int)dto.i_min + threadIdx.x; i <= dto.i_max; i+=blockDim.x) {
+    for (int i = (int)dto.i_min + threadIdx.x; i <= dto.i_max; i += blockDim.x) {
         dto.xp = x_min + i * params.x_scale + params.offset;
-        for (int j = (int)dto.j_min + threadIdx.y; j <= dto.j_max; j+= blockDim.y) {
+        for (int j = (int)dto.j_min + threadIdx.y; j <= dto.j_max; j += blockDim.y) {
             dto.yp = y_min + j * params.y_scale + params.offset;
 
             if (!test(dto.xp, dto.yp, dto.vx, dto.vy, dto.point_in_triangle)) {
                 continue;
             }
 
-            for (size_t d = 0; d < params.z_data_count; d++) {
+            for (int d = 0; d < params.z_data_count; d++) {
                 double result = abc[abc_index + d].a * dto.xp + abc[abc_index + d].b * dto.yp + abc[abc_index + d].c;
                 zdata[d].output_arr[i * zdata[d].output_height + j] = result;
                 int int_result = (int)floor(result);
                 atomicMin(&zdata[d].min_int, int_result);
                 atomicMax(&zdata[d].max_int, int_result);
-
             }
         }
     }
 }
 
-cudaError_t LaunchInterpolation(delaunay::DelaunayTriangle2D *triangles, Zdata* zdata,
-                                TriangleInterpolationParams params){
+cudaError_t LaunchInterpolation(delaunay::DelaunayTriangle2D* triangles, Zdata* zdata,
+                                TriangleInterpolationParams params) {
     dim3 block_size(512);
     dim3 grid_size(cuda::GetGridDim(512, params.triangle_count));
-    Zdataabc *device_abc;
+    Zdataabc* device_abc;
     TriangleDto* device_dtos;
-    int *selected_triangles;
-    unsigned int *amount_of_triangles;
+    int* selected_triangles;
+    unsigned int* amount_of_triangles;
     unsigned int accepted_triangles;
 
-    CHECK_CUDA_ERR(cudaMalloc((void **)&selected_triangles, params.triangle_count * sizeof(int)));
-    CHECK_CUDA_ERR(cudaMalloc((void **)&amount_of_triangles, sizeof(unsigned int)));
-    CHECK_CUDA_ERR(cudaMalloc((void **)&device_abc, params.triangle_count * params.z_data_count * sizeof(Zdataabc)));
-    CHECK_CUDA_ERR(cudaMalloc((void **)&device_dtos, params.triangle_count * sizeof(TriangleDto)));
+    CHECK_CUDA_ERR(cudaMalloc(&selected_triangles, params.triangle_count * sizeof(int)));
+    CHECK_CUDA_ERR(cudaMalloc(&amount_of_triangles, sizeof(unsigned int)));
+    CHECK_CUDA_ERR(cudaMalloc(&device_abc, params.triangle_count * params.z_data_count * sizeof(Zdataabc)));
+    CHECK_CUDA_ERR(cudaMalloc(&device_dtos, params.triangle_count * sizeof(TriangleDto)));
 
     CHECK_CUDA_ERR(cudaMemset(amount_of_triangles, 0, sizeof(unsigned int)));
 
-    FindValidTriangles<<<grid_size, block_size>>>(triangles, params, zdata, device_abc, device_dtos, selected_triangles, amount_of_triangles);
+    FindValidTriangles<<<grid_size, block_size>>>(triangles, params, zdata, device_abc, device_dtos, selected_triangles,
+                                                  amount_of_triangles);
     cudaError_t result = cudaGetLastError();
 
     CHECK_CUDA_ERR(cudaMemcpy(&accepted_triangles, amount_of_triangles, sizeof(unsigned int), cudaMemcpyDeviceToHost));
@@ -241,7 +227,10 @@ cudaError_t LaunchInterpolation(delaunay::DelaunayTriangle2D *triangles, Zdata* 
     grid_dim++;
 
     dim3 interpolation_grid_size(grid_dim, grid_dim);
-    dim3 interpolation_block_size(16, 16);
+
+    // TODO investigate further
+    // block size dimension has major impact the kernel compute time on different GPUs
+    dim3 interpolation_block_size(8, 8);
     Interpolate<<<interpolation_grid_size, interpolation_block_size>>>(zdata, device_abc, device_dtos, params2);
 
     CHECK_CUDA_ERR(cudaFree(device_abc));
