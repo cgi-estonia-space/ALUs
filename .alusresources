@@ -1,0 +1,11 @@
+https://alus-goods.s3.eu-central-1.amazonaws.com/goods_resources/srtm_41_01.zip resources/srtm_41_01.zip
+https://alus-goods.s3.eu-central-1.amazonaws.com/goods_resources/srtm_42_01.zip resources/srtm_42_01.zip
+https://alus-goods.s3.eu-central-1.amazonaws.com/goods_resources/srtm_43_06.zip resources/srtm_43_06.zip
+https://alus-goods.s3.eu-central-1.amazonaws.com/goods_resources/srtm_44_06.zip resources/srtm_44_06.zip
+https://alus-goods.s3.eu-central-1.amazonaws.com/validation/land_destruction_at_beirut/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.SAFE.zip     resources/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.zip
+https://alus-goods.s3.eu-central-1.amazonaws.com/validation/land_destruction_at_beirut/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD.SAFE.zip     resources/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD.zip
+https://alus-goods.s3.eu-central-1.amazonaws.com/goods_resources/4_bands.tif    resources/4_bands.tif
+https://alus-goods.s3.eu-central-1.amazonaws.com/goods_resources/Beirut_IW1_6_VH_orb_stack_cor_deb_coh_data.zip resources/Beirut_IW1_6_VH_orb_stack_cor_deb_coh_data.zip
+https://alus-goods.s3.eu-central-1.amazonaws.com/goods_resources/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_data.zip resources/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_data.zip
+https://alus-goods.s3.eu-central-1.amazonaws.com/goods_resources/apply_orbit_file_op.zip        resources/apply_orbit_file_op.zip
+https://alus-goods.s3.eu-central-1.amazonaws.com/goods_resources/topsar_deburst_op.zip  resources/topsar_deburst_op.zip

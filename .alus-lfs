@@ -1,0 +1,38 @@
+#!/bin/bash
+# Created from the knowledge of https://www.cyberciti.biz/faq/unix-howto-read-line-by-line-from-file/
+
+set -e
+
+script_directory=$(dirname -- "`pwd`/$0")
+resources_file="$script_directory/.alusresources"
+
+if [ "$1" == "--clean" ]; then
+
+    echo "cleaning"
+
+  for GOOD in "$script_directory/resources"/*;
+  do
+    resource=$(basename $GOOD)
+    if grep -q -R $resource $resources_file
+    then
+      echo "$resource is registered"
+    else
+      rm $GOOD
+      echo "$resource removed"
+    fi
+  done
+
+else
+
+  while IFS='     ' read -r good destination comment
+  do
+    destination_path="$script_directory/$destination"
+    if [ -f "$destination_path" ]; then
+      echo "Alus LFS resource '$destination_path' exists, nothing to download"
+    else
+      echo "Alus LFS resource '$destination_path' will be downloaded"
+      wget -q "$good" -O "$destination_path"
+    fi
+  done <$resources_file
+
+fi

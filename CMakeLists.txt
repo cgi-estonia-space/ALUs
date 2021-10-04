@@ -46,6 +46,8 @@ find_package(Eigen3 REQUIRED)
 
 set(ALUS_BINARY_OUTPUT_DIR ${PROJECT_BINARY_DIR}/alus_package)
 set(ALUS_UNIT_TEST_BINARY_OUTPUT_DIR ${PROJECT_BINARY_DIR}/unit-test)
+set(ALUS_LFS_INVOKE ${CMAKE_CURRENT_LIST_DIR}/.alus-lfs)
+set(ALUS_LFS_GOODS ${CMAKE_CURRENT_LIST_DIR}/resources)
 
 option(ENABLE_TESTS "Enable tests" OFF)
 

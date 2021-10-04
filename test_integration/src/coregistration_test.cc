@@ -82,8 +82,8 @@ TEST(coregistration, full3) {
     std::unique_ptr<alus::coregistration::Coregistration> cor =
         std::make_unique<alus::coregistration::Coregistration>("./goods/apply_orbit_file_op/orbit-files/");
     cor->Initialize(
-        "./goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD_thin.SAFE",
-        "./goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6_thin.SAFE",
+        "./goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD.SAFE",
+        "./goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.SAFE",
         output_file.data(), "IW1", "VV");
     dem_assistant->GetSrtm3Manager()->HostToDevice();
     cor->DoWork(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
@@ -127,8 +127,8 @@ TEST(coregistration, split_cut){
         std::make_unique<alus::coregistration::Coregistration>("goods/apply_orbit_file_op/orbit-files/");
 
     cor->Initialize(
-    "goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD_thin.SAFE",
-    "goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6_thin.SAFE",
+    "goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD.SAFE",
+    "goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.SAFE",
     output_file_cut.data(), "IW1", "VV", 4, 6);
 
     dem_assistant->GetSrtm3Manager()->HostToDevice();

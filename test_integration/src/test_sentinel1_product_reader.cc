@@ -36,9 +36,9 @@ namespace {
 class TestSentinel1ProductReader : public ::testing::Test, public alus::s1tbx::ReaderTest {
 protected:
     boost::filesystem::path input_s1_safe_{
-        "./goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6_thin.SAFE"};
+        "./goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.SAFE"};
     boost::filesystem::path input_s1_safe_zip_{
-        "./goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD_thin.SAFE.zip"};
+        "./goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD.zip"};
 
 public:
     TestSentinel1ProductReader() : ReaderTest(std::make_shared<alus::s1tbx::Sentinel1ProductReaderPlugIn>()) {}
@@ -53,8 +53,10 @@ TEST_F(TestSentinel1ProductReader, testOpeningFile) {
 
         ValidateProduct(prod);
         ValidateMetadata(prod);
-        ValidateBands(prod, std::vector<std::string>{"i_IW1_VV", "q_IW1_VV", "Intensity_IW1_VV", "i_IW2_VH", "q_IW2_VH",
-                                                     "Intensity_IW2_VH"});
+        ValidateBands(prod, std::vector<std::string>{"i_IW3_VV", "q_IW3_VV", "Intensity_IW3_VV", "i_IW3_VH", "q_IW3_VH",
+                                                     "Intensity_IW3_VH", "i_IW2_VV", "q_IW2_VV", "Intensity_IW2_VV",
+                                                     "i_IW2_VH", "q_IW2_VH", "Intensity_IW2_VH", "i_IW1_VV", "q_IW1_VV",
+                                                     "Intensity_IW1_VV", "i_IW1_VH", "q_IW1_VH", "Intensity_IW1_VH"});
     }
 }
 
@@ -66,8 +68,10 @@ TEST_F(TestSentinel1ProductReader, testOpeningZip) {
 
         ValidateProduct(prod);
         ValidateMetadata(prod);
-        ValidateBands(prod, std::vector<std::string>{"i_IW1_VV", "q_IW1_VV", "Intensity_IW1_VV", "i_IW2_VH", "q_IW2_VH",
-                                                     "Intensity_IW2_VH"});
+        ValidateBands(prod, std::vector<std::string>{"i_IW3_VV", "q_IW3_VV", "Intensity_IW3_VV", "i_IW3_VH", "q_IW3_VH",
+                                                     "Intensity_IW3_VH", "i_IW2_VV", "q_IW2_VV", "Intensity_IW2_VV",
+                                                     "i_IW2_VH", "q_IW2_VH", "Intensity_IW2_VH", "i_IW1_VV", "q_IW1_VV",
+                                                     "Intensity_IW1_VV", "i_IW1_VH", "q_IW1_VH", "Intensity_IW1_VH"});
     }
 }
 

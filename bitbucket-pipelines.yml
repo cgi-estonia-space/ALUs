@@ -4,7 +4,6 @@
 # -----
 # You can specify a custom docker image from Docker Hub as your build environment.
 clone:
-  lfs: true
   depth: full
 pipelines:
   pull-requests:
@@ -92,7 +91,6 @@ pipelines:
               clone:
                 depth: 1
                 enabled: true
-                lfs: true
               script:
                 - git submodule update --init --recursive
                 - build_dir="build-nightly"
@@ -149,7 +147,6 @@ pipelines:
           clone:
             depth: 1
             enabled: true
-            lfs: true
           script:
             - git submodule update --init --recursive
             - build_dir="build-nightly"

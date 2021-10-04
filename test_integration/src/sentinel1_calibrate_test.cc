@@ -33,7 +33,7 @@ using namespace alus::sentinel1calibrate;
 class Sentinel1CalibrateTest : public ::testing::Test {
 protected:
     boost::filesystem::path input_file_{
-        "./goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6_thin.SAFE"};
+        "./goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.SAFE"};
 
     const std::shared_ptr<s1tbx::Sentinel1ProductReaderPlugIn> reader_plug_in_ =
         std::make_shared<s1tbx::Sentinel1ProductReaderPlugIn>();
@@ -43,7 +43,7 @@ TEST_F(Sentinel1CalibrateTest, Virumaa) {
     // Scope for forcing destruction of Sentinel1Calibrator
 
     const std::string result_file{
-        "/tmp/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6_THIN_Cal_IW1.tif"};
+        "/tmp/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6_Cal_IW1.tif"};
     std::remove(result_file.data());
     {
         ASSERT_THAT(boost::filesystem::exists(input_file_), ::testing::IsTrue());

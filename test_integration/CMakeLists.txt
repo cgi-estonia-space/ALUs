@@ -45,66 +45,61 @@ list(APPEND TEST_INCLUDE
         ${CMAKE_CURRENT_LIST_DIR}/include
         )
 
+set(INTEGRATION_TEST_DATA_FOLDER ${CMAKE_BINARY_DIR}/test_integration/goods)
 #----------------Prepare all data for integration tests-----------------------------
 add_custom_target(integration-test-prepare-data ALL
         COMMAND echo "Creating test data"
 
-        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/test_integration/goods/beirut_images
+        COMMAND ${ALUS_LFS_INVOKE}
 
         # Apply orbit file data
-        COMMAND rm -rf ${CMAKE_BINARY_DIR}/test_integration/goods/apply_orbit_file_op
-        COMMAND ln -s ${CMAKE_CURRENT_LIST_DIR}/goods/apply_orbit_file_op ${CMAKE_BINARY_DIR}/test_integration/goods/apply_orbit_file_op
+        COMMAND test -d ${INTEGRATION_TEST_DATA_FOLDER}/apply_orbit_file_op || unzip -qn ${ALUS_LFS_GOODS}/apply_orbit_file_op.zip -d ${INTEGRATION_TEST_DATA_FOLDER}
 
         # Prepare DEM files
-        COMMAND test -d ${CMAKE_BINARY_DIR}/test_integration/goods/srtm_41_01.tif || unzip -qn ${CMAKE_CURRENT_LIST_DIR}/goods/srtm_41_01.zip -d ${CMAKE_BINARY_DIR}/test_integration/goods/
-        COMMAND test -d ${CMAKE_BINARY_DIR}/test_integration/goods/srtm_42_01.tif || unzip -qn ${CMAKE_CURRENT_LIST_DIR}/goods/srtm_42_01.zip -d ${CMAKE_BINARY_DIR}/test_integration/goods/
-        COMMAND test -d ${CMAKE_BINARY_DIR}/test_integration/goods/srtm_43_06.tif || unzip -qn ${CMAKE_CURRENT_LIST_DIR}/goods/srtm_43_06.zip -d ${CMAKE_BINARY_DIR}/test_integration/goods/
-        COMMAND test -d ${CMAKE_BINARY_DIR}/test_integration/goods/srtm_44_06.tif || unzip -qn ${CMAKE_CURRENT_LIST_DIR}/goods/srtm_44_06.zip -d ${CMAKE_BINARY_DIR}/test_integration/goods/
+        COMMAND test -f ${INTEGRATION_TEST_DATA_FOLDER}/srtm_41_01.tif || unzip -qn ${ALUS_LFS_GOODS}/srtm_41_01.zip -d ${INTEGRATION_TEST_DATA_FOLDER}
+        COMMAND test -f ${INTEGRATION_TEST_DATA_FOLDER}/srtm_42_01.tif || unzip -qn ${ALUS_LFS_GOODS}/srtm_42_01.zip -d ${INTEGRATION_TEST_DATA_FOLDER}
+        COMMAND test -f ${INTEGRATION_TEST_DATA_FOLDER}/srtm_43_06.tif || unzip -qn ${ALUS_LFS_GOODS}/srtm_43_06.zip -d ${INTEGRATION_TEST_DATA_FOLDER}
+        COMMAND test -f ${INTEGRATION_TEST_DATA_FOLDER}/srtm_44_06.tif || unzip -qn ${ALUS_LFS_GOODS}/srtm_44_06.zip -d ${INTEGRATION_TEST_DATA_FOLDER}
 
-        # Prepare Beirut thinned SAFE files
-        COMMAND test -d ${CMAKE_BINARY_DIR}/test_integration/goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6_thin.SAFE || unzip -qn ${CMAKE_CURRENT_LIST_DIR}/goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6_thin.SAFE.zip -d ${CMAKE_BINARY_DIR}/test_integration/goods/beirut_images
-        COMMAND test -d ${CMAKE_BINARY_DIR}/test_integration/goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD_thin.SAFE || unzip -qn ${CMAKE_CURRENT_LIST_DIR}/goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD_thin.SAFE.zip -d ${CMAKE_BINARY_DIR}/test_integration/goods/beirut_images
+        # Prepare Beirut SAFE files
+        COMMAND mkdir -p ${INTEGRATION_TEST_DATA_FOLDER}/beirut_images
+        COMMAND test -d ${INTEGRATION_TEST_DATA_FOLDER}/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.SAFE || unzip -qn ${ALUS_LFS_GOODS}/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.zip -d ${INTEGRATION_TEST_DATA_FOLDER}/beirut_images
+        COMMAND test -d ${INTEGRATION_TEST_DATA_FOLDER}/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD.SAFE || unzip -qn ${ALUS_LFS_GOODS}/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD.zip -d ${INTEGRATION_TEST_DATA_FOLDER}/beirut_images
+        COMMAND cp -n ${ALUS_LFS_GOODS}/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD.zip ${INTEGRATION_TEST_DATA_FOLDER}/beirut_images/
 
         # Coregistration data
-        COMMAND test -f ${CMAKE_BINARY_DIR}/test_integration/goods/coregistration_strips.txt || cp ${CMAKE_CURRENT_LIST_DIR}/goods/coregistration_strips.txt ${CMAKE_BINARY_DIR}/test_integration/goods/coregistration_strips.txt
-        COMMAND test -f ${CMAKE_BINARY_DIR}/test_integration/goods/coregistration_strips_cut.txt || cp ${CMAKE_CURRENT_LIST_DIR}/goods/coregistration_strips_cut.txt ${CMAKE_BINARY_DIR}/test_integration/goods/coregistration_strips_cut.txt
+        COMMAND test -f ${INTEGRATION_TEST_DATA_FOLDER}/coregistration_strips.txt || cp ${CMAKE_CURRENT_LIST_DIR}/goods/coregistration_strips.txt ${INTEGRATION_TEST_DATA_FOLDER}/coregistration_strips.txt
+        COMMAND test -f ${INTEGRATION_TEST_DATA_FOLDER}/coregistration_strips_cut.txt || cp ${CMAKE_CURRENT_LIST_DIR}/goods/coregistration_strips_cut.txt ${INTEGRATION_TEST_DATA_FOLDER}/coregistration_strips_cut.txt
 
-        COMMAND ln -rfns ${CMAKE_CURRENT_LIST_DIR}/goods/ww15mgh_b.grd ${CMAKE_BINARY_DIR}/test_integration/goods/.
-        COMMAND ln -rfns ${CMAKE_CURRENT_LIST_DIR}/goods/master_metadata.dim ${CMAKE_BINARY_DIR}/test_integration/goods/.
-        COMMAND ln -rfns ${CMAKE_CURRENT_LIST_DIR}/goods/slave_metadata.dim ${CMAKE_BINARY_DIR}/test_integration/goods/.
-        COMMAND ln -fns ${CMAKE_CURRENT_LIST_DIR}/goods/egm96TestData.txt ${CMAKE_BINARY_DIR}/test_integration/goods/.
-        COMMAND ln -fns ${CMAKE_CURRENT_LIST_DIR}/goods/tileFormatTestData.txt ${CMAKE_BINARY_DIR}/test_integration/goods/.
-        COMMAND ln -fns ${CMAKE_CURRENT_LIST_DIR}/goods/altitudeTestData.txt ${CMAKE_BINARY_DIR}/test_integration/goods/.
+        COMMAND ln -rfns ${CMAKE_CURRENT_LIST_DIR}/goods/ww15mgh_b.grd ${INTEGRATION_TEST_DATA_FOLDER}/.
+        COMMAND ln -rfns ${CMAKE_CURRENT_LIST_DIR}/goods/master_metadata.dim ${INTEGRATION_TEST_DATA_FOLDER}/.
+        COMMAND ln -rfns ${CMAKE_CURRENT_LIST_DIR}/goods/slave_metadata.dim ${INTEGRATION_TEST_DATA_FOLDER}/.
+        COMMAND ln -fns ${CMAKE_CURRENT_LIST_DIR}/goods/egm96TestData.txt ${INTEGRATION_TEST_DATA_FOLDER}/.
+        COMMAND ln -fns ${CMAKE_CURRENT_LIST_DIR}/goods/tileFormatTestData.txt ${INTEGRATION_TEST_DATA_FOLDER}/.
+        COMMAND ln -fns ${CMAKE_CURRENT_LIST_DIR}/goods/altitudeTestData.txt ${INTEGRATION_TEST_DATA_FOLDER}/.
 
-        COMMAND rm -rf ${CMAKE_BINARY_DIR}/test_integration/goods/coherence
-        COMMAND ln -s ${CMAKE_CURRENT_LIST_DIR}/goods/coherence ${CMAKE_BINARY_DIR}/test_integration/goods/coherence
-
-        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/test_integration/goods/terrain_correction
+        COMMAND cp -nr ${CMAKE_CURRENT_LIST_DIR}/goods/coherence ${INTEGRATION_TEST_DATA_FOLDER}/.
+        COMMAND test -f ${INTEGRATION_TEST_DATA_FOLDER}/coherence/4_bands.tif || cp ${ALUS_LFS_GOODS}/4_bands.tif ${INTEGRATION_TEST_DATA_FOLDER}/coherence/
 
         # Prepare TC Metadata test data
-        COMMAND ln -fs ${CMAKE_CURRENT_LIST_DIR}/goods/terrain_correction/longitude.img ${CMAKE_BINARY_DIR}/test_integration/goods/terrain_correction/longitude.img
-        COMMAND ln -fs ${CMAKE_CURRENT_LIST_DIR}/goods/terrain_correction/longitude.hdr ${CMAKE_BINARY_DIR}/test_integration/goods/terrain_correction/longitude.hdr
-        COMMAND ln -fs ${CMAKE_CURRENT_LIST_DIR}/goods/terrain_correction/latitude.img ${CMAKE_BINARY_DIR}/test_integration/goods/terrain_correction/latitude.img
-        COMMAND ln -fs ${CMAKE_CURRENT_LIST_DIR}/goods/terrain_correction/latitude.hdr ${CMAKE_BINARY_DIR}/test_integration/goods/terrain_correction/latitude.hdr
+        COMMAND mkdir -p ${INTEGRATION_TEST_DATA_FOLDER}/terrain_correction
+        COMMAND ln -fs ${CMAKE_CURRENT_LIST_DIR}/goods/terrain_correction/longitude.img ${INTEGRATION_TEST_DATA_FOLDER}/terrain_correction/longitude.img
+        COMMAND ln -fs ${CMAKE_CURRENT_LIST_DIR}/goods/terrain_correction/longitude.hdr ${INTEGRATION_TEST_DATA_FOLDER}/terrain_correction/longitude.hdr
+        COMMAND ln -fs ${CMAKE_CURRENT_LIST_DIR}/goods/terrain_correction/latitude.img ${INTEGRATION_TEST_DATA_FOLDER}/terrain_correction/latitude.img
+        COMMAND ln -fs ${CMAKE_CURRENT_LIST_DIR}/goods/terrain_correction/latitude.hdr ${INTEGRATION_TEST_DATA_FOLDER}/terrain_correction/latitude.hdr
 
         # Prepare TC Beirut integration test data
-        COMMAND unzip -oq ${CMAKE_CURRENT_LIST_DIR}/goods/terrain_correction/Beirut_IW1_6_VH_orb_stack_cor_deb_coh_data.zip
-        -d ${CMAKE_BINARY_DIR}/test_integration/goods/terrain_correction
+        COMMAND unzip -oq ${ALUS_LFS_GOODS}/Beirut_IW1_6_VH_orb_stack_cor_deb_coh_data.zip -d ${INTEGRATION_TEST_DATA_FOLDER}/terrain_correction
 
         # Prepare TC Saaremaa test data
-        COMMAND unzip -oq ${CMAKE_CURRENT_LIST_DIR}/goods/terrain_correction/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_data.zip
-        -d ${CMAKE_BINARY_DIR}/test_integration/goods/terrain_correction
+        COMMAND unzip -oq ${ALUS_LFS_GOODS}/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_data.zip -d ${INTEGRATION_TEST_DATA_FOLDER}/terrain_correction
 
         # Prepare backgeocoding test data
-        COMMAND rm -rf ${CMAKE_BINARY_DIR}/test_integration/goods/backgeocoding COMMAND ln -fsn ${CMAKE_CURRENT_LIST_DIR}/goods/backgeocoding ${CMAKE_BINARY_DIR}/test_integration/goods/backgeocoding
+        COMMAND rm -rf ${INTEGRATION_TEST_DATA_FOLDER}/backgeocoding
+        COMMAND ln -fsn ${CMAKE_CURRENT_LIST_DIR}/goods/backgeocoding ${INTEGRATION_TEST_DATA_FOLDER}/backgeocoding
 
         # Topsar deburst data
-        COMMAND rm -rf ${CMAKE_BINARY_DIR}/test_integration/goods/topsar_deburst_op
-        COMMAND ln -s ${CMAKE_CURRENT_LIST_DIR}/goods/topsar_deburst_op
-        ${CMAKE_BINARY_DIR}/test_integration/goods/topsar_deburst_op
-
-        COMMAND ln -fsn ${CMAKE_CURRENT_LIST_DIR}/goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD_thin.SAFE.zip
-        ${CMAKE_BINARY_DIR}/test_integration/goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD_thin.SAFE.zip
+        COMMAND test -d ${INTEGRATION_TEST_DATA_FOLDER}/topsar_deburst_op || unzip -qn ${ALUS_LFS_GOODS}/topsar_deburst_op.zip -d ${INTEGRATION_TEST_DATA_FOLDER}
 
         VERBATIM
         )
