@@ -1,8 +1,6 @@
 # ALUS
 
-ALUS means beer in latvian.
-
-Here it means Acceleration Library Used for Sentinel.
+Acceleration Library Used for Sentinel.
 
 A software project that targets to utilize Nvidia GPUs for processing earth observation data (faster).
 
@@ -58,6 +56,8 @@ In order to load shared library components one should move to directory where bi
 or move/create symlinks to a location that is present in default ``LD_LIBRARY_PATH``.
 
 See ``--help`` and ``--alg_help`` for specific arguments/parameters how to invoke processing.
+
+# [Performance](PERFORMANCE.md)
 
 # Contributing
 
