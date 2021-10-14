@@ -33,7 +33,7 @@ constexpr size_t FULL_SUBSWATH_BURST_INDEX_END{9999};
 namespace alus::coregistration {
 
 Coregistration::Coregistration(std::string aux_data_path) {
-    alus::snapengine::SystemUtils::SetAuxDataPath(aux_data_path);
+    alus::snapengine::SystemUtils::SetAuxDataPath(aux_data_path + "/");
 }
 
 void Coregistration::Initialize(std::string_view master_file, std::string_view slave_file, std::string_view output_file,

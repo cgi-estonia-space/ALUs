@@ -38,10 +38,28 @@ function parse_safe_coordinates {
     coordinates=$1
     echo "parsing $coordinates"
     coordinates_split=($coordinates)
-    left=$(echo ${coordinates_split[0]} | awk -F',' '{print $2}')
-    bottom=$(echo ${coordinates_split[3]} | awk -F',' '{print $1}')
-    right=$(echo ${coordinates_split[2]} | awk -F',' '{print $2}')
-    top=$(echo ${coordinates_split[1]} | awk -F',' '{print $1}')
+    
+    # Coordinates in <gml::coordinates> are layed out so that first coordinate is bottom right when looking at a regular rectangle, they follow in clockwise direction
+    # a 3rd coordinate is left top, last top right
+    point00_lat=$(echo ${coordinates_split[0]} | awk -F',' '{print $1}')
+    point01_lat=$(echo ${coordinates_split[1]} | awk -F',' '{print $1}')
+    
+    left_up=1
+    if (( $(echo "$point00_lat > $point01_lat" |bc -l) )); then
+        left_up=0
+    fi
+    
+    if [[ $left_up == 1 ]]; then
+        left=$(echo ${coordinates_split[1]} | awk -F',' '{print $2}')
+        bottom=$(echo ${coordinates_split[0]} | awk -F',' '{print $1}')
+        right=$(echo ${coordinates_split[3]} | awk -F',' '{print $2}')
+        top=$(echo ${coordinates_split[2]} | awk -F',' '{print $1}')
+    else
+        left=$(echo ${coordinates_split[2]} | awk -F',' '{print $2}')
+        bottom=$(echo ${coordinates_split[1]} | awk -F',' '{print $1}')
+        right=$(echo ${coordinates_split[0]} | awk -F',' '{print $2}')
+        top=$(echo ${coordinates_split[3]} | awk -F',' '{print $1}')
+    fi
 }
 
 if [[ "$type_string" == "SAFE" || "$type_string" == "AFE/" ]]; then
@@ -67,7 +85,7 @@ else
     exit 2
 fi
 
-margin="0.5"
+margin="0.1"
 left_with_margin=$(echo "$left - $margin" | bc)
 bottom_with_margin=$(echo "$bottom - $margin" | bc)
 right_with_margin=$(echo "$right + $margin" | bc)
@@ -86,13 +104,15 @@ if [ $clip_bottom -eq 1 ]; then
 fi
 
 dem_dir="/tmp/elevation"
+mkdir -p $dem_dir
 log_file=${dem_dir}/log.txt
-echo "eio --product SRTM3 --cache_dir $dem_dir seed --bounds $left_with_margin $bottom_with_margin $right_with_margin $top_with_margin"
+touch $log_file
+echo "eio --product SRTM3 seed --bounds $left_with_margin $bottom_with_margin $right_with_margin $top_with_margin"
 eio --product SRTM3 --cache_dir $dem_dir seed --bounds $left_with_margin $bottom_with_margin $right_with_margin $top_with_margin | tee $log_file
 
 # Parse DEM files for this scene
-dem_files_raw=$(grep "SRTM3 associated" $log_file | head -1 | cut -c18-)
-dem_files_associated=${dem_files_raw//SRTM3 associated/}
+dem_files_raw=$(grep "DEM files covered" $log_file | head -1 | cut -c18-)
+dem_files_associated=${dem_files_raw//DEM files covered/}
 
 echo "Log saved to $log_file" 
 echo "DEM files for scene:"

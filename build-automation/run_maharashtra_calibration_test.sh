@@ -29,10 +29,11 @@ fi
 
 mkdir -p $output_dir
 
-test_1_prod_path=$output_dir/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_Calib_IW1_tc.tif
-time alus --alg_name calibration-routine -i $test_dataset_dir/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563.SAFE \
+test_1_prod_path=$output_dir/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_Calib_b26_tc.tif
+time alus --alg_name calibration-routine -i $test_dataset_dir/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58.SAFE \
      -o $test_1_prod_path \
-     -x 4000 -y 4000 -p "subswath=IW1,polarisation=VV,calibration_type=beta" --dem $dem_files_dir/srtm_42_01.tif
+     -x 3000 -y 3000 -p "subswath=IW2,polarisation=VV,calibration_type=gamma,first_burst_index=2,last_burst_index=6" \
+     --dem $dem_files_dir/srtm_51_09.tif --dem $dem_files_dir/srtm_52_09.tif
 
 if [[ -z "${NIGHTLY_GOLDEN_DIR}" ]]; then
   echo "no golden directory defined, no verification executed"
@@ -40,6 +41,6 @@ if [[ -z "${NIGHTLY_GOLDEN_DIR}" ]]; then
 fi
 
 echo "Validating $test_1_prod_path"
-./alus_result_check.py -I $test_1_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_Calib_IW1_tc.tif
+./alus_result_check.py -I $test_1_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_Calib_b26_tc.tif
 
 exit $?
