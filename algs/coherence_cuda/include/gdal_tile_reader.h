@@ -45,7 +45,6 @@ private:
     std::deque<std::mutex> mutexes_;
     std::string data_projection_;
     std::vector<double> affine_geo_transform_;
-    bool do_close_dataset_;
 };
 }  // namespace coherence_cuda
 }  // namespace alus

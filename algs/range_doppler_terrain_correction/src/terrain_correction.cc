@@ -61,7 +61,7 @@ void InitThreadContext(alus::terraincorrection::PerThreadData* ctx, size_t max_t
     gpu_mem_sz += gpu_mem_sz / 20;                                // alignment paddings
     ctx->device_memory_arena.ReserveMemory(gpu_mem_sz);
 
-    ctx->d_source_buffer.Reallocate(max_tile_size * src_ratio);
+    ctx->d_source_buffer.Resize(max_tile_size * src_ratio);
 
     CHECK_CUDA_ERR(cudaStreamCreate(&ctx->stream));
 }
@@ -475,7 +475,7 @@ void TerrainCorrection::CalculateTile(TcTileCoordinates tile_coordinates, Shared
         // check if we can use preallocated buffers, if not we have to do cudaMalloc and use non-pinned memory
         // these will hinder the operation of cuda streams
         if (source_rect_sz > ctx->d_source_buffer.GetElemCount()) {
-            ctx->d_source_buffer.Reallocate(source_rect_sz);
+            ctx->d_source_buffer.Resize(source_rect_sz);
         }
 
         std::unique_ptr<float[]> source_buffer;

@@ -92,6 +92,18 @@ public:
     void DeviceToHost() override;
     void DeviceFree() override;
 
+    double calc_avg_incidence_angle()
+    {
+        return incidence_angle_[num_of_geo_lines_/2][num_of_geo_points_per_line_/2];
+    }
+
+    bool isNearRangeOnLeft()
+    {
+        double angle_first_pixel = incidence_angle_[0][0];
+        double angle_last_pixel = incidence_angle_[0][num_of_geo_points_per_line_-1];
+        return angle_first_pixel < angle_last_pixel;
+    }
+
     SubSwathInfo();
     ~SubSwathInfo();
     SubSwathInfo(const SubSwathInfo&) = delete;  // class does not support copying(and moving)

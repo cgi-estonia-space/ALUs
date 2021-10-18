@@ -23,58 +23,50 @@
 
 namespace alus {
 namespace coherence_cuda {
-GdalTileReader::GdalTileReader(const std::string_view file_name) : do_close_dataset_{true} {
+GdalTileReader::GdalTileReader(const std::string_view file_name) {
     auto* dataset = static_cast<GDALDataset*>(GDALOpen(file_name.data(), GA_ReadOnly));
     CHECK_GDAL_PTR(dataset);
     mutexes_.resize(1);
     datasets_.push_back(dataset);
     affine_geo_transform_.resize(6);
-    if(dataset->GetGeoTransform(affine_geo_transform_.data()) != CE_None) {
+    if (dataset->GetGeoTransform(affine_geo_transform_.data()) != CE_None) {
         affine_geo_transform_.clear();
     }
     data_projection_ = dataset->GetProjectionRef();
 }
 
-GdalTileReader::GdalTileReader(const std::vector<GDALDataset*>& datasets)
-    : datasets_{datasets}, do_close_dataset_{false} {
+GdalTileReader::GdalTileReader(const std::vector<GDALDataset*>& datasets) : datasets_{datasets} {
     mutexes_.resize(datasets_.size());
 }
 
 void GdalTileReader::ReadTile(const Tile& tile, float* data, int band_nr) {
-
     std::mutex* mutex = nullptr;
     GDALRasterBand* band = nullptr;
 
-    if(datasets_.size() == 1)
-    {
+    if (datasets_.size() == 1) {
         mutex = &mutexes_.at(0);
         band = datasets_.at(0)->GetRasterBand(band_nr);
-    }
-    else
-    {
+    } else {
         mutex = &mutexes_.at(band_nr - 1);
         band = datasets_.at(band_nr - 1)->GetRasterBand(1);
     }
 
     std::unique_lock lock(*mutex);
     CHECK_GDAL_ERROR(band->RasterIO(GF_Read, tile.GetXMin(), tile.GetYMin(), tile.GetXSize(), tile.GetYSize(), data,
-                                        tile.GetXSize(), tile.GetYSize(), GDALDataType::GDT_Float32, 0, 0));
+                                    tile.GetXSize(), tile.GetYSize(), GDALDataType::GDT_Float32, 0, 0));
 }
 
 void GdalTileReader::CloseDataSet() {
-    if (do_close_dataset_) {
-        for(auto*& dataset : datasets_){
-            GDALClose(dataset);
-        }
-        datasets_.clear();
+    for (auto*& dataset : datasets_) {
+        GDALClose(dataset);
     }
+    datasets_.clear();
 }
 
-double GdalTileReader::GetValueAtXy(int x, int y)
-{
-    //TODO refactor, this function is only needed for coherence integration test, when reading beam dimap
+double GdalTileReader::GetValueAtXy(int x, int y) {
+    // TODO refactor, this function is only needed for coherence integration test, when reading beam dimap
     float val = 0;
-    CHECK_GDAL_ERROR(datasets_.at(0)->GetRasterBand(1)->RasterIO(GF_Read, x, y, 1, 1, &val, 1, 1, GDT_Float32, 0 ,0));
+    CHECK_GDAL_ERROR(datasets_.at(0)->GetRasterBand(1)->RasterIO(GF_Read, x, y, 1, 1, &val, 1, 1, GDT_Float32, 0, 0));
     return val;
 }
 

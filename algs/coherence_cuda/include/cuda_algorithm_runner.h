@@ -13,7 +13,7 @@
  */
 #pragma once
 
-#include "i_algo_cuda.h"
+#include "coherence_calc_cuda.h"
 #include "gdal_tile_reader.h"
 #include "i_data_tile_writer.h"
 #include "i_tile_provider.h"
@@ -25,7 +25,7 @@ private:
     GdalTileReader* tile_reader_;
     IDataTileWriter* tile_writer_;
     ITileProvider* tile_provider_;
-    IAlgoCuda* algo_;
+    CohCuda* algo_;
 
     struct ThreadParams;
     static void ThreadRun(CUDAAlgorithmRunner* algo, ThreadParams* params);
@@ -33,7 +33,7 @@ private:
 public:
     CUDAAlgorithmRunner() = delete;
     CUDAAlgorithmRunner(GdalTileReader* tile_reader, IDataTileWriter* tile_writer, ITileProvider* tile_provider,
-                        IAlgoCuda* algorithm);
+                        CohCuda* algorithm);
     void Run();
 };
 }  // namespace coherence_cuda

@@ -104,14 +104,16 @@ int CoherenceEstimationRoutineExecute::ExecuteSafe() {
         GDALDataset* coh_dataset = nullptr;
         {
             const auto coh_start = std::chrono::steady_clock::now();
-            const auto near_range_on_left = s1tbx::SARGeocoding::IsNearRangeOnLeft(
-                main_product->GetTiePointGrid("incident_angle"), main_product->GetSceneRasterWidth());
+            s1tbx::Sentinel1Utils su(main_product);
+            const bool near_range_on_left = su.GetSubSwath().at(0)->isNearRangeOnLeft();
+            const double avg_incidence_angle = su.GetSubSwath().at(0)->calc_avg_incidence_angle();
 
             alus::coherence_cuda::MetaData meta_master{
-                near_range_on_left, snapengine::AbstractMetadata::GetAbstractedMetadata(main_product), orbit_degree_};
+                near_range_on_left, snapengine::AbstractMetadata::GetAbstractedMetadata(main_product), orbit_degree_,
+                avg_incidence_angle};
             alus::coherence_cuda::MetaData meta_slave{
                 near_range_on_left, snapengine::AbstractMetadata::GetAbstractedMetadata(secondary_product),
-                orbit_degree_};
+                orbit_degree_, avg_incidence_angle};
 
             std::vector<int> band_map_out{1};
             int band_count_out = 1;
@@ -137,8 +139,8 @@ int CoherenceEstimationRoutineExecute::ExecuteSafe() {
                                          coh_data_reader.GetBandXMin(),
                                          coh_data_reader.GetBandYMin()};
 
-            alus::coherence_cuda::GdalTileWriter coh_data_writer{GetGDALDriverManager()->GetDriverByName("MEM"),
-                                                                 band_params, {}, {}};
+            alus::coherence_cuda::GdalTileWriter coh_data_writer{
+                GetGDALDriverManager()->GetDriverByName("MEM"), band_params, {}, {}};
 
             alus::coherence_cuda::CohTilesGenerator tiles_generator{
                 coh_data_reader.GetBandXSize(), coh_data_reader.GetBandYSize(), static_cast<int>(tile_width_),

@@ -28,7 +28,7 @@
 namespace alus {
 namespace coherence_cuda {
 class MetaData;
-class CohCuda : public IAlgoCuda {
+class CohCuda {
 private:
     const int srp_number_points_;
     const int srp_polynomial_degree_;
@@ -52,9 +52,8 @@ public:
     CohCuda(int srp_number_points, int srp_polynomial_degree, bool subtract_flat_earth, const CohWindow& coh_window,
             int orbit_degree, MetaData& meta_master, MetaData& meta_slave);
     void CoherencePreTileCalc();
-    void PreTileCalc() override;
-    void TileCalc(CohTile& tile, const std::array<std::vector<float>, 4>& data, std::vector<float>& data_out) override;
-    void Cleanup() override;
+    void PreTileCalc();
+    void TileCalc(const CohTile& tile, ThreadContext& ctx);
 };
 }  // namespace coherence_cuda
 }  // namespace alus

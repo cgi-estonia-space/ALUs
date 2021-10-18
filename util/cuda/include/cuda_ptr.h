@@ -28,7 +28,7 @@ namespace cuda {
 template <typename T>
 class CudaPtr {
 public:
-    explicit CudaPtr(size_t elem_count) : elem_count_(elem_count) {
+    explicit CudaPtr(size_t elem_count) : elem_count_(elem_count), capacity_(elem_count) {
         CHECK_CUDA_ERR(cudaMalloc((void**)&device_ptr_, elem_count * sizeof(T)));
     }
     CudaPtr() = default;
@@ -41,22 +41,40 @@ public:
             cudaFree(device_ptr_);
             device_ptr_ = nullptr;
             elem_count_ = 0;
+            capacity_ = 0;
         }
     }
 
     size_t GetElemCount() const { return elem_count_; }
 
-    void Reallocate(size_t size) {
-        free();
-        CHECK_CUDA_ERR(cudaMalloc((void**)&device_ptr_, size * sizeof(T)));
-        elem_count_ = size;
+    void Resize(size_t size) {
+        // avoid reallocating if possible, works better with streams
+        if (size > capacity_) {
+            CHECK_CUDA_ERR(cudaFree(device_ptr_));
+            CHECK_CUDA_ERR(cudaMalloc(&device_ptr_, size * sizeof(T)));
+            elem_count_ = size;
+            capacity_ = size;
+        } else {
+            elem_count_ = size;
+        }
     }
     T* Get() { return device_ptr_; }
+
+    // basic STL interface, useful for moving from device_vector to this
+    T* begin() { return device_ptr_; }
+    T* end() { return device_ptr_ + elem_count_; }
+    size_t size() const { return elem_count_; }
+    T* data() { return device_ptr_; }
 
 private:
     T* device_ptr_ = nullptr;
     size_t elem_count_ = 0;
+    size_t capacity_ = 0;
 };
+
+// a better name is buffer as it contains size and capacity information as well, TODO refactor it later
+template <class T>
+using DeviceBuffer = CudaPtr<T>;
 
 }  // namespace cuda
 }  // namespace alus

@@ -128,18 +128,15 @@ void CohCuda::CoherencePreTileCalc() {
     coherence_computation_.LaunchCoherencePreTileCalc(x_pows, y_pows, position_lines_pixels, generate_y, band_params_);
 }
 
-void CohCuda::TileCalc(CohTile& tile, const std::array<std::vector<float>, 4>& data, std::vector<float>& data_out) {
-    coherence_computation_.LaunchCoherence(tile, data, data_out, coh_win_, band_params_);
+void CohCuda::TileCalc(const CohTile& tile, ThreadContext& buffers) {
+    coherence_computation_.LaunchCoherence(tile, buffers, coh_win_, band_params_);
 }
 
 void CohCuda::PreTileCalc() {
     if (subtract_flat_earth_) {
         CoherencePreTileCalc();
     }
-}  // namespace coherence_cuda
-
-void CohCuda::Cleanup() {
-    //    if needed
 }
+
 }  // namespace coherence_cuda
 }  // namespace alus
