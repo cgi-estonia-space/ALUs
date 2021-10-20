@@ -77,7 +77,7 @@ target_link_libraries(sentinel1-util-static
         PUBLIC
         gdal
         snap-engine-static
-        exotic_operations-static
+        exotic-operations-static
         Eigen3::Eigen
         staticZipper
         common-util-static

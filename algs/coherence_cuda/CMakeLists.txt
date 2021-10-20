@@ -40,18 +40,9 @@ list(APPEND COHERENCE_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/../../common/include
         )
 
-add_library(coherence-cuda-obj
-        OBJECT
-        ${COHERENCE_SOURCES}
-        )
-target_include_directories(coherence-cuda-obj
-        PRIVATE
-        ${COHERENCE_INCLUDE_DIRS}
-        )
-
 add_library(coherence-cuda-static
         STATIC
-        $<TARGET_OBJECTS:coherence-cuda-obj>
+        ${COHERENCE_SOURCES}
         )
 target_include_directories(coherence-cuda-static
         PUBLIC
@@ -69,7 +60,7 @@ target_link_libraries(coherence-cuda-static
         snap-engine-static
         sentinel1-util-static
         pugixml-static
-        cuda_util-static
+        cuda-util-static
         ${CUDA_CUBLAS_LIBRARIES}
         ${CUDA_cusolver_LIBRARY}
         )

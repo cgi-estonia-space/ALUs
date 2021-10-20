@@ -113,9 +113,9 @@ target_include_directories(backgeocoding-full
 target_link_libraries(backgeocoding-full
         PRIVATE
         alus-gmock-main
-        cuda_util-static
+        cuda-util-static
         backgeocoding-static
-        exotic_operations-static
+        exotic-operations-static
         app-util-static
         )
 
@@ -125,9 +125,9 @@ add_executable(integration-test-topsar-split ${TEST_SOURCES_TOPSAR_SPLIT})
 target_link_libraries(integration-test-topsar-split
         PRIVATE
         alus-gmock-main
-        cuda_util-static
+        cuda-util-static
         topsar-split-static
-        exotic_operations-static
+        exotic-operations-static
         app-util-static
         apply-orbit-file-op-static
         )
@@ -144,9 +144,9 @@ target_include_directories(integration-test-coregistration
 target_link_libraries(integration-test-coregistration
         PRIVATE
         alus-gmock-main
-        cuda_util-static
+        cuda-util-static
         topsar-split-static
-        exotic_operations-static
+        exotic-operations-static
         app-util-static
         backgeocoding-static
         apply-orbit-file-op-static
@@ -171,8 +171,8 @@ target_link_libraries(integration-test-snap-engine
         srtm3-test-util-static
         snap-engine-static
         gdal-util-static
-        cuda_util-static
-        exotic_operations-static
+        cuda-util-static
+        exotic-operations-static
         sentinel1-util-static
         )
 
@@ -187,7 +187,7 @@ target_link_libraries(integration-test-coherence-cuda
         alus-gmock-main
         Boost::filesystem
         Boost::iostreams
-        cuda_util-static
+        cuda-util-static
         gdal-util-static
         sentinel1-util-static
         coherence-cuda-static
@@ -225,7 +225,7 @@ target_link_libraries(integration-test-backgeocoding
         sentinel1-util-static
         snap-engine-static
         gdal-util-static
-        exotic_operations-static
+        exotic-operations-static
         app-util-static
         )
 
@@ -244,7 +244,7 @@ target_link_libraries(integration-test-apply-orbit-file-op
         Boost::filesystem
         Boost::iostreams
         alus-gmock-main
-        cuda_util-static
+        cuda-util-static
         gdal-util-static
         sentinel1-util-static
         apply-orbit-file-op-static
@@ -266,7 +266,7 @@ target_link_libraries(integration-test-topsar-deburst-op
         Boost::filesystem
         Boost::iostreams
         alus-gmock-main
-        cuda_util-static
+        cuda-util-static
         gdal-util-static
         sentinel1-util-static
         topsar-deburst-op-static
@@ -289,7 +289,7 @@ target_link_libraries(integration-sentinel1_product_reader
         Boost::filesystem
         Boost::iostreams
         alus-gmock-main
-        cuda_util-static
+        cuda-util-static
         gdal-util-static
         sentinel1-util-static
         snap-engine-static
@@ -315,7 +315,7 @@ target_link_libraries(integration-test-sentinel1-calibrate
         alus-gmock-main
         sentinel1-calibrate-static
         topsar-split-static
-        cuda_util-static
+        cuda-util-static
         gdal-util-static
         )
 

@@ -24,18 +24,9 @@ list(APPEND BACKGEOCODING_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/../../util/common/include
         )
 
-add_library(backgeocoding-obj
-        OBJECT
-        ${BACKGEOCODING_SOURCES}
-        )
-target_include_directories(backgeocoding-obj
-        PRIVATE
-        ${BACKGEOCODING_INCLUDE_DIRS}
-        )
-
 add_library(backgeocoding-static
         STATIC
-        $<TARGET_OBJECTS:backgeocoding-obj>
+        ${BACKGEOCODING_SOURCES}
         )
 target_include_directories(backgeocoding-static
         PUBLIC
@@ -49,9 +40,9 @@ target_link_libraries(backgeocoding-static
         PUBLIC
         common-util-static
         gdal-util-static
-        exotic_operations-static
+        exotic-operations-static
         sentinel1-util-static
-        cuda_util-static
+        cuda-util-static
         snap-engine-static
         Boost::program_options
         )

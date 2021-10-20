@@ -24,7 +24,6 @@
 
 #include "alus_log.h"
 #include "gdal_management.h"
-#include "terrain_correction_executor.h"
 
 namespace {
 constexpr std::string_view EXECUTOR_NAME{"Coherence estimation routine"};
@@ -166,10 +165,11 @@ std::string CoherenceEstimationRoutineExecute::GetArgumentsHelp() const {
                 << std::endl;
 
     help_stream << GetCoherenceHelp();
-    help_stream << terraincorrection::TerrainCorrectionExecutor().GetArgumentsHelp();
-
-    help_stream << PARAMETER_WRITE_INTERMEDIATE_FILES
-                << " - write intermediate files - true/false (default:false)\n";
+    help_stream
+        << "use_avg_scene_height - average scene height to be used instead of DEM values during terrain correction"
+        << std::endl;
+    help_stream << PARAMETER_WRITE_INTERMEDIATE_FILES << " - write intermediate files - true/false (default:false)"
+                << std::endl;
 
     return help_stream.str();
 }

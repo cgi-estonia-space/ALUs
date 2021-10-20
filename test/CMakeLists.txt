@@ -57,10 +57,10 @@ target_link_libraries(unit_test
         gdal-util-static
         terrain-correction-static
         sentinel1-util-static
-        exotic_operations-static
+        exotic-operations-static
         backgeocoding-static
         snap-engine-static
-        cuda_util-static
+        cuda-util-static
         tiePointGrid-test-static
         range-doppler-geocoding-test-static
         sar-geocoding-test-static

@@ -22,18 +22,9 @@ list(APPEND SENTINEL_1_CALIBRATE_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/../topsar_split/include
         )
 
-add_library(sentinel1-calibrate-obj
-        OBJECT
-        ${SENTINEL_1_CALIBRATE_SOURCES})
-
-target_include_directories(sentinel1-calibrate-obj
-        PRIVATE
-        ${SENTINEL_1_CALIBRATE_INCLUDE_DIRS}
-        )
-
 add_library(sentinel1-calibrate-static
         STATIC
-        $<TARGET_OBJECTS:sentinel1-calibrate-obj>
+        ${SENTINEL_1_CALIBRATE_SOURCES}
         )
 
 target_include_directories(sentinel1-calibrate-static
@@ -53,37 +44,7 @@ target_link_libraries(sentinel1-calibrate-static
         sentinel1-util-static
         snap-engine-static
         gdal-util-static
-        cuda_util-static
-        common-util-static
-        topsar-split-static
-
-        )
-
-add_library(sentinel1-calibrate-shared
-        SHARED
-        $<TARGET_OBJECTS:sentinel1-calibrate-obj>
-        ${CMAKE_CURRENT_LIST_DIR}/src/sentinel1_calibrate_executor_shared.cc
-        )
-
-target_include_directories(sentinel1-calibrate-shared
-        PUBLIC
-        ${SENTINEL_1_CALIBRATE_INCLUDE_DIRS}
-        )
-
-set_target_properties(sentinel1-calibrate-shared
-        PROPERTIES
-        OUTPUT_NAME sentinel1-calibrate
-        LIBRARY_OUTPUT_DIRECTORY ${ALUS_BINARY_OUTPUT_DIR}
-        )
-
-target_link_libraries(sentinel1-calibrate-shared
-        PUBLIC
-        Boost::filesystem
-        Boost::iostreams
-        sentinel1-util-static
-        snap-engine-static
-        gdal-util-static
-        cuda_util-static
+        cuda-util-static
         common-util-static
         topsar-split-static
         )

@@ -141,7 +141,7 @@ target_link_libraries(snap-engine-static
         PUBLIC
         Boost::filesystem
         Boost::iostreams
-        exotic_operations-static
+        exotic-operations-static
         gdal-util-static
         pugixml-static
         staticZipper

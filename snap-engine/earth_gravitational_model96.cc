@@ -13,7 +13,6 @@
  */
 #include "snap-dem/dem/dataio/earth_gravitational_model96.h"
 
-#include <condition_variable>
 #include <mutex>
 #include <sstream>
 #include <thread>
