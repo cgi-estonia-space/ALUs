@@ -6,7 +6,7 @@ Overall ALUS should always be faster than the equivalent SNAP algorithm.
 ## Example performance test
 
 Reference laptop computer details:  
-CPU: i7 10750h  
+CPU: i7 10750h, 16GB RAM
 GPU: GTX 1650Ti Mobile  
 SSD: M.2  
 
@@ -15,7 +15,7 @@ S1B_IW_SLC__1SDV_20210124T164217_20210124T164244_025299_03034D_690D
 S1B_IW_SLC__1SDV_20210112T164218_20210112T164245_025124_02FDBF_2399  
 
 Full swath(1.4GB SLC data) landmass only processing time:  
-Coherence estimation routine: 17.2s  
+Coherence estimation routine: 15.7s 
 Calibration routine: 5.8s  
 
 Coherence estimation routine means: 2 x input SLC coregistration(split + apply orbit file + backgeocoding) -> coherence estimation -> deburst -> range doppler terrain correction -> GTiff output  
