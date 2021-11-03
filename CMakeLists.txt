@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
-project(aluserer
+project(ALUs
         LANGUAGES CXX CUDA
-        DESCRIPTION "Geospatial algorithms on steroids."
-        VERSION 0.5.0
+        DESCRIPTION "Parallel ALUs for geospatial data processing"
+        VERSION 0.7.0
         )
 
 set(CMAKE_CUDA_STANDARD 14)

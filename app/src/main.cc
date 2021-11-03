@@ -45,10 +45,9 @@ void PrintHelp(const std::string& options_help) {
 
 int main(int argc, const char* argv[]) {
     std::string help_string{};
+    std::thread cuda_warmup;
     int alg_execute_status{};
     try {
-        std::thread cuda_warmup([](){cudaFree(nullptr);}); //init cuda with a cudaFree so others don't have to wait.
-        cuda_warmup.detach();
         alus::common::log::Initialize();
 #ifdef NDEBUG
         alus::common::log::SetLevel(alus::common::log::Level::INFO);
@@ -62,6 +61,9 @@ int main(int argc, const char* argv[]) {
             PrintHelp(help_string);
             return 0;
         }
+
+        // init cuda with a cudaFree so others don't have to wait.
+        cuda_warmup = std::thread([]() { cudaFree(nullptr); });
 
         const auto& alg_to_run = options.GetSelectedAlgorithm();
         LOGI << "Algorithm to run: " << alg_to_run;
@@ -81,7 +83,7 @@ int main(int argc, const char* argv[]) {
         const auto& merged_parameters =
             alus::app::AlgorithmParameters::MergeAndWarn(file_conf_parameters, command_line_parameters, warnings);
 
-        if(!warnings.empty()){
+        if (!warnings.empty()) {
             LOGW << warnings;
         }
         if (merged_parameters.count(alg_to_run)) {
@@ -116,18 +118,18 @@ int main(int argc, const char* argv[]) {
     } catch (const po::error& e) {
         LOGE << e.what();
         PrintHelp(help_string);
-        return 1;  // TODO: Create constants for exit codes.
-    } catch (const std::fstream::failure& e) {
-        LOGE << "Exception opening/reading file - " << e.what();
-        return 2;
+        alg_execute_status = 1;  // TODO: Create constants for exit codes.
+
     } catch (const std::exception& e) {
-        LOGE << "An exception was caught - " << e.what() << "Exciting";
-        return 3;
+        LOGE << "An exception was caught - " << e.what() << " - Exiting";
+        alg_execute_status = 2;
     } catch (...) {
         LOGE << "Exception of unknown type was caught."
              << "ERRNO:" << strerror(errno);
-        return 4;
+        alg_execute_status = 3;
     }
+
+    cuda_warmup.join();
 
     return alg_execute_status;
 }
