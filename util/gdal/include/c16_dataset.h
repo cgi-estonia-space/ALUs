@@ -40,6 +40,7 @@ public:
 
     Dataset<Iq16>* GetDataset() { return dataset_.get(); }
     void TryToCacheImage() override;
+    void SetReadingArea(Rectangle new_area) override {dataset_->SetReadingArea(new_area);};
 
 private:
     std::unique_ptr<Dataset<Iq16>> dataset_;

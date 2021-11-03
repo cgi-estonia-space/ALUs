@@ -24,12 +24,12 @@
 #include "alus_log.h"
 #include "gdal_data_copy.h"
 #include "general_constants.h"
-#include "snap-engine-utilities/eo/constants.h"
 #include "io/orbits/sentinel1/sentinel_p_o_d_orbit_file.h"
-#include "orbit_state_vector.h"
 #include "product_data_utc.h"
 #include "product_utils.h"
-#include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
+#include "snap-engine-utilities/engine-utilities/datamodel/metadata/abstract_metadata.h"
+#include "snap-engine-utilities/engine-utilities/eo/constants.h"
+#include "orbit_state_vector.h"
 
 namespace alus::s1tbx {
 

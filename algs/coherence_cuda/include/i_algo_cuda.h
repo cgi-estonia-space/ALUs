@@ -13,6 +13,7 @@
  */
 #pragma once
 
+#include <array>
 #include <vector>
 
 #include "coh_tile.h"
@@ -27,7 +28,7 @@ public:
     IAlgoCuda& operator=(const IAlgoCuda&) = delete;
     virtual ~IAlgoCuda() = default;
     // todo: probably needs T instead of float (starting simple) and need some more generic tile
-    virtual void TileCalc(CohTile& tile, const std::vector<float>& data, std::vector<float>& data_out) = 0;
+    virtual void TileCalc(CohTile& tile, const std::array<std::vector<float>, 4>& data, std::vector<float>& data_out) = 0;
     virtual void PreTileCalc() = 0;
     virtual void Cleanup() = 0;
 };

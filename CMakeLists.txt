@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
-project(aluserer
+project(ALUs
         LANGUAGES CXX CUDA
-        DESCRIPTION "Geospatial algorithms on steroids."
-        VERSION 0.5.0
+        DESCRIPTION "Parallel ALUs for geospatial data processing"
+        VERSION 0.7.0
         )
 
 set(CMAKE_CUDA_STANDARD 14)
@@ -46,6 +46,8 @@ find_package(Eigen3 REQUIRED)
 
 set(ALUS_BINARY_OUTPUT_DIR ${PROJECT_BINARY_DIR}/alus_package)
 set(ALUS_UNIT_TEST_BINARY_OUTPUT_DIR ${PROJECT_BINARY_DIR}/unit-test)
+set(ALUS_LFS_INVOKE ${CMAKE_CURRENT_LIST_DIR}/.alus-lfs)
+set(ALUS_LFS_GOODS ${CMAKE_CURRENT_LIST_DIR}/resources)
 
 option(ENABLE_TESTS "Enable tests" OFF)
 
@@ -75,11 +77,11 @@ add_subdirectory(external/pugixml)
 
 # Utilities
 add_subdirectory(util/gdal)
-add_subdirectory(util/sentinel1)
+add_subdirectory(sentinel1)
 add_subdirectory(util/exotic_operations)
 add_subdirectory(util/common)
 add_subdirectory(util/cuda)
-add_subdirectory(util/snap-engine)
+add_subdirectory(snap-engine)
 
 # Algorithms
 add_subdirectory(algs/algorithm_bond)
@@ -93,6 +95,7 @@ add_subdirectory(algs/coherence_estimation_routine)
 add_subdirectory(algs/coregistration)
 add_subdirectory(algs/topsar_split)
 add_subdirectory(algs/calibration_routine)
+add_subdirectory(algs/topsar_merge)
 
 # Test helpers
 add_subdirectory(test/range_doppler_geocoding)
@@ -101,10 +104,6 @@ add_subdirectory(test/sar_geocoding)
 
 # Main terminal application
 add_subdirectory(app)
-
-# Tests
-message(STATUS "Enable testing: ${ENABLE_UNIT_TESTS}")
-message(STATUS "Integration tests enabled: ${ENABLE_INTEGRATION_TESTS}")
 
 include(FetchContent)
 

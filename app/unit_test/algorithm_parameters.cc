@@ -51,6 +51,18 @@ TEST(AlgorithmParametersTest, parsesCorrectlyParametersWithoutAlgorithmName) {
                                      Pair("last_one", "OK12")));
 }
 
+TEST(AlgorithmParametersTest, parsesCorrectlyParametersWithoutAlgorithmNameWithWkt) {
+    AlgorithmParameters test(
+        "first=yes,second=2,param3=5.930,wkt=POLYGON ((30 10, 40 40, 20 40, 10 20, 30 10)),par am=1e-6");
+    ASSERT_THAT(test.GetAlgorithmName(), IsEmpty());
+    ASSERT_THAT(test.GetParameters(),
+                UnorderedElementsAre(Pair("first", "yes"),
+                                     Pair("second", "2"),
+                                     Pair("param3", "5.930"),
+                                     Pair("par am", "1e-6"),
+                                     Pair("wkt", "POLYGON ((30 10, 40 40, 20 40, 10 20, 30 10))")));
+}
+
 TEST(AlgorithmParametersTest, parsesCorrectlyMulipleAlgorithmParameters) {
     const auto& results = AlgorithmParameters::TryCreateFrom(
         "terrain-correction:useAvgSceneHeight=true,points=10;coherence:subtract_flat_earth_phase=false,rg=65.90,az=140;"

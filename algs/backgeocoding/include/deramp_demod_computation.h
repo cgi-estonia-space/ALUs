@@ -15,15 +15,15 @@
 #include <cuda_runtime.h>
 
 #include "general_constants.h"
+#include "s1tbx-commons/subswath_info_computation.h"
 #include "shapes.h"
-#include "subswath_info_computation.h"
 
 namespace alus {
 namespace backgeocoding {
 
 cudaError_t LaunchDerampDemod(Rectangle rectangle,
-                              double *slave_i,
-                              double *slave_q,
+                              int16_t *slave_i,
+                              int16_t *slave_q,
                               double *demod_phase,
                               double *demod_i,
                               double *demod_q,

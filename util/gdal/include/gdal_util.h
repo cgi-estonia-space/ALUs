@@ -23,6 +23,23 @@
 #include <gdal_priv.h>
 
 namespace alus {
+
+namespace gdal::constants {
+// GDAL driver constants
+constexpr char GDAL_MEM_DRIVER[]{"MEM"};
+constexpr char GDAL_GTIFF_DRIVER[]{"GTiff"};
+constexpr char GDAL_GTIFF_FILE_EXTENSION[]{".tif"};
+constexpr int GDAL_DEFAULT_RASTER_BAND{1};
+}
+
+inline GDALDriver* GetGdalMemDriver() {
+    return GetGDALDriverManager()->GetDriverByName(gdal::constants::GDAL_MEM_DRIVER);
+}
+
+inline GDALDriver* GetGdalGeoTiffDriver() {
+    return GetGDALDriverManager()->GetDriverByName(gdal::constants::GDAL_GTIFF_DRIVER);
+}
+
 class GdalErrorException final : public std::runtime_error {
 public:
     GdalErrorException(CPLErr const errType, CPLErrorNum const errNum, std::string_view errMsg, std::string_view src,

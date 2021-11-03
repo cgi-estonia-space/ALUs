@@ -16,10 +16,10 @@
 #include "backgeocoding_constants.h"
 #include "position_data.h"
 
+#include "../../../snap-engine/srtm3_elevation_calc.cuh"
 #include "backgeocoding_utils.cuh"
-#include "geo_utils.cuh"
 #include "math_utils.cuh"
-#include "srtm3_elevation_calc.cuh"
+#include "snap-engine-utilities/engine-utilities/eo/geo_utils.cuh"
 
 namespace alus {
 namespace backgeocoding {
@@ -41,19 +41,13 @@ __global__ void ComputeBurstOffsetKernel(BurstOffsetKernelArgs args) {
 
     s1tbx::PositionData position_data{};
     snapengine::geoutils::Geo2xyzWgs84Impl(latitude, longitude, altitude, position_data.earth_point);
-    const BurstIndices master_burst_indices = GetBurstIndices(args.master_sentinel_utils,
-                                                              args.master_subswath_info,
-                                                              position_data.earth_point,
-                                                              args.master_orbit,
-                                                              args.master_num_orbit_vec,
-                                                              args.master_dt);
+    const BurstIndices master_burst_indices =
+        GetBurstIndices(args.master_sentinel_utils, args.master_subswath_info, position_data.earth_point,
+                        args.master_orbit, args.master_num_orbit_vec, args.master_dt);
 
-    const BurstIndices slave_burst_indices = GetBurstIndices(args.slave_sentinel_utils,
-                                                             args.slave_subswath_info,
-                                                             position_data.earth_point,
-                                                             args.slave_orbit,
-                                                             args.slave_num_orbit_vec,
-                                                             args.slave_dt);
+    const BurstIndices slave_burst_indices =
+        GetBurstIndices(args.slave_sentinel_utils, args.slave_subswath_info, position_data.earth_point,
+                        args.slave_orbit, args.slave_num_orbit_vec, args.slave_dt);
     if (!master_burst_indices.valid || !slave_burst_indices.valid ||
         (master_burst_indices.first_burst_index == -1 && master_burst_indices.second_burst_index == -1) ||
         (slave_burst_indices.first_burst_index == -1 && slave_burst_indices.second_burst_index == -1)) {
@@ -62,39 +56,38 @@ __global__ void ComputeBurstOffsetKernel(BurstOffsetKernelArgs args) {
     int old = *args.burst_offset;
     bool execution_condition =
         master_burst_indices.in_upper_part_of_first_burst == slave_burst_indices.in_upper_part_of_first_burst;
-    mathutils::Cas(&old,
-                   INVALID_BURST_OFFSET * execution_condition,
+    mathutils::Cas(&old, INVALID_BURST_OFFSET * execution_condition,
                    slave_burst_indices.first_burst_index - master_burst_indices.first_burst_index);
 
-    execution_condition = mathutils::Xor(
-        execution_condition,
-        slave_burst_indices.second_burst_index != -1 &&
-            master_burst_indices.in_upper_part_of_first_burst == slave_burst_indices.in_upper_part_of_second_burst);
-    mathutils::Cas(&old,
-                   INVALID_BURST_OFFSET * execution_condition,
+    execution_condition =
+        mathutils::Xor(execution_condition, slave_burst_indices.second_burst_index != -1 &&
+                                                master_burst_indices.in_upper_part_of_first_burst ==
+                                                    slave_burst_indices.in_upper_part_of_second_burst);
+    mathutils::Cas(&old, INVALID_BURST_OFFSET * execution_condition,
                    slave_burst_indices.second_burst_index - master_burst_indices.first_burst_index);
 
-    execution_condition = mathutils::Xor(
-        execution_condition,
-        master_burst_indices.second_burst_index != -1 &&
-            master_burst_indices.in_upper_part_of_second_burst == slave_burst_indices.in_upper_part_of_first_burst);
-    mathutils::Cas(&old,
-                   INVALID_BURST_OFFSET * execution_condition,
+    execution_condition = mathutils::Xor(execution_condition, master_burst_indices.second_burst_index != -1 &&
+                                                                  master_burst_indices.in_upper_part_of_second_burst ==
+                                                                      slave_burst_indices.in_upper_part_of_first_burst);
+    mathutils::Cas(&old, INVALID_BURST_OFFSET * execution_condition,
                    slave_burst_indices.first_burst_index - master_burst_indices.second_burst_index);
 
     execution_condition = mathutils::Xor(
         execution_condition,
         master_burst_indices.second_burst_index != -1 && slave_burst_indices.second_burst_index != -1 &&
             master_burst_indices.in_upper_part_of_second_burst == slave_burst_indices.in_upper_part_of_second_burst);
-    mathutils::Cas(&old,
-                   INVALID_BURST_OFFSET * execution_condition,
+    mathutils::Cas(&old, INVALID_BURST_OFFSET * execution_condition,
                    slave_burst_indices.second_burst_index - master_burst_indices.second_burst_index);
     atomicCAS(args.burst_offset, INVALID_BURST_OFFSET * (old != INVALID_BURST_OFFSET), old);
 }
 
 cudaError LaunchBurstOffsetKernel(BurstOffsetKernelArgs& args, int* burst_offset) {
-    dim3 block_dim(24, 24);
+    // CC7.5 does not launch with 24x24
+    // TODO use smarted launcher configuration, ie occupancy calculator
+    dim3 block_dim(8, 8);
     dim3 grid_dim(cuda::GetGridDim(block_dim.x, args.width), cuda::GetGridDim(block_dim.y, args.height));
+
+    // TODO no point doing this calculation on GPU
     ComputeBurstOffsetKernel<<<grid_dim, block_dim>>>(args);
     cudaDeviceSynchronize();
 

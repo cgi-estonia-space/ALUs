@@ -31,9 +31,9 @@ TEST_F(DatasetTest, onInvalidFilenameThrows) {
 TEST_F(DatasetTest, loadsValidTifFile) {
     auto ds = alus::Dataset<double>(TIF_PATH_1);
     ds.LoadRasterBand(1);
-    ASSERT_EQ(100, ds.GetXSize());
-    ASSERT_EQ(100, ds.GetYSize());
-    ASSERT_EQ(ds.GetXSize() * ds.GetYSize(), ds.GetHostDataBuffer().size())
+    ASSERT_EQ(100, ds.GetRasterSizeX());
+    ASSERT_EQ(100, ds.GetRasterSizeY());
+    ASSERT_EQ(ds.GetRasterSizeX() * ds.GetRasterSizeY(), ds.GetHostDataBuffer().size())
         << "Loaded band 1 buffer does not contain exact data from dataset.";
 }
 

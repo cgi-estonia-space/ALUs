@@ -8,22 +8,22 @@ list(APPEND TOPSAR_DEBURST_OP_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/../algorithm_bond/include
         ${CMAKE_CURRENT_LIST_DIR}/../../app/include
         #      SENTINEL1
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/sentinel1/include
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/sentinel1/include/io/orbits/sentinel1
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/sentinel1/include/jlinda-core
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/sentinel1/include/s1tbx-io/sentinel1
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/sentinel1/include/s1tbx-commons/io
+        ${CMAKE_CURRENT_LIST_DIR}/../../sentinel1
+        ${CMAKE_CURRENT_LIST_DIR}/../../sentinel1/io/orbits/sentinel1
+        ${CMAKE_CURRENT_LIST_DIR}/../../sentinel1/jlinda/jlinda-core
+        ${CMAKE_CURRENT_LIST_DIR}/../../sentinel1/s1tbx-io/sentinel1
+        ${CMAKE_CURRENT_LIST_DIR}/../../sentinel1/s1tbx-commons/io
         #      SNAP-ENGINE
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/ceres-core
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-core/datamodel
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-core/dataio
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-core/util
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-core/util/math
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-core/subset
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-engine-utilities
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-engine-utilities/util
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-engine-utilities/datamodel
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine/ceres-core
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine/snap-core/core/datamodel
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine/snap-core/core/dataio
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine/snap-core/core/util
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine/snap-core/core/util/math
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine/snap-core/core/subset
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine/snap-engine-utilities
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine/snap-engine-utilities/engine-utilities/util
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine/snap-engine-utilities/engine-utilities/datamodel
         #      OTHER
         ${CMAKE_CURRENT_LIST_DIR}/../../util/exotic_operations/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/cuda/include

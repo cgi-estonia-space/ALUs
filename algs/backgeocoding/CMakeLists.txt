@@ -3,7 +3,6 @@ list(APPEND BACKGEOCODING_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/backgeocoding.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/backgeocoding_controller.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/backgeocoding_worker.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/backgeocoding_bond.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/bilinear.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/deramp_demod.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/slave_pixpos.cu
@@ -17,27 +16,17 @@ list(APPEND BACKGEOCODING_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/../../util/gdal/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/common/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/exotic_operations/include
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/sentinel1/include
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-core/datamodel
+        ${CMAKE_CURRENT_LIST_DIR}/../../sentinel1
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine/snap-core/core/datamodel
         ${CMAKE_CURRENT_LIST_DIR}/../../util/cuda/include
-        ${CMAKE_CURRENT_LIST_DIR}/../algorithm_bond/include
         ${CMAKE_CURRENT_LIST_DIR}/../../app/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/common/include
         )
 
-add_library(backgeocoding-obj
-        OBJECT
-        ${BACKGEOCODING_SOURCES}
-        )
-target_include_directories(backgeocoding-obj
-        PRIVATE
-        ${BACKGEOCODING_INCLUDE_DIRS}
-        )
-
 add_library(backgeocoding-static
         STATIC
-        $<TARGET_OBJECTS:backgeocoding-obj>
+        ${BACKGEOCODING_SOURCES}
         )
 target_include_directories(backgeocoding-static
         PUBLIC
@@ -51,35 +40,10 @@ target_link_libraries(backgeocoding-static
         PUBLIC
         common-util-static
         gdal-util-static
-        exotic_operations-static
+        exotic-operations-static
         sentinel1-util-static
-        cuda_util-static
+        cuda-util-static
         snap-engine-static
         Boost::program_options
         )
 
-add_library(backgeocoding-shared
-        SHARED
-        $<TARGET_OBJECTS:backgeocoding-obj>
-        ${CMAKE_CURRENT_LIST_DIR}/src/backgeocoding_bond_shared.cc
-        )
-target_include_directories(backgeocoding-shared
-        PUBLIC
-        ${BACKGEOCODING_INCLUDE_DIRS}
-        )
-set_target_properties(backgeocoding-shared
-        PROPERTIES
-        OUTPUT_NAME backgeocoding
-        LIBRARY_OUTPUT_DIRECTORY ${ALUS_BINARY_OUTPUT_DIR}
-        )
-
-target_link_libraries(backgeocoding-shared
-        PUBLIC
-        common-util-static
-        gdal-util-static
-        exotic_operations-static
-        sentinel1-util-static
-        cuda_util-static
-        snap-engine-static
-        Boost::program_options
-        )

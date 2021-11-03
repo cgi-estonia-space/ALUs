@@ -11,11 +11,11 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
+#include "../../../snap-engine/srtm3_elevation_calc.cuh"
+#include "../../../snap-engine/srtm3_elevation_model_constants.h"
 #include "backgeocoding_constants.h"
 #include "cuda_util.h"
 #include "elevation_mask_computation.h"
-#include "srtm3_elevation_calc.cuh"
-#include "srtm3_elevation_model_constants.h"
 
 namespace alus {
 namespace backgeocoding {

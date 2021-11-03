@@ -17,8 +17,8 @@
 
 #include "orbit_state_vector_computation.h"
 #include "pointer_holders.h"
-#include "sentinel1_utils_computation.h"
-#include "subswath_info_computation.h"
+#include "s1tbx-commons/sentinel1_utils_computation.h"
+#include "s1tbx-commons/subswath_info_computation.h"
 
 namespace alus {
 namespace backgeocoding {

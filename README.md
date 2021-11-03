@@ -1,18 +1,34 @@
 # ALUS
 
-Acceleration Library Used for Sentinel.
+Collection of processing operators/routines defined by software - plural of ALU(Arithmetic Logic Unit)  
+or  
+ALU for Space/Surveillance etc.
 
-A software project that targets to utilize Nvidia GPUs for processing earth observation data (faster).
+A software project that targets to utilize Nvidia GPUs for processing earth observation data (faster).  
+Kickstart of this project was funded through [ESA's EOEP programme](http://www.esa.int/About_Us/Business_with_ESA/Business_Opportunities/Earth_Observation_Envelope_Programme)  
+Current development is funded through [ESA's GSTP programme](https://www.esa.int/Enabling_Support/Space_Engineering_Technology/Shaping_the_Future/About_the_General_Support_Technology_Programme_GSTP)
 
-Kickstart of this project was funded through ESA's EOEP programme - http://www.esa.int/About_Us/Business_with_ESA/Business_Opportunities/Earth_Observation_Envelope_Programme
-
-Developed by CGI Estonia.
+Developed by [CGI Estonia](https://www.cgi.com/ee/et).
 
 # Out of the box usage
 
-Latest build can be downloaded from - https://alus-builds.s3.eu-central-1.amazonaws.com/alus-nightly-latest.tar.gz
+Latest build can be downloaded from - https://alus-builds.s3.eu-central-1.amazonaws.com/alus-nightly-latest.tar.gz  
+Verified releases can be downloaded from - https://bitbucket.org/cgi-ee-space/alus/downloads/  
+One can download prepared image with all of the needed dependencies from [dockerhub](https://hub.docker.com/repository/docker/cgialus/alus-infra) 
 
-On dockerhub one can download prepared image with all of the needed dependencies from [dockerhub](https://hub.docker.com/repository/docker/cgialus/alus-infra) 
+## Executing
+
+Main executable with algorithm shared libraries(.so) are located at **<build_dir>/alus_package**
+
+Update **PATH** environment variable in order to execute it everywhere:  
+``export PATH=$PATH:<path/alus_package>``
+
+**OPTIONAL**(not needed on many OS flavors where RPATH is effective):  
+In order to load shared library components one should move to directory where binaries are located or  
+``LD_LIBRARY_PATH=$LD_LIBRARY_PATH:...<build_dir>/alus_package; export LD_LIBRARY_PATH``  
+or move/create symlinks to a location that is present in default ``LD_LIBRARY_PATH``.
+
+See ``--help`` and ``--alg_help`` for specific arguments/parameters how to invoke processing.
 
 
 ## Docker example
@@ -45,17 +61,7 @@ cd build
 make -j8
 ```
 
-# Executing
-
-Main executable with algorithm shared libraries(.so) is located at **<build_dir>/alus_package**.
-
-In order to load shared library components one should move to directory where binaries are located or
-
-``LD_LIBRARY_PATH=$LD_LIBRARY_PATH:...<build_dir>/alus_package; export LD_LIBRARY_PATH``
-
-or move/create symlinks to a location that is present in default ``LD_LIBRARY_PATH``.
-
-See ``--help`` and ``--alg_help`` for specific arguments/parameters how to invoke processing.
+# [Performance](PERFORMANCE.md)
 
 # [Performance](PERFORMANCE.md)
 
@@ -67,6 +73,6 @@ See ``--help`` and ``--alg_help`` for specific arguments/parameters how to invok
 
 [GNU GPLv3](LICENSE.txt)
 
-# Releases
+# [Releases](RELEASE.md)
 
-(https://alus-builds.s3.eu-central-1.amazonaws.com/release)[https://alus-builds.s3.eu-central-1.amazonaws.com/release]
+[Binary downloads](https://bitbucket.org/cgi-ee-space/alus/downloads/?tab=downloads)  

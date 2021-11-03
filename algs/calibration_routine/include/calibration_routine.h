@@ -40,17 +40,22 @@ public:
 private:
     size_t tile_width_{};
     size_t tile_height_{};
-    std::string input_file_{};
     std::vector<std::string> input_dataset_filenames_;
     std::string output_path_{};
     std::vector<std::string> sub_swaths_{};
     std::set<std::string, std::less<>> polarisations_{};
+    std::string calibration_type_{};
     sentinel1calibrate::SelectedCalibrationBands calibration_bands_{};
     bool write_intermediate_files_{};
+    static constexpr int INVALID_BURST_INDEX{-1};
+    int first_burst_index_{INVALID_BURST_INDEX};
+    int last_burst_index_{INVALID_BURST_INDEX};
+    std::string wkt_aoi_{};
 
     snapengine::Srtm3ElevationModel* srtm3_manager_{};
     const snapengine::EarthGravitationalModel96* egm96_manager_{};
 
+    void PrintProcessingParameters() const override;
     void ParseCalibrationType(std::string_view calibration_string);
     void ValidateSubSwath() const;
     void ValidatePolarisation() const;

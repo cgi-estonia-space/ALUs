@@ -10,8 +10,6 @@ list(APPEND GDAL_UTIL_SOURCES
 
 list(APPEND GDAL_UTIL_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/include
-        ${CMAKE_CURRENT_LIST_DIR}/../common/include
-        ${CMAKE_CURRENT_LIST_DIR}/../cuda/include
         )
 
 add_library(gdal-util-static
@@ -29,7 +27,7 @@ set_target_properties(gdal-util-static
 target_link_libraries(gdal-util-static
         PUBLIC
         gdal
-        cuda_util-static
+        cuda-util-static
         common-util-static
         Boost::filesystem
         )

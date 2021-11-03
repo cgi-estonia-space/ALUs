@@ -13,8 +13,8 @@
  */
 #pragma once
 
-#include "calibration_vector_computation.h"
 #include "kernel_array.h"
+#include "s1tbx-commons/calibration_vector_computation.h"
 
 namespace alus {
 namespace sentinel1calibrate {

@@ -21,15 +21,16 @@
 
 #include "alus_log.h"
 #include "pointer_holders.h"
-#include "snap-core/datamodel/metadata_element.h"
-#include "snap-core/util/product_utils.h"
-#include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
-#include "snap-engine-utilities/gpf/stack_utils.h"
+#include "snap-core/core/datamodel/metadata_element.h"
+#include "snap-core/core/util/product_utils.h"
+#include "snap-engine-utilities/engine-utilities/datamodel/metadata/abstract_metadata.h"
+#include "snap-engine-utilities/engine-utilities/gpf/stack_utils.h"
+#include "tile_queue.h"
 
 namespace alus::backgeocoding {
 
-BackgeocodingController::BackgeocodingController(std::shared_ptr<AlusFileReader<double>> master_input_dataset,
-                                                 std::shared_ptr<AlusFileReader<double>> slave_input_dataset,
+BackgeocodingController::BackgeocodingController(std::shared_ptr<AlusFileReader<int16_t>> master_input_dataset,
+                                                 std::shared_ptr<AlusFileReader<int16_t>> slave_input_dataset,
                                                  std::shared_ptr<AlusFileWriter<float>> output_dataset,
                                                  std::string_view master_metadata_file,
                                                  std::string_view slave_metadata_file)
@@ -38,11 +39,10 @@ BackgeocodingController::BackgeocodingController(std::shared_ptr<AlusFileReader<
       slave_input_dataset_(slave_input_dataset),
       output_dataset_(output_dataset),
       master_metadata_file_(master_metadata_file),
-      slave_metadata_file_(slave_metadata_file) {
-}
+      slave_metadata_file_(slave_metadata_file) {}
 
-BackgeocodingController::BackgeocodingController(std::shared_ptr<AlusFileReader<double>> master_input_dataset,
-                                                 std::shared_ptr<AlusFileReader<double>> slave_input_dataset,
+BackgeocodingController::BackgeocodingController(std::shared_ptr<AlusFileReader<int16_t>> master_input_dataset,
+                                                 std::shared_ptr<AlusFileReader<int16_t>> slave_input_dataset,
                                                  std::shared_ptr<AlusFileWriter<float>> output_dataset,
                                                  std::shared_ptr<snapengine::Product> master_product,
                                                  std::shared_ptr<snapengine::Product> slave_product)
@@ -75,22 +75,10 @@ void BackgeocodingController::RegisterException(std::exception_ptr e) {
     exceptions_thrown_++;
 }
 
-void BackgeocodingController::RegisterThreadEnd() {
-    std::unique_lock lock(register_mutex_);
-
-    finished_count_++;
-
-    if (finished_count_ == worker_count_) {
-        end_block_.notify_all();
-    } else {
-        thread_sync_.notify_one();
-    }
-}
-
-void BackgeocodingController::ReadMaster(Rectangle master_area, double* i_tile, double* q_tile) {
+void BackgeocodingController::ReadMaster(Rectangle master_area, int16_t* i_tile, int16_t* q_tile) const {
     // TODO: Could we read slave and master at the same time if we branch into 2 other threads during this thread.
     // TODO: find out if the band ordering is random or not. Then replace those numbers.
-    std::map<int, double*> bands;
+    std::map<int, int16_t*> bands;
     bands.insert({1, i_tile});
     bands.insert({2, q_tile});
     master_input_dataset_->ReadRectangle(master_area, bands);
@@ -100,8 +88,6 @@ PositionComputeResults BackgeocodingController::PositionCompute(int m_burst_inde
                                                                 Rectangle target_area, double* device_x_points,
                                                                 double* device_y_points) {
     PositionComputeResults result;
-    std::unique_lock lock(position_compute_mutex_);
-
     result.slave_area =
         backgeocoding_->PositionCompute(m_burst_index, s_burst_index, target_area, device_x_points, device_y_points);
     result.demod_size = result.slave_area.width * result.slave_area.height;
@@ -109,28 +95,22 @@ PositionComputeResults BackgeocodingController::PositionCompute(int m_burst_inde
     return result;
 }
 
-void BackgeocodingController::ReadSlave(Rectangle slave_area, double* i_tile, double* q_tile) {
-
+void BackgeocodingController::ReadSlave(Rectangle slave_area, int16_t* i_tile, int16_t* q_tile) const {
     // TODO: find out if the band ordering is random or not. Then replace those numbers.
-    std::map<int, double*> bands;
+    std::map<int, int16_t*> bands;
     bands.insert({1, i_tile});
     bands.insert({2, q_tile});
     slave_input_dataset_->ReadRectangle(slave_area, bands);
 }
 
-void BackgeocodingController::CoreCompute(CoreComputeParams params) {
-    std::unique_lock lock(core_compute_mutex_);
-
+void BackgeocodingController::CoreCompute(const CoreComputeParams& params) const {
     backgeocoding_->CoreCompute(params);
 }
 
 void BackgeocodingController::WriteOutputs(Rectangle output_area, float* i_master_results, float* q_master_results,
-                                           float* i_slave_results, float* q_slave_results) {
-    std::unique_lock<std::mutex> lock(output_write_mutex_);
-
+                                           float* i_slave_results, float* q_slave_results) const {
     output_dataset_->WriteRectangle(i_master_results, output_area, 1);
     output_dataset_->WriteRectangle(q_master_results, output_area, 2);
-
     output_dataset_->WriteRectangle(i_slave_results, output_area, 3);
     output_dataset_->WriteRectangle(q_slave_results, output_area, 4);
 }
@@ -138,53 +118,48 @@ void BackgeocodingController::WriteOutputs(Rectangle output_area, float* i_maste
 void BackgeocodingController::DoWork() {
     WorkerParams params;
     exceptions_thrown_ = 0;
-    worker_count_ = 1;
-    finished_count_ = 0;
-    active_worker_count_ = 5;
-    int slave_burst_offset = backgeocoding_->GetBurstOffset();
-    int first_line_idx;
-    int recommended_width;
-    int actual_width;
+    const int slave_burst_offset = backgeocoding_->GetBurstOffset();
 
-    recommended_width = recommended_tile_area_ / lines_per_burst_;
-    worker_count_ = num_of_bursts_ * (lines_per_burst_ * samples_per_burst_ / recommended_tile_area_ + 1);
-    workers_.reserve(worker_count_);
-    worker_count_ = 0;
-    worker_counter_ = 0;
+    std::vector<BackgeocodingController::BackgeocodingWorker> workers;
+    const int recommended_width = recommended_tile_area_ / lines_per_burst_;
+    int worker_count = 0;
     params.index = 0;
 
     for (int burst_index = 0; burst_index < num_of_bursts_; burst_index++) {
-        first_line_idx = burst_index * lines_per_burst_;
+        const int first_line_idx = burst_index * lines_per_burst_;
 
         for (int sample_index = 0; sample_index < samples_per_burst_; sample_index += recommended_width) {
-            actual_width = (sample_index + recommended_width < samples_per_burst_) ? recommended_width
-                                                                                   : samples_per_burst_ - sample_index;
+            const int actual_width = (sample_index + recommended_width < samples_per_burst_)
+                                         ? recommended_width
+                                         : samples_per_burst_ - sample_index;
             params.index++;
             params.master_input_area = {sample_index, first_line_idx, actual_width, lines_per_burst_};
             params.slave_burst_index = burst_index + slave_burst_offset;
             params.master_burst_index = burst_index;
-            worker_count_++;
-            workers_.emplace_back(params, this);
+            worker_count++;
+            workers.emplace_back(params, this);
         }
     }
 
-    while (worker_counter_ < worker_count_) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    ThreadSafeTileQueue<BackgeocodingWorker> queue(std::move(workers));
+    std::vector<std::thread> threads_vec;
+
+    // Backgeocoding does a lot of things on cpu, 2 x input datasets, 4 x output datasets, partial CPU triangulation
+    // this number should be double checked if further optimizations are made
+    const int n_worker_threads = 9;
+    for (int i = 0; i < n_worker_threads; i++) {
+        threads_vec.emplace_back([&queue]() {
+            BackgeocodingWorker worker;
+            while (queue.PopFront(worker)) {
+                worker.Work();
+            }
+        });
     }
 
-    for (size_t i = 0; i < active_worker_count_ && i < worker_count_; i++) {
-        thread_sync_.notify_one();
+    for (auto& thread : threads_vec) {
+        thread.join();
     }
-
-    std::mutex final_mutex;
-    std::unique_lock final_lock(final_mutex);
-    end_block_.wait(final_lock);
     LOGV << "Final block reached.";
-
-    // make sure the last thread actually got out of its lock.
-    register_mutex_.lock();
-    LOGV << "Final thread release confirmed.";
-    register_mutex_.unlock();
     if (exceptions_thrown_) {
         LOGW << "Backgeocoding had " << exceptions_thrown_ << " exceptions thrown. Passing on the first one.";
         std::rethrow_exception(exceptions_.at(0));

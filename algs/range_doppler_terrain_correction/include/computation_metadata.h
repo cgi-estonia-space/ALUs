@@ -11,7 +11,7 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
- #pragma once
+#pragma once
 
 #include "kernel_array.h"
 #include "orbit_state_vector_computation.h"

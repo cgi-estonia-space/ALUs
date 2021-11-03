@@ -15,28 +15,27 @@
 
 #include "orbit_state_vector_computation.h"
 #include "pointer_holders.h"
-#include "sentinel1_utils_computation.h"
+#include "s1tbx-commons/sentinel1_utils_computation.h"
+#include "s1tbx-commons/subswath_info.h"
 #include "shapes.h"
-#include "subswath_info.h"
 
 namespace alus {
 namespace backgeocoding {
 struct AzimuthAndRangeBounds {
-    double azimuth_min;
-    double azimuth_max;
-    double range_min;
-    double range_max;
+    int azimuth_min;
+    int azimuth_max;
+    int range_min;
+    int range_max;
 };
 
 cudaError_t LaunchComputeExtendedAmount(Rectangle bounds,
                                         AzimuthAndRangeBounds &extended_amount,
-                                        const snapengine::OrbitStateVectorComputation* vectors,
+                                        snapengine::OrbitStateVectorComputation* d_orbit_state_vectors,
                                         size_t nr_of_vectors,
                                         double vectors_dt,
                                         const s1tbx::SubSwathInfo& subswath_info,
                                         s1tbx::DeviceSentinel1Utils* d_sentinel_1_utils,
-                                        s1tbx::DeviceSubswathInfo* d_subswath_info,
-                                        const PointerArray &tiles,
-                                        float *egm);
+                                        s1tbx::DeviceSubswathInfo* d_subswath_info, const PointerArray& tiles,
+                                        float* egm);
 }  // namespace backgeocoding
 }  // namespace alus

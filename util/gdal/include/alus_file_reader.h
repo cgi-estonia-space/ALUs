@@ -34,6 +34,7 @@ class AlusFileReader {
     virtual long unsigned int GetBufferByteSize() = 0;
     virtual size_t GetBufferElemCount() = 0;
     virtual void TryToCacheImage() = 0;
+    virtual void SetReadingArea(Rectangle new_area) = 0;
 };
 
 }

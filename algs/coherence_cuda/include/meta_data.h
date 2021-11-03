@@ -15,30 +15,36 @@
 
 #include <memory>
 
-#include "i_data_tile_reader.h"
-#include "metadata_element.h"
-#include "orbit.h"
+#include "gdal_tile_reader.h"
 #include "point.h"
+#include "s1tbx-commons/orbit.h"
+#include "snap-core/core/datamodel/metadata_element.h"
 
 namespace alus {
 namespace coherence_cuda {
+
 class MetaData {
 private:
-    // todo:maybe not needed as a member
-    IDataTileReader* incidence_angle_reader_;
-    s1tbx::Point approx_xyz_centre_original_, approx_radar_centre_original_;
-    int band_x_size_, band_x_min_, band_x_max_, band_y_size_, band_y_min_, band_y_max_;
-    double t_range_1_, rsr_2_x_, t_azi_1_, line_time_interval_, radar_wavelength_, range_azimuth_spacing_ratio_;
+    s1tbx::Point approx_xyz_centre_original_;
+    s1tbx::Point approx_radar_centre_original_;
+    int band_x_size_;
+    int band_x_min_;
+    int band_x_max_;
+    int band_y_size_;
+    int band_y_min_;
+    int band_y_max_;
+    double t_range_1_;
+    double rsr_2_x_;
+    double t_azi_1_;
+    double line_time_interval_;
+    double radar_wavelength_;
+    double ground_range_azimuth_spacing_ratio_;
     bool near_range_on_left_;
     std::shared_ptr<s1tbx::Orbit> orbit_;
 
-    static bool IsNearRangeOnLeft(IDataTileReader* incidence_angle_reader);
-
 public:
-    MetaData(IDataTileReader* incidence_angle_reader, std::shared_ptr<snapengine::MetadataElement> root_element,
-             int orbit_degree);
-    MetaData(bool is_near_range_on_left, std::shared_ptr<snapengine::MetadataElement> root_element,
-             int orbit_degree);
+    MetaData(bool is_near_range_on_left, std::shared_ptr<snapengine::MetadataElement> root_element, int orbit_degree,
+             double avg_incidence_angle);
     // Convert pixel number to range time (1 is first pixel)
     [[nodiscard]] double PixelToTimeRange(double pixel) const;
     double Line2Ta(int line);
@@ -48,7 +54,7 @@ public:
     [[nodiscard]] int GetBandXSize() const { return band_x_size_; }
     [[nodiscard]] int GetBandYSize() const { return band_y_size_; }
     [[nodiscard]] double GetRadarWaveLength() const { return radar_wavelength_; }
-    [[nodiscard]] double GetRangeAzimuthSpacingRatio() const { return range_azimuth_spacing_ratio_; }
+    [[nodiscard]] double GetRangeAzimuthSpacingRatio() const { return ground_range_azimuth_spacing_ratio_; }
 };
 }  // namespace coherence_cuda
 }  // namespace alus

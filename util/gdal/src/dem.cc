@@ -25,7 +25,7 @@ std::vector<double> Dem::GetLocalDemFor(Dataset<double>& image, unsigned int x_0
                                         unsigned int y_0, unsigned int width,
                                         unsigned int height){
     auto const& data_buffer = m_ds_.GetHostDataBuffer();
-    auto const band_x_size = m_ds_.GetXSize();
+    auto const band_x_size = m_ds_.GetRasterSizeX();
     std::vector<double> altitudes;
     altitudes.reserve(data_buffer.size());
     for (unsigned int iX = 0; iX < width; iX++) {

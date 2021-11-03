@@ -16,12 +16,12 @@
 
 #include "gmock/gmock.h"
 
-#include "cuda_friendly_object.h"
 #include "comparators.h"
+#include "cuda_friendly_object.h"
 #include "cuda_util.h"
-#include "earth_gravitational_model96.h"
-#include "earth_gravitational_model96_computation.h"
 #include "egm96_test.cuh"
+#include "snap-dem/dem/dataio/earth_gravitational_model96.h"
+#include "snap-dem/dem/dataio/earth_gravitational_model96_computation.h"
 
 using namespace alus::tests;
 

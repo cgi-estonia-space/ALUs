@@ -15,13 +15,13 @@
 
 #include <algorithm>
 
-#include "pointer_holders.h"
 #include "resampling.h"
+#include "pointer_holders.h"
 #include "shapes.h"
 
-#include "bilinear_interpolation.cuh"
-#include "cuda_util.cuh"
 #include "resampling.cuh"
+#include "cuda_util.cuh"
+#include "snap-core/core/dataop/resamp/bilinear_interpolation.cuh"
 
 namespace alus {
 namespace terraincorrection {

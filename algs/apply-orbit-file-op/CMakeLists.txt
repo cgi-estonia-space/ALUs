@@ -5,29 +5,24 @@ list(APPEND APPLY_ORBIT_FILE_OP_SOURCES
 
 list(APPEND APPLY_ORBIT_FILE_OP_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/include
-        ${CMAKE_CURRENT_LIST_DIR}/../algorithm_bond/include
-        ${CMAKE_CURRENT_LIST_DIR}/../../app/include
         #      SENTINEL1
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/sentinel1/include
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/sentinel1/include/io/orbits/sentinel1
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/sentinel1/include/jlinda-core
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/sentinel1/include/s1tbx-io/sentinel1
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/sentinel1/include/s1tbx-commons/io
+        ${CMAKE_CURRENT_LIST_DIR}/../../sentinel1/
+        ${CMAKE_CURRENT_LIST_DIR}/../../sentinel1/io/orbits/sentinel1
+        ${CMAKE_CURRENT_LIST_DIR}/../../sentinel1/jlinda-core
+        ${CMAKE_CURRENT_LIST_DIR}/../../sentinel1/s1tbx-io/sentinel1
+        ${CMAKE_CURRENT_LIST_DIR}/../../sentinel1/s1tbx-commons/io
         #      SNAP-ENGINE
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/ceres-core
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-core/datamodel
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-core/dataio
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-core/util
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-core/util/math
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-core/subset
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-engine-utilities
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-engine-utilities/util
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-engine-utilities/datamodel
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine/ceres-core
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine/snap-core/datamodel
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine/snap-core/dataio
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine/snap-core/util
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine/snap-core/util/math
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine/snap-core/subset
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine/snap-engine-utilities
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine/snap-engine-utilities/util
+        ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine/snap-engine-utilities/datamodel
         #      OTHER
         ${CMAKE_CURRENT_LIST_DIR}/../../external/pugixml/include
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/gdal/include
-        ${CMAKE_CURRENT_LIST_DIR}/../../common/include
         )
 
 add_library(apply-orbit-file-op-static
@@ -47,7 +42,7 @@ target_link_libraries(apply-orbit-file-op-static
         gdal
         snap-engine-static
         sentinel1-util-static
-        exotic_operations-static
+        exotic-operations-static
         pugixml-static
         common-util-static
         )

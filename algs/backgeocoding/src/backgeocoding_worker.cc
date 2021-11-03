@@ -21,35 +21,30 @@
 
 namespace alus::backgeocoding {
 
-BackgeocodingController::BackgeocodingWorker::~BackgeocodingWorker() {
-    LOGV << "Death of worker: " << params_.index;
-}
-
 void BackgeocodingController::BackgeocodingWorker::Work() {
     CoreComputeParams core_params;
     std::vector<float> i_results;
     std::vector<float> q_results;
 
-    std::unique_lock<std::mutex> lk(controller_->queue_mutex_);
-    controller_->worker_counter_++;  // mark down that this thread is now fully functional and started
-    controller_->GetThreadSync()->wait(lk);
-    lk.unlock();
-
     if (!controller_->exceptions_thrown_) {
-        LOGV << "I am now working. Worker: " << params_.index;
+        LOGV << "I am now working. Worker: " << params_.index << " rect = [" << params_.master_input_area.x << " "
+             << params_.master_input_area.y << " " << params_.master_input_area.width << " "
+             << params_.master_input_area.height << "]";
     } else {
         LOGW << "Worker " << params_.index
-                  << " has detected that exceptions were thrown elsewhere and is shutting down.";
-        controller_->RegisterThreadEnd();
+             << " has detected that exceptions were thrown elsewhere and is shutting down.";
+        return;
     }
 
     try {
         const size_t tile_size = params_.master_input_area.width * params_.master_input_area.height;
-        std::vector<double> master_tile_i(tile_size);
-        std::vector<double> master_tile_q(tile_size);
-        std::vector<float> out_master_tile_i(tile_size);
-        std::vector<float> out_master_tile_q(tile_size);
+        std::vector<int16_t> master_tile_i(tile_size);
+        std::vector<int16_t> master_tile_q(tile_size);
         controller_->ReadMaster(params_.master_input_area, master_tile_i.data(), master_tile_q.data());
+
+        // TODO master conversion int16->float could be done in gdal, or possibly move to cint16 type
+        std::vector<float> out_master_tile_i(master_tile_i.begin(), master_tile_i.end());
+        std::vector<float> out_master_tile_q(master_tile_q.begin(), master_tile_q.end());
 
         cuda::CudaPtr<double> device_x_points(tile_size);
         cuda::CudaPtr<double> device_y_points(tile_size);
@@ -60,26 +55,22 @@ void BackgeocodingController::BackgeocodingWorker::Work() {
             params_.master_burst_index, params_.slave_burst_index, params_.master_input_area,
             core_params.device_x_points, core_params.device_y_points);
 
-        for (size_t i = 0; i < tile_size; i++) {
-            out_master_tile_i.at(i) = static_cast<float>(master_tile_i.at(i));
-            out_master_tile_q.at(i) = static_cast<float>(master_tile_q.at(i));
-        }
         // Position computation succeeded
         if (pos_results.slave_area.width != 0 && pos_results.slave_area.height != 0) {
-            std::vector<double> slave_tile_i(pos_results.demod_size);
-            std::vector<double> slave_tile_q(pos_results.demod_size);
+            std::vector<int16_t> slave_tile_i(pos_results.demod_size);
+            std::vector<int16_t> slave_tile_q(pos_results.demod_size);
 
             controller_->ReadSlave(pos_results.slave_area, slave_tile_i.data(), slave_tile_q.data());
 
-            cuda::CudaPtr<double> device_slave_i(pos_results.demod_size);
-            cuda::CudaPtr<double> device_slave_q(pos_results.demod_size);
+            cuda::CudaPtr<int16_t> device_slave_i(pos_results.demod_size);
+            cuda::CudaPtr<int16_t> device_slave_q(pos_results.demod_size);
             core_params.device_slave_i = device_slave_i.Get();
             core_params.device_slave_q = device_slave_q.Get();
 
             CHECK_CUDA_ERR(cudaMemcpy(core_params.device_slave_i, slave_tile_i.data(),
-                                      pos_results.demod_size * sizeof(double), cudaMemcpyHostToDevice));
+                                      pos_results.demod_size * sizeof(int16_t), cudaMemcpyHostToDevice));
             CHECK_CUDA_ERR(cudaMemcpy(core_params.device_slave_q, slave_tile_q.data(),
-                                      pos_results.demod_size * sizeof(double), cudaMemcpyHostToDevice));
+                                      pos_results.demod_size * sizeof(int16_t), cudaMemcpyHostToDevice));
 
             core_params.slave_rectangle = pos_results.slave_area;
             core_params.s_burst_index = params_.slave_burst_index;
@@ -97,10 +88,8 @@ void BackgeocodingController::BackgeocodingWorker::Work() {
             core_params.device_i_results = device_i_results.Get();
             core_params.device_q_results = device_q_results.Get();
 
-            CHECK_CUDA_ERR(cudaMemset(core_params.device_i_results, 0, tile_size * sizeof(float)));
-            CHECK_CUDA_ERR(cudaMemset(core_params.device_q_results, 0, tile_size * sizeof(float)));
-
             controller_->CoreCompute(core_params);
+            LOGV << "all computations ended: " << params_.index;
             device_slave_i.free();
             device_slave_q.free();
             device_demod_i.free();
@@ -118,8 +107,6 @@ void BackgeocodingController::BackgeocodingWorker::Work() {
             device_i_results.free();
             device_q_results.free();
 
-            controller_->WriteOutputs(params_.master_input_area, out_master_tile_i.data(), out_master_tile_q.data(),
-                                      i_results.data(), q_results.data());
         } else {  // position computation failed, write out no data values.
             i_results.resize(tile_size, controller_->output_no_data_value_);
             q_results.resize(tile_size, controller_->output_no_data_value_);
@@ -130,15 +117,10 @@ void BackgeocodingController::BackgeocodingWorker::Work() {
         controller_->WriteOutputs(params_.master_input_area, out_master_tile_i.data(), out_master_tile_q.data(),
                                   i_results.data(), q_results.data());
     } catch (const std::exception& e) {
-        LOGE << "Thread nr " << params_.index << " covering master recangle " << params_.master_input_area.x << " "
-                  << params_.master_input_area.y << " " << params_.master_input_area.width << " "
-                  << params_.master_input_area.height << " has caught exception "
-                  << e.what();
+        LOGE << "Thread nr " << params_.index << " has caught exception " << e.what();
         controller_->RegisterException(std::current_exception());
-        controller_->RegisterThreadEnd();
     }
-
-    controller_->RegisterThreadEnd();
+    LOGV << "Death of worker: " << params_.index;
 }
 
 }  // namespace alus::backgeocoding

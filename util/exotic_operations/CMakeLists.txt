@@ -8,26 +8,24 @@ list(APPEND EXOTIC_OPERATIONS_SOURCES
 
 list(APPEND EXOTIC_OPERATIONS_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/include
-        ${CMAKE_CURRENT_LIST_DIR}/../cuda/include
-        ${CMAKE_CURRENT_LIST_DIR}/../common/include
         ${CMAKE_CURRENT_LIST_DIR}/../../external/delaunay/include
         )
 
-add_library(exotic_operations-static
+add_library(exotic-operations-static
         STATIC
         ${EXOTIC_OPERATIONS_SOURCES}
         )
-target_include_directories(exotic_operations-static
+target_include_directories(exotic-operations-static
         PUBLIC
         ${EXOTIC_OPERATIONS_INCLUDE_DIRS}
         )
-set_target_properties(exotic_operations-static
+set_target_properties(exotic-operations-static
         PROPERTIES
-        OUTPUT_NAME exotic_operations
+        OUTPUT_NAME exotic-operations
         )
-target_link_libraries(exotic_operations-static
+target_link_libraries(exotic-operations-static
         PUBLIC
         gdal
-        cuda_util-static
+        cuda-util-static
         common-util-static
         )

@@ -15,15 +15,15 @@
 
 #include <cstdio>
 
+#include "../../../snap-engine/srtm3_elevation_calc.cuh"
 #include "backgeocoding_constants.h"
 #include "backgeocoding_utils.cuh"
-#include "earth_gravitational_model96.cuh"
-#include "geo_utils.cuh"
 #include "position_data.h"
-#include "srtm3_elevation_calc.cuh"
+#include "snap-dem/dem/dataio/earth_gravitational_model96.cuh"
+#include "snap-engine-utilities/engine-utilities/eo/geo_utils.cuh"
 
+#include "../../../snap-engine/srtm3_elevation_model_constants.h"
 #include "cuda_util.h"
-#include "srtm3_elevation_model_constants.h"
 
 /**
  * The contents of this file refer to BackGeocodingOp.computeSlavePixPos in SNAP's java code.
@@ -114,8 +114,10 @@ __global__ void FillXAndY(double *device_x_points, double *device_y_points, size
 }
 
 cudaError_t LaunchSlavePixPos(SlavePixPosData calc_data) {
-    dim3 block_size(24, 24);
-    dim3 grid_size(cuda::GetGridDim(20, calc_data.num_lines), cuda::GetGridDim(20, calc_data.num_pixels));
+    // CC7.5 does not launch with 24x24
+    //TODO use smarted launcher configuration, ie occupancy calculator
+    dim3 block_size(16, 16);
+    dim3 grid_size(cuda::GetGridDim(block_size.x, calc_data.num_lines), cuda::GetGridDim(block_size.y, calc_data.num_pixels));
 
     SlavePixPos<<<grid_size, block_size>>>(calc_data);
     return cudaGetLastError();

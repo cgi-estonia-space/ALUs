@@ -13,30 +13,33 @@
  */
 #pragma once
 
+#include <deque>
+#include <mutex>
 #include <vector>
 
 #include <gdal_priv.h>
 
+#include "alus_file_writer.h"
 #include "dataset.h"
 #include "raster_properties.h"
 #include "shapes.h"
-#include "alus_file_writer.h"
 
 namespace alus {
 
-struct TargetDatasetParams{
-    GDALDriver *driver;
+struct TargetDatasetParams {
+    GDALDriver* driver;
     std::string_view filename;
     int band_count;
+    bool dataset_per_band;
     RasterDimension dimension;
-    const double *transform;
-    const char *projectionRef;
+    const double* transform;
+    const char* projectionRef;
 };
 
-template<typename OutputType>
-class TargetDataset: public AlusFileWriter<OutputType> {
-   public:
-    TargetDataset(TargetDatasetParams params); //TODO: any better way to pass confs?
+template <typename OutputType>
+class TargetDataset : public AlusFileWriter<OutputType> {
+public:
+    TargetDataset(TargetDatasetParams params);  // TODO: any better way to pass confs?
     TargetDataset();
 
     /**
@@ -47,20 +50,20 @@ class TargetDataset: public AlusFileWriter<OutputType> {
      * @param howMuch When default value (x/width:0, y/height:0) is used a
      *                this->dimensions are applied.
      */
-    void WriteRectangle(OutputType *from, Rectangle area, int band_nr) override ;
+    void WriteRectangle(OutputType* from, Rectangle area, int band_nr) override;
 
-    [[nodiscard]] size_t getSize() const { return this->dimensions.columnsX *
-                                                  this->dimensions.rowsY; }
-    [[nodiscard]] RasterDimension getDimensions() const { return
-                                                          this->dimensions; }
+    [[nodiscard]] size_t getSize() const { return this->dimensions.columnsX * this->dimensions.rowsY; }
+    [[nodiscard]] RasterDimension getDimensions() const { return this->dimensions; }
 
-    GDALDataset* GetDataset() { return gdalDs; }
-    void ReleaseDataset() { gdalDs = nullptr; }
+    [[nodiscard]] std::vector<GDALDataset*> GetDataset() { return datasets_; }
+    void ReleaseDataset() { datasets_.clear(); }
 
     ~TargetDataset() override;
 
-   private:
-    GDALDataset* gdalDs;
+private:
+    std::vector<GDALDataset*> datasets_;
+    std::deque<std::mutex> mutexes_;
+    bool dataset_per_band_;
     GDALDataType gdal_data_type_;
     RasterDimension const dimensions{};
 };

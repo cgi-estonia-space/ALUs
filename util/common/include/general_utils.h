@@ -16,6 +16,7 @@
 #include <chrono>
 #include <functional>
 #include <sstream>
+#include <string>
 #include <string_view>
 
 #include "alus_log.h"
@@ -58,5 +59,25 @@ inline bool DoesStringContain(std::string_view string, std::string_view key) {
 template <typename T>
 inline bool DoesVectorContain(const std::vector<T>& vector, T key) {
     return std::find(vector.begin(), vector.end(), key) != vector.end();
+}
+
+/**
+ * Joins vector of string into one string using the provided delimiter. This function is similar to Java's
+ * String.join().
+ *
+ * @param delimiter delimiter which is used to join strings.
+ * @param string_sequence vector of strings which will be joined.
+ * @return strings from the vector joined with the given delimiter into one string.
+ */
+inline std::string JoinStrings(std::string_view delimiter, const std::vector<std::string>& string_sequence) {
+    std::string result;
+    for (size_t i = 0; i < string_sequence.size(); ++i) {
+        result += string_sequence.at(i);
+        if (i != string_sequence.size() - 1) {
+            result += delimiter;
+        }
+    }
+
+    return result;
 }
 }  // namespace alus::utils::general

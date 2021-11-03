@@ -29,9 +29,9 @@
 #include "gdal_tile_reader.h"
 #include "gdal_tile_writer.h"
 #include "s1tbx-commons/s_a_r_geocoding.h"
-#include "snap-core/datamodel/band.h"
-#include "snap-core/datamodel/product_data.h"
-#include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
+#include "snap-core/core/datamodel/band.h"
+#include "snap-core/core/datamodel/product_data.h"
+#include "snap-engine-utilities/engine-utilities/datamodel/metadata/abstract_metadata.h"
 #include "terrain_correction.h"
 #include "terrain_correction_metadata.h"
 #include "topsar_deburst_op.h"
@@ -54,33 +54,47 @@ int CoherenceEstimationRoutineExecute::ExecuteSafe() {
             result_stem = boost::filesystem::path(output_name_).stem().string();
         }
 
-        std::string cor_output_file = output_folder + result_stem + "_Orb_Stack.tif";
+        std::string cor_output_file = output_folder + result_stem + "_Orb_Stack";
         std::shared_ptr<snapengine::Product> main_product{};
         std::shared_ptr<snapengine::Product> secondary_product{};
-        GDALDataset* coreg_dataset = nullptr;
+        std::vector<GDALDataset*> coreg_output_datasets;
         {
             const auto coreg_start = std::chrono::steady_clock::now();
+
             coregistration::Coregistration coreg{orbit_file_dir_};
-            if (!main_scene_orbit_file_.empty() || !secondary_scene_orbit_file_.empty()) {
-                coreg.Initialize(main_scene_file_path_, secondary_scene_file_path_, cor_output_file, subswath_, polarization_,
-                                 main_scene_orbit_file_, secondary_scene_orbit_file_);
-            } else {
-                coreg.Initialize(main_scene_file_path_, secondary_scene_file_path_, cor_output_file, subswath_, polarization_);
-            }
+            coregistration::Coregistration::Parameters coreg_params{};
+            coreg_params.main_scene_file = main_scene_file_path_;
+            coreg_params.main_orbit_file = main_scene_orbit_file_;
+            coreg_params.main_scene_first_burst_index = main_scene_first_burst_index_;
+            coreg_params.main_scene_last_burst_index = main_scene_last_burst_index_;
+            coreg_params.secondary_scene_file = secondary_scene_file_path_;
+            coreg_params.secondary_orbit_file = secondary_scene_orbit_file_;
+            coreg_params.secondary_scene_first_burst_index = secondary_scene_first_burst_index_;
+            coreg_params.secondary_scene_last_burst_index = secondary_scene_last_burst_index_;
+            coreg_params.polarisation = polarization_;
+            coreg_params.subswath = subswath_;
+            coreg_params.aoi = wkt_aoi_;
+            coreg_params.output_file = cor_output_file;
+            coreg.Initialize(coreg_params);
+
             coreg.DoWork(egm96_manager_->GetDeviceValues(),
                          {srtm3_manager_->GetSrtmBuffersInfo(), srtm3_manager_->GetDeviceSrtm3TilesCount()});
             main_product = coreg.GetMasterProduct();
             secondary_product = coreg.GetSlaveProduct();
-            coreg_dataset = coreg.GetOutputDataset();
-            coreg.ReleaseOutputDataset();
+            auto coreg_target_dataset = coreg.GetTargetDataset();
+            coreg_output_datasets = coreg_target_dataset->GetDataset();
+            coreg_target_dataset->ReleaseDataset();
             LOGI << "S-1 TOPS Coregistration done - "
                  << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() -
                                                                           coreg_start)
                         .count()
                  << "ms";
             if (write_intermediate_files_) {
-                LOGI << "Coregstration output @ " << cor_output_file;
-                GeoTiffWriteFile(coreg_dataset, cor_output_file);
+                LOGI << "Coregstration output base @ " << cor_output_file;
+                GeoTiffWriteFile(coreg_output_datasets.at(0), cor_output_file + "_mst_I");
+                GeoTiffWriteFile(coreg_output_datasets.at(1), cor_output_file + "_mst_Q");
+                GeoTiffWriteFile(coreg_output_datasets.at(2), cor_output_file + "_slave_I");
+                GeoTiffWriteFile(coreg_output_datasets.at(3), cor_output_file + "_slave_Q");
             }
         }
         // do not clear srtm from gpu as TC use it, and the new coherence takes less gpu memory
@@ -90,18 +104,18 @@ int CoherenceEstimationRoutineExecute::ExecuteSafe() {
         GDALDataset* coh_dataset = nullptr;
         {
             const auto coh_start = std::chrono::steady_clock::now();
-            const auto near_range_on_left = s1tbx::SARGeocoding::IsNearRangeOnLeft(
-                main_product->GetTiePointGrid("incident_angle"), main_product->GetSceneRasterWidth());
+            s1tbx::Sentinel1Utils su(main_product);
+            const bool near_range_on_left = su.GetSubSwath().at(0)->isNearRangeOnLeft();
+            const double avg_incidence_angle = su.GetSubSwath().at(0)->calc_avg_incidence_angle();
 
             alus::coherence_cuda::MetaData meta_master{
-                near_range_on_left, snapengine::AbstractMetadata::GetAbstractedMetadata(main_product), orbit_degree_};
+                near_range_on_left, snapengine::AbstractMetadata::GetAbstractedMetadata(main_product), orbit_degree_,
+                avg_incidence_angle};
             alus::coherence_cuda::MetaData meta_slave{
                 near_range_on_left, snapengine::AbstractMetadata::GetAbstractedMetadata(secondary_product),
-                orbit_degree_};
+                orbit_degree_, avg_incidence_angle};
 
-            std::vector<int> band_map{1, 2, 3, 4};
             std::vector<int> band_map_out{1};
-            int band_count_in = 4;
             int band_count_out = 1;
 
             if (coherence_window_azimuth_ == 0) {
@@ -116,7 +130,7 @@ int CoherenceEstimationRoutineExecute::ExecuteSafe() {
                      << orbit_degree_;
             }
 
-            alus::coherence_cuda::GdalTileReader coh_data_reader{coreg_dataset, band_map, band_count_in, true};
+            alus::coherence_cuda::GdalTileReader coh_data_reader{coreg_output_datasets};
 
             alus::BandParams band_params{band_map_out,
                                          band_count_out,
@@ -125,9 +139,8 @@ int CoherenceEstimationRoutineExecute::ExecuteSafe() {
                                          coh_data_reader.GetBandXMin(),
                                          coh_data_reader.GetBandYMin()};
 
-            alus::coherence_cuda::GdalTileWriter coh_data_writer{GetGDALDriverManager()->GetDriverByName("MEM"),
-                                                                 band_params, coh_data_reader.GetGeoTransform(),
-                                                                 coh_data_reader.GetDataProjection()};
+            alus::coherence_cuda::GdalTileWriter coh_data_writer{
+                GetGDALDriverManager()->GetDriverByName("MEM"), band_params, {}, {}};
 
             alus::coherence_cuda::CohTilesGenerator tiles_generator{
                 coh_data_reader.GetBandXSize(), coh_data_reader.GetBandYSize(), static_cast<int>(tile_width_),

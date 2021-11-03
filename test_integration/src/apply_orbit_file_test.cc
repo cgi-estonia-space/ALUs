@@ -25,14 +25,14 @@
 #include "gmock/gmock.h"
 
 #include "apply_orbit_file_op.h"
-#include "../goods/apply_orbit_file_op/apply_orbit_test_data.h"
+#include "../goods/apply_orbit_test_data.h"
 #include "custom/dimension.h"
 #include "sentinel1_product_reader_plug_in.h"
-#include "snap-core/datamodel/pugixml_meta_data_reader.h"
-#include "snap-core/datamodel/pugixml_meta_data_writer.h"
-#include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
-#include "snap-core/util/alus_utils.h"
-#include "snap-core/util/system_utils.h"
+#include "snap-core/core/datamodel/pugixml_meta_data_reader.h"
+#include "snap-core/core/datamodel/pugixml_meta_data_writer.h"
+#include "snap-engine-utilities/engine-utilities/datamodel/metadata/abstract_metadata.h"
+#include "snap-core/core/util/alus_utils.h"
+#include "snap-core/core/util/system_utils.h"
 
 namespace {
 
@@ -268,7 +268,7 @@ TEST_F(ApplyOrbitFileOpIntegrationTest, modify_source_only_test) {
 
 TEST_F(ApplyOrbitFileOpIntegrationTest, modify_safe_test) {
     boost::filesystem::path input_path =
-        "./goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6_thin.SAFE";
+        "./goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.SAFE";
     alus::snapengine::AlusUtils::SetOrbitFilePath(
         "./goods/apply_orbit_file_op/orbit-files/S1A/2020/08/"
         "S1A_OPER_AUX_POEORB_OPOD_20200825T121215_V20200804T225942_20200806T005942.EOF");
@@ -284,6 +284,6 @@ TEST_F(ApplyOrbitFileOpIntegrationTest, modify_safe_test) {
     auto metadata = alus::snapengine::AbstractMetadata::GetAbstractedMetadata(product);
     auto alus_vec = alus::snapengine::AbstractMetadata::GetOrbitStateVectors(metadata);
 
-    VerifyOrbitStateVectorResult(alus_vec, OSV_TEST_DATA_S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6_thin);
+    VerifyOrbitStateVectorResult(alus_vec, OSV_TEST_DATA_S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6);
 }
 }  // namespace

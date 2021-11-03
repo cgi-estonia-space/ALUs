@@ -21,6 +21,7 @@
 #include "general_constants.h"
 #include "kernel_array.h"
 #include "sentinel1_calibrate_kernel.h"
+#include "s1tbx-commons/calibration_vector_computation.h"
 
 #include "math_utils.cuh"
 
@@ -36,14 +37,15 @@ inline __host__ __device__ size_t GetCalibrationVectorIndexImpl(int y, int count
 
 inline __device__ __host__ void SetupTileLineImpl(int y, CalibrationKernelArgs& args,
                                                   CalibrationLineParameters& line_parameters) {
-    const auto calibration_vector_index = GetCalibrationVectorIndexImpl(y, args.calibration_info.line_values.size,
+    const int y_with_offset = y + args.subset_offset_y; // in case of split, offset is non-zero
+    const auto calibration_vector_index = GetCalibrationVectorIndexImpl(y_with_offset, args.calibration_info.line_values.size,
                                                                         args.calibration_info.line_values.array);
     line_parameters.calibration_vector_0 = &args.calibration_info.calibration_vectors.array[calibration_vector_index];
     line_parameters.calibration_vector_1 =
         &args.calibration_info.calibration_vectors.array[calibration_vector_index + 1];
 
     line_parameters.azimuth_time =
-        args.calibration_info.first_line_time + (args.subset_offset_y + y) * args.calibration_info.line_time_interval;
+        args.calibration_info.first_line_time + y_with_offset * args.calibration_info.line_time_interval;
     line_parameters.mu_y =
         (line_parameters.azimuth_time - line_parameters.calibration_vector_0->time_mjd) /
         (line_parameters.calibration_vector_1->time_mjd - line_parameters.calibration_vector_0->time_mjd);

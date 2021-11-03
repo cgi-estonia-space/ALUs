@@ -12,7 +12,7 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 
-#include "geo_utils.h"
+#include "../../snap-engine/geo_utils.h"
 
 #include <vector>
 

@@ -18,15 +18,14 @@
 #include <string>
 #include <vector>
 
-#include "earth_gravitational_model96.h"
 #include "pointer_holders.h"
+#include "snap-dem/dem/dataio/earth_gravitational_model96.h"
 #include "srtm3_elevation_model.h"
 
 namespace alus::app {
 
 class DemAssistant final {
 public:
-
     class ArgumentsExtract final {
     public:
         bool static IsValid(std::string_view dem_file);
@@ -45,8 +44,7 @@ public:
     ~DemAssistant() = default;
 
 private:
-
     snapengine::Srtm3ElevationModel model_;
     std::shared_ptr<snapengine::EarthGravitationalModel96> egm96_;
 };
-}
+}  // namespace alus::app

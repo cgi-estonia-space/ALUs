@@ -19,8 +19,8 @@
 
 #include "alg_bond.h"
 #include "algorithm_parameters.h"
-#include "earth_gravitational_model96.h"
 #include "pointer_holders.h"
+#include "snap-dem/dem/dataio/earth_gravitational_model96.h"
 #include "srtm3_elevation_model.h"
 
 namespace alus {
@@ -69,11 +69,18 @@ private:
     std::string coherence_terrain_correction_metadata_param_{};
     std::string main_scene_file_path_{};
     std::string secondary_scene_file_path_{};
+
+    static constexpr int INVALID_BURST_INDEX{-1};
+    int main_scene_first_burst_index_{INVALID_BURST_INDEX};
+    int main_scene_last_burst_index_{INVALID_BURST_INDEX};
+    int secondary_scene_first_burst_index_{INVALID_BURST_INDEX};
+    int secondary_scene_last_burst_index_{INVALID_BURST_INDEX};
+    std::string wkt_aoi_{};
     int srp_number_points_{501};
     int srp_polynomial_degree_{5};
     bool subtract_flat_earth_phase_{true};
     int coherence_window_range_{15};
-    int coherence_window_azimuth_{0}; // if left as zero, derived from range window
+    int coherence_window_azimuth_{0};  // if left as zero, derived from range window
     int orbit_degree_{3};
 };
-}
+}  // namespace alus

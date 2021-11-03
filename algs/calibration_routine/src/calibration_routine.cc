@@ -22,6 +22,7 @@
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/replace.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
 
 #include "alg_bond.h"
@@ -32,9 +33,9 @@
 #include "dataset.h"
 #include "gdal_management.h"
 
-#include "sentinel1_calibrate.h"
-#include "snap-core/datamodel/product.h"
 #include "srtm3_elevation_model.h"
+#include "sentinel1_calibrate.h"
+#include "snap-core/core/datamodel/product.h"
 #include "terrain_correction.h"
 #include "terrain_correction_metadata.h"
 #include "topsar_deburst_op.h"
@@ -42,10 +43,11 @@
 
 namespace {
 // TODO share theese and some of the implemenation with sentinel_calibrate_executor.cc
+// TODO not trivially destructible types in static memory space
 const std::vector<std::string> ALLOWED_SUB_SWATHES{"IW1", "IW2", "IW3"};
 const std::vector<std::string> ALLOWED_POLARISATIONS{"VV", "VH"};
-// const std::vector<std::string> ALLOWED_CALIBRATION_TYPES{"sigma", "beta", "gamma", "dn"};
 
+constexpr std::string_view EXECUTOR_NAME{"Calibration routine"};
 constexpr std::string_view PARAMETER_SUB_SWATH{"subswath"};
 constexpr std::string_view PARAMETER_POLARISATION{"polarisation"};
 constexpr std::string_view PARAMETER_CALIBRATION_TYPE{"calibration_type"};
@@ -55,6 +57,10 @@ constexpr std::string_view PARAMETER_VALUE_SIGMA{"sigma"};
 constexpr std::string_view PARAMETER_VALUE_GAMMA{"gamma"};
 constexpr std::string_view PARAMETER_VALUE_DN{"dn"};
 constexpr std::string_view PARAMETER_WRITE_INTERMEDIATE_FILES("wif");
+constexpr std::string_view PARAMETER_ID_FIRST_BURST_INDEX{"first_burst_index"};
+constexpr std::string_view PARAMETER_ID_LAST_BURST_INDEX{"last_burst_index"};
+constexpr std::string_view PARAMETER_ID_WKT_AOI{"aoi"};
+
 }  // namespace
 
 namespace alus::sentinel1calibrate {
@@ -71,11 +77,23 @@ void CalibrationRoutine::SetParameters(const app::AlgorithmParameters::Table& pa
 
     if (const auto calibration_type = param_values.find(PARAMETER_CALIBRATION_TYPE.data());
         calibration_type != param_values.end()) {
+        calibration_type_ = calibration_type->second;
         ParseCalibrationType(calibration_type->second);
     }
     if (const auto write_intermediate_files = param_values.find(PARAMETER_WRITE_INTERMEDIATE_FILES.data());
         write_intermediate_files != param_values.end()) {
         write_intermediate_files_ = boost::iequals(write_intermediate_files->second, "true");
+    }
+    if (const auto first_burst_index = param_values.find(PARAMETER_ID_FIRST_BURST_INDEX.data());
+        first_burst_index != param_values.end()){
+        first_burst_index_ = boost::lexical_cast<int>(first_burst_index->second);
+    }
+    if (const auto last_burst_index = param_values.find(PARAMETER_ID_LAST_BURST_INDEX.data());
+        last_burst_index != param_values.end()){
+        last_burst_index_ = boost::lexical_cast<int>(last_burst_index->second);
+    }
+    if (const auto wkt = param_values.find(PARAMETER_ID_WKT_AOI.data()); wkt != param_values.end()){
+        wkt_aoi_ = wkt->second;
     }
 }
 
@@ -86,9 +104,9 @@ void CalibrationRoutine::SetTileSize(size_t width, size_t height) {
 
 int CalibrationRoutine::Execute() {
     try {
+        PrintProcessingParameters();
         ValidateParameters();
 
-        const auto cal_start = std::chrono::steady_clock::now();
         const auto input_path = input_dataset_filenames_.at(0);
         const auto subswath = sub_swaths_.at(0);
         const auto polarization = *polarisations_.begin();
@@ -109,17 +127,32 @@ int CalibrationRoutine::Execute() {
         alus::gdalmanagement::SetCacheMax(4e9);
 
         // split
-        alus::topsarsplit::TopsarSplit split_op(input_path, subswath, polarization);
-        split_op.initialize();
-        auto split_product = split_op.GetTargetProduct();
+        const auto split_start = std::chrono::steady_clock::now();
+        std::unique_ptr<topsarsplit::TopsarSplit> split_op{};
+        if (!wkt_aoi_.empty()) {
+            split_op = std::make_unique<topsarsplit::TopsarSplit>(input_path, subswath,
+                                                                       polarization, wkt_aoi_);
+        } else if (first_burst_index_ != INVALID_BURST_INDEX && last_burst_index_ != INVALID_BURST_INDEX) {
+            split_op = std::make_unique<topsarsplit::TopsarSplit>(input_path, subswath, polarization,
+                                                                  first_burst_index_, last_burst_index_);
+        } else {
+            split_op = std::make_unique<topsarsplit::TopsarSplit>(input_path, subswath, polarization);
+        }
+
+        split_op->initialize();
+        auto split_product = split_op->GetTargetProduct();
+        auto* pixel_reader = split_op->GetPixelReader()->GetDataset();
+        LOGI << "Sentinel 1 split done - "
+             << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - split_start)
+                    .count() << "ms";
 
         // calibration
-
+        const auto cal_start = std::chrono::steady_clock::now();
         std::shared_ptr<snapengine::Product> calibrated_product;
         std::shared_ptr<GDALDataset> calibrated_ds;
         std::string calibration_tmp_file;
         Sentinel1Calibrator calibrator{split_product,
-                                       input_path,
+                                       pixel_reader,
                                        sub_swaths_,
                                        polarisations_,
                                        calibration_bands_,
@@ -140,6 +173,10 @@ int CalibrationRoutine::Execute() {
             LOGI << "Calibration output @ " << calibration_tmp_file;
             GeoTiffWriteFile(calibrated_ds.get(), calibration_tmp_file);
         }
+
+        // start thread for srtm calculations parallel with CPU deburst
+        // rethink this part if we add support for larger GPUs with full chain on GPU processing
+        srtm3_manager_->HostToDevice();
 
         // deburst
         const auto deb_start = std::chrono::steady_clock::now();
@@ -173,7 +210,7 @@ int CalibrationRoutine::Execute() {
         // TC
         const auto tc_start = std::chrono::steady_clock::now();
         terraincorrection::Metadata metadata(debursted_product);
-        srtm3_manager_->HostToDevice();
+
         const auto* d_srtm_3_tiles = srtm3_manager_->GetSrtmBuffersInfo();
         const size_t srtm_3_tiles_length = srtm3_manager_->GetDeviceSrtm3TilesCount();
         const int selected_band{1};
@@ -211,7 +248,12 @@ std::string CalibrationRoutine::GetArgumentsHelp() const {
         PARAMETER_CALIBRATION_TYPE.data(),
         "Type of calibration (sigma, beta, "
         "gamma, dn)")(PARAMETER_WRITE_INTERMEDIATE_FILES.data(),
-                      "write intermediate files - true/false (default:false)");
+                      "write intermediate files - true/false (default:false)")(
+        PARAMETER_ID_FIRST_BURST_INDEX.data(),
+        "First burst index - starting at '1', leave unspecified for whole subswath")(
+        PARAMETER_ID_LAST_BURST_INDEX.data(),
+        "Last burst index - starting at '1', leave unspecified for whole subswath")(
+        PARAMETER_ID_WKT_AOI.data(), "Area Of Interest WKT polygon, overrules first and last burst indexes");
     std::stringstream result;
     result << options;
     return boost::algorithm::replace_all_copy(result.str(), "--", "");
@@ -286,6 +328,18 @@ void CalibrationRoutine::SetSrtm3Manager(snapengine::Srtm3ElevationModel* manage
 
 void CalibrationRoutine::SetEgm96Manager(snapengine::EarthGravitationalModel96* manager) {
     egm96_manager_ = manager;
+}
+
+void CalibrationRoutine::PrintProcessingParameters() const {
+    LOGI << EXECUTOR_NAME << " processing parameters:"  << std::endl
+         << "Input product - " << input_dataset_filenames_.at(0) << std::endl
+         << PARAMETER_SUB_SWATH << " - " << sub_swaths_.at(0) << std::endl
+         << PARAMETER_POLARISATION << " - " << *polarisations_.begin() << std::endl
+         << PARAMETER_CALIBRATION_TYPE << " - " << calibration_type_ << std::endl
+         << PARAMETER_ID_FIRST_BURST_INDEX << " - " << first_burst_index_ << std::endl
+         << PARAMETER_ID_LAST_BURST_INDEX << " - " << last_burst_index_ << std::endl
+         << PARAMETER_ID_WKT_AOI << " - " << wkt_aoi_ << std::endl
+         << PARAMETER_WRITE_INTERMEDIATE_FILES << " - " << write_intermediate_files_ << std::endl;
 }
 
 }  // namespace alus::sentinel1calibrate

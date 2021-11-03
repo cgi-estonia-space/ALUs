@@ -4,10 +4,10 @@ list(APPEND TIE_POINT_GRID_TEST_SOURCES
 
 list(APPEND TIE_POINT_GRID_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/include
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include
+        ../../snap-engine/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/cuda/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/common/include
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/snap-engine/include/snap-core/datamodel
+        ../../snap-engine/snap-core/core/datamodel
         )
 
 add_library(tiePointGrid-test-obj

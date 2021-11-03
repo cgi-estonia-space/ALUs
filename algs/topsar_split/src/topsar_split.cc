@@ -14,37 +14,65 @@
 #include "topsar_split.h"
 
 #include <memory>
+#include <string_view>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/geometry.hpp>
 
+#include "aoi_burst_extract.h"
+#include "algorithm_exception.h"
 #include "alus_log.h"
 #include "c16_dataset.h"
 #include "general_constants.h"
+#include "s1tbx-commons/subswath_info.h"
 #include "s1tbx-io/sentinel1/sentinel1_product_reader_plug_in.h"
-#include "snap-core/dataio/product_subset_def.h"
-#include "snap-core/datamodel/band.h"
-#include "snap-core/datamodel/metadata_element.h"
-#include "snap-core/datamodel/product_data_utc.h"
-#include "snap-core/datamodel/pugixml_meta_data_reader.h"
-#include "snap-core/datamodel/tie_point_geo_coding.h"
-#include "snap-core/datamodel/tie_point_grid.h"
-#include "snap-core/subset/pixel_subset_region.h"
-#include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
-#include "snap-engine-utilities/eo/constants.h"
-#include "snap-engine-utilities/gpf/input_product_validator.h"
+#include "snap-core/core/dataio/product_subset_def.h"
+#include "snap-core/core/datamodel/band.h"
+#include "snap-core/core/datamodel/metadata_element.h"
+#include "snap-core/core/datamodel/product_data_utc.h"
+#include "snap-core/core/datamodel/pugixml_meta_data_reader.h"
+#include "snap-core/core/datamodel/tie_point_geo_coding.h"
+#include "snap-core/core/datamodel/tie_point_grid.h"
+#include "snap-core/core/subset/pixel_subset_region.h"
+#include "snap-engine-utilities/engine-utilities/datamodel/metadata/abstract_metadata.h"
+#include "snap-engine-utilities/engine-utilities/eo/constants.h"
+#include "snap-engine-utilities/engine-utilities/gpf/input_product_validator.h"
 #include "split_product_subset_builder.h"
-#include "subswath_info.h"
+
+namespace {
+constexpr std::string_view ALG_NAME{"TOPSAR-SPLIT"};
+}
 
 namespace alus::topsarsplit {
 
-TopsarSplit::TopsarSplit(std::string filename, std::string selected_subswath, std::string selected_polarisation)
-    : subswath_(selected_subswath), selected_polarisations_({selected_polarisation}) {
+TopsarSplit::TopsarSplit(std::string_view filename, std::string_view selected_subswath,
+                         std::string_view selected_polarisation, size_t first_burst, size_t last_burst)
+    : TopsarSplit(filename, selected_subswath, selected_polarisation) {
+    first_burst_index_ = static_cast<int>(first_burst);
+    last_burst_index_ = static_cast<int>(last_burst);
+}
+
+TopsarSplit::TopsarSplit(std::string_view filename, std::string_view selected_subswath,
+                         std::string_view selected_polarisation)
+    : subswath_(selected_subswath), selected_polarisations_({std::string(selected_polarisation)}) {
+    LoadInputDataset(filename);
+}
+
+TopsarSplit::TopsarSplit(std::string_view filename, std::string_view selected_subswath,
+                         std::string_view selected_polarisation, std::string_view aoi_polygon_wkt)
+    : subswath_{selected_subswath},
+      selected_polarisations_{std::string(selected_polarisation)},
+      burst_aoi_wkt_{aoi_polygon_wkt} {
+    LoadInputDataset(filename);
+}
+
+void TopsarSplit::LoadInputDataset(std::string_view filename) {
     boost::filesystem::path path = std::string(filename);
     boost::filesystem::path measurement = path.string() + "/measurement";
     boost::filesystem::directory_iterator end_itr;
-    std::string low_subswath = boost::to_lower_copy(selected_subswath);
-    std::string low_polarisation = boost::to_lower_copy(selected_polarisation);
+    std::string low_subswath = boost::to_lower_copy(std::string(subswath_));
+    std::string low_polarisation = boost::to_lower_copy(std::string(selected_polarisations_.front()));
 
     auto reader_plug_in = std::make_shared<alus::s1tbx::Sentinel1ProductReaderPlugIn>();
     reader_ = reader_plug_in->CreateReaderInstance();
@@ -58,7 +86,7 @@ TopsarSplit::TopsarSplit(std::string filename, std::string selected_subswath, st
             if (current_file.find(low_subswath) != std::string::npos &&
                 current_file.find(low_polarisation) != std::string::npos) {
                 LOGV << "Selecting tif for reading: " << current_file;
-                pixel_reader_ = std::make_shared<C16Dataset<double>>(current_file);
+                pixel_reader_ = std::make_shared<C16Dataset<int16_t>>(current_file);
                 pixel_reader_->TryToCacheImage();
                 found_it = true;
                 break;
@@ -67,8 +95,9 @@ TopsarSplit::TopsarSplit(std::string filename, std::string selected_subswath, st
     }
 
     if (!found_it) {
-        throw std::runtime_error("SAFE file does not contain GeoTIFF file for subswath '" + selected_subswath +
-                                 "' and polarisation '" + selected_polarisation + "'");
+        throw common::AlgorithmException(ALG_NAME, "SAFE file does not contain GeoTIFF file for subswath '" +
+                                                   subswath_ + "' and polarisation '" +
+                                                   selected_polarisations_.front() + "'");
     }
 }
 
@@ -88,7 +117,6 @@ void TopsarSplit::initialize() {
     snapengine::InputProductValidator validator(source_product_);
     validator.CheckIfSARProduct();
     validator.CheckIfSentinel1Product();
-    validator.CheckIfMultiSwathTOPSARProduct();
     validator.CheckProductType({"SLC"});
     validator.CheckAcquisitionMode({"IW", "EW"});
 
@@ -100,7 +128,7 @@ void TopsarSplit::initialize() {
 
     // TODO: forget the index, find the pointer.
     s1_utils_ = std::make_unique<s1tbx::Sentinel1Utils>(source_product_);
-    const std::vector<std::unique_ptr<s1tbx::SubSwathInfo>>& subswath_info = s1_utils_->GetSubSwath();
+    const std::vector<std::shared_ptr<s1tbx::SubSwathInfo>>& subswath_info = s1_utils_->GetSubSwath();
     for (size_t i = 0; i < subswath_info.size(); i++) {
         if (subswath_info.at(i)->subswath_name_.find(subswath_) != std::string::npos) {
             selected_subswath_info_ = subswath_info.at(i).get();
@@ -108,7 +136,7 @@ void TopsarSplit::initialize() {
         }
     }
     if (selected_subswath_info_ == nullptr) {
-        throw std::runtime_error("Topsar split did not find subswath named " + subswath_);
+        throw common::AlgorithmException(ALG_NAME, "No subswath named '" + subswath_ + "' found");
     }
 
     if (selected_polarisations_.empty()) {
@@ -142,18 +170,61 @@ void TopsarSplit::initialize() {
         }
     }
 
-    int max_bursts = selected_subswath_info_->num_of_bursts_;
+    const auto max_bursts = selected_subswath_info_->num_of_bursts_;
     if (last_burst_index_ > max_bursts) {
         last_burst_index_ = max_bursts;
     }
 
-    // TODO: switch this on, when using WKT.
-    /*if(wktAoi != null) {
-        findValidBurstsBasedOnWkt();
-    }*/
+    if (!burst_aoi_wkt_.empty()) {
+
+        Aoi aoi_polygon;
+        try {
+            boost::geometry::read<boost::geometry::format_wkt>(aoi_polygon, burst_aoi_wkt_);
+        } catch (const boost::geometry::exception& e) {
+            throw common::AlgorithmException(ALG_NAME, e.what());
+        }
+
+        // Tie point grid's latitude and longitude points are along the burst north and south edges
+        const auto burst_count = selected_subswath_info_->num_of_geo_lines_ - 1;
+        // If data is not malformed, then first index is the edge's most west point and last the most east point along
+        // the burst edge.
+        const auto last_coordinate_index = selected_subswath_info_->num_of_geo_points_per_line_ - 1;
+        // Assemble reasonable container for coordinates first.
+        std::vector<std::vector<Coordinates>> burst_edge_line_coordinates;
+        for (int line_i = 0; line_i <= burst_count; ++line_i) {
+            std::vector<Coordinates> coordinates;
+            for (int coordinate_i = 0; coordinate_i <= last_coordinate_index; ++coordinate_i) {
+                coordinates.push_back({selected_subswath_info_->longitude_[line_i][coordinate_i],
+                                       selected_subswath_info_->latitude_[line_i][coordinate_i]});
+            }
+            burst_edge_line_coordinates.push_back(std::move(coordinates));
+        }
+
+        auto bursts = DetermineBurstIndexesCoveredBy(aoi_polygon, burst_edge_line_coordinates);
+        if (bursts.empty()) {
+            throw common::AlgorithmException(
+                ALG_NAME,
+                "Given AOI '" + burst_aoi_wkt_ + "' does not cover any bursts in the selected subswath '" + subswath_ + "'");
+        }
+        first_burst_index_ = bursts.front();
+        last_burst_index_ = bursts.back();
+
+        if (first_burst_index_ > last_burst_index_ || last_burst_index_ > max_bursts) {
+            THROW_ALGORITHM_EXCEPTION(ALG_NAME, "First burst(" + std::to_string(first_burst_index_) +
+                                                    ") and last burst(" + std::to_string(last_burst_index_) +
+                                                    ") indexes do not align");
+        }
+        LOGI << "Burst indexes " << first_burst_index_ << " " << last_burst_index_;
+    }
+
+    if (first_burst_index_ < BURST_INDEX_OFFSET) {
+        throw common::AlgorithmException(
+            ALG_NAME, ("First burst index (" + std::to_string(first_burst_index_) + ") not valid - starting from " +
+                       std::to_string(BURST_INDEX_OFFSET)));
+    }
 
     subset_builder_ = std::make_unique<snapengine::SplitProductSubsetBuilder>();
-    std::shared_ptr<snapengine::ProductSubsetDef> subset_def = std::make_shared<snapengine::ProductSubsetDef>();
+    auto subset_def = std::make_shared<snapengine::ProductSubsetDef>();
 
     std::vector<std::string> selected_tpg_list;
     for (std::shared_ptr<snapengine::TiePointGrid> src_tpg : source_product_->GetTiePointGrids()) {
@@ -162,15 +233,15 @@ void TopsarSplit::initialize() {
         }
     }
     subset_def->AddNodeNames(selected_tpg_list);
-
     int x = 0;
-    int y = (first_burst_index_ - 1) * selected_subswath_info_->lines_per_burst_;
+    int y = (first_burst_index_ - BURST_INDEX_OFFSET) * selected_subswath_info_->lines_per_burst_;
     int w = selected_bands.at(0)->GetRasterWidth();
-    int h = (last_burst_index_ - first_burst_index_ + 1) * selected_subswath_info_->lines_per_burst_;
+    int h = (last_burst_index_ - first_burst_index_ + BURST_INDEX_OFFSET) * selected_subswath_info_->lines_per_burst_;
     subset_def->SetSubsetRegion(std::make_shared<snapengine::PixelSubsetRegion>(x, y, w, h, 0));
 
     subset_def->SetSubSampling(1, 1);
     subset_def->SetIgnoreMetadata(false);
+    pixel_reader_->SetReadingArea({x,y,w,h});
 
     std::vector<std::string> selected_band_names(selected_bands.size());
     for (size_t i = 0; i < selected_bands.size(); i++) {
@@ -208,12 +279,12 @@ void TopsarSplit::UpdateAbstractedMetadata() {
 
     abs_tgt->SetAttributeUtc(
         snapengine::AbstractMetadata::FIRST_LINE_TIME,
-        std::make_shared<snapengine::Utc>(selected_subswath_info_->burst_first_line_time_[first_burst_index_ - 1] /
+        std::make_shared<snapengine::Utc>(selected_subswath_info_->burst_first_line_time_[first_burst_index_ - BURST_INDEX_OFFSET] /
                                           snapengine::eo::constants::SECONDS_IN_DAY));
 
     abs_tgt->SetAttributeUtc(
         snapengine::AbstractMetadata::LAST_LINE_TIME,
-        std::make_shared<snapengine::Utc>(selected_subswath_info_->burst_last_line_time_[last_burst_index_ - 1] /
+        std::make_shared<snapengine::Utc>(selected_subswath_info_->burst_last_line_time_[last_burst_index_ - BURST_INDEX_OFFSET] /
                                           snapengine::eo::constants::SECONDS_IN_DAY));
 
     abs_tgt->SetAttributeDouble(snapengine::AbstractMetadata::LINE_TIME_INTERVAL,
@@ -230,7 +301,7 @@ void TopsarSplit::UpdateAbstractedMetadata() {
                                 selected_subswath_info_->azimuth_pixel_spacing_);
 
     abs_tgt->SetAttributeInt(snapengine::AbstractMetadata::NUM_OUTPUT_LINES,
-                             selected_subswath_info_->lines_per_burst_ * (last_burst_index_ - first_burst_index_ + 1));
+                             selected_subswath_info_->lines_per_burst_ * (last_burst_index_ - first_burst_index_ + BURST_INDEX_OFFSET));
 
     abs_tgt->SetAttributeInt(snapengine::AbstractMetadata::NUM_SAMPLES_PER_LINE,
                              selected_subswath_info_->num_of_samples_);
@@ -238,16 +309,16 @@ void TopsarSplit::UpdateAbstractedMetadata() {
     int cols = selected_subswath_info_->num_of_geo_points_per_line_;
 
     snapengine::AbstractMetadata::SetAttribute(abs_tgt, snapengine::AbstractMetadata::FIRST_NEAR_LAT,
-                                               selected_subswath_info_->latitude_[first_burst_index_ - 1][0]);
+                                               selected_subswath_info_->latitude_[first_burst_index_ - BURST_INDEX_OFFSET][0]);
 
     snapengine::AbstractMetadata::SetAttribute(abs_tgt, snapengine::AbstractMetadata::FIRST_NEAR_LONG,
-                                               selected_subswath_info_->longitude_[first_burst_index_ - 1][0]);
+                                               selected_subswath_info_->longitude_[first_burst_index_ - BURST_INDEX_OFFSET][0]);
 
     snapengine::AbstractMetadata::SetAttribute(abs_tgt, snapengine::AbstractMetadata::FIRST_FAR_LAT,
-                                               selected_subswath_info_->latitude_[first_burst_index_ - 1][cols - 1]);
+                                               selected_subswath_info_->latitude_[first_burst_index_ - BURST_INDEX_OFFSET][cols - 1]);
 
     snapengine::AbstractMetadata::SetAttribute(abs_tgt, snapengine::AbstractMetadata::FIRST_FAR_LONG,
-                                               selected_subswath_info_->longitude_[first_burst_index_ - 1][cols - 1]);
+                                               selected_subswath_info_->longitude_[first_burst_index_ - BURST_INDEX_OFFSET][cols - 1]);
 
     snapengine::AbstractMetadata::SetAttribute(abs_tgt, snapengine::AbstractMetadata::LAST_NEAR_LAT,
                                                selected_subswath_info_->latitude_[last_burst_index_][0]);
@@ -361,7 +432,7 @@ void TopsarSplit::RemoveElements(std::shared_ptr<snapengine::MetadataElement>& o
 void TopsarSplit::RemoveBursts(std::shared_ptr<snapengine::MetadataElement>& orig_meta) {
     std::shared_ptr<snapengine::MetadataElement> annotation = orig_meta->GetElement("annotation");
     if (annotation == nullptr) {
-        throw std::runtime_error("Annotation Metadata not found");
+        throw common::AlgorithmException(ALG_NAME, "Annotation Metadata not found");
     }
 
     auto elems = annotation->GetElements();
@@ -369,11 +440,12 @@ void TopsarSplit::RemoveBursts(std::shared_ptr<snapengine::MetadataElement>& ori
         std::shared_ptr<snapengine::MetadataElement> product = elem->GetElement("product");
         std::shared_ptr<snapengine::MetadataElement> swath_timing = product->GetElement("swathTiming");
         std::shared_ptr<snapengine::MetadataElement> burst_list = swath_timing->GetElement("burstList");
-        burst_list->SetAttributeString("count", std::to_string(last_burst_index_ - first_burst_index_ + 1));
+        burst_list->SetAttributeString("count",
+                                       std::to_string(last_burst_index_ - first_burst_index_ + BURST_INDEX_OFFSET));
         auto burst_list_elem = burst_list->GetElements();
-        int size = burst_list_elem.size();
+        auto size = static_cast<int>(burst_list_elem.size());
         for (int i = 0; i < size; i++) {
-            if (i < first_burst_index_ - 1 || i > last_burst_index_ - 1) {
+            if (i < first_burst_index_ - BURST_INDEX_OFFSET || i > last_burst_index_ - BURST_INDEX_OFFSET) {
                 burst_list->RemoveElement(burst_list_elem[i]);
             }
         }
@@ -383,7 +455,7 @@ void TopsarSplit::RemoveBursts(std::shared_ptr<snapengine::MetadataElement>& ori
 void TopsarSplit::UpdateImageInformation(std::shared_ptr<snapengine::MetadataElement>& orig_meta) {
     std::shared_ptr<snapengine::MetadataElement> annotation = orig_meta->GetElement("annotation");
     if (annotation == nullptr) {
-        throw std::runtime_error("Annotation Metadata not found");
+        throw common::AlgorithmException(ALG_NAME, "Annotation Metadata not found");
     }
 
     auto elems = annotation->GetElements();
@@ -394,19 +466,19 @@ void TopsarSplit::UpdateImageInformation(std::shared_ptr<snapengine::MetadataEle
             image_annotation->GetElement("imageInformation");
 
         image_information->SetAttributeString(
-            "numberOfLines",
-            std::to_string(selected_subswath_info_->lines_per_burst_ * (last_burst_index_ - first_burst_index_ + 1)));
+            "numberOfLines", std::to_string(selected_subswath_info_->lines_per_burst_ *
+                                            (last_burst_index_ - first_burst_index_ + BURST_INDEX_OFFSET)));
 
-        std::shared_ptr<snapengine::Utc> first_line_time_utc =
-            std::make_shared<snapengine::Utc>(selected_subswath_info_->burst_first_line_time_[first_burst_index_ - 1] /
-                                              snapengine::eo::constants::SECONDS_IN_DAY);
+        auto first_line_time_utc = std::make_shared<snapengine::Utc>(
+            selected_subswath_info_->burst_first_line_time_[first_burst_index_ - BURST_INDEX_OFFSET] /
+            snapengine::eo::constants::SECONDS_IN_DAY);
 
         image_information->SetAttributeString("productFirstLineUtcTime",
                                               first_line_time_utc->Format("%Y-%m-%d %H:%M:%S"));
 
-        std::shared_ptr<snapengine::Utc> last_line_time_utc =
-            std::make_shared<snapengine::Utc>(selected_subswath_info_->burst_last_line_time_[last_burst_index_ - 1] /
-                                              snapengine::eo::constants::SECONDS_IN_DAY);
+        auto last_line_time_utc = std::make_shared<snapengine::Utc>(
+            selected_subswath_info_->burst_last_line_time_[last_burst_index_ - BURST_INDEX_OFFSET] /
+            snapengine::eo::constants::SECONDS_IN_DAY);
 
         image_information->SetAttributeString("productLastLineUtcTime",
                                               last_line_time_utc->Format("%Y-%m-%d %H:%M:%S"));

@@ -75,9 +75,8 @@ class Dataset: public AlusFileReader<BufferType> {
         this->origin_lon_ = other.origin_lon_;
         this->pixel_size_lon_ = other.pixel_size_lon_;
         this->pixel_size_lat_ = other.pixel_size_lat_;
-        this->x_size_ = other.x_size_;
-        this->y_size_ = other.y_size_;
         this->gdal_data_type_ = other.gdal_data_type_;
+        this->reading_area_ = other.reading_area_;
         this->data_buffer_ = std::move(other.data_buffer_);
         return *this;
     }
@@ -114,13 +113,9 @@ class Dataset: public AlusFileReader<BufferType> {
         pixel_size_lat = GetPixelSizeLat();
     }
 
-    int GetRasterSizeX() const { return dataset_->GetRasterXSize(); }
-    int GetRasterSizeY() const { return dataset_->GetRasterYSize(); }
+    int GetRasterSizeX() const { return reading_area_.width; }
+    int GetRasterSizeY() const { return reading_area_.height; }
     RasterDimension GetRasterDimensions() const { return {GetRasterSizeX(), GetRasterSizeY()}; }
-    int GetColumnCount() const { return GetRasterSizeX(); }
-    int GetRowCount() const { return GetRasterSizeY(); }
-    int GetXSize() const { return x_size_; }
-    int GetYSize() const { return y_size_; }
     std::vector<BufferType> const& GetHostDataBuffer() const override { return data_buffer_; }
     double GetNoDataValue(int band_nr) { return dataset_->GetRasterBand(band_nr)->GetNoDataValue(); }
     long unsigned int GetBufferByteSize() override { return data_buffer_.size() * sizeof(BufferType);};
@@ -130,6 +125,7 @@ class Dataset: public AlusFileReader<BufferType> {
     [[nodiscard]] std::string_view GetFilePath();
     void ReadRectangle(Rectangle rectangle, std::map<int, BufferType*>& bands) override;
     void TryToCacheImage() override;
+    void SetReadingArea(Rectangle new_area) override {reading_area_ = new_area;};
 
     ~Dataset();
 
@@ -137,9 +133,10 @@ class Dataset: public AlusFileReader<BufferType> {
     void LoadDataset(std::string_view filename);
     void LoadDataset(std::string_view filename, GDALAccess access);
     void CacheImage();
-    void ReadRectangle(Rectangle rectangle, int band_nr, BufferType* data_buffer, bool is_from_cache);
+    void ReadRectangle(Rectangle rectangle, int band_nr, BufferType* data_buffer, bool is_from_cache, int offset_x, int offset_y);
     std::mutex read_lock_; //rasterIO is not actually thread safe. Some stream object is shared.
     std::thread cacher_;
+    Rectangle reading_area_;
 
     GDALDataset* dataset_{};
     GDALDataType gdal_data_type_;
@@ -151,8 +148,6 @@ class Dataset: public AlusFileReader<BufferType> {
     double pixel_size_lat_{};
     std::atomic<bool> is_allowed_to_cache_{true};
 
-    int x_size_{};
-    int y_size_{};
     std::vector<BufferType> data_buffer_{};
     std::string file_path_{};
 

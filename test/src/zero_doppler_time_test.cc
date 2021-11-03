@@ -16,13 +16,12 @@
 
 #include "gmock/gmock.h"
 
-#include "cuda_friendly_object.h"
 #include "comparators.h"
+#include "cuda_friendly_object.h"
 #include "cuda_util.h"
 #include "pos_vector.h"
+#include "s1tbx-commons/sentinel1_utils.h"
 #include "sar_geocoding_test.cuh"
-#include "sentinel1_utils.h"
-
 
 namespace {
 
@@ -32,8 +31,8 @@ using ::testing::Pointwise;
 using namespace alus::tests;
 
 class ZeroDopplerTimeTester : public alus::cuda::CudaFriendlyObject {
-   private:
-   public:
+private:
+public:
     std::vector<alus::snapengine::PosVector> earth_points_;
     std::vector<double> line_time_intervals_;
     std::vector<double> wavelengths_;
@@ -41,10 +40,10 @@ class ZeroDopplerTimeTester : public alus::cuda::CudaFriendlyObject {
     std::vector<double> calcd_zero_doppler_times_;
     size_t data_size_;
 
-    double *device_zero_doppler_times_{nullptr};
-    double *device_line_time_intervals_{nullptr};
-    double *device_wavelengths_{nullptr};
-    alus::snapengine::PosVector *device_earth_points_{nullptr};
+    double* device_zero_doppler_times_{nullptr};
+    double* device_line_time_intervals_{nullptr};
+    double* device_wavelengths_{nullptr};
+    alus::snapengine::PosVector* device_earth_points_{nullptr};
 
     ZeroDopplerTimeTester() = default;
     ~ZeroDopplerTimeTester() { this->DeviceFree(); }
@@ -71,31 +70,23 @@ class ZeroDopplerTimeTester : public alus::cuda::CudaFriendlyObject {
     }
 
     void HostToDevice() {
-        CHECK_CUDA_ERR(cudaMalloc((void **)&this->device_zero_doppler_times_, this->data_size_ * sizeof(double)));
-        CHECK_CUDA_ERR(cudaMalloc((void **)&this->device_line_time_intervals_, this->data_size_ * sizeof(double)));
-        CHECK_CUDA_ERR(cudaMalloc((void **)&this->device_wavelengths_, this->data_size_ * sizeof(double)));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&this->device_zero_doppler_times_, this->data_size_ * sizeof(double)));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&this->device_line_time_intervals_, this->data_size_ * sizeof(double)));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&this->device_wavelengths_, this->data_size_ * sizeof(double)));
         CHECK_CUDA_ERR(
-            cudaMalloc((void **)&this->device_earth_points_, this->data_size_ * sizeof(alus::snapengine::PosVector)));
+            cudaMalloc((void**)&this->device_earth_points_, this->data_size_ * sizeof(alus::snapengine::PosVector)));
 
-        CHECK_CUDA_ERR(cudaMemcpy(this->device_line_time_intervals_,
-                                  this->line_time_intervals_.data(),
-                                  this->data_size_ * sizeof(double),
-                                  cudaMemcpyHostToDevice));
-        CHECK_CUDA_ERR(cudaMemcpy(this->device_wavelengths_,
-                                  this->wavelengths_.data(),
-                                  this->data_size_ * sizeof(double),
-                                  cudaMemcpyHostToDevice));
-        CHECK_CUDA_ERR(cudaMemcpy(this->device_earth_points_,
-                                  this->earth_points_.data(),
-                                  this->data_size_ * sizeof(alus::snapengine::PosVector),
-                                  cudaMemcpyHostToDevice));
+        CHECK_CUDA_ERR(cudaMemcpy(this->device_line_time_intervals_, this->line_time_intervals_.data(),
+                                  this->data_size_ * sizeof(double), cudaMemcpyHostToDevice));
+        CHECK_CUDA_ERR(cudaMemcpy(this->device_wavelengths_, this->wavelengths_.data(),
+                                  this->data_size_ * sizeof(double), cudaMemcpyHostToDevice));
+        CHECK_CUDA_ERR(cudaMemcpy(this->device_earth_points_, this->earth_points_.data(),
+                                  this->data_size_ * sizeof(alus::snapengine::PosVector), cudaMemcpyHostToDevice));
     }
 
     void DeviceToHost() {
-        CHECK_CUDA_ERR(cudaMemcpy(this->calcd_zero_doppler_times_.data(),
-                                  this->device_zero_doppler_times_,
-                                  this->data_size_ * sizeof(double),
-                                  cudaMemcpyDeviceToHost));
+        CHECK_CUDA_ERR(cudaMemcpy(this->calcd_zero_doppler_times_.data(), this->device_zero_doppler_times_,
+                                  this->data_size_ * sizeof(double), cudaMemcpyDeviceToHost));
     }
 
     void DeviceFree() {
@@ -124,10 +115,10 @@ TEST(SarGeoCodingTestSimple, ZeroDopplerTimeTest) {
     master_utils.ComputeReferenceTime();
     master_utils.subswath_.at(0)->HostToDevice();
     master_utils.HostToDevice();
-    alus::s1tbx::OrbitStateVectors *master_orbit = master_utils.GetOrbitStateVectors();
-    const auto &master_orbit_vectors_computation = master_orbit->orbit_state_vectors_computation_;
-    const size_t master_orbit_vectors_size = sizeof(alus::snapengine::OrbitStateVectorComputation) *
-        master_orbit_vectors_computation.size();
+    alus::s1tbx::OrbitStateVectors* master_orbit = master_utils.GetOrbitStateVectors();
+    const auto& master_orbit_vectors_computation = master_orbit->orbit_state_vectors_computation_;
+    const size_t master_orbit_vectors_size =
+        sizeof(alus::snapengine::OrbitStateVectorComputation) * master_orbit_vectors_computation.size();
     alus::cuda::KernelArray<alus::snapengine::OrbitStateVectorComputation> d_master_orbit_vectors{};
     CHECK_CUDA_ERR(cudaMalloc(&d_master_orbit_vectors.array, master_orbit_vectors_size));
     CHECK_CUDA_ERR(cudaMemcpy(d_master_orbit_vectors.array, master_orbit_vectors_computation.data(),

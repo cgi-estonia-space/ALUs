@@ -39,8 +39,10 @@ list(APPEND TEST_SOURCES
         src/multithreading_test.cc
         src/sentinel_1_calibrate_test.cc
         src/sentinel_1_calibrate_utils_test.cc
+        src/aoi_burst_extract_test.cc
         src/cuda_util_test.cc
         src/geotiff_write_test.cc
+        src/topsar_merge_test.cc
         )
 
 add_executable(unit_test ${TEST_SOURCES})
@@ -56,16 +58,18 @@ target_link_libraries(unit_test
         gdal-util-static
         terrain-correction-static
         sentinel1-util-static
-        exotic_operations-static
+        exotic-operations-static
         backgeocoding-static
         snap-engine-static
-        cuda_util-static
+        cuda-util-static
         tiePointGrid-test-static
         range-doppler-geocoding-test-static
         sar-geocoding-test-static
         sentinel1-calibrate-static
+        topsar-split-static
         crypto
         Boost::filesystem
+        topsar-merge-static
         )
 
 set_target_properties(unit_test

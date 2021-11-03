@@ -12,8 +12,7 @@ Install:
 ```
 # Clone or download .zip and unpack it
 cd elevation
-python3 -m pip install -r requirements-dev.txt
-sudo -H python3 -m pip install -e .
+sudo python3 setup.py install
 ```
 
 ### Usage
@@ -27,6 +26,10 @@ Script outputs DEM file list as a last line which can be automatically supplied 
 ./dem_supply.sh S1A_3432_4324...324.dim
 alus -input in.tif -output out.tif .... --dem "$(cat /tmp/elevation/log.txt | tail -n 1)"
 #or
-dem_files=`./dem_supply.sh S1A_3432_4324...324.dim | tail -n 1`
+dem_files=`./dem_supply.sh S1A_3432_4324...324.SAFE | tail -n 1`
 alus -input in.tif -output out.tif .... --dem "$dem_files"
 ```
+
+### DEM files location
+
+```/tmp/elevation/SRTM3```

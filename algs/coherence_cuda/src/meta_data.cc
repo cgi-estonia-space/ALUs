@@ -13,21 +13,16 @@
  */
 #include "meta_data.h"
 
-#include "date_utils.h"
-#include "jlinda-core/constants.h"
-#include "jlinda-core/ellipsoid.h"
-#include "jlinda-core/geopoint.h"
-#include "snap-engine-utilities/datamodel/metadata/abstract_metadata.h"
-#include "snap-engine-utilities/eo/constants.h"
+#include "jlinda/jlinda-core/ellipsoid.h"
+#include "jlinda/jlinda-core/geopoint.h"
+#include "jlinda/jlinda-core/utils/date_utils.h"
+#include "snap-engine-utilities/engine-utilities/datamodel/metadata/abstract_metadata.h"
+#include "snap-engine-utilities/engine-utilities/eo/constants.h"
 
 namespace alus {
 namespace coherence_cuda {
-MetaData::MetaData(IDataTileReader* incidence_angle_reader, std::shared_ptr<snapengine::MetadataElement> element,
-                   int orbit_degree) : MetaData(IsNearRangeOnLeft(incidence_angle_reader), element, orbit_degree){
-}
-
-MetaData::MetaData(bool is_near_range_on_left, std::shared_ptr<snapengine::MetadataElement> element, int orbit_degree) {
-
+MetaData::MetaData(bool is_near_range_on_left, std::shared_ptr<snapengine::MetadataElement> element, int orbit_degree,
+                   double avg_incidence_angle) {
     this->near_range_on_left_ = is_near_range_on_left;
 
     // todo: check what snap uses! this is custom solution
@@ -45,10 +40,10 @@ MetaData::MetaData(bool is_near_range_on_left, std::shared_ptr<snapengine::Metad
     constexpr long MEGA{1000000};
     radar_wavelength_ = (snapengine::eo::constants::LIGHT_SPEED / MEGA) /
                         element->GetAttributeDouble(alus::snapengine::AbstractMetadata::RADAR_FREQUENCY);
-    t_azi_1_ = snapengine::DateUtils::DateTimeToSecOfDay(
+    t_azi_1_ = s1tbx::DateUtils::DateTimeToSecOfDay(
         element->GetAttributeUtc(alus::snapengine::AbstractMetadata::FIRST_LINE_TIME)->ToString());
     t_range_1_ = element->GetAttributeDouble(alus::snapengine::AbstractMetadata::SLANT_RANGE_TO_FIRST_PIXEL) /
-        snapengine::eo::constants::LIGHT_SPEED;
+                 snapengine::eo::constants::LIGHT_SPEED;
     rsr_2_x_ = element->GetAttributeDouble(alus::snapengine::AbstractMetadata::RANGE_SAMPLING_RATE) * MEGA * 2;
 
     approx_radar_centre_original_.SetX(
@@ -81,20 +76,12 @@ MetaData::MetaData(bool is_near_range_on_left, std::shared_ptr<snapengine::Metad
 
     orbit_ = std::make_shared<s1tbx::Orbit>(element, orbit_degree);
 
-    range_azimuth_spacing_ratio_ = element->GetAttributeDouble(alus::snapengine::AbstractMetadata::RANGE_SPACING) /
-        element->GetAttributeDouble(alus::snapengine::AbstractMetadata::AZIMUTH_SPACING);
-}
+    double range_spacing = element->GetAttributeDouble(alus::snapengine::AbstractMetadata::RANGE_SPACING);
 
-// todo: how should we tie this to specific product in our logic?
-bool MetaData::IsNearRangeOnLeft(IDataTileReader* incidence_angle_reader) {
-    const double INCIDENCE_ANGLE_TO_FIRST_PIXEL = incidence_angle_reader->GetValueAtXy(
-        incidence_angle_reader->GetBandXMin(), incidence_angle_reader->GetBandYMin());
-    const double INCIDENCE_ANGLE_TO_LAST_PIXEL = incidence_angle_reader->GetValueAtXy(
-        incidence_angle_reader->GetBandXSize() - 1, incidence_angle_reader->GetBandYMin());
-    if (INCIDENCE_ANGLE_TO_FIRST_PIXEL && INCIDENCE_ANGLE_TO_LAST_PIXEL) {
-        return (INCIDENCE_ANGLE_TO_FIRST_PIXEL < INCIDENCE_ANGLE_TO_LAST_PIXEL);
-    }
-    return true;
+    range_spacing /= sin(avg_incidence_angle * alus::snapengine::eo::constants::DTOR);
+
+    ground_range_azimuth_spacing_ratio_ =
+        range_spacing / element->GetAttributeDouble(alus::snapengine::AbstractMetadata::AZIMUTH_SPACING);
 }
 
 // pix2tr

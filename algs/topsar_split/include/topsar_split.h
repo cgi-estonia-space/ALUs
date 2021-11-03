@@ -13,27 +13,36 @@
  */
 #pragma once
 
-#include <sentinel1_utils.h>
+#include <s1tbx-commons/sentinel1_utils.h>
 #include <memory>
 #include <string>
+#include <string_view>
+#include <vector>
 
 #include "c16_dataset.h"
+#include "s1tbx-commons/sentinel1_utils.h"
+#include "s1tbx-commons/subswath_info.h"
 #include "s1tbx-io/sentinel1/sentinel1_product_reader.h"
-#include "sentinel1_utils.h"
-#include "snap-core/dataio/i_product_reader.h"
-#include "snap-core/datamodel/product.h"
+#include "snap-core/core/dataio/i_product_reader.h"
+#include "snap-core/core/datamodel/product.h"
 #include "split_product_subset_builder.h"
-#include "subswath_info.h"
 
 namespace alus::topsarsplit {
 
+
 class TopsarSplit {
 public:
-    TopsarSplit(std::string filename, std::string selected_subswath, std::string selected_polarisation);
-    void initialize();
+    TopsarSplit(std::string_view filename, std::string_view selected_subswath, std::string_view selected_polarisation);
+    TopsarSplit(std::string_view filename, std::string_view selected_subswath, std::string_view selected_polarisation,
+                size_t first_burst, size_t last_burst);
+    TopsarSplit(std::string_view filename, std::string_view selected_subswath, std::string_view selected_polarisation,
+                std::string_view aoi_polygon_wkt);
 
-    std::shared_ptr<snapengine::Product> GetTargetProduct() { return target_product_; }
-    [[nodiscard]] const std::shared_ptr<C16Dataset<double>>& GetPixelReader() const { return pixel_reader_; }
+    void initialize();
+    std::shared_ptr<snapengine::Product> GetTargetProduct() const { return target_product_; }
+    [[nodiscard]] const std::shared_ptr<C16Dataset<int16_t>>& GetPixelReader() const { return pixel_reader_; }
+
+    constexpr static int BURST_INDEX_OFFSET{1};
 
 private:
     std::shared_ptr<snapengine::IProductReader> reader_;
@@ -41,16 +50,18 @@ private:
     std::shared_ptr<snapengine::Product> target_product_;
     std::unique_ptr<s1tbx::Sentinel1Utils> s1_utils_;
     std::shared_ptr<snapengine::SplitProductSubsetBuilder> subset_builder_;
-    std::shared_ptr<C16Dataset<double>> pixel_reader_;
+    std::shared_ptr<C16Dataset<int16_t>> pixel_reader_;
 
     std::string subswath_;
     std::vector<std::string> selected_polarisations_;
 
-    int first_burst_index_ = 1;
+    int first_burst_index_{BURST_INDEX_OFFSET};
     int last_burst_index_ = 9999;
+    std::string burst_aoi_wkt_{};
 
     s1tbx::SubSwathInfo* selected_subswath_info_ = nullptr;
 
+    void LoadInputDataset(std::string_view filename);
     void UpdateAbstractedMetadata();
     void RemoveBursts(std::shared_ptr<snapengine::MetadataElement>& orig_meta);
     void UpdateImageInformation(std::shared_ptr<snapengine::MetadataElement>& orig_meta);

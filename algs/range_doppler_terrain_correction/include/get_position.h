@@ -15,9 +15,9 @@
 
 #include <vector>
 
-#include "kernel_array.h"
 #include "orbit_state_vector_computation.h"
 #include "pos_vector.h"
+#include "kernel_array.h"
 #include "position_data.h"
 
 namespace alus {

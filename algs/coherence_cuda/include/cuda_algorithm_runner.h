@@ -13,8 +13,8 @@
  */
 #pragma once
 
-#include "i_algo_cuda.h"
-#include "i_data_tile_reader.h"
+#include "coherence_calc_cuda.h"
+#include "gdal_tile_reader.h"
 #include "i_data_tile_writer.h"
 #include "i_tile_provider.h"
 
@@ -22,18 +22,18 @@ namespace alus {
 namespace coherence_cuda {
 class CUDAAlgorithmRunner {
 private:
-    IDataTileReader* tile_reader_;
+    GdalTileReader* tile_reader_;
     IDataTileWriter* tile_writer_;
     ITileProvider* tile_provider_;
-    IAlgoCuda* algo_;
+    CohCuda* algo_;
 
     struct ThreadParams;
     static void ThreadRun(CUDAAlgorithmRunner* algo, ThreadParams* params);
 
 public:
     CUDAAlgorithmRunner() = delete;
-    CUDAAlgorithmRunner(IDataTileReader* tile_reader, IDataTileWriter* tile_writer, ITileProvider* tile_provider,
-                        IAlgoCuda* algorithm);
+    CUDAAlgorithmRunner(GdalTileReader* tile_reader, IDataTileWriter* tile_writer, ITileProvider* tile_provider,
+                        CohCuda* algorithm);
     void Run();
 };
 }  // namespace coherence_cuda

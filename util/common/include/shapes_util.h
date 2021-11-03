@@ -14,6 +14,7 @@
 #pragma once
 
 #include <climits>
+#include <cmath>
 
 #include "shapes.h"
 
@@ -49,5 +50,59 @@ inline Rectangle GetIntersection(const Rectangle& rectangle_1, const Rectangle& 
     }
     return {target_x, target_y, static_cast<int>(target_width), static_cast<int>(target_height)};
 }
+
+inline std::vector<Rectangle> GenerateRectanglesForRaster(int raster_size_x, int raster_size_y, int rectangle_size_x, int rectangle_size_y) {
+    int x_rectangles = static_cast<short>(std::ceil(static_cast<float>(raster_size_x) / static_cast<float>(rectangle_size_x)));
+    int y_rectangles = static_cast<short>(std::ceil(static_cast<float>(raster_size_y) / static_cast<float>(rectangle_size_y)));
+    std::vector<Rectangle> rectangles;
+    rectangles.reserve(static_cast<std::size_t>(y_rectangles * x_rectangles));
+
+    int y_max;
+    int x_max;
+    int x_min;
+    int y_min;
+
+    for (auto rectangle_y = 0; rectangle_y < y_rectangles; rectangle_y++) {
+        if (rectangle_size_y >= raster_size_y) {
+            y_min = 0;
+            y_max = raster_size_y - 1;
+        } else {
+            if (rectangle_y == 0) {
+                y_min = 0;
+            } else {
+                y_min = rectangle_size_y * rectangle_y;
+            }
+
+            if (rectangle_y == y_rectangles - 1) {
+                y_max = raster_size_y - 1;
+            } else {
+                y_max = (y_min + rectangle_size_y) - 1;
+            }
+        }
+        for (auto rectangle_x = 0; rectangle_x < x_rectangles; rectangle_x++) {
+            if (rectangle_size_x >= raster_size_x) {
+                x_min = 0;
+                x_max = raster_size_x - 1;
+            } else {
+                if (rectangle_x == 0) {
+                    x_min = 0;
+                } else {
+                    x_min = rectangle_size_x * rectangle_x;
+                }
+
+                if (rectangle_x == x_rectangles - 1) {
+                    x_max = raster_size_x - 1;
+                } else {
+                    x_max = (x_min + rectangle_size_x) - 1;
+                }
+            }
+
+            rectangles.push_back({x_min, y_min, x_max - x_min + 1, y_max - y_min + 1});
+        }
+    }
+
+    return rectangles;
+}
+
 }  // namespace shapeutils
 }  // namespace alus

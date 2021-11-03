@@ -13,36 +13,38 @@
  */
 #pragma once
 
+#include <deque>
+#include <mutex>
 #include <string_view>
 #include <vector>
 
 #include <gdal_priv.h>
 
-#include "i_data_tile_read_write_base.h"
-#include "i_data_tile_reader.h"
 #include "tile.h"
 
 namespace alus {
 namespace coherence_cuda {
-class GdalTileReader : public IDataTileReader {
+class GdalTileReader {
 public:
-    GdalTileReader(std::string_view file_name, const std::vector<int>& band_map, int band_count, bool has_transform);
-    GdalTileReader(GDALDataset* dataset, const std::vector<int>& band_map, int band_count, bool has_transform);
+    explicit GdalTileReader(std::string_view file_name);
+    explicit GdalTileReader(const std::vector<GDALDataset*>& dataset);
     GdalTileReader(const GdalTileReader&) = delete;
     GdalTileReader& operator=(const GdalTileReader&) = delete;
-    ~GdalTileReader() override;
-    void ReadTile(const Tile& tile) override;
-    void ReadTile(const Tile& tile, float* data) override;
+    ~GdalTileReader();
+    void ReadTile(const Tile& tile, float* data, int band_nr);
     void CloseDataSet();
-    [[nodiscard]] const std::vector<float>& GetData() const override;
-    [[nodiscard]] double GetValueAtXy(int x, int y) const override;
-    // todo:  void ReadTileToTensors(const IDataTileIn &tile) override;
+    [[nodiscard]] int GetBandXSize() const { return datasets_.at(0)->GetRasterXSize(); }
+    [[nodiscard]] int GetBandYSize() const { return datasets_.at(0)->GetRasterYSize(); }
+    [[nodiscard]] int GetBandXMin() const { return 0; }
+    [[nodiscard]] int GetBandYMin() const { return 0; }
+    double GetValueAtXy(int x, int y);
+    [[nodiscard]] std::string GetDataProjection() const { return data_projection_; }
+    [[nodiscard]] const std::vector<double>& GetGeoTransform() const { return affine_geo_transform_; }
 private:
-    GDALDataset* dataset_{};
-    bool do_close_dataset_;
-    std::vector<float> data_{};
-
-    void InitializeDatasetProperties(GDALDataset* dataset, bool has_transform);
+    std::vector<GDALDataset*> datasets_;
+    std::deque<std::mutex> mutexes_;
+    std::string data_projection_;
+    std::vector<double> affine_geo_transform_;
 };
 }  // namespace coherence_cuda
 }  // namespace alus

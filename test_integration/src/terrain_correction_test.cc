@@ -131,8 +131,7 @@ TEST_F(TerrainCorrectionIntegrationTest, SaaremaaAverageSceneHeight) {
 
     {
         TerrainCorrection tc(input.GetGdalDataset(), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
-                             metadata.GetLonTiePointGrid(), nullptr, 0, selected_band,
-                             use_avg_scene_height);
+                             metadata.GetLonTiePointGrid(), nullptr, 0, selected_band, use_avg_scene_height);
         tc.ExecuteTerrainCorrection(output_path, 1000, 1000);
     }
 

@@ -17,11 +17,11 @@
 
 #include "gmock/gmock.h"
 
-#include "cuda_friendly_object.h"
 #include "comparators.h"
+#include "cuda_friendly_object.h"
 #include "cuda_util.h"
-#include "earth_gravitational_model96.h"
 #include "shapes.h"
+#include "snap-dem/dem/dataio/earth_gravitational_model96.h"
 #include "srtm3_elevation_model.h"
 #include "srtm3_test_util.cuh"
 
@@ -30,18 +30,18 @@ namespace {
 using namespace alus::tests;
 
 class Srtm3AltitudeTester : public alus::cuda::CudaFriendlyObject {
-   private:
+private:
     std::string test_file_name_;
 
-   public:
+public:
     std::vector<double> lats_;
     std::vector<double> lons_;
     std::vector<double> alts_;
     std::vector<double> end_results_;
 
-    double *device_lats_{nullptr};
-    double *device_lons_{nullptr};
-    double *device_alts_{nullptr};
+    double* device_lats_{nullptr};
+    double* device_lons_{nullptr};
+    double* device_alts_{nullptr};
 
     size_t size_;
 
@@ -68,9 +68,9 @@ class Srtm3AltitudeTester : public alus::cuda::CudaFriendlyObject {
     }
 
     void HostToDevice() {
-        CHECK_CUDA_ERR(cudaMalloc((void **)&device_lats_, this->size_ * sizeof(double)));
-        CHECK_CUDA_ERR(cudaMalloc((void **)&device_lons_, this->size_ * sizeof(double)));
-        CHECK_CUDA_ERR(cudaMalloc((void **)&device_alts_, this->size_ * sizeof(double)));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&device_lats_, this->size_ * sizeof(double)));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&device_lons_, this->size_ * sizeof(double)));
+        CHECK_CUDA_ERR(cudaMalloc((void**)&device_alts_, this->size_ * sizeof(double)));
 
         CHECK_CUDA_ERR(
             cudaMemcpy(this->device_lats_, this->lats_.data(), this->size_ * sizeof(double), cudaMemcpyHostToDevice));
@@ -79,8 +79,8 @@ class Srtm3AltitudeTester : public alus::cuda::CudaFriendlyObject {
     }
 
     void DeviceToHost() {
-        CHECK_CUDA_ERR(cudaMemcpy(
-            this->end_results_.data(), this->device_alts_, this->size_ * sizeof(double), cudaMemcpyDeviceToHost));
+        CHECK_CUDA_ERR(cudaMemcpy(this->end_results_.data(), this->device_alts_, this->size_ * sizeof(double),
+                                  cudaMemcpyDeviceToHost));
     }
 
     void DeviceFree() {
@@ -106,7 +106,8 @@ TEST(SRTM3, altitudeCalc) {
     dim3 block_size(512);
     dim3 grid_size(alus::cuda::GetGridDim(block_size.x, tester.size_));
 
-    std::shared_ptr<alus::snapengine::EarthGravitationalModel96> egm_96 = std::make_shared<alus::snapengine::EarthGravitationalModel96>();
+    std::shared_ptr<alus::snapengine::EarthGravitationalModel96> egm_96 =
+        std::make_shared<alus::snapengine::EarthGravitationalModel96>();
     egm_96->HostToDevice();
 
     std::vector<std::string> files{"./goods/srtm_41_01.tif", "./goods/srtm_42_01.tif"};
@@ -119,8 +120,8 @@ TEST(SRTM3, altitudeCalc) {
     calc_data.tiles.array = srtm_3_dem.GetSrtmBuffersInfo();
     calc_data.tiles.size = srtm_3_dem.GetDeviceSrtm3TilesCount();
 
-    CHECK_CUDA_ERR(LaunchSRTM3AltitudeTester(
-        grid_size, block_size, tester.device_lats_, tester.device_lons_, tester.device_alts_, calc_data));
+    CHECK_CUDA_ERR(LaunchSRTM3AltitudeTester(grid_size, block_size, tester.device_lats_, tester.device_lons_,
+                                             tester.device_alts_, calc_data));
     tester.DeviceToHost();
 
     size_t count = alus::EqualsArraysd(tester.end_results_.data(), tester.alts_.data(), tester.size_, 0.00001);

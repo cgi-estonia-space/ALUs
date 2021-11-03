@@ -46,10 +46,10 @@ private:
     sentinel1calibrate::SelectedCalibrationBands calibration_bands_{};
 
     void ParseCalibrationType(std::string_view calibration_string);
-    void ValidateSubSwath();
-    void ValidatePolarisation();
-    void ValidateCalibrationType();
-    void ValidateParameters();
+    void ValidateSubSwath() const;
+    void ValidatePolarisation() const;
+    void ValidateCalibrationType() const;
+    void ValidateParameters() const;
 
     static bool DoesStringEqualAnyOf(std::string_view comparand, const std::vector<std::string>& string_list);
 };

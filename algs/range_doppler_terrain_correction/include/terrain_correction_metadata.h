@@ -19,13 +19,13 @@
 #include <string_view>
 #include <vector>
 
+#include "orbit_state_vector.h"
+#include "tie_point_grid.h"
 #include "cuda_util.h"
 #include "metadata_enums.h"
-#include "orbit_state_vector.h"
 #include "product.h"
-#include "snap-core/datamodel/tie_point_grid.h"
+#include "snap-core/core/datamodel/tie_point_grid.h"
 #include "spectral_band_info.h"
-#include "tie_point_grid.h"
 
 namespace alus {
 namespace terraincorrection {

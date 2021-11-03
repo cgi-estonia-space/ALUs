@@ -31,7 +31,7 @@ struct BilinearParams {
     int subswath_start;
     int subswath_end;
 
-    double no_data_value;
+    float no_data_value;
 };
 
 cudaError_t LaunchBilinearInterpolation(double *x_pixels,

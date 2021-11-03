@@ -1,6 +1,6 @@
 #include "sar_geocoding_test.cuh"
 
-#include "sar_geocoding.cuh"
+#include "s1tbx-commons/sar_geocoding.cuh"
 
 namespace alus {
 namespace tests{

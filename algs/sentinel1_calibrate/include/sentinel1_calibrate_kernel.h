@@ -18,8 +18,8 @@
 
 #include "calibration_info_computation.h"
 #include "calibration_type.h"
-#include "calibration_vector_computation.h"
 #include "kernel_array.h"
+#include "s1tbx-commons/calibration_vector_computation.h"
 #include "shapes.h"
 
 namespace alus {
@@ -43,8 +43,8 @@ struct CalibrationKernelArgs {
     sentinel1calibrate::CalibrationInfoComputation calibration_info;
     cuda::KernelArray<CalibrationLineParameters> line_parameters_array{nullptr, 0};
     Rectangle target_rectangle;
-    int subset_offset_y;
     int subset_offset_x;
+    int subset_offset_y;
 };
 
 // alignas(4) gives us 1x ld.global.v2.u16 vs 2 x ld.global.u16 at PTX level

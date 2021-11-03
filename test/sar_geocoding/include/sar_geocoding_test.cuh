@@ -1,6 +1,6 @@
 #pragma once
-#include "pos_vector.h"
-#include "orbit_state_vector_computation.h"
+#include "../../../snap-engine/orbit_state_vector_computation.h"
+#include "../../../snap-engine/pos_vector.h"
 
 namespace alus {
 namespace tests{
