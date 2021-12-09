@@ -29,26 +29,26 @@
 
 #include "ceres-core/core/i_virtual_dir.h"
 
-namespace alus {
-namespace ceres {
+namespace alus::ceres {
 class Zip : public IVirtualDir {
 private:
     boost::filesystem::path zip_file_;
     boost::filesystem::path temp_zip_file_dir_;
-
+    zipper::Unzipper unzipper_;
+    std::vector<zipper::ZipEntry> entries_;
     zipper::ZipEntry GetEntry(std::string_view path);
     void Unzip(const zipper::ZipEntry& zip_entry, const boost::filesystem::path& temp_file);
     void GetInputStream(const zipper::ZipEntry& zip_entry, std::fstream& stream);
     void Cleanup();
+    void Close() override;
 
 public:
-    explicit Zip(const boost::filesystem::path& file) : zip_file_(file) {}
+    explicit Zip(const boost::filesystem::path& file);
     bool IsCompressed() override { return true; }
     std::vector<std::string> List(std::string_view path) override;
     boost::filesystem::path GetFile(std::string_view path) override;
     bool Exists(std::string_view path) override;
     void GetInputStream(std::string_view path, std::fstream& stream) override;
-    void Close() override;
+    ~Zip() override { Close(); }
 };
-}  // namespace ceres
-}  // namespace alus
+}  // namespace alus::ceres

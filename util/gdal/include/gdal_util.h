@@ -14,6 +14,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 #include <string_view>
 #include <typeindex>
 #include <typeinfo>
@@ -23,14 +24,23 @@
 #include <gdal_priv.h>
 
 namespace alus {
-
 namespace gdal::constants {
 // GDAL driver constants
 constexpr char GDAL_MEM_DRIVER[]{"MEM"};
 constexpr char GDAL_GTIFF_DRIVER[]{"GTiff"};
 constexpr char GDAL_GTIFF_FILE_EXTENSION[]{".tif"};
 constexpr int GDAL_DEFAULT_RASTER_BAND{1};
-}
+
+constexpr std::string_view GDAL_ZIP_PREFIX{"/vsizip/"};
+constexpr std::string_view GDAL_GZIP_PREFIX{"/vsigzip/"};
+constexpr std::string_view GDAL_TAR_PREFIX{"/vsitar/"};
+
+constexpr std::string_view ZIP_EXTENSION{".zip"};
+constexpr std::string_view GZIP_EXTENSION{".gz"};
+constexpr std::string_view TAR_EXTENSION{".tar"};
+constexpr std::string_view TGZ_EXTENSION{
+    ".tgz"};  // TODO: .tar.gz is not supported yet (would require additional checks in AdjustFilePath()
+}  // namespace constants
 
 inline GDALDriver* GetGdalMemDriver() {
     return GetGDALDriverManager()->GetDriverByName(gdal::constants::GDAL_MEM_DRIVER);
@@ -90,7 +100,14 @@ void GeoTiffWriteFile(GDALDataset* input_dataset, const std::string_view output_
 
 std::string findOptimalTileSize(int raster_dimension);
 
-}  // namespace alus
+/**
+ * Checks if the file is an archive and prepends it with the suitable GDAL virtual filesystem prefix.
+ *
+ * @param file_path The original path to the file.
+ * @return File path with a correct prefix if needed.
+ */
+std::string AdjustFilePath(std::string_view file_path);
+}  // namespace alus::gdal
 
 inline void checkGdalError(CPLErr const err, char const* file, int const line) {
     if (err != CE_None) {

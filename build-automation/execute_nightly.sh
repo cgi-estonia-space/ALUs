@@ -36,7 +36,7 @@ set +e
 # Run cases
 echo "
 *****Beirut disaster coherence scenes*****"
-./run_beirut_disaster_test.sh $test_datasets_dir $dem_files_dir $orbit_files_dir $products_output
+./run_beirut_disaster_test.sh "$test_datasets_dir" "$dem_files_dir" "$orbit_files_dir" $products_output
 disaster_test_exit=$?
 echo "
 *****BEL and GER flood coherence scenes*****"

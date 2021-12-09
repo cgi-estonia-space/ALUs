@@ -20,6 +20,7 @@
 #include <string_view>
 
 #include "alus_log.h"
+#include "zip_util.h"
 
 namespace alus::utils::general {
 
@@ -79,5 +80,27 @@ inline std::string JoinStrings(std::string_view delimiter, const std::vector<std
     }
 
     return result;
+}
+
+/**
+ * Checks whether all of the given datasets are supported input formats (Sentinel-1 SAFE or zipped Sentinel-1 SAFE).
+ *
+ * @param input_datasets Vector of names of the datasets.
+ * @return True if the input is in the supported format, False otherwise.
+ */
+inline bool IsZipOrSafeInput(const std::vector<std::string>& input_datasets) {
+    return std::all_of(input_datasets.begin(), input_datasets.end(), [](const auto& dataset) {
+        const auto extension = boost::filesystem::path(dataset).extension().string();
+        if (extension == ".zip") {
+            if (const auto zip_contents = common::zip::GetZipContents(dataset); zip_contents.size() >= 1) {
+                const auto separator =
+                    zip_contents.at(0).rfind('.');  // SAFE directory should be at the root of the archive
+                const auto zipped_extension = zip_contents.at(0).substr(separator);
+                return zipped_extension == ".SAFE/" || zipped_extension == ".safe/";
+            }
+            return false;
+        }
+        return extension == ".SAFE" || extension == ".safe";
+    });
 }
 }  // namespace alus::utils::general

@@ -32,8 +32,14 @@ mkdir -p $output_dir
 test_1_prod_path=$output_dir/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_Calib_b26_tc.tif
 time alus --alg_name calibration-routine -i $test_dataset_dir/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58.SAFE \
      -o $test_1_prod_path \
-     -x 3000 -y 3000 -p "subswath=IW2,polarisation=VV,calibration_type=gamma,first_burst_index=2,last_burst_index=6" \
+     -x 2000 -y 2000 -p "subswath=IW2,polarisation=VV,calibration_type=gamma,first_burst_index=2,last_burst_index=6" \
      --dem $dem_files_dir/srtm_51_09.tif --dem $dem_files_dir/srtm_52_09.tif
+
+test_2_prod_path=$output_dir/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_Calib_b26_tc_zipped.tif
+time alus --alg_name calibration-routine -i $test_dataset_dir/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58.zip \
+     -o $test_2_prod_path \
+     -x 2000 -y 2000 -p "subswath=IW2,polarisation=VV,calibration_type=gamma,first_burst_index=2,last_burst_index=6" \
+     --dem $dem_files_dir/srtm_51_09.zip --dem $dem_files_dir/srtm_52_09.zip
 
 if [[ -z "${NIGHTLY_GOLDEN_DIR}" ]]; then
   echo "no golden directory defined, no verification executed"
@@ -42,5 +48,7 @@ fi
 
 echo "Validating $test_1_prod_path"
 ./alus_result_check.py -I $test_1_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_Calib_b26_tc.tif
+echo "Validating $test_2_prod_path"
+./alus_result_check.py -I $test_2_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_Calib_b26_tc.tif
 
 exit $?
