@@ -98,4 +98,4 @@ echo "Validating $test_5_prod_path"
 ./alus_result_check.py -I $test_5_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_IW1_b47_coh_deb_tc.tif
 res5=$?
 
-exit $(($res1 | $res2 | $res3 | $res4 | res5))
+exit $(($res1 | $res2 | $res3 | $res4 | $res5))

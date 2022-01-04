@@ -21,8 +21,8 @@ namespace alus::snapengine::custom {
 class IoTile {
 private:
     // tile location In cartesian system tile_x_ tile_y_
-    int tile_x_{};  // NOLINT
-    int tile_y_{};  // NOLINT
+    [[maybe_unused]] int tile_x_{};
+    [[maybe_unused]] int tile_y_{};
     // tile read from source using provided reader
     std::shared_ptr<snapengine::ITile> tile_in_;
     // tile written out using provided writer

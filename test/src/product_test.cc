@@ -88,12 +88,7 @@ TEST_F(ProductTest, testSetAndGetReader) {
     product->SetProductReader(reader2);
     ASSERT_EQ(reader2, product->GetProductReader());
 
-    try {
-        product->SetProductReader(nullptr);
-        ASSERT_THROW((void)"product->SetProductReader(nullptr)", std::invalid_argument);
-    } catch (const std::invalid_argument& ignored) {
-        ASSERT_STREQ("ProductReader argument is nullptr", ignored.what());
-    }
+    ASSERT_THROW(product->SetProductReader(nullptr), std::invalid_argument);
 }
 
 TEST_F(ProductTest, testAddBandWithBandParameters) {
@@ -188,27 +183,13 @@ TEST_F(ProductTest, testGetSceneRasterHeight) {
 TEST_F(ProductTest, testGetAndSetRefNo) {
     ASSERT_EQ(0, product_->GetRefNo());
 
-    try {
-        product_->SetRefNo(0);
-        ASSERT_THROW((void)"product_->SetRefNo(0)", std::invalid_argument);
-    } catch (const std::invalid_argument& e) {
-        std::string str1("[refNo] is [0]  but should be in the range [1] to [" +
-                         std::to_string(std::numeric_limits<int>::max()) + "]");
-        ASSERT_STREQ(str1.c_str(), e.what());
-    }
+    ASSERT_THROW(product_->SetRefNo(0), std::invalid_argument);
 
     const int ref_no_1{14};
     product_->SetRefNo(ref_no_1);
     ASSERT_EQ(ref_no_1, product_->GetRefNo());
 
-    try {
-        const int ref_no_2{23};
-        product_->SetRefNo(ref_no_2);
-        ASSERT_THROW((void)"product_->SetRefNo(ref_no_2)", std::runtime_error);  // NOLINT
-    } catch (const std::runtime_error& e) {
-        // expected if the reference number was alredy set
-        ASSERT_STREQ("this.refNo != 0 && this.refNo != refNo", e.what());
-    }
+    ASSERT_THROW(product_->SetRefNo(23), std::runtime_error);
 
     // no exception expected when the reference number to be set is the same as the one already set
     product_->SetRefNo(ref_no_1);

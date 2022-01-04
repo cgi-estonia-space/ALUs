@@ -20,6 +20,7 @@
 
 #include <cstddef>
 #include <exception>
+#include <filesystem>
 
 #include "alus_log.h"
 #include "gdal_data_copy.h"
@@ -193,8 +194,8 @@ void ApplyOrbitFileOp::CreateTargetProduct() {
     //    todo: naming logic is currently half baked on the fly changes (snap used different systems for that)
     target_product_->SetFileLocation(
         source_product_->GetFileLocation().parent_path().parent_path().generic_path().string() +
-        boost::filesystem::path::preferred_separator + target_product_->GetName() +
-        boost::filesystem::path::preferred_separator + target_product_->GetName() + ".tif");
+        std::filesystem::path::preferred_separator + target_product_->GetName() +
+        std::filesystem::path::preferred_separator + target_product_->GetName() + ".tif");
 
     // todo: look this over when we decide on jai replacement
     /*
@@ -207,21 +208,22 @@ void ApplyOrbitFileOp::CreateTargetProduct() {
     }*/
 }
 void ApplyOrbitFileOp::WriteProductFiles(std::shared_ptr<snapengine::IMetaDataWriter> metadata_writer) {
-    boost::filesystem::create_directories(target_product_->GetFileLocation().parent_path().generic_path());
+    std::filesystem::create_directories(target_product_->GetFileLocation().parent_path().generic_path().c_str());
     // copy data
     alus::GdalDataCopy(source_product_->GetFileLocation().c_str(), target_product_->GetFileLocation().c_str());
     // temporary workaround to forward tie_point_grids directory...
-    boost::filesystem::copy(source_product_->GetFileLocation().parent_path().generic_path().string() +
-                                boost::filesystem::path::preferred_separator + "tie_point_grids",
+
+    std::filesystem::copy(source_product_->GetFileLocation().parent_path().generic_path().string() +
+                                std::filesystem::path::preferred_separator + "tie_point_grids",
                             target_product_->GetFileLocation().parent_path().generic_path().string() +
-                                boost::filesystem::path::preferred_separator + "tie_point_grids",
-                            boost::filesystem::copy_options::recursive);
+                                std::filesystem::path::preferred_separator + "tie_point_grids",
+                            std::filesystem::copy_options::recursive);
     // temporary workaround to forward vector directory...
-    boost::filesystem::copy(source_product_->GetFileLocation().parent_path().generic_path().string() +
-                                boost::filesystem::path::preferred_separator + "vector_data",
+    std::filesystem::copy(source_product_->GetFileLocation().parent_path().generic_path().string() +
+                                std::filesystem::path::preferred_separator + "vector_data",
                             target_product_->GetFileLocation().parent_path().generic_path().string() +
-                                boost::filesystem::path::preferred_separator + "vector_data",
-                            boost::filesystem::copy_options::recursive);
+                                std::filesystem::path::preferred_separator + "vector_data",
+                            std::filesystem::copy_options::recursive);
     // write metadata file
     target_product_->SetMetadataWriter(metadata_writer);
     target_product_->GetMetadataWriter()->Write();

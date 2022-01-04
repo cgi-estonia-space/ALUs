@@ -97,12 +97,8 @@ TEST(ProductDataUtc, testDateParsingEmptyString) {
     EXPECT_THROW(alus::snapengine::Utc::Parse(""), std::invalid_argument);
 }
 
-TEST(ProductDataUtc, testDateParsingNull) {
-    EXPECT_THROW((void)alus::snapengine::Utc::Parse(nullptr), std::invalid_argument);  // NOLINT
-}
-
-// ported just to provide example (timezone UTZ only atm and calendar logic is different)
-TEST(ProductDataUtc, testMerisDateParsing) {
+//ported just to provide example (timezone UTZ only atm and calendar logic is different)
+TEST(ProductDataUtc, testMerisDateParsing){
     std::string jan("03-JAN-2003 01:02:03.3456");
     std::string feb("05-FEB-2002 02:03:04.67890");
     std::string mar("06-MAR-2002 02:03:04.67890");

@@ -3,7 +3,8 @@
 
 set -e
 
-script_directory=$(dirname -- "`pwd`/$0")
+
+script_directory=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 resources_file="$script_directory/.alusresources"
 
 if [ "$1" == "--clean" ]; then

@@ -14,7 +14,7 @@ Developed by [CGI Estonia](https://www.cgi.com/ee/et).
 
 Latest build can be downloaded from - https://alus-builds.s3.eu-central-1.amazonaws.com/alus-nightly-latest.tar.gz  
 Verified releases can be downloaded from - https://bitbucket.org/cgi-ee-space/alus/downloads/  
-One can download prepared image with all of the needed dependencies from [dockerhub](https://hub.docker.com/repository/docker/cgialus/alus-infra) 
+One can download prepared image with all of the needed dependencies from [dockerhub](https://hub.docker.com/repository/docker/cgialus/alus-devel) 
 
 ## Executing
 
@@ -34,8 +34,8 @@ See ``--help`` and ``--alg_help`` for specific arguments/parameters how to invok
 ## Docker example
 
 ```
-docker pull cgialus/alus-infra:latest
-docker run -t -d --gpus all --name alus_container cgialus/alus-infra
+docker pull cgialus/alus-devel:latest
+docker run -t -d --gpus all --name alus_container cgialus/alus-devel
 docker exec -t alus_container mkdir /root/alus
 docker cp <latest build tar archive> alus_container:/root/alus/
 docker exec -t alus_container bash -c "tar -xzf /root/alus/*.tar.gz -C /root/alus/"

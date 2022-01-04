@@ -134,8 +134,8 @@ TEST_F(CoherenceIntegrationTest, singleBurstData2018) {
     }
 
     const std::string actual_hash = prev_band_hash;
-    const std::string expected_hash1 = "87d53d43ac7c7447";
-    const std::string expected_hash2 = "584b3a8c96c3f550";
+    const std::string expected_hash1 = "d401107a416848a3";
+    const std::string expected_hash2 = "ae3a8961ab05ddb3";
 
     if (actual_hash == expected_hash1 || actual_hash == expected_hash2) return;
 

@@ -59,7 +59,7 @@ public:
 private:
     GDALDataset* input_ds_;
     const RangeDopplerTerrainMetadata& metadata_;
-    snapengine::geocoding::Geocoding* target_geocoding_{};
+    [[maybe_unused]] snapengine::geocoding::Geocoding* target_geocoding_{};
     const PointerHolder* d_srtm_3_tiles_;
     const size_t d_srtm_3_tiles_length_;
     std::vector<void*> cuda_arrays_to_clean_{};

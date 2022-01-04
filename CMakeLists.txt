@@ -1,11 +1,11 @@
-cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 project(ALUs
         LANGUAGES CXX CUDA
         DESCRIPTION "Parallel ALUs for geospatial data processing"
-        VERSION 0.7.0
+        VERSION 1.0.0
         )
 
-set(CMAKE_CUDA_STANDARD 14)
+set(CMAKE_CUDA_STANDARD 17)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -15,32 +15,28 @@ find_package(Threads REQUIRED)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Dependencies which should be installed on a host system and not included separately by this project.
-find_package(CUDA REQUIRED)
-if (CUDA_FOUND)
-    message(STATUS "Found CUDA ${CUDA_VERSION_STRING} at ${CUDA_TOOLKIT_ROOT_DIR}")
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler=-Wall")
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler=-Werror")
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler=-Wextra")
-    # To suppress using of cmath std::min and std::max.
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr")
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --Werror all-warnings")
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --extended-lambda")
 
-    # mapping executable GPU code to source code, only enable for testing/profiling
-    #set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -lineinfo")
-    #    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --resource-usage")
-    INCLUDE_DIRECTORIES(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-    if (CUDA_ARCH)
-        set(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCH} CACHE STRING "CUDA architectures" FORCE)
-    else (CUDA_ARCH)
-        set(CMAKE_CUDA_ARCHITECTURES 50 CACHE STRING "CUDA architectures" FORCE)
-    endif ()
-    message(STATUS "CUDA binary code will be generated for the following architecture(s) - ${CMAKE_CUDA_ARCHITECTURES}")
-else (CUDA_FOUND)
-    message(FATAL_ERROR "No CUDA toolchain found. Exiting.")
-endif ()
+find_package(CUDAToolkit 11.2 REQUIRED)
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler=-Wall")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler=-Werror")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler=-Wextra")
+# To suppress using of cmath std::min and std::max.
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --Werror all-warnings")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --extended-lambda")
+# mapping executable GPU code to source code, only enable for testing/profiling
+#set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -lineinfo")
+#set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --resource-usage")
 
-find_package(Boost 1.74.0 REQUIRED COMPONENTS program_options date_time filesystem iostreams log log_setup)
+INCLUDE_DIRECTORIES(${CUDAToolkit_INCLUDE_DIRS})
+
+if (NOT DEFINED ENV{CUDAARCHS})
+	message(STATUS "CUDAARCHS not set, defaulting")
+	set(CMAKE_CUDA_ARCHITECTURES 60 CACHE STRING "CUDA architectures" FORCE)
+endif()
+message(STATUS "CUDA binary code will be generated for the following architecture(s) - ${CMAKE_CUDA_ARCHITECTURES}")
+
+find_package(Boost 1.71.0 REQUIRED COMPONENTS program_options date_time filesystem iostreams log log_setup)
 
 find_package(GDAL REQUIRED)
 include_directories(${GDAL_INCLUDE_DIRS})
@@ -55,6 +51,9 @@ set(ALUS_LFS_GOODS ${CMAKE_CURRENT_LIST_DIR}/resources)
 option(ENABLE_TESTS "Enable tests" OFF)
 
 #external library as git submodule with separate CMakeLists.txt project
+set(BUILD_TEST OFF CACHE BOOL "Build tests")
+set(BUILD_STATIC_VERSION ON CACHE BOOL "Build static library")
+set(BUILD_SHARED_VERSION OFF CACHE BOOL "Build shared library")
 add_subdirectory(external/zipper)
 
 # Project wide compilation directives.
@@ -63,6 +62,14 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_FLAGS "-Wall -Werror -Wextra -pedantic -DBOOST_LOG_DYN_LINK")
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+	message(STATUS "Setting GNU compiler specific flags")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=attributes")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+else()
+	message(WARNING "Building the project may fail with not supported compiler - " ${CMAKE_CXX_COMPILER_ID})
+endif()
 
 set(CMAKE_SKIP_BUILD_RPATH  FALSE)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)

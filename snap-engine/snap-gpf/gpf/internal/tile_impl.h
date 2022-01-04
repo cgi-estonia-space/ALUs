@@ -36,7 +36,7 @@ private:
     // this instance should be created using reader?
     std::shared_ptr<snapengine::ProductData> data_buffer_;  // NOLINT
     std::vector<float> simple_data_buffer_;
-    const std::shared_ptr<RasterDataNode>& raster_data_node_;  // NOLINT
+    [[maybe_unused]] const std::shared_ptr<RasterDataNode>& raster_data_node_;
 
 public:
     inline TileImpl(const std::shared_ptr<RasterDataNode>& raster_data_node, const custom::Rectangle& rectangle)
