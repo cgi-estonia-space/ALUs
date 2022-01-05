@@ -20,10 +20,11 @@
 #include <boost/filesystem.hpp>
 #include <boost/geometry.hpp>
 
-#include "aoi_burst_extract.h"
 #include "algorithm_exception.h"
 #include "alus_log.h"
+#include "aoi_burst_extract.h"
 #include "c16_dataset.h"
+#include "ceres-core/core/zip.h"
 #include "general_constants.h"
 #include "s1tbx-commons/subswath_info.h"
 #include "s1tbx-io/sentinel1/sentinel1_product_reader_plug_in.h"
@@ -39,6 +40,7 @@
 #include "snap-engine-utilities/engine-utilities/eo/constants.h"
 #include "snap-engine-utilities/engine-utilities/gpf/input_product_validator.h"
 #include "split_product_subset_builder.h"
+#include "zip_util.h"
 
 namespace {
 constexpr std::string_view ALG_NAME{"TOPSAR-SPLIT"};
@@ -76,28 +78,58 @@ void TopsarSplit::LoadInputDataset(std::string_view filename) {
 
     auto reader_plug_in = std::make_shared<alus::s1tbx::Sentinel1ProductReaderPlugIn>();
     reader_ = reader_plug_in->CreateReaderInstance();
-    source_product_ = reader_->ReadProductNodes(boost::filesystem::canonical("manifest.safe", path), nullptr);
+    source_product_ = reader_->ReadProductNodes(boost::filesystem::canonical(path), nullptr);
 
     bool found_it = false;
-    std::shared_ptr<snapengine::PugixmlMetaDataReader> xml_reader;
-    for (boost::filesystem::directory_iterator itr(measurement); itr != end_itr; itr++) {
-        if (is_regular_file(itr->path())) {
-            std::string current_file = itr->path().string();
-            if (current_file.find(low_subswath) != std::string::npos &&
-                current_file.find(low_polarisation) != std::string::npos) {
-                LOGV << "Selecting tif for reading: " << current_file;
-                pixel_reader_ = std::make_shared<C16Dataset<int16_t>>(current_file);
-                pixel_reader_->TryToCacheImage();
-                found_it = true;
-                break;
+    std::string input_file{};
+
+    if (common::zip::IsFileAnArchive(filename)) {
+        if (!boost::filesystem::exists(filename.data())) {
+            std::string error_message{"No file " + std::string(filename) + " found"};
+            THROW_ALGORITHM_EXCEPTION(ALG_NAME, error_message);
+        }
+
+        ceres::Zip dir(path);
+        // Convert path to SAFE
+        auto leaf = path.leaf();
+        leaf.replace_extension("SAFE");
+
+        std::shared_ptr<snapengine::PugixmlMetaDataReader> xml_reader;
+        const auto file_list = dir.List(leaf.string() + "/measurement");
+        const auto image_file =
+            std::find_if(std::begin(file_list), std::end(file_list), [&low_subswath, &low_polarisation](auto& file) {
+                return file.find(low_subswath) != std::string::npos && file.find(low_polarisation) != std::string::npos;
+            });
+        if (image_file == std::end(file_list)) {
+            THROW_ALGORITHM_EXCEPTION(ALG_NAME, "Image file for " + low_subswath + " and " + low_polarisation +
+                                                    " does not exist in dataset.");
+        }
+        input_file = leaf.string() + "/measurement/" + *image_file;
+        pixel_reader_ = std::make_shared<C16Dataset<int16_t>>(gdal::constants::GDAL_ZIP_PREFIX.data() + path.string() +
+                                                              "/" + input_file);
+        pixel_reader_->TryToCacheImage();
+        found_it = true;
+    } else {
+        std::shared_ptr<snapengine::PugixmlMetaDataReader> xml_reader;
+        for (boost::filesystem::directory_iterator itr(measurement); itr != end_itr; itr++) {
+            if (is_regular_file(itr->path())) {
+                std::string current_file = itr->path().string();
+                if (current_file.find(low_subswath) != std::string::npos &&
+                    current_file.find(low_polarisation) != std::string::npos) {
+                    LOGV << "Selecting tif for reading: " << current_file;
+                    pixel_reader_ = std::make_shared<C16Dataset<int16_t>>(current_file);
+                    pixel_reader_->TryToCacheImage();
+                    found_it = true;
+                    break;
+                }
             }
         }
     }
 
     if (!found_it) {
         throw common::AlgorithmException(ALG_NAME, "SAFE file does not contain GeoTIFF file for subswath '" +
-                                                   subswath_ + "' and polarisation '" +
-                                                   selected_polarisations_.front() + "'");
+                                                       subswath_ + "' and polarisation '" +
+                                                       selected_polarisations_.front() + "'");
     }
 }
 
@@ -176,7 +208,6 @@ void TopsarSplit::initialize() {
     }
 
     if (!burst_aoi_wkt_.empty()) {
-
         Aoi aoi_polygon;
         try {
             boost::geometry::read<boost::geometry::format_wkt>(aoi_polygon, burst_aoi_wkt_);
@@ -202,9 +233,9 @@ void TopsarSplit::initialize() {
 
         auto bursts = DetermineBurstIndexesCoveredBy(aoi_polygon, burst_edge_line_coordinates);
         if (bursts.empty()) {
-            throw common::AlgorithmException(
-                ALG_NAME,
-                "Given AOI '" + burst_aoi_wkt_ + "' does not cover any bursts in the selected subswath '" + subswath_ + "'");
+            throw common::AlgorithmException(ALG_NAME, "Given AOI '" + burst_aoi_wkt_ +
+                                                           "' does not cover any bursts in the selected subswath '" +
+                                                           subswath_ + "'");
         }
         first_burst_index_ = bursts.front();
         last_burst_index_ = bursts.back();
@@ -241,7 +272,7 @@ void TopsarSplit::initialize() {
 
     subset_def->SetSubSampling(1, 1);
     subset_def->SetIgnoreMetadata(false);
-    pixel_reader_->SetReadingArea({x,y,w,h});
+    pixel_reader_->SetReadingArea({x, y, w, h});
 
     std::vector<std::string> selected_band_names(selected_bands.size());
     for (size_t i = 0; i < selected_bands.size(); i++) {
@@ -279,13 +310,15 @@ void TopsarSplit::UpdateAbstractedMetadata() {
 
     abs_tgt->SetAttributeUtc(
         snapengine::AbstractMetadata::FIRST_LINE_TIME,
-        std::make_shared<snapengine::Utc>(selected_subswath_info_->burst_first_line_time_[first_burst_index_ - BURST_INDEX_OFFSET] /
-                                          snapengine::eo::constants::SECONDS_IN_DAY));
+        std::make_shared<snapengine::Utc>(
+            selected_subswath_info_->burst_first_line_time_[first_burst_index_ - BURST_INDEX_OFFSET] /
+            snapengine::eo::constants::SECONDS_IN_DAY));
 
     abs_tgt->SetAttributeUtc(
         snapengine::AbstractMetadata::LAST_LINE_TIME,
-        std::make_shared<snapengine::Utc>(selected_subswath_info_->burst_last_line_time_[last_burst_index_ - BURST_INDEX_OFFSET] /
-                                          snapengine::eo::constants::SECONDS_IN_DAY));
+        std::make_shared<snapengine::Utc>(
+            selected_subswath_info_->burst_last_line_time_[last_burst_index_ - BURST_INDEX_OFFSET] /
+            snapengine::eo::constants::SECONDS_IN_DAY));
 
     abs_tgt->SetAttributeDouble(snapengine::AbstractMetadata::LINE_TIME_INTERVAL,
                                 selected_subswath_info_->azimuth_time_interval_);
@@ -300,25 +333,30 @@ void TopsarSplit::UpdateAbstractedMetadata() {
     abs_tgt->SetAttributeDouble(snapengine::AbstractMetadata::AZIMUTH_SPACING,
                                 selected_subswath_info_->azimuth_pixel_spacing_);
 
-    abs_tgt->SetAttributeInt(snapengine::AbstractMetadata::NUM_OUTPUT_LINES,
-                             selected_subswath_info_->lines_per_burst_ * (last_burst_index_ - first_burst_index_ + BURST_INDEX_OFFSET));
+    abs_tgt->SetAttributeInt(
+        snapengine::AbstractMetadata::NUM_OUTPUT_LINES,
+        selected_subswath_info_->lines_per_burst_ * (last_burst_index_ - first_burst_index_ + BURST_INDEX_OFFSET));
 
     abs_tgt->SetAttributeInt(snapengine::AbstractMetadata::NUM_SAMPLES_PER_LINE,
                              selected_subswath_info_->num_of_samples_);
 
     int cols = selected_subswath_info_->num_of_geo_points_per_line_;
 
-    snapengine::AbstractMetadata::SetAttribute(abs_tgt, snapengine::AbstractMetadata::FIRST_NEAR_LAT,
-                                               selected_subswath_info_->latitude_[first_burst_index_ - BURST_INDEX_OFFSET][0]);
+    snapengine::AbstractMetadata::SetAttribute(
+        abs_tgt, snapengine::AbstractMetadata::FIRST_NEAR_LAT,
+        selected_subswath_info_->latitude_[first_burst_index_ - BURST_INDEX_OFFSET][0]);
 
-    snapengine::AbstractMetadata::SetAttribute(abs_tgt, snapengine::AbstractMetadata::FIRST_NEAR_LONG,
-                                               selected_subswath_info_->longitude_[first_burst_index_ - BURST_INDEX_OFFSET][0]);
+    snapengine::AbstractMetadata::SetAttribute(
+        abs_tgt, snapengine::AbstractMetadata::FIRST_NEAR_LONG,
+        selected_subswath_info_->longitude_[first_burst_index_ - BURST_INDEX_OFFSET][0]);
 
-    snapengine::AbstractMetadata::SetAttribute(abs_tgt, snapengine::AbstractMetadata::FIRST_FAR_LAT,
-                                               selected_subswath_info_->latitude_[first_burst_index_ - BURST_INDEX_OFFSET][cols - 1]);
+    snapengine::AbstractMetadata::SetAttribute(
+        abs_tgt, snapengine::AbstractMetadata::FIRST_FAR_LAT,
+        selected_subswath_info_->latitude_[first_burst_index_ - BURST_INDEX_OFFSET][cols - 1]);
 
-    snapengine::AbstractMetadata::SetAttribute(abs_tgt, snapengine::AbstractMetadata::FIRST_FAR_LONG,
-                                               selected_subswath_info_->longitude_[first_burst_index_ - BURST_INDEX_OFFSET][cols - 1]);
+    snapengine::AbstractMetadata::SetAttribute(
+        abs_tgt, snapengine::AbstractMetadata::FIRST_FAR_LONG,
+        selected_subswath_info_->longitude_[first_burst_index_ - BURST_INDEX_OFFSET][cols - 1]);
 
     snapengine::AbstractMetadata::SetAttribute(abs_tgt, snapengine::AbstractMetadata::LAST_NEAR_LAT,
                                                selected_subswath_info_->latitude_[last_burst_index_][0]);

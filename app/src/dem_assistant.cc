@@ -18,6 +18,10 @@
 #include <string_view>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
+
+#include "gdal_util.h"
+#include "zip_util.h"
 
 namespace {
 constexpr std::string_view TIF_EXTENSION{".tif"};
@@ -26,7 +30,15 @@ constexpr std::string_view TIF_EXTENSION{".tif"};
 namespace alus::app {
 
 bool DemAssistant::ArgumentsExtract::IsValid(std::string_view dem_file) {
-    return dem_file.substr(dem_file.length() - TIF_EXTENSION.length(), dem_file.length()) == TIF_EXTENSION;
+    const auto extension = boost::filesystem::path(dem_file.data()).extension().string();
+    bool is_valid = extension == TIF_EXTENSION;
+    if (extension == gdal::constants::ZIP_EXTENSION) {
+        const auto zip_contents = common::zip::GetZipContents(dem_file);
+        is_valid |= std::any_of(std::begin(zip_contents), std::end(zip_contents), [](const auto& file) {
+            return boost::filesystem::path(file).extension().string() == TIF_EXTENSION;
+        });
+    }
+    return is_valid;
 }
 
 std::vector<std::string> DemAssistant::ArgumentsExtract::ExtractSrtm3Files(
@@ -36,14 +48,23 @@ std::vector<std::string> DemAssistant::ArgumentsExtract::ExtractSrtm3Files(
         std::vector<std::string> argument_values{};
         boost::split(argument_values, arg, boost::is_any_of("\t "));
 
-        for (auto&& value : argument_values) {
+        for (const auto& value : argument_values) {
             if (!IsValid(arg)) {
                 throw std::invalid_argument("Invalid DEM file - " + arg);
             }
-            srtm3_files.push_back(value);
+
+            srtm3_files.push_back(AdjustSrtm3Path(value));
         }
     }
     return srtm3_files;
+}
+std::string DemAssistant::ArgumentsExtract::AdjustSrtm3Path(std::string_view path) {
+    if (const auto file_path = boost::filesystem::path(path.data());
+        file_path.extension().string() == gdal::constants::ZIP_EXTENSION) {
+        const auto tiff_name = boost::filesystem::change_extension(file_path.leaf(), TIF_EXTENSION.data());
+        return gdal::constants::GDAL_ZIP_PREFIX.data() + file_path.string() + "/" + tiff_name.string();
+    }
+    return path.data();
 }
 
 std::shared_ptr<DemAssistant> DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(

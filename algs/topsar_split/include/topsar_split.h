@@ -29,7 +29,6 @@
 
 namespace alus::topsarsplit {
 
-
 class TopsarSplit {
 public:
     TopsarSplit(std::string_view filename, std::string_view selected_subswath, std::string_view selected_polarisation);
@@ -58,7 +57,6 @@ private:
     int first_burst_index_{BURST_INDEX_OFFSET};
     int last_burst_index_ = 9999;
     std::string burst_aoi_wkt_{};
-
     s1tbx::SubSwathInfo* selected_subswath_info_ = nullptr;
 
     void LoadInputDataset(std::string_view filename);
@@ -69,5 +67,4 @@ private:
     void UpdateTargetProductMetadata();
     void RemoveElements(std::shared_ptr<snapengine::MetadataElement>& orig_meta, std::string parent);
 };
-
 }  // namespace alus::topsarsplit

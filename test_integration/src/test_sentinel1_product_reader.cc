@@ -22,7 +22,7 @@
 
 #include <boost/filesystem.hpp>
 
-#include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
 #include "s1tbx-commons/test/reader_test.h"
 
@@ -74,5 +74,4 @@ TEST_F(TestSentinel1ProductReader, testOpeningZip) {
                                                      "Intensity_IW1_VV", "i_IW1_VH", "q_IW1_VH", "Intensity_IW1_VH"});
     }
 }
-
 }  // namespace

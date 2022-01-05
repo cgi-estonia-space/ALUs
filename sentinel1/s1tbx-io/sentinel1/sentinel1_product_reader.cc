@@ -63,7 +63,7 @@ std::shared_ptr<snapengine::Product> Sentinel1ProductReader::ReadProductNodesImp
             Sentinel1ProductReaderPlugIn::ValidateInput(input_path);
         }
         data_dir_->ReadProductDirectory();
-        std::shared_ptr<snapengine::Product> product = data_dir_->CreateProduct();
+        std::shared_ptr<snapengine::Product> product = data_dir_->CreateProduct(); // Reads XML files and Raster files.
         product->SetFileLocation(input_path);
         product->SetProductReader(SharedFromBase<Sentinel1ProductReader>());
         // todo: add support if needed
@@ -73,7 +73,8 @@ std::shared_ptr<snapengine::Product> Sentinel1ProductReader::ReadProductNodesImp
         AddCommonSARMetadata(product);
 
         SetQuicklookBandName(product);
-        AddQuicklook(product, snapengine::Quicklook::DEFAULT_QUICKLOOK_NAME, GetQuicklookFile());
+        // Reading Quicklooks only decreases performance of the application
+        //AddQuicklook(product, snapengine::Quicklook::DEFAULT_QUICKLOOK_NAME, GetQuicklookFile());
 
         product->SetModified(false);
 

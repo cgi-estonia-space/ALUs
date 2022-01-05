@@ -23,5 +23,6 @@ target_link_libraries(common-util-static
         PUBLIC
         Boost::log
         Boost::log_setup
+        staticZipper
         )
 
