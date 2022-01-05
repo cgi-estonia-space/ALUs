@@ -19,17 +19,18 @@
 #include "tie_point_grid.h"
 #include "tie_point_grid_test.cuh"
 
-using namespace alus;
-using namespace alus::snapengine;
-using namespace alus::tests;
-
 namespace {
 
-class TiePointGridTester : public cuda::CudaFriendlyObject {
+using alus::cuda::CudaFriendlyObject;
+using alus::cuda::KernelArray;
+using alus::snapengine::tiepointgrid::TiePointGrid;
+using alus::tests::LaunchGetPixelDouble;
+
+class TiePointGridTester : public CudaFriendlyObject {
 public:
     // Array values are received by running terrain correction on
     // S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb.dim data file.
-    float tie_points_array_[126]{
+    const float tie_points_array_[126]{
         58.213177, 58.22355,  58.23374,  58.243763, 58.25362,  58.263313, 58.272854, 58.28224,  58.29149,  58.3006,
         58.30957,  58.318413, 58.32713,  58.33572,  58.344196, 58.352554, 58.3608,   58.36894,  58.37697,  58.384895,
         58.39272,  58.2498,   58.26018,  58.270382, 58.280407, 58.290268, 58.29997,  58.309513, 58.31891,  58.32816,
@@ -43,7 +44,7 @@ public:
         58.507614, 58.515766, 58.52381,  58.531754, 58.539593, 58.39631,  58.40671,  58.416935, 58.426983, 58.436863,
         58.446587, 58.45615,  58.465565, 58.474834, 58.483967, 58.49296,  58.501827, 58.510563, 58.51918,  58.52767,
         58.536053, 58.544315, 58.55247,  58.56052,  58.568466, 58.57631};
-    cuda::KernelArray<float> tie_points_ = {tie_points_array_, 126};
+    KernelArray<float> tie_points_ = {const_cast<float*>(tie_points_array_), 126};  // NOLINT
 
     const double EXPECTED_RESULT_ = 58.21324222804141;
     double end_result_;
@@ -52,29 +53,29 @@ public:
 
     ~TiePointGridTester() { this->DeviceFree(); }
 
-    void HostToDevice() {
+    void HostToDevice() override {
         CHECK_CUDA_ERR(cudaMalloc(&device_tie_points_, sizeof(float) * tie_points_.size));
         CHECK_CUDA_ERR(cudaMalloc(&device_result_, sizeof(double)));
         CHECK_CUDA_ERR(cudaMemcpy(device_tie_points_, tie_points_.array, sizeof(float) * tie_points_.size,
                                   cudaMemcpyHostToDevice));
     }
 
-    void DeviceToHost() {
+    void DeviceToHost() override {
         CHECK_CUDA_ERR(cudaMemcpy(&end_result_, device_result_, sizeof(double), cudaMemcpyDeviceToHost));
     }
 
-    void DeviceFree() {
+    void DeviceFree() override {
         cudaFree(device_tie_points_);
         cudaFree(device_result_);
     }
 };
 
-TEST(getPixelDouble, tie_point_grid) {
+TEST(getPixelDouble, TiePointGrid) {
     TiePointGridTester tester;
 
     tester.HostToDevice();
     CHECK_CUDA_ERR(LaunchGetPixelDouble(1, 1, 0.5, 0.5, tester.device_result_,
-                                        tiepointgrid::TiePointGrid{0, 0, 1163, 300, 21, 6, tester.device_tie_points_}));
+                                        TiePointGrid{0, 0, 1163, 300, 21, 6, tester.device_tie_points_}));
 
     tester.DeviceToHost();
     EXPECT_DOUBLE_EQ(tester.end_result_, tester.EXPECTED_RESULT_);

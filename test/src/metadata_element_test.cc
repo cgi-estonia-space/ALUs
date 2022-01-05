@@ -27,8 +27,9 @@
 #include "metadata_element.h"
 
 namespace {
-using namespace alus::snapengine;
-
+using alus::snapengine::MetadataAttribute;
+using alus::snapengine::MetadataElement;
+using alus::snapengine::ProductData;
 /*
 class ProductDataMetadataElementTest : public ::testing::Test {
 public:
@@ -44,7 +45,7 @@ protected:
 /**
  * Tests construction failures
  */
-TEST(MetadataElement, testRsAnnotation) { EXPECT_THROW(MetadataElement(nullptr), std::invalid_argument); }
+TEST(MetadataElement, testRsAnnotation) { EXPECT_THROW(MetadataElement(""), std::invalid_argument); }
 
 /**
  * Tests the functionality for addAttribute
@@ -89,7 +90,7 @@ TEST(MetadataElement, testGetAttribute) {
     auto annot = std::make_shared<MetadataElement>("yepp");
 
     // a new object should not return anything on this request
-    EXPECT_THROW(annot->GetAttributeAt(0), std::runtime_error);
+    EXPECT_THROW((void)annot->GetAttributeAt(0), std::runtime_error);  // NOLINT
 
     auto att = std::make_shared<MetadataAttribute>("GuiTest_DialogAndModalDialog",
                                                    ProductData::CreateInstance(ProductData::TYPE_INT32), false);
@@ -165,19 +166,21 @@ TEST(MetadataElement, testSetAtributeInt) {
     auto elem = std::make_shared<MetadataElement>("test");
     ASSERT_EQ(0, elem->GetNumAttributes());
 
-    elem->SetAttributeInt("counter", 3);
+    const int attribute_1{3};
+    elem->SetAttributeInt("counter", attribute_1);
 
     ASSERT_EQ(1, elem->GetNumAttributes());
     auto attrib = elem->GetAttributeAt(0);
     ASSERT_NE(attrib, nullptr);
     ASSERT_EQ("counter", attrib->GetName());
-    ASSERT_EQ(3, attrib->GetData()->GetElemInt());
+    ASSERT_EQ(attribute_1, attrib->GetData()->GetElemInt());
 
-    elem->SetAttributeInt("counter", -3);
+    const int attribute_2{-3};
+    elem->SetAttributeInt("counter", attribute_2);
 
     ASSERT_EQ(1, elem->GetNumAttributes());
     ASSERT_EQ("counter", attrib->GetName());
-    ASSERT_EQ(-3, attrib->GetData()->GetElemInt());
+    ASSERT_EQ(attribute_2, attrib->GetData()->GetElemInt());
 }
 
 }  // namespace

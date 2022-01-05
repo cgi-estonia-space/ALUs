@@ -20,7 +20,7 @@
 #include <cstddef>
 #include <string>
 
-namespace alus {
+namespace alus {  // NOLINT TODO: concatenate namespace and remove nolint after migrating to cuda 11+
 namespace utils {
 namespace constants {
 constexpr int INVALID_INDEX{-1};

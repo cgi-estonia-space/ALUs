@@ -1,4 +1,16 @@
-
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #include "gmock/gmock.h"
 
 #include <vector>
@@ -39,7 +51,7 @@ public:
                                                            BURST1_NOT_CONTAINING_AOI.data());
     }
 
-    std::vector<alus::Coordinates> beirut_burst_line_1_{
+    const std::vector<alus::Coordinates> beirut_burst_line_1_{
         {36.03317558581512, 34.71570741931848}, {35.98053459523368, 34.72402648536686},
         {35.92710924936979, 34.73244348560416}, {35.87432262850503, 34.74073531201949},
         {35.82190975883752, 34.74894415822732}, {35.76997534648072, 34.75705419567446},
@@ -52,7 +64,7 @@ public:
         {35.13152649229082, 34.85482021355166}, {35.08481087781347, 34.86183350620586},
         {35.03914088219177, 34.86867135255156}};
 
-    std::vector<alus::Coordinates> beirut_burst_line_2_{
+    const std::vector<alus::Coordinates> beirut_burst_line_2_{
         {35.99552328254985, 34.54919208767427}, {35.94167267732444, 34.55771918566346},
         {35.88835894572777, 34.56613620673014}, {35.83556102292847, 34.5744472762801},
         {35.78325908153008, 34.58265610261994}, {35.73143452375636, 34.59076641343774},
@@ -65,7 +77,7 @@ public:
         {35.09433035955234, 34.68854803625642}, {35.04771283875525, 34.69556341102302},
         {35.00213872465311, 34.70240346523518}};
 
-    std::vector<alus::Coordinates> beirut_burst_line_3_{
+    const std::vector<alus::Coordinates> beirut_burst_line_3_{
         {35.93678417920061, 34.38652507074804}, {35.9004061535996, 34.39230709903136},
         {35.84723770322268, 34.40071748036523}, {35.79420191953901, 34.40908191360079},
         {35.74479743587158, 34.41685406854229}, {35.6930814915122, 34.42496458881858},

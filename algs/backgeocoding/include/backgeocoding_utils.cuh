@@ -59,11 +59,11 @@ inline __device__ bool GetPosition(s1tbx::DeviceSubswathInfo* subswath_info,
     // TODO: consider getting rid of it once the whole algorithm is complete and we no longer need snap to debug.
     // https://jira.devzone.ee/browse/SNAPGPU-169
     if (idx == 55 && idy == 53) {
-        //printf("AZ index %.10f zero doppler time: %.10f FLT %.10f AZTI %.10f zero doppler in days %.10f\n",
-        //       position_data->azimuth_index, zero_doppler_time,
-        //       subswath_info->device_burst_first_line_time[burst_index], subswath_info->azimuth_time_interval,
-        //       zero_doppler_time_in_days);
-        if(isnan(zero_doppler_time)) { //workaround to get rid of the previous printf
+        // printf("AZ index %.10f zero doppler time: %.10f FLT %.10f AZTI %.10f zero doppler in days %.10f\n",
+        //        position_data->azimuth_index, zero_doppler_time,
+        //        subswath_info->device_burst_first_line_time[burst_index], subswath_info->azimuth_time_interval,
+        //        zero_doppler_time_in_days);
+        if (isnan(zero_doppler_time)) {  // workaround to get rid of the previous printf
             return false;
         }
     }

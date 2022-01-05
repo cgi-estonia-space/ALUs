@@ -17,7 +17,7 @@
 
 #include "cuda_util.h"
 
-namespace alus {
+namespace alus {  // NOLINT TODO: concatenate namespace and remove nolint after migrating to cuda 11+
 namespace cuda {
 
 /**
@@ -36,7 +36,7 @@ public:
     CudaPtr(const CudaPtr&) = delete;  // class does not support copying(and moving)
     CudaPtr& operator=(const CudaPtr&) = delete;
 
-    void free() {
+    void free() {  // NOLINT
         if (device_ptr_ != nullptr) {
             cudaFree(device_ptr_);
             device_ptr_ = nullptr;
@@ -45,7 +45,7 @@ public:
         }
     }
 
-    size_t GetElemCount() const { return elem_count_; }
+    [[nodiscard]] size_t GetElemCount() const { return elem_count_; }
 
     void Resize(size_t size) {
         // avoid reallocating if possible, works better with streams
@@ -61,10 +61,10 @@ public:
     T* Get() { return device_ptr_; }
 
     // basic STL interface, useful for moving from device_vector to this
-    T* begin() { return device_ptr_; }
-    T* end() { return device_ptr_ + elem_count_; }
-    size_t size() const { return elem_count_; }
-    T* data() { return device_ptr_; }
+    T* begin() { return device_ptr_; }                         // NOLINT
+    T* end() { return device_ptr_ + elem_count_; }             // NOLINT
+    [[nodiscard]] size_t size() const { return elem_count_; }  // NOLINT
+    T* data() { return device_ptr_; }                          // NOLINT
 
 private:
     T* device_ptr_ = nullptr;

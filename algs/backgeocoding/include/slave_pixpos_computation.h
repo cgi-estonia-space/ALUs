@@ -40,33 +40,34 @@ struct SlavePixPosData {
     PointerArray tiles;
 
     // earth gravitational model
-    float *egm;
+    float* egm;
 
     int max_lats;
     int max_lons;
     double dem_no_data_value;
     int mask_out_area_without_elevation;
 
-    size_t *device_valid_index_counter;
+    size_t* device_valid_index_counter;
     double *device_master_az, *device_master_rg;
     double *device_slave_az, *device_slave_rg;
     double *device_lats, *device_lons;
 
-    s1tbx::DeviceSubswathInfo *device_master_subswath;
-    s1tbx::DeviceSubswathInfo *device_slave_subswath;
+    s1tbx::DeviceSubswathInfo* device_master_subswath;
+    s1tbx::DeviceSubswathInfo* device_slave_subswath;
 
-    s1tbx::DeviceSentinel1Utils *device_master_utils;
-    s1tbx::DeviceSentinel1Utils *device_slave_utils;
+    s1tbx::DeviceSentinel1Utils* device_master_utils;
+    s1tbx::DeviceSentinel1Utils* device_slave_utils;
 
-    snapengine::OrbitStateVectorComputation *device_master_orbit_state_vectors;
-    snapengine::OrbitStateVectorComputation *device_slave_orbit_state_vectors;
+    snapengine::OrbitStateVectorComputation* device_master_orbit_state_vectors;
+    snapengine::OrbitStateVectorComputation* device_slave_orbit_state_vectors;
     int nr_of_master_vectors, nr_of_slave_vectors;
 
     double master_dt, slave_dt;
 };
 
 cudaError_t LaunchSlavePixPos(SlavePixPosData calc_data);
-cudaError_t LaunchFillXAndY(double *device_x_points, double *device_y_points, size_t points_size, double placeholder_value);
+cudaError_t LaunchFillXAndY(double* device_x_points, double* device_y_points, size_t points_size,
+                            double placeholder_value);
 
 }  // namespace backgeocoding
 }  // namespace alus

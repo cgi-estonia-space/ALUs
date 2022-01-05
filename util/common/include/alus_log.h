@@ -18,22 +18,15 @@
 
 namespace alus::common::log {
 
-enum class Level{
-    VERBOSE,
-    DEBUG,
-    INFO,
-    WARNING,
-    ERROR,
-    SILENT
-};
+enum class Level { VERBOSE, DEBUG, INFO, WARNING, ERROR, SILENT };
 
 void Initialize();
 void SetLevel(Level level);
 
-}
+}  // namespace alus::common::log
 
-#define LOGV  BOOST_LOG_TRIVIAL(trace)
-#define LOGD  BOOST_LOG_TRIVIAL(debug)
-#define LOGI  BOOST_LOG_TRIVIAL(info)
-#define LOGW  BOOST_LOG_TRIVIAL(warning)
-#define LOGE  BOOST_LOG_TRIVIAL(error)
+#define LOGV BOOST_LOG_TRIVIAL(trace)
+#define LOGD BOOST_LOG_TRIVIAL(debug)
+#define LOGI BOOST_LOG_TRIVIAL(info)
+#define LOGW BOOST_LOG_TRIVIAL(warning)
+#define LOGE BOOST_LOG_TRIVIAL(error)

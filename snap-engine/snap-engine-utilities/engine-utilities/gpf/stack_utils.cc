@@ -24,11 +24,11 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include "snap-core/core/datamodel/product.h"
-#include "snap-engine-utilities/engine-utilities/datamodel/metadata/abstract_metadata.h"
 #include "snap-core/core//datamodel/metadata_element.h"
-#include "snap-engine-utilities/engine-utilities/gpf/operator_utils.h"
+#include "snap-core/core/datamodel/product.h"
 #include "snap-core/core/util/string_utils.h"
+#include "snap-engine-utilities/engine-utilities/datamodel/metadata/abstract_metadata.h"
+#include "snap-engine-utilities/engine-utilities/gpf/operator_utils.h"
 
 namespace alus::snapengine {
 
@@ -37,12 +37,12 @@ std::string StackUtils::CreateBandTimeStamp(std::shared_ptr<Product>& product) {
     if (abs_root != nullptr) {
         std::string date_string = OperatorUtils::GetAcquisitionDate(abs_root);
         if (!date_string.empty()) date_string = '_' + date_string;
-        return StringUtils::CreateValidName(date_string, {'_', '.'}, '_');
+        return StringUtils::CreateValidName(date_string, "_.", '_');
     }
     return "";
 }
 
-bool StackUtils::IsMasterBand(std::string_view band_name, const std::shared_ptr<Product> product) {
+bool StackUtils::IsMasterBand(std::string_view band_name, const std::shared_ptr<Product>& product) {
     if (const auto slave_metadata_root = product->GetMetadataRoot()->GetElement(AbstractMetadata::SLAVE_METADATA_ROOT);
         slave_metadata_root) {
         const auto master_band_names = slave_metadata_root->GetAttributeString(AbstractMetadata::MASTER_BANDS, "");
@@ -62,11 +62,11 @@ bool StackUtils::IsSlaveBand(std::string_view band_name, const std::shared_ptr<P
                            return IsSlaveBand(band_name, product, slave_product_name);
                        });
 }
-std::vector<std::string> StackUtils::GetSlaveProductNames(std::shared_ptr<Product> product) {
+std::vector<std::string> StackUtils::GetSlaveProductNames(const std::shared_ptr<Product>& product) {
     const auto slave_metadata_root = product->GetMetadataRoot()->GetElement(AbstractMetadata::SLAVE_METADATA_ROOT);
     return slave_metadata_root ? slave_metadata_root->GetElementNames() : std::vector<std::string>(0);
 }
-bool StackUtils::IsSlaveBand(std::string_view band_name, std::shared_ptr<Product> product,
+bool StackUtils::IsSlaveBand(std::string_view band_name, const std::shared_ptr<Product>& product,
                              std::string_view slave_product_name) {
     if (const auto slave_metadata_root = product->GetMetadataRoot()->GetElement(AbstractMetadata::SLAVE_METADATA_ROOT);
         slave_metadata_root) {
@@ -86,7 +86,7 @@ bool StackUtils::IsSlaveBand(std::string_view band_name, std::shared_ptr<Product
                                   boost::algorithm::contains(source_band_name, band_name);
                        });
 }
-bool StackUtils::IsCoregisteredStack(std::shared_ptr<Product> product) {
+bool StackUtils::IsCoregisteredStack(const std::shared_ptr<Product>& product) {
     if (AbstractMetadata::HasAbstractedMetadata(product)) {
         const auto abs_root = AbstractMetadata::GetAbstractedMetadata(product);
         return abs_root != nullptr && abs_root->GetAttributeInt(AbstractMetadata::COREGISTERED_STACK, 0) == 1;

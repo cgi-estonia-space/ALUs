@@ -29,8 +29,7 @@
 #include "product_data_utc.h"
 #include "product_node.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 template <typename T>
 class ProductNodeGroup;
@@ -51,16 +50,16 @@ private:
     std::shared_ptr<MetadataAttribute> GetAndMaybeCreateAttribute(std::string_view name, int type, int num_elems);
 
 public:
-    explicit MetadataElement() : ProductNode(nullptr) {}
+    explicit MetadataElement() : ProductNode("") {}
     explicit MetadataElement(std::string_view name) : ProductNode(name) {}
-    virtual void AddElement(std::shared_ptr<MetadataElement> me);
+    virtual void AddElement(const std::shared_ptr<MetadataElement>& element);
 
     /**
      * Adds an attribute to this node.
      *
      * @param attribute the attribute to be added, <code>null</code> is ignored
      */
-    virtual void AddAttribute(std::shared_ptr<MetadataAttribute> ma);
+    virtual void AddAttribute(const std::shared_ptr<MetadataAttribute>& attribute);
 
     /**
      * Returns an std::vector of elements contained in this element.
@@ -94,9 +93,9 @@ public:
      * Returns a vector of strings containing the names of the groups contained in this element.
      *
      * @return a string vector containing the names of the groups contained in this element. If this element has no
-*         groups an empty vector is returned.
+     *         groups an empty vector is returned.
      */
-    std::vector<std::string> GetElementNames() const;
+    [[nodiscard]] std::vector<std::string> GetElementNames() const;
 
     [[nodiscard]] std::vector<std::shared_ptr<MetadataAttribute>> GetAttributes();
 
@@ -345,7 +344,7 @@ public:
      *
      * @return <code>true</code> if it was removed
      */
-    bool RemoveAttribute(std::shared_ptr<MetadataAttribute> attribute);
+    bool RemoveAttribute(const std::shared_ptr<MetadataAttribute>& attribute);
 
     /**
      * Releases all of the resources used by this object instance and all of its owned children. Its primary use is to
@@ -356,5 +355,4 @@ public:
      */
     void Dispose() override;
 };
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

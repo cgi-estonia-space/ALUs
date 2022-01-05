@@ -22,8 +22,7 @@
 
 #include "../util/guardian.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 FlagCoding::FlagCoding(std::string_view name) : SampleCoding(name) {}
 
@@ -52,5 +51,4 @@ int FlagCoding::GetFlagMask(std::string_view name) {
     return attribute->GetData()->GetElemInt();
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

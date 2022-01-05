@@ -20,8 +20,7 @@
 
 #include "f_x_y_sum.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 /**
  * Provides an optimized <code>computeZ</code> method for linear polynomials (order = 1).
@@ -32,10 +31,9 @@ class Cubic final : public virtual FXYSum {
 public:
     Cubic();
 
-    explicit Cubic(std::vector<double> coefficients);
+    explicit Cubic(const std::vector<double>& coefficients);
 
     double ComputeZ(double x, double y) override;
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

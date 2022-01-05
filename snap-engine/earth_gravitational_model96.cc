@@ -46,7 +46,7 @@ void EarthGravitationalModel96::FetchGridValuesThread() {
         int num_char_in_header = earthgravitationalmodel96computation::NUM_CHAR_PER_NORMAL_LINE +
                                  earthgravitationalmodel96computation::NUM_CHAR_PER_EMPTY_LINE;
 
-        grid_reader.seekg(num_char_in_header, grid_reader.beg);
+        grid_reader.seekg(num_char_in_header, std::stringstream::beg);
 
         for (int row_idx = 0; row_idx < earthgravitationalmodel96computation::NUM_LATS; row_idx++) {
             for (int col_idx = 0; col_idx < earthgravitationalmodel96computation::NUM_LONS; col_idx++) {

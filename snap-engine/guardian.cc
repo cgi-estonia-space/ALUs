@@ -22,15 +22,14 @@
 #include <stdexcept>
 #include <string>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 void Guardian::AssertNotNullOrEmpty(std::string_view expr_text, std::string_view expr_value) {
     if (expr_value.empty()) {
         throw std::invalid_argument(std::string(expr_text) + " argument is empty");
     }
 }
-void Guardian::AssertEquals(std::string_view expr_text, long expr_value, long expected_value) {
+void Guardian::AssertEquals(std::string_view expr_text, int64_t expr_value, int64_t expected_value) {
     if (expected_value != expr_value) {
         std::stringstream sb;
         sb << "[" << expr_text << "]"
@@ -38,7 +37,7 @@ void Guardian::AssertEquals(std::string_view expr_text, long expr_value, long ex
         throw std::invalid_argument(sb.str());
     }
 }
-void Guardian::AssertWithinRange(std::string_view expr_text, long expr_value, long range_min, long range_max) {
+void Guardian::AssertWithinRange(std::string_view expr_text, int64_t expr_value, int64_t range_min, int64_t range_max) {
     if (expr_value < range_min || expr_value > range_max) {
         std::stringstream sb;
         sb << "[" << expr_text << "]"
@@ -56,5 +55,4 @@ void Guardian::AssertWithinRange(std::string_view expr_text, long expr_value, lo
 //    }
 //}
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

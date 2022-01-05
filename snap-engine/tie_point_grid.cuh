@@ -23,21 +23,17 @@ namespace alus {
 namespace snapengine {
 namespace tiepointgrid {
 
-inline __device__ __host__ double Interpolate(
-    double wi, double wj, int i0, int j0, const tiepointgrid::TiePointGrid *grid) {
+inline __device__ __host__ double Interpolate(double wi, double wj, int i0, int j0,
+                                              const tiepointgrid::TiePointGrid* grid) {
     const int w = grid->grid_width;
     const int j1 = j0 + 1;
     const int i1 = i0 + 1;
 
-    return mathutils::Interpolate2D(wi,
-                                    wj,
-                                    grid->tie_points[i0 + j0 * w],
-                                    grid->tie_points[i1 + j0 * w],
-                                    grid->tie_points[i0 + j1 * w],
-                                    grid->tie_points[i1 + j1 * w]);
+    return mathutils::Interpolate2D(wi, wj, grid->tie_points[i0 + j0 * w], grid->tie_points[i1 + j0 * w],
+                                    grid->tie_points[i0 + j1 * w], grid->tie_points[i1 + j1 * w]);
 }
 
-inline __device__ __host__ double GetPixelDoubleImpl(double x, double y, const tiepointgrid::TiePointGrid *grid) {
+inline __device__ __host__ double GetPixelDoubleImpl(double x, double y, const tiepointgrid::TiePointGrid* grid) {
     const double fi = (x - grid->offset_x) / grid->sub_sampling_x;
     const double fj = (y - grid->offset_y) / grid->sub_sampling_y;
 

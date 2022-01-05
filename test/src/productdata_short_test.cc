@@ -20,16 +20,18 @@
 #include <fstream>
 
 #include "gmock/gmock.h"
+
 #include "product_data_short.h"
 
 namespace {
-using namespace alus::snapengine;
+
+using alus::snapengine::ProductData;
 
 class ProductDataShortTest {};
 
 TEST(ProductDataShort, testSingleValueConstructor) {
     std::shared_ptr<ProductData> instance = ProductData::CreateInstance(ProductData::TYPE_INT16);
-    instance->SetElems(std::vector<int16_t>{32767});
+    instance->SetElems(std::vector<int16_t>{32767});  // NOLINT
 
     ASSERT_EQ(ProductData::TYPE_INT16, instance->GetType());
     ASSERT_EQ(32767, instance->GetElemInt());
@@ -48,11 +50,11 @@ TEST(ProductDataShort, testSingleValueConstructor) {
     ASSERT_EQ("32767", instance->ToString());
 
     std::shared_ptr<ProductData> expected_equal = ProductData::CreateInstance(ProductData::TYPE_INT16);
-    expected_equal->SetElems(std::vector<int16_t>{32767});
+    expected_equal->SetElems(std::vector<int16_t>{32767});  // NOLINT
     ASSERT_EQ(true, instance->EqualElems(expected_equal));
 
     std::shared_ptr<ProductData> expected_unequal = ProductData::CreateInstance(ProductData::TYPE_INT16);
-    expected_unequal->SetElems(std::vector<int16_t>{32766});
+    expected_unequal->SetElems(std::vector<int16_t>{32766});  // NOLINT
     ASSERT_EQ(false, instance->EqualElems(expected_unequal));
 
     //        StreamTest
@@ -68,8 +70,8 @@ TEST(ProductDataShort, testSingleValueConstructor) {
 }
 
 TEST(ProductDataShort, testConstructor) {
-    std::shared_ptr<ProductData> instance = ProductData::CreateInstance(ProductData::TYPE_INT16, 3);
-    instance->SetElems(std::vector<int16_t>{-1, 32767, -32768});
+    std::shared_ptr<ProductData> instance = ProductData::CreateInstance(ProductData::TYPE_INT16, 3);  // NOLINT
+    instance->SetElems(std::vector<int16_t>{-1, 32767, -32768});                                      // NOLINT
 
     ASSERT_EQ(ProductData::TYPE_INT16, instance->GetType());
     ASSERT_EQ(-1, instance->GetElemIntAt(0));
@@ -97,12 +99,12 @@ TEST(ProductDataShort, testConstructor) {
     ASSERT_EQ(true, instance->IsInt());
     ASSERT_EQ("-1,32767,-32768", instance->ToString());
 
-    std::shared_ptr<ProductData> expected_equal = ProductData::CreateInstance(ProductData::TYPE_INT16, 3);
-    expected_equal->SetElems(std::vector<int16_t>{-1, 32767, -32768});
+    std::shared_ptr<ProductData> expected_equal = ProductData::CreateInstance(ProductData::TYPE_INT16, 3);  // NOLINT
+    expected_equal->SetElems(std::vector<int16_t>{-1, 32767, -32768});                                      // NOLINT
     ASSERT_EQ(true, instance->EqualElems(expected_equal));
 
-    std::shared_ptr<ProductData> expected_unequal = ProductData::CreateInstance(ProductData::TYPE_INT16, 3);
-    expected_unequal->SetElems(std::vector<int16_t>{-1, 32767, -32767});
+    std::shared_ptr<ProductData> expected_unequal = ProductData::CreateInstance(ProductData::TYPE_INT16, 3);  // NOLINT
+    expected_unequal->SetElems(std::vector<int16_t>{-1, 32767, -32767});                                      // NOLINT
     ASSERT_EQ(false, instance->EqualElems(expected_unequal));
 
     //        StreamTest
@@ -118,7 +120,7 @@ TEST(ProductDataShort, testConstructor) {
 }
 
 TEST(ProductDataShort, testSetElemsAsString) {
-    std::shared_ptr<ProductData> pd = ProductData::CreateInstance(ProductData::TYPE_INT16, 3);
+    std::shared_ptr<ProductData> pd = ProductData::CreateInstance(ProductData::TYPE_INT16, 3);  // NOLINT
     pd->SetElems(std::vector<std::string>{std::to_string(INT16_MAX), std::to_string(0), std::to_string(INT16_MIN)});
 
     ASSERT_EQ(INT16_MAX, pd->GetElemIntAt(0));
@@ -126,7 +128,7 @@ TEST(ProductDataShort, testSetElemsAsString) {
     ASSERT_EQ(INT16_MIN, pd->GetElemIntAt(2));
 }
 
-TEST(ProductDataShort, testSetElemsAsString_OutOfRange) {
+TEST(ProductDataShort, testSetElemsAsStringOutOfRange) {
     std::shared_ptr<ProductData> pd1 = ProductData::CreateInstance(ProductData::TYPE_INT16, 1);
     EXPECT_THROW(pd1->SetElems(std::vector<std::string>{std::to_string(INT16_MAX + 1)}), std::out_of_range);
     std::shared_ptr<ProductData> pd2 = ProductData::CreateInstance(ProductData::TYPE_INT16, 1);

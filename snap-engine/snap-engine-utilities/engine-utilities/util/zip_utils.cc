@@ -30,8 +30,7 @@
 
 #include "alus_log.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 bool ZipUtils::IsZipped(const boost::filesystem::path& file) {
     std::string name = file.filename().string();
@@ -101,5 +100,4 @@ bool ZipUtils::FindInZip(const boost::filesystem::path& file, std::string_view p
     return false;
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

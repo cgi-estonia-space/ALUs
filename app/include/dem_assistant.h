@@ -36,7 +36,7 @@ public:
     };
 
     DemAssistant() = delete;
-    DemAssistant(std::vector<std::string> srtm3_files);
+    explicit DemAssistant(std::vector<std::string> srtm3_files);
 
     static std::shared_ptr<DemAssistant> CreateFormattedSrtm3TilesOnGpuFrom(
         const std::vector<std::string>& cmd_line_arguments);

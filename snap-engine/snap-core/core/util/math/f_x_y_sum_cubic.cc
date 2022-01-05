@@ -18,18 +18,17 @@
  */
 #include "f_x_y_sum_cubic.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
-Cubic::Cubic() : FXYSum(FXY_CUBIC, 3) {}
+Cubic::Cubic() : FXYSum(fxy_cubic_, 3) {}  // NOLINT
 
-Cubic::Cubic(std::vector<double> coefficients) : FXYSum(FXY_CUBIC, 3, coefficients) {}
+Cubic::Cubic(const std::vector<double>& coefficients) : FXYSum(fxy_cubic_, 3, coefficients) {}  // NOLINT
 
 double Cubic::ComputeZ(double x, double y) {
     std::vector<double> c = GetCoefficients();
-    return c.at(0) + (c.at(1) + (c.at(3) + c.at(6) * x + c.at(7) * y) * x + (c.at(4) + c.at(8) * y) * y) * x +
-           (c.at(2) + (c.at(5) + c.at(9) * y) * y) * y;
+    return c.at(0) +
+           (c.at(1) + (c.at(3) + c.at(6) * x + c.at(7) * y) * x + (c.at(4) + c.at(8) * y) * y) * x +  // NOLINT
+           (c.at(2) + (c.at(5) + c.at(9) * y) * y) * y;                                               // NOLINT
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

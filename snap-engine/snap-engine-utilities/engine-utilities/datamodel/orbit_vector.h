@@ -20,8 +20,7 @@
 
 #include <memory>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 class OrbitVector {
 public:
     double utc_mjd_;
@@ -37,5 +36,4 @@ public:
     static int Compare(const std::shared_ptr<OrbitVector>& osv1, const std::shared_ptr<OrbitVector>& osv2);
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

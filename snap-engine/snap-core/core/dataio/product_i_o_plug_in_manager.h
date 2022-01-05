@@ -32,7 +32,7 @@ class ProductIOPlugInManager {
 private:
     std::vector<std::shared_ptr<IProductReaderPlugIn>> reader_plug_ins_;
 
-    ProductIOPlugInManager() {}
+    ProductIOPlugInManager() = default;
 
 public:
     ProductIOPlugInManager(ProductIOPlugInManager const&) = delete;
@@ -57,7 +57,7 @@ public:
      *
      * @param readerPlugIn the reader plug-in to be added to this manager
      */
-    void AddReaderPlugIn(std::shared_ptr<IProductReaderPlugIn> reader_plug_in) {
+    void AddReaderPlugIn(const std::shared_ptr<IProductReaderPlugIn>& reader_plug_in) {
         if (reader_plug_in) {
             reader_plug_ins_.emplace_back(reader_plug_in);
         }

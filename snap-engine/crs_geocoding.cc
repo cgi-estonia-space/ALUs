@@ -13,9 +13,7 @@
  */
 #include "crs_geocoding.h"
 
-namespace alus {
-namespace snapengine {
-namespace geocoding {
+namespace alus::snapengine::geocoding {
 Coordinates CrsGeocoding::GetPixelCoordinates(double x, double y) const {
     auto geo_transform = this->geo_transform_parameters_;
     double longitude = geo_transform.originLon + geo_transform.pixelSizeLon * (x) + geo_transform.pixelSizeLon / 2;
@@ -52,6 +50,4 @@ PrecisePixelPosition CrsGeocoding::GetPixelPosition(double lon, double lat) cons
 
     return {x, y};
 }
-}  // namespace geocoding
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine::geocoding

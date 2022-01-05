@@ -23,7 +23,7 @@
 namespace alus::snapengine {
 
 class DimapProductConstants {
-   public:
+public:
     static constexpr std::string_view DIMAP_FORMAT_NAME = "BEAM-DIMAP";
     /**
      * BEAM-Dimap XML-File extension
@@ -350,7 +350,7 @@ class DimapProductConstants {
     static constexpr std::string_view TAG_SUN_ELEVATION = "SUN_ELEVATION";
     static constexpr std::string_view TAG_METADATA_ELEMENT = "MDElem";
     static constexpr std::string_view TAG_METADATA_VALUE = "VALUE";
-//    static constexpr std::string_view TAG_METADATA_ATTRIBUTE = "MDATTR";
+    //    static constexpr std::string_view TAG_METADATA_ATTRIBUTE = "MDATTR";
     static constexpr std::string_view TAG_METADATA_ATTRIBUTE = "MDATTR";
 
     // BEAM-Dimap mask definition tags

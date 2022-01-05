@@ -20,6 +20,7 @@
 
 #include <cmath>
 #include <stdexcept>
+#include <utility>
 
 #include "custom/dimension.h"
 #include "product.h"
@@ -27,9 +28,7 @@
 
 namespace alus::snapengine {
 
-int RasterDataNode::READ_BUFFER_MAX_SIZE = 8 * 1024 * 1024;  // 8 MB
-
-RasterDataNode::RasterDataNode(std::string_view name, int data_type, long num_elems)
+RasterDataNode::RasterDataNode(std::string_view name, int data_type, int64_t num_elems)
     : DataNode(name, data_type, num_elems) {
     if (data_type != ProductData::TYPE_INT8 && data_type != ProductData::TYPE_INT16 &&
         data_type != ProductData::TYPE_INT32 && data_type != ProductData::TYPE_UINT8 &&
@@ -67,7 +66,7 @@ int RasterDataNode::GetGeophysicalDataType() {
     //                                                 GetScalingType(),
     //                                                 GetInterpretationType()));
 }
-void RasterDataNode::SetRasterData(std::shared_ptr<ProductData> raster_data) {
+[[maybe_unused]] void RasterDataNode::SetRasterData(const std::shared_ptr<ProductData>& raster_data) {
     std::shared_ptr<ProductData> old_data = GetData();
     if (old_data != raster_data) {
         if (raster_data != nullptr) {
@@ -157,7 +156,7 @@ double RasterDataNode::ScaleInverse(double v) {
 }
 std::shared_ptr<IGeoCoding> RasterDataNode::GetGeoCoding() {
     if (geo_coding_ == nullptr) {
-        auto product = GetProduct();
+        auto* product = GetProduct();
         if (product) {
             return product->GetSceneGeoCoding();
         }
@@ -166,7 +165,7 @@ std::shared_ptr<IGeoCoding> RasterDataNode::GetGeoCoding() {
 }
 void RasterDataNode::ReadRasterData(int offset_x, int offset_y, int width, int height,
                                     std::shared_ptr<ProductData> raster_data) {
-    ReadRasterData(offset_x, offset_y, width, height, raster_data, nullptr);
+    ReadRasterData(offset_x, offset_y, width, height, std::move(raster_data), nullptr);
 }
 void RasterDataNode::ReadRasterDataFully() { ReadRasterDataFully(nullptr); }
 
@@ -175,8 +174,8 @@ void RasterDataNode::SetGeoCoding(const std::shared_ptr<IGeoCoding>& geo_coding)
         geo_coding_ = geo_coding;
         // If our product has no geo-coding yet, it is set to the current one, if any
         if (geo_coding_) {
-            auto product = GetProduct();
-            if (product && product->GetSceneGeoCoding() == nullptr &&
+            auto* product = GetProduct();
+            if ((product != nullptr) && product->GetSceneGeoCoding() == nullptr &&
                 product->GetSceneRasterSize() == GetRasterSize()) {
                 product->SetSceneGeoCoding(geo_coding_);
             }

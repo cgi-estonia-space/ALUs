@@ -45,7 +45,7 @@ public:
 
     virtual void Open(std::string_view path_to_band_file, bool has_transform, bool has_correct_proj) = 0;
 
-    virtual const std::vector<float>& GetData() const = 0;
+    [[nodiscard]] virtual const std::vector<float>& GetData() const = 0;
 
     /**
      * close dataset

@@ -32,8 +32,7 @@
 #include "snap-core/core/datamodel/tie_point_grid.h"
 #include "spectral_band_info.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 PugixmlMetaDataReader::PugixmlMetaDataReader(Product* product) : IMetaDataReader(product) {}
 PugixmlMetaDataReader::PugixmlMetaDataReader(const std::string_view file_name) : IMetaDataReader(file_name) {}
@@ -91,7 +90,8 @@ SpectralBandInfo PugixmlMetaDataReader::GetSpectralBandInfo(pugi::xml_node& spec
             bandwidth,        scaling_factor, scaling_offset,    no_data_value,       valid_mask_term};
 }
 
-std::unique_ptr<snapengine::TiePointGrid> PugixmlMetaDataReader::GetTiePointGrid(const pugi::xml_node& tie_point_grid_node) {
+std::unique_ptr<snapengine::TiePointGrid> PugixmlMetaDataReader::GetTiePointGrid(
+    const pugi::xml_node& tie_point_grid_node) {
     const std::string name = tie_point_grid_node.child_value(DimapProductConstants::TAG_TIE_POINT_GRID_NAME.data());
 
     const auto grid_width =
@@ -115,7 +115,8 @@ std::unique_ptr<snapengine::TiePointGrid> PugixmlMetaDataReader::GetTiePointGrid
         (is_cyclic && is_cyclic.value() ? TiePointGrid::DISCONT_AT_180 : TiePointGrid::DISCONT_NONE));
 }
 
-std::map<std::string, std::unique_ptr<snapengine::TiePointGrid>, std::less<>> PugixmlMetaDataReader::ReadTiePointGridsTag() {
+std::map<std::string, std::unique_ptr<snapengine::TiePointGrid>, std::less<>>
+PugixmlMetaDataReader::ReadTiePointGridsTag() {
     std::map<std::string, std::unique_ptr<snapengine::TiePointGrid>, std::less<>> tie_point_grids;
 
     std::string file_name;
@@ -304,5 +305,4 @@ std::shared_ptr<MetadataElement> PugixmlMetaDataReader::ImplToModel(std::string_
 void PugixmlMetaDataReader::SetProduct(Product* product) { product_ = product; }
 
 PugixmlMetaDataReader::~PugixmlMetaDataReader() = default;
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

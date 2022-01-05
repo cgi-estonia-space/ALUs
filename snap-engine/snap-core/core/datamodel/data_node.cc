@@ -26,7 +26,7 @@
 
 namespace alus::snapengine {
 
-DataNode::DataNode(std::string_view name, int data_type, long num_elems) : ProductNode(name) {
+DataNode::DataNode(std::string_view name, int data_type, int64_t num_elems) : ProductNode(name) {
     if (data_type != ProductData::TYPE_INT8 && data_type != ProductData::TYPE_INT16 &&
         data_type != ProductData::TYPE_INT32 && data_type != ProductData::TYPE_UINT8 &&
         data_type != ProductData::TYPE_UINT16 && data_type != ProductData::TYPE_UINT32 &&
@@ -48,7 +48,7 @@ DataNode::DataNode(std::string_view name, std::shared_ptr<ProductData> data, boo
 }
 
 void DataNode::SetUnit(std::string_view unit) { unit_ = unit; }
-void DataNode::SetUnit(std::optional<std::string> unit) { unit_ = unit; }
+void DataNode::SetUnit(std::optional<std::string> unit) { unit_ = std::move(unit); }
 
 void DataNode::SetSynthetic(bool synthetic) { synthetic_ = synthetic; }
 
@@ -65,13 +65,13 @@ void DataNode::SetDataElems(const std::any& elems) {
         // todo:investigate this limit (ported from java)
         if (num_elems_ > INT32_MAX) {
             throw std::invalid_argument("number of elements must be less than " +
-                                        std::to_string((int64_t)INT32_MAX + 1));
+                                        std::to_string(static_cast<int64_t> INT32_MAX + 1));
         }
-        data_ = CreateCompatibleProductData((int32_t)num_elems_);
+        data_ = CreateCompatibleProductData(static_cast<int32_t>(num_elems_));
     }
 
     std::any old_data = data_->GetElems();
-//    todo: snap java version checks for changes, if we need this must be added here
+    //    todo: snap java version checks for changes, if we need this must be added here
     data_->SetElems(elems);
 }
 void DataNode::SetReadOnly(bool read_only) {
@@ -133,8 +133,9 @@ void DataNode::Dispose() {
 
 uint64_t DataNode::GetRawStorageSize(const std::shared_ptr<ProductSubsetDef>& subset_def) {
     uint64_t size = 0;
+    const int estimated_overhead{256};
     if (IsPartOfSubset(subset_def)) {
-        size += 256;  // add estimated overhead of 256 bytes
+        size += estimated_overhead;
         size += ProductData::GetElemSize(GetDataType()) * GetNumDataElems();
     }
     return size;

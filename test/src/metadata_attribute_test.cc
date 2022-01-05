@@ -29,7 +29,10 @@
 #include "product_data_ascii.h"
 
 namespace {
-using namespace alus::snapengine;
+
+using alus::snapengine::ASCII;
+using alus::snapengine::MetadataAttribute;
+using alus::snapengine::ProductData;
 
 class ProductDataMetadataAttributeTest : public ::testing::Test {
 public:
@@ -42,11 +45,11 @@ public:
 
     void SetUp() override {
         attribute_int_ = std::make_shared<MetadataAttribute>(
-            "attributeInt", ProductData::CreateInstance(ProductData::TYPE_INT32, 3), false);
+            "attributeInt", ProductData::CreateInstance(ProductData::TYPE_INT32, 3), false);  // NOLINT
         attribute_float_ = std::make_shared<MetadataAttribute>(
             "attributeFloat", ProductData::CreateInstance(ProductData::TYPE_FLOAT32), false);
         attribute_string_ = std::make_shared<MetadataAttribute>(
-            "attributeString", ProductData::CreateInstance(ProductData::TYPE_ASCII, 32), false);
+            "attributeString", ProductData::CreateInstance(ProductData::TYPE_ASCII, 32), false);  // NOLINT
     }
     //    void TearDown() override { Test::TearDown(); }
 };
@@ -55,7 +58,7 @@ public:
  * Tests construction failures
  */
 TEST(MetadataAttribute, testRsAttribute) {
-    EXPECT_THROW(MetadataAttribute(nullptr, ProductData::CreateInstance(ProductData::TYPE_FLOAT32), false),
+    EXPECT_THROW(MetadataAttribute("", ProductData::CreateInstance(ProductData::TYPE_FLOAT32), false),
                  std::invalid_argument);
     EXPECT_THROW(MetadataAttribute("a2", nullptr, false), std::invalid_argument);
 }
@@ -68,14 +71,14 @@ TEST_F(ProductDataMetadataAttributeTest, testSetData) {
     EXPECT_THROW(attribute_int_->SetDataElems(nullptr), std::invalid_argument);
 
     // null --> new value: is modified ?
-    attribute_int_->SetDataElems(std::vector<int32_t>{1, 2, 3});
+    attribute_int_->SetDataElems(std::vector<int32_t>{1, 2, 3});  // NOLINT
 
     ASSERT_EQ(true,
               (std::vector<int32_t>{1, 2, 3} == std::any_cast<std::vector<int32_t>>(attribute_int_->GetDataElems())));
     //    ASSERT_EQ(true, attribute_int_->IsModified());
 
     // old value == new value?
-    attribute_int_->SetDataElems(std::vector<int32_t>{1, 2, 3});
+    attribute_int_->SetDataElems(std::vector<int32_t>{1, 2, 3});  // NOLINT
     ASSERT_EQ(true,
               (std::vector<int32_t>{1, 2, 3} == std::any_cast<std::vector<int32_t>>(attribute_int_->GetDataElems())));
     //    ASSERT_EQ(true, attribute_int_->IsModified());

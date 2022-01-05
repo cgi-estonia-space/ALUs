@@ -13,10 +13,12 @@
  */
 #pragma once
 
+#include <cstddef>
+
 #include "shapes.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus {        // NOLINT
+namespace snapengine {  // NOLINT
 namespace resampling {
 
 struct ResamplingIndex {
@@ -26,10 +28,10 @@ struct ResamplingIndex {
     int height;
     double i0;
     double j0;
-    double *i;
-    double *j;
-    double *ki;
-    double *kj;
+    double* i;
+    double* j;
+    double* ki;
+    double* kj;
 };
 
 struct Tile {
@@ -39,7 +41,7 @@ struct Tile {
     size_t height;
     bool target;
     bool scaled;
-    float *data_buffer;
+    float* data_buffer;
 };
 
 struct ResamplingRaster {
@@ -47,7 +49,7 @@ struct ResamplingRaster {
     double azimuth_index;
     int sub_swath_index = -1;
     Rectangle source_rectangle;
-    Tile *source_tile_i;
+    Tile* source_tile_i;
     bool source_rectangle_calculated;
 };
 }  // namespace resampling

@@ -24,6 +24,8 @@
 #include <stdexcept>
 
 #include "alus_log.h"
+#include "custom/dimension.h"
+#include "custom/rectangle.h"
 #include "snap-core/core/dataio/product_subset_def.h"
 #include "snap-core/core/datamodel/i_scene.h"
 #include "snap-core/core/datamodel/tie_point_grid.h"
@@ -36,11 +38,8 @@
 #include "snap-core/core/util/math/f_x_y_sum_linear.h"
 #include "snap-core/core/util/math/f_x_y_sum_quadric.h"
 #include "snap-core/core/util/math/math_utils.h"
-#include "custom/dimension.h"
-#include "custom/rectangle.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 // todo: provide actual CRS WGS84 when this gets used
 TiePointGeoCoding::TiePointGeoCoding(const std::shared_ptr<TiePointGrid>& lat_grid,
@@ -113,13 +112,13 @@ std::shared_ptr<TiePointGrid> TiePointGeoCoding::InitNormalizedLonGrid() {
             p2 = normalized_longitudes.at(index);  // the current, un-normalised point
             lon_delta = p2 - p1;                   // difference = current point minus base point
 
-            if (lon_delta > 180.0) {
-                p2 -= 360.0;             // place new point in the west (with a lon. < -180)
+            if (lon_delta > 180.0) {     // NOLINT
+                p2 -= 360.0;             // place new point in the west (with a lon. < -180)  // NOLINT
                 west_normalized = true;  // mark what we've done
                 normalized_longitudes.at(index) = static_cast<float>(p2);
-            } else if (lon_delta < -180.0) {
-                p2 += 360.0;             // place new point in the east (with a lon. > +180)
-                east_normalized = true;  // mark what we've done
+            } else if (lon_delta < -180.0) {  // NOLINT
+                p2 += 360.0;                  // place new point in the east (with a lon. > +180)  // NOLINT
+                east_normalized = true;       // mark what we've done
                 normalized_longitudes.at(index) = static_cast<float>(p2);
             } else {
                 lon_delta_max = std::max(lon_delta_max, std::abs(lon_delta));
@@ -131,7 +130,7 @@ std::shared_ptr<TiePointGrid> TiePointGeoCoding::InitNormalizedLonGrid() {
     if (west_normalized) {
         // This ensures that the all longitude points are >= -180 degree
         for (int i = 0; i < num_values; i++) {
-            normalized_longitudes.at(i) += 360;
+            normalized_longitudes.at(i) += 360;  // NOLINT
         }
     }
 
@@ -171,12 +170,12 @@ void TiePointGeoCoding::InitLatLonMinMax(const std::shared_ptr<TiePointGrid>& no
     }
 
     overlap_start_ = normalized_lon_min_;
-    if (overlap_start_ < -180) {
-        overlap_start_ += 360;
+    if (overlap_start_ < -180) {  // NOLINT
+        overlap_start_ += 360;    // NOLINT
     }
     overlap_end_ = normalized_lon_max_;
-    if (overlap_end_ > 180) {
-        overlap_end_ -= 360;
+    if (overlap_end_ > 180) {  // NOLINT
+        overlap_end_ -= 360;   // NOLINT
     }
 
     LOGV << "TiePointGeoCoding.normalizedLonMin = " << normalized_lon_min_;
@@ -197,7 +196,7 @@ std::vector<std::shared_ptr<Approximation>> TiePointGeoCoding::InitApproximation
     // 10 points are at least required for a quadratic polynomial
     // start with some appropriate tile number
     int num_tiles = static_cast<int>(ceil(num_points / 10.0));
-    num_tiles = std::min(std::max(1, num_tiles), 300);
+    num_tiles = std::min(std::max(1, num_tiles), 300);  // NOLINT
     int num_tiles_i = 1;
     int num_tiles_j = 1;
     while (num_tiles > 1) {
@@ -207,7 +206,7 @@ std::vector<std::shared_ptr<Approximation>> TiePointGeoCoding::InitApproximation
         int new_num_tiles_j = tile_dim->height;
         int new_num_tiles = new_num_tiles_i * new_num_tiles_j;
         // 10 points are at least required for a quadratic polynomial
-        if (num_points / new_num_tiles >= 10) {
+        if (num_points / new_num_tiles >= 10) {  // NOLINT
             num_tiles = new_num_tiles;
             num_tiles_i = new_num_tiles_i;
             num_tiles_j = new_num_tiles_j;
@@ -235,8 +234,8 @@ std::vector<std::shared_ptr<Approximation>> TiePointGeoCoding::InitApproximation
     return approximations;
 }
 
-std::shared_ptr<FXYSum> TiePointGeoCoding::GetBestPolynomial(std::vector<std::vector<double>> data,
-                                                             std::vector<int> indices) {
+std::shared_ptr<FXYSum> TiePointGeoCoding::GetBestPolynomial(const std::vector<std::vector<double>>& data,
+                                                             const std::vector<int>& indices) {
     // These are the potential polynomials which we will check
     //        todo: check this over, not sure it works like that (some tests?)
     const std::vector<std::shared_ptr<FXYSum>> potential_polynomials{
@@ -246,10 +245,10 @@ std::shared_ptr<FXYSum> TiePointGeoCoding::GetBestPolynomial(std::vector<std::ve
         std::make_shared<BiQuadric>(),
         std::make_shared<Cubic>(),
         std::make_shared<BiCubic>(),
-        std::make_shared<FXYSum>(FXYSum::FXY_4TH, 4),
-        std::make_shared<FXYSum>(FXYSum::FXY_BI_4TH, 4 + 4)};
+        std::make_shared<FXYSum>(FXYSum::fxy_4_th_, 4),
+        std::make_shared<FXYSum>(FXYSum::fxy_bi_4_th_, 4 + 4)};
 
-    // Find the polynomial which best fitts the warp points
+    // Find the polynomial which best fits the warp points
     double rmse_min = std::numeric_limits<double>::max();
     int index = -1;
     for (std::size_t i = 0; i < potential_polynomials.size(); i++) {
@@ -303,11 +302,11 @@ std::vector<std::vector<double>> TiePointGeoCoding::CreateWarpPoints(
     int num_u = warp_parameters.at(0);
     int num_v = warp_parameters.at(1);
     int step_i = warp_parameters.at(2);
-    int step_j = warp_parameters.at(3);
+    int step_j = warp_parameters.at(3);  // NOLINT
 
     // Collect numU * numV warp points
     const int m = num_u * num_v;
-    std::vector<std::vector<double>> data(4, std::vector<double>(m));
+    std::vector<std::vector<double>> data(4, std::vector<double>(m));  // NOLINT
     double lat;
     double lon;
     double x;
@@ -334,7 +333,7 @@ std::vector<std::vector<double>> TiePointGeoCoding::CreateWarpPoints(
             data.at(k).at(0) = lat;
             data.at(k).at(1) = lon;
             data.at(k).at(2) = x;
-            data.at(k).at(3) = y;
+            data.at(k).at(3) = y;  // NOLINT
             k++;
         }
     }
@@ -388,17 +387,17 @@ std::shared_ptr<Approximation> TiePointGeoCoding::CreateApproximation(
         sum_lat += point.at(0);
         sum_lon += point.at(1);
     }
-    double center_lon = sum_lon / data.size();
-    double center_lat = sum_lat / data.size();
+    double center_lon = sum_lon / static_cast<double>(data.size());
+    double center_lat = sum_lat / static_cast<double>(data.size());
     const double max_square_distance = GetMaxSquareDistance(data, center_lat, center_lon);
 
-    for (std::size_t i = 0; i < data.size(); i++) {
-        data.at(i).at(0) = RescaleLatitude(data.at(i).at(0));
-        data.at(i).at(1) = RescaleLongitude(data.at(i).at(1), center_lon);
+    for (auto& i : data) {
+        i.at(0) = RescaleLatitude(i.at(0));
+        i.at(1) = RescaleLongitude(i.at(1), center_lon);
     }
 
     std::vector<int> x_indices{0, 1, 2};
-    std::vector<int> y_indices{0, 1, 3};
+    std::vector<int> y_indices{0, 1, 3};  // NOLINT
 
     const std::shared_ptr<FXYSum> f_x = GetBestPolynomial(data, x_indices);
     const std::shared_ptr<FXYSum> f_y = GetBestPolynomial(data, y_indices);
@@ -419,7 +418,7 @@ std::shared_ptr<Approximation> TiePointGeoCoding::CreateApproximation(
     LOGV << "TiePointGeoCoding: Max.error Y = " << max_error_y << ", "
          << (max_error_y < ABS_ERROR_LIMIT ? "OK" : "too large");
 
-    return std::make_shared<Approximation>(f_x, f_y, center_lat, center_lon, max_square_distance * 1.1);
+    return std::make_shared<Approximation>(f_x, f_y, center_lat, center_lon, max_square_distance * 1.1);  // NOLINT
 }
 
 double TiePointGeoCoding::GetMaxSquareDistance(const std::vector<std::vector<double>>& data, double center_lat,
@@ -518,7 +517,7 @@ std::shared_ptr<PixelPos> TiePointGeoCoding::GetPixelPos(const std::shared_ptr<G
                 } else {
                     square_distance = std::numeric_limits<double>::max();
                 }
-                double temp_lon = lon + 360;
+                double temp_lon = lon + 360;  // NOLINT
                 std::shared_ptr<Approximation> renormalized_approximation =
                     FindRenormalizedApproximation(lat, temp_lon, square_distance);
                 if (renormalized_approximation) {
@@ -542,19 +541,19 @@ std::shared_ptr<PixelPos> TiePointGeoCoding::GetPixelPos(const std::shared_ptr<G
 }
 
 double TiePointGeoCoding::NormalizeLat(double lat) {
-    if (lat < -90 || lat > 90) {
+    if (lat < -90 || lat > 90) {  // NOLINT
         return std::nan("NormalizeLat");
     }
     return lat;
 }
 
-double TiePointGeoCoding::NormalizeLon(double lon) {
-    if (lon < -180 || lon > 180) {
+double TiePointGeoCoding::NormalizeLon(double lon) const {
+    if (lon < -180 || lon > 180) {  // NOLINT
         return std::nan("NormalizeLon");
     }
     double normalized_lon = lon;
     if (normalized_lon < normalized_lon_min_) {
-        normalized_lon += 360;
+        normalized_lon += 360;  // NOLINT
     }
     if (normalized_lon < normalized_lon_min_ || normalized_lon > normalized_lon_max_) {
         return std::nan("NormalizeLon");
@@ -589,5 +588,4 @@ void TiePointGeoCoding::Dispose() {
     // esa snap has it empty like that
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

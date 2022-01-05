@@ -19,7 +19,8 @@
 
 namespace alus::goods::calibrationdata {
 
-static constexpr std::string_view TEST_DIM_FILE{"goods/calibration/S1B_IW_SLC__1SDV_20190709T160353_20190709T160421_017059_020187_0733.dim"};
+static constexpr std::string_view TEST_DIM_FILE{
+    "goods/calibration/S1B_IW_SLC__1SDV_20190709T160353_20190709T160421_017059_020187_0733.dim"};
 
 /*
  * First calibration data

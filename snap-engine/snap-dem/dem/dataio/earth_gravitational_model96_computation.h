@@ -13,8 +13,8 @@
  */
 #pragma once
 
-namespace alus {
-namespace snapengine {
+namespace alus {        // NOLINT
+namespace snapengine {  // NOLINT
 namespace earthgravitationalmodel96computation {
 
 constexpr int NUM_LATS = 721;   // 180*4 + 1  (cover 90 degree to -90 degree)

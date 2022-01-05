@@ -20,11 +20,10 @@
 
 #include <cmath>
 
-#include "orbit_state_vector.h"
 #include "constants.h"
-#include "general_constants.h"
 #include "jlinda/jlinda-core/utils/date_utils.h"
 #include "jlinda/jlinda-core/utils/poly_utils.h"
+#include "orbit_state_vector.h"
 #include "snap-engine-utilities/engine-utilities/datamodel/metadata/abstract_metadata.h"
 #include "snap-engine-utilities/engine-utilities/eo/constants.h"
 
@@ -42,7 +41,9 @@ Point Orbit::GetXyzDotDot(double az_time) {
     // normalize time
     double az_time_normal = (az_time - this->time_[this->time_.size() / 2]) / 10.0;
 
-    double x = 0, y = 0, z = 0;
+    double x{0};
+    double y{0};
+    double z{0};
     for (int i = 2; i <= poly_degree_; ++i) {
         double pow_t = ((i - 1) * i) * pow(az_time_normal, i - 2);
         x += coeff_x_[i] * pow_t;
@@ -58,7 +59,7 @@ Point Orbit::Xyz2T(Point point_on_ellips, double time_azimuth) {
 
     int iter;
     double solution;
-    for (iter = 0; iter <= maxiter_; ++iter) {
+    for (iter = 0; iter <= MAXITER; ++iter) {
         Point satellite_position = GetXyz(time_azimuth);
         Point satellite_velocity = GetXyzDot(time_azimuth);
         Point satellite_acceleration = GetXyzDotDot(time_azimuth);
@@ -105,7 +106,7 @@ Point Orbit::GetXyzDot(double az_time) {
     double y = this->coeff_y_.at(1);
     double z = this->coeff_z_.at(1);
     for (size_t i = 2; i <= degree; ++i) {
-        double pow_t = i * pow(az_time, i - 1);
+        double pow_t = static_cast<double>(i) * pow(az_time, i - 1);
         x += this->coeff_x_.at(i) * pow_t;
         y += this->coeff_y_.at(i) * pow_t;
         z += this->coeff_z_.at(i) * pow_t;
@@ -140,17 +141,17 @@ Point Orbit::RowsColumnsHeightToXyz(int rows, int columns, int height, double az
     Point satellite_velocity;
 
     // allocate matrices
-    std::vector<double> equation_set(3);
+    const int equation_parts_count{3};
+    std::vector<double> equation_set(equation_parts_count);
 
-    std::vector<std::vector<double>> partials_xyz;
-    partials_xyz.resize(3, std::vector<double>(3));
+    std::vector<std::vector<double>> partials_xyz(equation_parts_count, std::vector<double>(equation_parts_count));
 
     satellite_position = GetXyz(az_time);
 
     satellite_velocity = GetXyzDot(az_time);
 
     // iterate for the solution
-    for (int iter = 0; iter <= maxiter_; iter++) {
+    for (int iter = 0; iter <= MAXITER; iter++) {
         // update equations and solve system
         Point dsat_p = ellipsoid_position.Min(satellite_position);
         equation_set[0] = -Eq1Doppler(satellite_velocity, dsat_p);
@@ -185,11 +186,11 @@ Point Orbit::RowsColumnsHeightToXyz(int rows, int columns, int height, double az
     return Point(ellipsoid_position);
 }
 
-Orbit::Orbit(std::shared_ptr<snapengine::MetadataElement> element, int degree) {
+Orbit::Orbit(const std::shared_ptr<snapengine::MetadataElement>& element, int degree) {
     std::vector<snapengine::OrbitStateVector> orbit_state_vectors =
         snapengine::AbstractMetadata::GetOrbitStateVectors(element);
 
-    num_state_vectors_ = orbit_state_vectors.size();
+    num_state_vectors_ = static_cast<int>(orbit_state_vectors.size());
 
     time_.resize(num_state_vectors_);
     data_x_.resize(num_state_vectors_);

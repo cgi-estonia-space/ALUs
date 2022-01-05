@@ -14,7 +14,7 @@
 
 #pragma once
 
-namespace alus {
+namespace alus {  // NOLINT
 namespace snapengine {
 struct OrbitStateVectorComputation {
     double timeMjd_;

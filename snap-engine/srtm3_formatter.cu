@@ -16,41 +16,35 @@
 #include "snap-dem/dem/dataio/earth_gravitational_model96.cuh"
 
 namespace alus {
-namespace snapengine{
+namespace snapengine {
 
-__global__ void FormatSRTM3dem(float *target, float *source, Srtm3FormatComputation data){
-    const int idx = threadIdx.x + (blockDim.x*blockIdx.x);
-    const int idy = threadIdx.y + (blockDim.y*blockIdx.y);
+__global__ void FormatSRTM3dem(float* target, float* source, Srtm3FormatComputation data) {
+    const int idx = threadIdx.x + (blockDim.x * blockIdx.x);
+    const int idy = threadIdx.y + (blockDim.y * blockIdx.y);
     double geo_pos_lon, geo_pos_lat;
     float source_value;
 
-
-    if(idx < data.x_size && idy < data.y_size){
+    if (idx < data.x_size && idy < data.y_size) {
         source_value = source[idx + data.x_size * idy];
-        if(source_value != data.no_data_value){
-            //everything that TileGeoReferencing.getGeoPos does.
-            geo_pos_lon = data.m00*(idx + 0.5) + data.m01*(idy + 0.5) + data.m02;
-            geo_pos_lat = data.m10*(idx + 0.5) + data.m11*(idy + 0.5) + data.m12;
-            target[idx + data.x_size *idy] =
+        if (source_value != data.no_data_value) {
+            // everything that TileGeoReferencing.getGeoPos does.
+            geo_pos_lon = data.m00 * (idx + 0.5) + data.m01 * (idy + 0.5) + data.m02;
+            geo_pos_lat = data.m10 * (idx + 0.5) + data.m11 * (idy + 0.5) + data.m12;
+            target[idx + data.x_size * idy] =
                 source_value + snapengine::earthgravitationalmodel96computation::GetEGM96(
-                                   geo_pos_lat,
-                                   geo_pos_lon,
-                                   data.max_lats,
-                                   data.max_lons,
-                                   data.egm);
-        }else{
-            target[idx + data.x_size *idy] = source_value;
+                                   geo_pos_lat, geo_pos_lon, data.max_lats, data.max_lons, data.egm);
+        } else {
+            target[idx + data.x_size * idy] = source_value;
         }
-
     }
 }
 
-
-cudaError_t LaunchDemFormatter(dim3 grid_size, dim3 block_size, float *target, float *source, Srtm3FormatComputation data){
+cudaError_t LaunchDemFormatter(dim3 grid_size, dim3 block_size, float* target, float* source,
+                               Srtm3FormatComputation data) {
     FormatSRTM3dem<<<grid_size, block_size>>>(target, source, data);
     cudaDeviceSynchronize();
     return cudaGetLastError();
 }
 
-}//namespace
-}//namespace
+}  // namespace snapengine
+}  // namespace alus

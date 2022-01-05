@@ -61,7 +61,7 @@ AlgorithmParameters::Table AlgorithmParameters::ParseParameters(std::string_view
     }
 
     std::vector<std::string> parameter_pairs{};
-    boost::split(parameter_pairs, parameters_list_local, std::bind1st(std::equal_to<char>(), PARAMETERS_SEPARATOR));
+    boost::split(parameter_pairs, parameters_list_local, boost::is_any_of(std::string(1, PARAMETERS_SEPARATOR)));
 
     for (auto&& pp : parameter_pairs) {
         const auto param_val_sep_pos = pp.find(PARAMETER_VALUE_SEPARATOR);
@@ -84,8 +84,7 @@ AlgorithmParameters::Table AlgorithmParameters::ParseParameters(std::string_view
 
 AlgorithmParameters::AlgParamTables AlgorithmParameters::TryCreateFrom(std::string_view algs_param_values) {
     std::vector<std::string> param_value_split_by_alg;
-    boost::split(
-        param_value_split_by_alg, algs_param_values, std::bind1st(std::equal_to<char>(), ALGORITHM_SEPARATORS));
+    boost::split(param_value_split_by_alg, algs_param_values, boost::is_any_of(std::string(1, ALGORITHM_SEPARATORS)));
 
     AlgParamTables alg_params;
     for (auto&& pva : param_value_split_by_alg) {

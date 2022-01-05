@@ -22,8 +22,7 @@
 #include <string_view>
 #include <vector>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 class MetadataElement;
 class Product;
@@ -52,7 +51,7 @@ private:
 
     static constexpr float GEOGRAPHIC_ERROR = 1.0e-3F;
 
-    static bool Contains(std::vector<std::string> list, std::string_view tag);
+    static bool Contains(const std::vector<std::string>& list, std::string_view tag);
 
 public:
     explicit InputProductValidator(const std::shared_ptr<Product>& product);
@@ -65,9 +64,9 @@ public:
     bool IsMultiSwath();
     bool IsSentinel1Product();
     void CheckIfSentinel1Product();
-    void CheckMission(std::vector<std::string> valid_missions);
-    void CheckProductType(std::vector<std::string> valid_product_types);
-    void CheckAcquisitionMode(std::vector<std::string> valid_modes);
+    void CheckMission(const std::vector<std::string>& valid_missions);
+    void CheckProductType(const std::vector<std::string>& valid_product_types);
+    void CheckAcquisitionMode(const std::vector<std::string>& valid_modes);
     bool IsTOPSARProduct();
     void CheckIfTOPSARBurstProduct(bool shouldbe);
     void CheckIfMultiSwathTOPSARProduct();
@@ -81,5 +80,4 @@ public:
     void CheckIfCompatibleProducts(std::vector<std::shared_ptr<Product>> source_products);
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

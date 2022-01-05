@@ -44,14 +44,15 @@ public:
      * @param path_to_band_file
      */
     void Open(std::string_view path_to_band_file, int raster_size_x, int raster_size_y,
-              std::vector<double> affine_geo_transform_out, const std::string_view data_projection_out, bool in_memory_file) override;
+              std::vector<double> affine_geo_transform_out, std::string_view data_projection_out,
+              bool in_memory_file) override;
 
-    //TODO internal dataset exposed to work together with different GDAL wrappers in the project
+    // TODO internal dataset exposed to work together with different GDAL wrappers in the project  // NOLINT
     GDALDataset* GetDataset() { return dataset_; }
 
     // todo: add support for subsampling
-    void WriteSubSampledData(const custom::Rectangle& rectangle, std::vector<float>& data, int band_indx) override;
-    void WriteSubSampledData(const alus::Rectangle& rectangle, std::vector<float>& data, int band_indx) override;
+    void WriteSubSampledData(const custom::Rectangle& rectangle, std::vector<float>& data, int band_index) override;
+    void WriteSubSampledData(const alus::Rectangle& rectangle, std::vector<float>& data, int band_index) override;
 
     void Close() override;
 };

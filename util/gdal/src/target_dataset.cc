@@ -21,8 +21,8 @@ namespace alus {
 
 template <typename OutputType>
 TargetDataset<OutputType>::TargetDataset(TargetDatasetParams params)
-    : dataset_per_band_{params.dataset_per_band}, dimensions{params.dimension} {
-    auto const driver = params.driver;
+    : dataset_per_band_{params.dataset_per_band}, dimensions_{params.dimension} {
+    auto* const driver = params.driver;
     CHECK_GDAL_PTR(driver);
 
     gdal_data_type_ = FindGdalDataType<OutputType>();
@@ -34,7 +34,7 @@ TargetDataset<OutputType>::TargetDataset(TargetDatasetParams params)
 
     try {
         for (auto*& dataset : datasets_) {
-            dataset = driver->Create(params.filename.data(), dimensions.columnsX, dimensions.rowsY, bands_per_dataset,
+            dataset = driver->Create(params.filename.data(), dimensions_.columnsX, dimensions_.rowsY, bands_per_dataset,
                                      gdal_data_type_, nullptr);
             CHECK_GDAL_PTR(dataset);
             if (dataset) {

@@ -89,7 +89,7 @@ int main(int argc, const char* argv[]) {
         if (merged_parameters.count(alg_to_run)) {
             alg_guard.GetInstanceHandle()->SetParameters(merged_parameters.at(alg_to_run));
         } else if (!merged_parameters.empty() &&
-                   merged_parameters.count("")) {  // Parameters without algorithm specification
+                   merged_parameters.count("") != 0) {  // Parameters without algorithm specification
             alg_guard.GetInstanceHandle()->SetParameters(merged_parameters.at(""));
         }
 
@@ -118,7 +118,7 @@ int main(int argc, const char* argv[]) {
     } catch (const po::error& e) {
         LOGE << e.what();
         PrintHelp(help_string);
-        alg_execute_status = 1;  // TODO: Create constants for exit codes.
+        alg_execute_status = 1;  // TODO: Create constants for exit codes.  // NOLINT
 
     } catch (const std::exception& e) {
         LOGE << "An exception was caught - " << e.what() << " - Exiting";
@@ -126,7 +126,7 @@ int main(int argc, const char* argv[]) {
     } catch (...) {
         LOGE << "Exception of unknown type was caught."
              << "ERRNO:" << strerror(errno);
-        alg_execute_status = 3;
+        alg_execute_status = 3;  // NOLINT
     }
 
     cuda_warmup.join();

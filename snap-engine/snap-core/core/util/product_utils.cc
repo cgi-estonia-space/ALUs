@@ -31,8 +31,7 @@
 #include "ceres-core/core/ceres_assert.h"
 #include "guardian.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 void ProductUtils::CopyProductNodes(const std::shared_ptr<Product>& source_product,
                                     const std::shared_ptr<Product>& target_product) {
@@ -392,16 +391,16 @@ int ProductUtils::NormalizeGeoPolygon(std::vector<GeoPos> polygon) {
     }
 
     double lon_diff;
-    double increment = 0.f;
+    double increment = 0.F;
     double min_lon = std::numeric_limits<double>::max();
     double max_lon = -std::numeric_limits<double>::max();
     for (size_t i = 1; i < polygon.size(); i++) {
         GeoPos geo_pos = polygon.at(i);
         lon_diff = original_lon.at(i) - original_lon.at(i - 1);
-        if (lon_diff > 180.0F) {
-            increment -= 360.0;
-        } else if (lon_diff < -180.0) {
-            increment += 360.0;
+        if (lon_diff > 180.0F) {         // NOLINT
+            increment -= 360.0;          // NOLINT
+        } else if (lon_diff < -180.0) {  // NOLINT
+            increment += 360.0;          // NOLINT
         }
 
         geo_pos.lon_ += increment;
@@ -417,10 +416,10 @@ int ProductUtils::NormalizeGeoPolygon(std::vector<GeoPos> polygon) {
     bool neg_normalized = false;
     bool pos_normalized = false;
 
-    if (min_lon < -180.0) {
+    if (min_lon < -180.0) {  // NOLINT
         pos_normalized = true;
     }
-    if (max_lon > 180.0) {
+    if (max_lon > 180.0) {  // NOLINT
         neg_normalized = true;
     }
 
@@ -429,14 +428,13 @@ int ProductUtils::NormalizeGeoPolygon(std::vector<GeoPos> polygon) {
     } else if (!neg_normalized && pos_normalized) {
         normalized = -1;
         for (GeoPos a_polygon : polygon) {
-            a_polygon.lon_ += 360.0;
+            a_polygon.lon_ += 360.0;  // NOLINT
         }
-    } else if (neg_normalized && pos_normalized) {
+    } else if (neg_normalized) {
         normalized = 2;
     }
 
     return normalized;
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

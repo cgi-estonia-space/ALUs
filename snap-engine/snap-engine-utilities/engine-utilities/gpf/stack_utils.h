@@ -29,11 +29,12 @@ namespace alus::snapengine {
 class StackUtils {
 public:
     static std::string CreateBandTimeStamp(std::shared_ptr<Product>& product);
-    static bool IsMasterBand(std::string_view band_name, std::shared_ptr<Product> product);
+    static bool IsMasterBand(std::string_view band_name, const std::shared_ptr<Product>& product);
     static bool IsSlaveBand(std::string_view band_name, std::shared_ptr<Product> product);
-    static bool IsSlaveBand(std::string_view band_name, std::shared_ptr<Product> product, std::string_view slave_product_name);
-    static std::vector<std::string> GetSlaveProductNames(std::shared_ptr<Product> product);
-    static bool IsCoregisteredStack(std::shared_ptr<Product> product);
+    static bool IsSlaveBand(std::string_view band_name, const std::shared_ptr<Product>& product,
+                            std::string_view slave_product_name);
+    static std::vector<std::string> GetSlaveProductNames(const std::shared_ptr<Product>& product);
+    static bool IsCoregisteredStack(const std::shared_ptr<Product>& product);
 
 private:
     static constexpr std::string_view MST{"_mst"};

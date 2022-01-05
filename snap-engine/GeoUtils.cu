@@ -22,5 +22,5 @@ __host__ void Geo2xyzWgs84(double latitude, double longitude, double altitude, P
 }
 
 }  // namespace geoutils
-}  // namespace snapEngine
+}  // namespace snapengine
 }  // namespace alus

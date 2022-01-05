@@ -21,20 +21,20 @@ public:
     CommandLineOptions();
     CommandLineOptions(int argc, const char* argv[]);
 
-    std::string GetHelp() const;
+    [[nodiscard]] std::string GetHelp() const;
 
     void ParseArgs(int argc, const char* argv[]);
-    bool DoRequireHelp() const;
-    bool DoRequireAlgorithmHelp() const;
-    const auto& GetSelectedAlgorithm() const { return alg_to_run_; }
-    const auto& GetInputDatasets() const { return input_files_; }
-    const auto& GetOutputStem() const { return output_path_; }
-    const auto& GetAux() const { return aux_locations_; }
-    auto GetTileWidth() const { return tile_width_; }
-    auto GetTileHeight() const { return tile_height_; }
-    const auto& GetAlgorithmParameters() const { return alg_params_; }
-    const auto& GetAlgorithmParametersFile() const { return params_file_path_; }
-    const auto& GetDemFiles() const { return dem_files_param_; }
+    [[nodiscard]] bool DoRequireHelp() const;
+    [[nodiscard]] bool DoRequireAlgorithmHelp() const;
+    [[nodiscard]] const auto& GetSelectedAlgorithm() const { return alg_to_run_; }
+    [[nodiscard]] const auto& GetInputDatasets() const { return input_files_; }
+    [[nodiscard]] const auto& GetOutputStem() const { return output_path_; }
+    [[nodiscard]] const auto& GetAux() const { return aux_locations_; }
+    [[nodiscard]] auto GetTileWidth() const { return tile_width_; }
+    [[nodiscard]] auto GetTileHeight() const { return tile_height_; }
+    [[nodiscard]] const auto& GetAlgorithmParameters() const { return alg_params_; }
+    [[nodiscard]] const auto& GetAlgorithmParametersFile() const { return params_file_path_; }
+    [[nodiscard]] const auto& GetDemFiles() const { return dem_files_param_; }
 
     ~CommandLineOptions() = default;
 

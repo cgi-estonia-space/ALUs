@@ -21,8 +21,7 @@
 #include <memory>
 #include <string_view>
 
-namespace alus {
-namespace ceres {
+namespace alus::ceres {
 
 /**
  * The <code>ProgressMonitor</code> interface is implemented
@@ -143,5 +142,4 @@ public:
      */
     virtual void Worked(int work) = 0;
 };
-}  // namespace ceres
-}  // namespace alus
+}  // namespace alus::ceres

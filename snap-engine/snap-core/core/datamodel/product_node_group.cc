@@ -29,12 +29,10 @@
 #include "snap-core/core/datamodel/quicklooks/quicklook.h"
 #include "snap-core/core/datamodel/tie_point_grid.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 template <typename T>
-ProductNodeGroup<T>::ProductNodeGroup(ProductNode* owner, std::string_view name,
-                                      bool taking_over_node_ownership)
+ProductNodeGroup<T>::ProductNodeGroup(ProductNode* owner, std::string_view name, bool taking_over_node_ownership)
     : ProductNode(name, "") {
     node_list_ = std::make_shared<ProductNodeList<T>>();
     taking_over_node_ownership_ = taking_over_node_ownership;
@@ -156,5 +154,4 @@ template class ProductNodeGroup<std::shared_ptr<FlagCoding>>;
 template class ProductNodeGroup<std::shared_ptr<IndexCoding>>;
 template class ProductNodeGroup<std::shared_ptr<Quicklook>>;
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

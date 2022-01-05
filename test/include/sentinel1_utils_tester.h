@@ -15,13 +15,14 @@
 
 #include <fstream>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <vector>
 
 #include "allocators.h"
 #include "s1tbx-commons/subswath_info.h"
 
-namespace {
+namespace testing {
 
 class Sentinel1UtilsTester {
 public:
@@ -39,7 +40,11 @@ public:
         std::ifstream range_depend_doppler_rate_reader(range_depend_file);
         std::ifstream reference_time_reader(reference_time_file);
 
-        int x, y, i, j;
+        int x;
+        int y;
+        int i;
+        int j;
+
         doppler_rate_reader >> x >> y;
         doppler_rate_2_ = alus::Allocate2DArray<double>(x, y);
 
@@ -158,7 +163,7 @@ public:
         geo_location_reader.close();
     }
 
-    Sentinel1UtilsTester() {}
+    Sentinel1UtilsTester() = default;
     ~Sentinel1UtilsTester() {
         alus::Deallocate2DArray(doppler_rate_2_);
         alus::Deallocate2DArray(doppler_centroid_2_);
@@ -169,4 +174,4 @@ public:
     Sentinel1UtilsTester& operator=(const Sentinel1UtilsTester&) = delete;
 };
 
-}  // namespace
+}  // namespace testing

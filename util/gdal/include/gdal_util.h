@@ -30,6 +30,7 @@ constexpr char GDAL_MEM_DRIVER[]{"MEM"};
 constexpr char GDAL_GTIFF_DRIVER[]{"GTiff"};
 constexpr char GDAL_GTIFF_FILE_EXTENSION[]{".tif"};
 constexpr int GDAL_DEFAULT_RASTER_BAND{1};
+constexpr int GDAL_GEOTRANSFORM_PARAMETER_COUNT{6};
 
 constexpr std::string_view GDAL_ZIP_PREFIX{"/vsizip/"};
 constexpr std::string_view GDAL_GZIP_PREFIX{"/vsigzip/"};
@@ -40,7 +41,7 @@ constexpr std::string_view GZIP_EXTENSION{".gz"};
 constexpr std::string_view TAR_EXTENSION{".tar"};
 constexpr std::string_view TGZ_EXTENSION{
     ".tgz"};  // TODO: .tar.gz is not supported yet (would require additional checks in AdjustFilePath()
-}  // namespace constants
+}  // namespace gdal::constants
 
 inline GDALDriver* GetGdalMemDriver() {
     return GetGDALDriverManager()->GetDriverByName(gdal::constants::GDAL_MEM_DRIVER);
@@ -57,48 +58,51 @@ public:
         : std::runtime_error("GDAL error no " + std::to_string(static_cast<int>(errNum)) + " type " +
                              std::to_string(static_cast<int>(errType)) + " - '" + std::string{errMsg} + "' at " +
                              std::string{src} + ":" + std::to_string(srcLine)),
-          gdalError{errNum},
-          file{src},
-          line{srcLine} {}
+          gdal_error_{errNum},
+          file_{src},
+          line_{srcLine} {}
 
-    [[nodiscard]] CPLErrorNum getGdalError() const { return gdalError; }
-    [[nodiscard]] std::string_view getSource() const { return file; }
-    [[nodiscard]] int getLine() const { return line; }
+    [[nodiscard]] CPLErrorNum GetGdalError() const { return gdal_error_; }
+    [[nodiscard]] std::string_view GetSource() const { return file_; }
+    [[nodiscard]] int GetLine() const { return line_; }
 
 private:
-    CPLErrorNum const gdalError;
-    std::string file;
-    int const line;
+    CPLErrorNum const gdal_error_;
+    std::string file_;
+    int const line_;
 };
 
 struct Iq16 {
     int16_t i;
     int16_t q;
 };
-static_assert(sizeof(Iq16) == 4, "Do no alter the memory layout of this structure!");
+static_assert(sizeof(Iq16) == 4, "Do no alter the memory layout of this structure!");  // NOLINT
 
 template <typename BufferType>
 GDALDataType FindGdalDataType() {
     if (std::is_same_v<BufferType, double>) {
         return GDALDataType::GDT_Float64;
-    } else if (std::is_same_v<BufferType, float>) {
-        return GDALDataType::GDT_Float32;
-    } else if (std::is_same_v<BufferType, int16_t>) {
-        return GDALDataType::GDT_Int16;
-    } else if (std::is_same_v<BufferType, int32_t>) {
-        return GDALDataType::GDT_Int32;
-    } else if (std::is_same_v<BufferType, Iq16>) {
-        return GDALDataType::GDT_CInt16;
-    } else {
-        // todo this function and error can be compile time, but requires refactoring in other places
-        throw std::invalid_argument(std::string(typeid(BufferType).name()) +
-                                    " is not an implemented type for this dataset.");
     }
+    if (std::is_same_v<BufferType, float>) {
+        return GDALDataType::GDT_Float32;
+    }
+    if (std::is_same_v<BufferType, int16_t>) {
+        return GDALDataType::GDT_Int16;
+    }
+    if (std::is_same_v<BufferType, int32_t>) {
+        return GDALDataType::GDT_Int32;
+    }
+    if (std::is_same_v<BufferType, Iq16>) {
+        return GDALDataType::GDT_CInt16;
+    }
+    // todo this function and error can be compile time, but requires refactoring in other places
+    throw std::invalid_argument(std::string(typeid(BufferType).name()) +
+                                " is not an implemented type for this dataset.");
 }
 
-void GeoTiffWriteFile(GDALDataset* input_dataset, const std::string_view output_file);
+void GeoTiffWriteFile(GDALDataset* input_dataset, std::string_view output_file);
 
-std::string findOptimalTileSize(int raster_dimension);
+std::string FindOptimalTileSize(int raster_dimension);
 
 /**
  * Checks if the file is an archive and prepends it with the suitable GDAL virtual filesystem prefix.
@@ -107,13 +111,13 @@ std::string findOptimalTileSize(int raster_dimension);
  * @return File path with a correct prefix if needed.
  */
 std::string AdjustFilePath(std::string_view file_path);
-}  // namespace alus::gdal
+}  // namespace alus
 
-inline void checkGdalError(CPLErr const err, char const* file, int const line) {
+inline void CheckGdalError(CPLErr const err, char const* file, int const line) {
     if (err != CE_None) {
         throw alus::GdalErrorException(err, CPLGetLastErrorNo(), CPLGetLastErrorMsg(), file, line);
     }
 }
 
-#define CHECK_GDAL_ERROR(err) checkGdalError(err, __FILE__, __LINE__)
+#define CHECK_GDAL_ERROR(err) CheckGdalError(err, __FILE__, __LINE__)
 #define CHECK_GDAL_PTR(ptr) CHECK_GDAL_ERROR((ptr) == nullptr ? CE_Failure : CE_None)

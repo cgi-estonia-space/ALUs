@@ -24,7 +24,6 @@
 
 namespace alus::utils::general {
 
-// TODO: maybe remove inline and create a library?
 inline void MeasureExecutionTime(std::string_view message, const std::function<void()>& code_block) {
     const auto start = std::chrono::steady_clock::now();
     code_block();
@@ -35,7 +34,7 @@ inline void MeasureExecutionTime(std::string_view message, const std::function<v
 
 inline void DisplayProgressBar(size_t counter, size_t total_size, const std::function<void()>& code_block) {
     code_block();
-    const float progress{static_cast<float>(counter) / (total_size - 1)};
+    const float progress{static_cast<float>(counter) / static_cast<float>((total_size - 1))};
     const int bar_width_in_symbols{70};
     auto position = static_cast<int>(bar_width_in_symbols * progress);
 
@@ -92,7 +91,7 @@ inline bool IsZipOrSafeInput(const std::vector<std::string>& input_datasets) {
     return std::all_of(input_datasets.begin(), input_datasets.end(), [](const auto& dataset) {
         const auto extension = boost::filesystem::path(dataset).extension().string();
         if (extension == ".zip") {
-            if (const auto zip_contents = common::zip::GetZipContents(dataset); zip_contents.size() >= 1) {
+            if (const auto zip_contents = common::zip::GetZipContents(dataset); !zip_contents.empty()) {
                 const auto separator =
                     zip_contents.at(0).rfind('.');  // SAFE directory should be at the root of the archive
                 const auto zipped_extension = zip_contents.at(0).substr(separator);

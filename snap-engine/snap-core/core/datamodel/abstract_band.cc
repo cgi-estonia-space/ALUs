@@ -28,11 +28,10 @@
 #include "ceres-core/core/i_progress_monitor.h"
 #include "snap-core/core/datamodel/product_data.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 AbstractBand::AbstractBand(std::string_view name, int data_type, int raster_width, int raster_height)
-    : RasterDataNode(name, data_type, static_cast<long>(raster_width) * static_cast<long>(raster_height)) {
+    : RasterDataNode(name, data_type, static_cast<int64_t>(raster_width) * static_cast<int64_t>(raster_height)) {
     raster_width_ = raster_width;
     raster_height_ = raster_height;
 }
@@ -456,11 +455,10 @@ std::shared_ptr<ProductData> AbstractBand::GetRasterDataSafe() {
 }
 
 std::shared_ptr<ProductData> AbstractBand::ReadSubRegionRasterData(int x, int y, int w, int h,
-                                                                   std::shared_ptr<ceres::IProgressMonitor> pm) {
+                                                                   const std::shared_ptr<ceres::IProgressMonitor>& pm) {
     std::shared_ptr<ProductData> sub_raster_data = CreateCompatibleRasterData(w, h);
     ReadRasterData(x, y, w, h, sub_raster_data, pm);
     return sub_raster_data;
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

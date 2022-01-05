@@ -32,8 +32,7 @@
 #include "snap-core/core/datamodel/tie_point_grid.h"
 #include "spectral_band_info.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 class MetadataElement;
 class Product;
 class PugixmlMetaDataReader : virtual public IMetaDataReader {
@@ -63,7 +62,7 @@ private:
         return std::make_optional(boost::lexical_cast<T>(string_value));
     }
 
-    std::unique_ptr<snapengine::TiePointGrid>  GetTiePointGrid(const pugi::xml_node& tie_point_grid_node);
+    std::unique_ptr<snapengine::TiePointGrid> GetTiePointGrid(const pugi::xml_node& tie_point_grid_node);
 
 public:
     PugixmlMetaDataReader() = default;
@@ -82,7 +81,7 @@ public:
     std::vector<SpectralBandInfo> ReadImageInterpretationTag();
 
     /**
-     * Method for accessing Tie_Point_Grids tag of BEAM-DIMAP format and reading tie_point_grid info from the
+     * Method for accessing Tie_Point_Grids tag of BEAM-DIMAP format and reading tie-point-grid info from the
      * aforementioned tag.
      *
      * @return Map of TiePointGrid names and their according TiePointGrid classes.
@@ -95,7 +94,8 @@ public:
 // Has to be outside of class namespace due to gcc not implementing C++ Core DR 727:
 // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85282
 template <>
-inline std::optional<bool> PugixmlMetaDataReader::ParseChildValue(const pugi::xml_node& node, std::string_view child_tag) {
+inline std::optional<bool> PugixmlMetaDataReader::ParseChildValue(const pugi::xml_node& node,
+                                                                  std::string_view child_tag) {
     std::string string_value = node.child_value(child_tag.data());
     if (string_value.empty()) {
         return std::nullopt;
@@ -111,5 +111,4 @@ inline std::optional<bool> PugixmlMetaDataReader::ParseChildValue(const pugi::xm
     }
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

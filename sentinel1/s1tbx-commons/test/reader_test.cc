@@ -48,14 +48,14 @@ std::shared_ptr<snapengine::Product> alus::s1tbx::ReaderTest::TestReader(
     }
 
     const std::shared_ptr<snapengine::IProductReader> reader = reader_plug_in->CreateReaderInstance();
-    const std::shared_ptr<snapengine::Product> product = reader->ReadProductNodes(input_path, nullptr);
+    std::shared_ptr<snapengine::Product> product = reader->ReadProductNodes(input_path, nullptr);
     if (product == nullptr) {
         throw std::runtime_error("Unable to read product");
     }
     return product;
 }
 
-void ReaderTest::ValidateProduct(const std::shared_ptr<snapengine::Product>& product) {
+void ReaderTest::ValidateProduct(const std::shared_ptr<snapengine::Product>& product) const {
     snapengine::TestUtils::VerifyProduct(product, verify_time_, verify_geocoding_);
 }
 void ReaderTest::ValidateMetadata(const std::shared_ptr<snapengine::Product>& product) {
@@ -68,7 +68,7 @@ void ReaderTest::ValidateMetadata(const std::shared_ptr<snapengine::Product>& pr
     metadata_validator->Validate();
 }
 void ReaderTest::ValidateBands(const std::shared_ptr<snapengine::Product>& trg_product,
-                               std::vector<std::string> band_names) {
+                               const std::vector<std::string>& band_names) {
     const std::vector<std::shared_ptr<snapengine::Band>> bands = trg_product->GetBands();
     if (band_names.size() != bands.size()) {
         throw std::runtime_error("Expecting " + std::to_string(band_names.size()) + " bands but found " +

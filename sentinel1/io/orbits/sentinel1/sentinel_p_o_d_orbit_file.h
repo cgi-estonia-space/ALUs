@@ -22,6 +22,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include <boost/filesystem.hpp>
@@ -32,8 +33,7 @@
 #include "metadata_element.h"
 #include "orbit_vector.h"
 
-namespace alus {
-namespace s1tbx {
+namespace alus::s1tbx {
 
 class FixedHeader {
 private:
@@ -59,9 +59,9 @@ private:
     static constexpr std::string_view DATE_FORMAT{"%Y%m%d-%H%M%S"};
     static constexpr std::string_view ORBIT_DATE_FORMAT{"%Y-%m-%d %H:%M:%S"};
 
-    static std::string GetMissionPrefix(std::shared_ptr<snapengine::MetadataElement> abs_root);
-    static boost::filesystem::path GetDestFolder(std::string_view mission_prefix, std::string_view orbit_type, int year,
-                                                 int month);
+    static std::string GetMissionPrefix(const std::shared_ptr<snapengine::MetadataElement>& abs_root);
+    static boost::filesystem::path GetDestFolder(std::string_view mission_prefix,
+                                                 [[maybe_unused]] std::string_view orbit_type, int year, int month);
 
     static std::optional<boost::filesystem::path> FindOrbitFile(std::string_view mission_prefix,
                                                                 std::string_view orbit_type, double state_vector_time,
@@ -100,7 +100,7 @@ public:
     static constexpr std::string_view PRECISE = "Sentinel Precise";
 
     SentinelPODOrbitFile(int poly_degree, std::shared_ptr<snapengine::MetadataElement> abs_root)
-        : poly_degree_(poly_degree), abs_root_(abs_root) {}
+        : poly_degree_(poly_degree), abs_root_(std::move(abs_root)) {}
 
     std::vector<std::string> GetAvailableOrbitTypes() override {
         return std::vector<std::string>{std::string(RESTITUTED), std::string(PRECISE)};
@@ -120,5 +120,4 @@ public:
      */
     std::shared_ptr<snapengine::OrbitVector> GetOrbitData(double utc) override;
 };
-}  // namespace s1tbx
-}  // namespace alus
+}  // namespace alus::s1tbx

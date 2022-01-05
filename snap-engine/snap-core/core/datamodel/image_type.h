@@ -18,27 +18,30 @@
  */
 #pragma once
 
-class Mask;
+#include <memory>
+#include <string>
 
-namespace alus {
-namespace snapengine {
+#include "snap-core/core/datamodel/product.h"
+
+namespace alus::snapengine {
 /**
  * Specifies a factory for the {@link RasterDataNode#getSourceImage() source image} used by a {@link Mask}.
  */
 class ImageType {
-   private:
+private:
     std::string name_;
 
-   protected:
-    ImageType(std::string_view name) : name_(name) {}
-    ImageType(const ImageType&) = delete;
-    ImageType& operator=(const ImageType&) = delete;
+protected:
+    explicit ImageType(std::string_view name) : name_(name) {}
     virtual ~ImageType() = default;
 
-   public:
+public:
+    ImageType(const ImageType&) = delete;
+    ImageType& operator=(const ImageType&) = delete;
+
     static constexpr std::string_view PROPERTY_NAME_COLOR = "color";
     static constexpr std::string_view PROPERTY_NAME_TRANSPARENCY = "transparency";
-//    static Color DEFAULT_COLOR = Color.RED;
+    //    static Color DEFAULT_COLOR = Color.RED;
     static constexpr double DEFAULT_TRANSPARENCY = 0.5;
 
     /**
@@ -48,42 +51,45 @@ class ImageType {
      *
      * @return The image.
      */
-    virtual std::shared_ptr<MultiLevelImage> CreateImage(std::shared_ptr<Mask> mask) = 0;
+    //    virtual std::shared_ptr<MultiLevelImage> CreateImage(std::shared_ptr<Mask> mask) = 0;
 
-    bool CanTransferMask(std::shared_ptr<Mask> mask, std::shared_ptr<Product> product) { return false; }
+    static bool CanTransferMask([[maybe_unused]] std::shared_ptr<Mask> mask,          // NOLINT
+                                [[maybe_unused]] std::shared_ptr<Product> product) {  // NOLINT
+        return false;
+    }
 
-    std::shared_ptr<Mask> TransferMask(std::shared_ptr<Mask> mask, std::shared_ptr<Product> product){return nullptr};
+    static std::shared_ptr<Mask> TransferMask([[maybe_unused]] std::shared_ptr<Mask> mask,          // NOLINT
+                                              [[maybe_unused]] std::shared_ptr<Product> product) {  // NOLINT
+        return nullptr;
+    };
 
     /**
      * Creates a prototype image configuration.
      *
      * @return The image configuration.
      */
-    std::shared_ptr<PropertyContainer> CreateImageConfig() {
-        std::shared_ptr<PropertyDescriptor> color_type =
-            std::make_shared<PropertyDescriptor>(PROPERTY_NAME_COLOR, Color.class);
-        color_type->SetNotNull(true);
-        color_type->SetDefaultValue(DEFAULT_COLOR);
+    /* std::shared_ptr<PropertyContainer> CreateImageConfig() {
+         std::shared_ptr<PropertyDescriptor> color_type =
+             std::make_shared<PropertyDescriptor>(PROPERTY_NAME_COLOR, Color.class);
+         color_type->SetNotNull(true);
+         color_type->SetDefaultValue(DEFAULT_COLOR);
 
-        std::shared_ptr<PropertyDescriptor> transparency_type =
-            std::make_shared<PropertyDescriptor>(PROPERTY_NAME_TRANSPARENCY, Double::TYPE);
-        transparency_type->DetDefaultValue(DEFAULT_TRANSPARENCY);
+         std::shared_ptr<PropertyDescriptor> transparency_type =
+             std::make_shared<PropertyDescriptor>(PROPERTY_NAME_TRANSPARENCY, Double::TYPE);
+         transparency_type->DetDefaultValue(DEFAULT_TRANSPARENCY);
 
-        std::shared_ptr<PropertyContainer> image_config = std::make_shared<PropertyContainer>();
-        image_config->AddProperty(std::make_shared<Property>(color_type, std::make_shared<DefaultPropertyAccessor>()));
-        image_config->AddProperty(
-            std::make_shared<Property>(transparency_type, std::make_shared<DefaultPropertyAccessor>()));
+         std::shared_ptr<PropertyContainer> image_config = std::make_shared<PropertyContainer>();
+         image_config->AddProperty(std::make_shared<Property>(color_type, std::make_shared<DefaultPropertyAccessor>()));
+         image_config->AddProperty(
+             std::make_shared<Property>(transparency_type, std::make_shared<DefaultPropertyAccessor>()));
 
-        SetImageStyle(image_config, DEFAULT_COLOR, DEFAULT_TRANSPARENCY);
-        return image_config;
-    }
+         SetImageStyle(image_config, DEFAULT_COLOR, DEFAULT_TRANSPARENCY);
+         return image_config;
+     }*/
 
-    void HandleRename(std::shared_ptr<Mask> mask,
-                      std::string_view old_external_name,
+    void HandleRename(std::shared_ptr<Mask> mask, std::string_view old_external_name,
                       std::string_view new_external_name) {}
 
     std::string GetName() { return name_; }
-}
-};  // namespace snapengine
-}  // namespace alus
-}  // namespace alus
+};
+}  // namespace alus::snapengine

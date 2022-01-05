@@ -82,7 +82,7 @@ std::string SARReader::FindPolarizationInBandName(std::string_view band_name) {
     return "";
 }
 
-void SARReader::DiscardUnusedMetadata(std::shared_ptr<snapengine::Product> product) {
+void SARReader::DiscardUnusedMetadata(const std::shared_ptr<snapengine::Product>& product) {
     //    todo::use config file solution to be made
     //    std::string dicard_unused_metadata = RuntimeContext.getModuleContext().getRuntimeConfig().
     //        GetContextProperty("discard.unused.metadata");
@@ -103,8 +103,9 @@ void SARReader::HandleReaderException(const std::exception& e) {
 }
 
 bool SARReader::CheckIfCrossMeridian(std::vector<float> longitude_list) {
+    const double delta_longitude{270};
     std::sort(longitude_list.begin(), longitude_list.end());
-    return (longitude_list.at(longitude_list.size() - 1) - longitude_list.at(0) > 270.0f);
+    return (longitude_list.at(longitude_list.size() - 1) - longitude_list.at(0) > delta_longitude);
 }
 
 boost::filesystem::path SARReader::GetPathFromInput(const std::any& input) {
@@ -120,6 +121,9 @@ void SARReader::AddCommonSARMetadata(const std::shared_ptr<snapengine::Product>&
     if (product->GetSceneGeoCoding() == nullptr) {
         return;
     }
+
+    const int geo_pos_y_step{100};
+
     //    todo: check if this works like expected
     std::shared_ptr<snapengine::GeoPos> empty_nullptr;
     std::shared_ptr<snapengine::GeoPos> geo_pos = product->GetSceneGeoCoding()->GetGeoPos(
@@ -128,7 +132,7 @@ void SARReader::AddCommonSARMetadata(const std::shared_ptr<snapengine::Product>&
 
     std::shared_ptr<snapengine::GeoPos> geo_pos2 = product->GetSceneGeoCoding()->GetGeoPos(
         std::make_shared<snapengine::PixelPos>(product->GetSceneRasterWidth() / 2,
-                                               (product->GetSceneRasterHeight() / 2) + 100),
+                                               (product->GetSceneRasterHeight() / 2) + geo_pos_y_step),
         empty_nullptr);
     std::shared_ptr<snapengine::DistanceHeading> heading = snapengine::GeoUtils::VincentyInverse(geo_pos, geo_pos2);
 

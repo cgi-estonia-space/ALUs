@@ -68,7 +68,7 @@ public:
      *
      * @return The minimum pixel x-coordinate.
      */
-    virtual int GetMinX() const = 0;
+    [[nodiscard]] virtual int GetMinX() const = 0;
 
     /**
      * Gets the maximum pixel x-coordinate within the scene covered by the tile's {@link #getRasterDataNode
@@ -76,7 +76,7 @@ public:
      *
      * @return The maximum pixel x-coordinate.
      */
-    virtual int GetMaxX() const = 0;
+    [[nodiscard]] virtual int GetMaxX() const = 0;
 
     /**
      * Gets the minimum pixel y-coordinate within the scene covered by the tile's {@link #getRasterDataNode
@@ -84,7 +84,7 @@ public:
      *
      * @return The minimum pixel y-coordinate.
      */
-    virtual int GetMinY() const = 0;
+    [[nodiscard]] virtual int GetMinY() const = 0;
 
     /**
      * Gets the maximum pixel y-coordinate within the scene covered by the tile's {@link #getRasterDataNode
@@ -92,7 +92,7 @@ public:
      *
      * @return The maximum pixel y-coordinate.
      */
-    virtual int GetMaxY() const = 0;
+    [[nodiscard]] virtual int GetMaxY() const = 0;
 
     /**
      * Gets the scanline offset.
@@ -102,7 +102,7 @@ public:
      *
      * @see #getScanlineStride()
      */
-    virtual int GetScanlineOffset() const = 0;
+    [[nodiscard]] virtual int GetScanlineOffset() const = 0;
 
     /**
      * Gets the raster scanline stride for addressing the internal data buffer.
@@ -112,7 +112,7 @@ public:
      *
      * @see #getScanlineOffset()
      */
-    virtual int GetScanlineStride() const = 0;
+    [[nodiscard]] virtual int GetScanlineStride() const = 0;
 
     virtual std::vector<float>& GetSimpleDataBuffer() = 0;
 

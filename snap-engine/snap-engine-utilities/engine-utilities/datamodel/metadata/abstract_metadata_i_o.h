@@ -36,10 +36,10 @@ public:
     /**
      * Add metadata from an XML file into the Metadata of the product
      *
-     * @param xmlRoot      root element of xml file
-     * @param metadataRoot MetadataElement to place it into
+     * @param xml_root      root xml_root of xml file
+     * @param metadata_root MetadataElement to place it into
      */
-    static void AddXMLMetadata(const pugi::xml_node& element, const std::shared_ptr<MetadataElement>& metadata_root);
+    static void AddXMLMetadata(const pugi::xml_node& xml_root, const std::shared_ptr<MetadataElement>& metadata_root);
 };
 
 }  // namespace alus::snapengine

@@ -30,15 +30,14 @@
 #include "snap-engine-utilities/engine-utilities/datamodel/unit.h"
 #include "snap-engine-utilities/engine-utilities/gpf/operator_utils.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 InputProductValidator::InputProductValidator(const std::shared_ptr<Product>& product) {
     product_ = product;
     abs_root_ = AbstractMetadata::GetAbstractedMetadata(product);
 }
 bool InputProductValidator::IsSARProduct() {
-    return abs_root_ != nullptr && abs_root_->GetAttributeDouble("radar_frequency", 99999) != 99999;
+    return abs_root_ != nullptr && abs_root_->GetAttributeDouble("radar_frequency", 99999) != 99999;  // NOLINT
 }
 void InputProductValidator::CheckIfSARProduct() {
     if ("RAW" == product_->GetProductType()) {
@@ -72,13 +71,9 @@ bool InputProductValidator::IsMultiSwath() {
     return (Contains(band_names, "IW1") && Contains(band_names, "IW2")) ||
            (Contains(band_names, "EW1") && Contains(band_names, "EW2"));
 }
-bool InputProductValidator::Contains(std::vector<std::string> list, std::string_view tag) {
-    for (auto const& s : list) {
-        if (s.find(tag) != std::string::npos) {
-            return true;
-        }
-    }
-    return false;
+bool InputProductValidator::Contains(const std::vector<std::string>& list, std::string_view tag) {
+    return std::any_of(std::begin(list), std::end(list),
+                       [&tag](const auto& string) { return string.find(tag) != std::string::npos; });
 }
 bool InputProductValidator::IsSentinel1Product() {
     std::string mission = abs_root_->GetAttributeString(AbstractMetadata::MISSION);
@@ -89,7 +84,7 @@ void InputProductValidator::CheckIfSentinel1Product() {
         throw std::runtime_error(std::string(SHOULD_BE_S1));
     }
 }
-void InputProductValidator::CheckMission(std::vector<std::string> valid_missions) {
+void InputProductValidator::CheckMission(const std::vector<std::string>& valid_missions) {
     std::string mission = abs_root_->GetAttributeString(AbstractMetadata::MISSION, "");
     boost::to_upper(mission);
     for (auto valid_mission : valid_missions) {
@@ -101,7 +96,7 @@ void InputProductValidator::CheckMission(std::vector<std::string> valid_missions
     throw std::runtime_error(mission +
                              " is not a valid mission from: " + StringUtils::ArrayToString(valid_missions, ","));
 }
-void InputProductValidator::CheckProductType(std::vector<std::string> valid_product_types) {
+void InputProductValidator::CheckProductType(const std::vector<std::string>& valid_product_types) {
     std::string product_type = abs_root_->GetAttributeString(AbstractMetadata::PRODUCT_TYPE, "");
     for (auto const& valid_product_type : valid_product_types) {
         if (boost::equals(product_type, valid_product_type)) {
@@ -111,7 +106,7 @@ void InputProductValidator::CheckProductType(std::vector<std::string> valid_prod
     throw std::runtime_error(
         product_type + " is not a valid product type from: " + StringUtils::ArrayToString(valid_product_types, ","));
 }
-void InputProductValidator::CheckAcquisitionMode(std::vector<std::string> valid_modes) {
+void InputProductValidator::CheckAcquisitionMode(const std::vector<std::string>& valid_modes) {
     std::string acquisition_mode = abs_root_->GetAttributeString(AbstractMetadata::ACQUISITION_MODE);
     for (auto const& valid_mode : valid_modes) {
         if (boost::equals(acquisition_mode, valid_mode)) {
@@ -137,10 +132,10 @@ void InputProductValidator::CheckIfTOPSARBurstProduct(bool shouldbe) {
     {
         bool is_topsar_product = IsTOPSARProduct();
         if (shouldbe && !is_topsar_product) {
-            // It should be a TOP SAR Burst product but it is not even a TOP SAR Product
+            // It should be a TOP SAR Burst product, but it is not even a TOP SAR Product
             throw std::runtime_error("Source product should be an SLC burst product");
         }
-        if (shouldbe && is_topsar_product && IsDebursted()) {
+        if (shouldbe && IsDebursted()) {
             // It should be a TOP SAR Burst product and it is a TOP SAR product but it has been deburst
             throw std::runtime_error("Source product should NOT be a deburst product");
         }
@@ -198,7 +193,7 @@ bool InputProductValidator::IsFullPolSLC() {
         }
     }
 
-    return (valid_band_cnt == 8);
+    return (valid_band_cnt == 8);  // NOLINT
 }
 void InputProductValidator::CheckIfQuadPolSLC() {
     if (!IsFullPolSLC()) {
@@ -246,5 +241,4 @@ void InputProductValidator::CheckIfTanDEMXProduct() {
 //    return false;
 //}
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

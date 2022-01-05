@@ -54,7 +54,7 @@ private:
     std::shared_ptr<ProductData> GetRasterDataSafe();
 
     std::shared_ptr<ProductData> ReadSubRegionRasterData(int x, int y, int w, int h,
-                                                         std::shared_ptr<ceres::IProgressMonitor> pm);
+                                                         const std::shared_ptr<ceres::IProgressMonitor>& pm);
 
 protected:
     //    todo: std::vector does not need such check like array, might want to check logic over when we get it working,

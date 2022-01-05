@@ -138,9 +138,7 @@ public:
      * @return the datum
      * @deprecated use the datum of the associated {@link #getMapCRS() map CRS}.
      */
-    [[deprecated]]
-    virtual std::shared_ptr<Datum> GetDatum() = 0;
-
+    [[deprecated]] virtual std::shared_ptr<Datum> GetDatum() = 0;
 };
 }  // namespace snapengine
 }  // namespace alus

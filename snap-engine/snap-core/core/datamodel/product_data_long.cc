@@ -24,29 +24,28 @@
 
 #include <boost/lexical_cast.hpp>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 Long::Long(int num_elems) : Long(std::vector<int64_t>(num_elems)) {}
 
 Long::Long(std::vector<int64_t> array) : ProductData(ProductData::TYPE_INT64) { array_ = std::move(array); }
 
-int Long::GetNumElems() const { return array_.size(); }
+int Long::GetNumElems() const { return static_cast<int>(array_.size()); }
 
 void Long::Dispose() { array_.clear(); }
 
-int Long::GetElemIntAt(int index) const { return array_.at(index); }
-long Long::GetElemUIntAt(int index) const { return array_.at(index); }
-long Long::GetElemLongAt(int index) const { return array_.at(index); }
-float Long::GetElemFloatAt(int index) const { return array_.at(index); }
-double Long::GetElemDoubleAt(int index) const { return array_.at(index); }
+int Long::GetElemIntAt(int index) const { return static_cast<int>(array_.at(index)); }
+int64_t Long::GetElemUIntAt(int index) const { return array_.at(index); }
+int64_t Long::GetElemLongAt(int index) const { return array_.at(index); }
+float Long::GetElemFloatAt(int index) const { return static_cast<float>(array_.at(index)); }
+double Long::GetElemDoubleAt(int index) const { return static_cast<double>(array_.at(index)); }
 std::string Long::GetElemStringAt(int index) const { return std::to_string(array_.at(index)); }
 
 void Long::SetElemIntAt(int index, int value) { array_.at(index) = value; }
-void Long::SetElemUIntAt(int index, long value) { array_.at(index) = value; }
-void Long::SetElemLongAt(int index, long value) { array_.at(index) = value; }
-void Long::SetElemFloatAt(int index, float value) { array_.at(index) = std::round(value); }
-void Long::SetElemDoubleAt(int index, double value) { array_.at(index) = std::round(value); }
+void Long::SetElemUIntAt(int index, int64_t value) { array_.at(index) = value; }
+void Long::SetElemLongAt(int index, int64_t value) { array_.at(index) = value; }
+void Long::SetElemFloatAt(int index, float value) { array_.at(index) = static_cast<int64_t>(std::round(value)); }
+void Long::SetElemDoubleAt(int index, double value) { array_.at(index) = static_cast<int64_t>(std::round(value)); }
 
 std::shared_ptr<ProductData> Long::CreateDeepClone() const {
     //    todo:check if this is correct
@@ -72,7 +71,8 @@ void Long::SetElems(std::any data) {
 bool Long::EqualElems(const std::shared_ptr<ProductData> other) const {
     if (other.get() == this) {
         return true;
-    } else if (other->GetElems().type() == typeid(std::vector<int64_t>)) {
+    }
+    if (other->GetElems().type() == typeid(std::vector<int64_t>)) {
         return (array_ == std::any_cast<std::vector<int64_t>>(other->GetElems()));
     }
     return false;
@@ -81,5 +81,4 @@ void Long::SetElemStringAt(int index, std::string_view value) {
     array_.at(index) = boost::lexical_cast<int64_t>(value);
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

@@ -20,8 +20,7 @@
 
 #include "product_data_byte.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 /**
  * The {@code ProductData.ASCII} class is a {@code ProductData.Byte} specialisation representing textual
@@ -85,5 +84,4 @@ public:
     std::string GetTypeString() override { return ProductData::GetTypeString(TYPE_ASCII); }
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

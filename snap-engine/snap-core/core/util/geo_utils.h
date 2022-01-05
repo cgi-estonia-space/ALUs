@@ -30,7 +30,7 @@
 namespace alus {
 namespace snapengine {
 
-namespace WGS84 {
+namespace WGS84 {                                        // NOLINT
 constexpr double A = 6378137.0;                          // m
 constexpr double B = 6356752.3142451794975639665996337;  // 6356752.31424518; // m
 constexpr double FLAT_EARTH_COEF = 1.0 / ((A - B) / A);  // 298.257223563;
@@ -84,7 +84,8 @@ public:
      * head2:	azimuth in degrees mesured in the direction North east south west
      * 			from (lon2,lat2) to (lon1, lat1)
      */
-    static std::shared_ptr<DistanceHeading> VincentyInverse(std::shared_ptr<GeoPos> pos1, std::shared_ptr<GeoPos> pos2);
+    static std::shared_ptr<DistanceHeading> VincentyInverse(const std::shared_ptr<GeoPos>& pos1,
+                                                            const std::shared_ptr<GeoPos>& pos2);
 };
 }  // namespace snapengine
 }  // namespace alus

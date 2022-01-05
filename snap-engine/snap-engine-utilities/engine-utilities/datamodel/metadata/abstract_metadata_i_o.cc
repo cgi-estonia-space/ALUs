@@ -35,12 +35,12 @@ void AbstractMetadataIO::AddXMLMetadata(const pugi::xml_node& xml_root,
     size_t child_attributes = std::distance(xml_root.attributes_begin(), xml_root.attributes_end());
     if (child_nodes == 1 && child_attributes == 0 &&
         xml_root.first_child().type() == pugi::xml_node_type::node_pcdata) {
-        if (xml_root.first_child().value()) {
+        if (xml_root.first_child().value() != nullptr) {
             AddAttribute(metadata_root, root_name, xml_root.first_child().value());
         }
     } else if (child_nodes == 1 && xml_root.first_child().type() == pugi::xml_node_type::node_pcdata) {
         auto meta_elem = std::make_shared<MetadataElement>(root_name);
-        if (xml_root.first_child().value()) {
+        if (xml_root.first_child().value() != nullptr) {
             AddAttribute(meta_elem, root_name, xml_root.first_child().value());
         }
         auto xml_attribs = xml_root.attributes();

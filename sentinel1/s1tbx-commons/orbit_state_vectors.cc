@@ -15,19 +15,16 @@
 
 #include <utility>
 
-namespace alus {
-namespace s1tbx {
+namespace alus::s1tbx {
 
 class OrbitStateVectors::PositionVelocity {
-   public:
+public:
     snapengine::PosVector position_{};
     snapengine::PosVector velocity_{};
 };
 
 OrbitStateVectors::OrbitStateVectors(std::vector<snapengine::OrbitStateVector> orbit_state_vectors,
-                                     double first_line_utc,
-                                     double line_time_interval,
-                                     int source_image_height) {
+                                     double first_line_utc, double line_time_interval, int source_image_height) {
     orbit_state_vectors_ = RemoveRedundantVectors(std::move(orbit_state_vectors));
     for (auto&& o : orbit_state_vectors_) {
         orbit_state_vectors_computation_.push_back(
@@ -35,7 +32,7 @@ OrbitStateVectors::OrbitStateVectors(std::vector<snapengine::OrbitStateVector> o
     }
 
     dt_ = (orbit_state_vectors_[orbit_state_vectors_.size() - 1].time_mjd_ - orbit_state_vectors_.at(0).time_mjd_) /
-          (orbit_state_vectors_.size() - 1);
+          (static_cast<double>(orbit_state_vectors_.size()) - 1);
 
     sensor_position_ = std::vector<snapengine::PosVector>(source_image_height);
     sensor_velocity_ = std::vector<snapengine::PosVector>(source_image_height);
@@ -47,7 +44,7 @@ OrbitStateVectors::OrbitStateVectors(std::vector<snapengine::OrbitStateVector> o
     }
 }
 OrbitStateVectors::OrbitStateVectors(std::vector<snapengine::OrbitStateVector> orbit_state_vectors) {
-    orbit_state_vectors_ = RemoveRedundantVectors(orbit_state_vectors);
+    orbit_state_vectors_ = RemoveRedundantVectors(std::move(orbit_state_vectors));
 
     for (auto&& o : orbit_state_vectors_) {
         orbit_state_vectors_computation_.push_back(
@@ -55,7 +52,7 @@ OrbitStateVectors::OrbitStateVectors(std::vector<snapengine::OrbitStateVector> o
     }
 
     dt_ = (orbit_state_vectors_[orbit_state_vectors_.size() - 1].time_mjd_ - orbit_state_vectors_.at(0).time_mjd_) /
-          (orbit_state_vectors_.size() - 1);
+          (static_cast<double>(orbit_state_vectors_.size()) - 1);
 }
 
 std::vector<snapengine::OrbitStateVector> OrbitStateVectors::RemoveRedundantVectors(
@@ -63,10 +60,7 @@ std::vector<snapengine::OrbitStateVector> OrbitStateVectors::RemoveRedundantVect
     std::vector<snapengine::OrbitStateVector> vector_list;
     auto current_time = 0.0;
     for (uint i = 0; i < orbit_state_vectors.size(); i++) {
-        if (i == 0) {
-            current_time = orbit_state_vectors.at(i).time_mjd_;
-            vector_list.push_back(orbit_state_vectors.at(i));
-        } else if (orbit_state_vectors.at(i).time_mjd_ > current_time) {
+        if (i == 0 || orbit_state_vectors.at(i).time_mjd_ > current_time) {
             current_time = orbit_state_vectors.at(i).time_mjd_;
             vector_list.push_back(orbit_state_vectors.at(i));
         }
@@ -76,57 +70,58 @@ std::vector<snapengine::OrbitStateVector> OrbitStateVectors::RemoveRedundantVect
 std::shared_ptr<OrbitStateVectors::PositionVelocity> OrbitStateVectors::GetPositionVelocity(double time) {
     if (time_map_.find(time) != time_map_.end() && time_map_.at(time) != nullptr) {
         return time_map_.at(time);
-    } else {
-        int i0, in;
-        if (orbit_state_vectors_.size() <= NV_) {
-            i0 = 0;
-            in = orbit_state_vectors_.size() - 1;
-        } else {
-            i0 = std::max((int)((time - orbit_state_vectors_.at(0).time_mjd_) / dt_) - NV_ / 2 + 1, 0);
-            in = std::min(i0 + NV_ - 1, (int)orbit_state_vectors_.size() - 1);
-            i0 = (in < (int)orbit_state_vectors_.size() - 1 ? i0 : in - NV_ + 1);
-        }
-
-        // lagrangeInterpolatingPolynomial
-        auto pv = std::make_shared<PositionVelocity>();
-
-        for (int i = i0; i <= in; ++i) {
-            snapengine::OrbitStateVector orb_i = orbit_state_vectors_.at(i);
-
-            double weight = 1;
-            for (int j = i0; j <= in; ++j) {
-                if (j != i) {
-                    double time2 = orbit_state_vectors_.at(j).time_mjd_;
-                    weight *= (time - time2) / (orb_i.time_mjd_ - time2);
-                }
-            }
-
-            pv->position_.x += weight * orb_i.x_pos_;
-            pv->position_.y += weight * orb_i.y_pos_;
-            pv->position_.z += weight * orb_i.z_pos_;
-
-            pv->velocity_.x += weight * orb_i.x_vel_;
-            pv->velocity_.y += weight * orb_i.y_vel_;
-            pv->velocity_.z += weight * orb_i.z_vel_;
-        }
-
-        time_map_.insert_or_assign(time, pv);
-
-        return pv;
     }
+    int i0;
+    int in;
+    if (orbit_state_vectors_.size() <= NV) {
+        i0 = 0;
+        in = static_cast<int>(orbit_state_vectors_.size()) - 1;
+    } else {
+        i0 = std::max(static_cast<int>(((time - orbit_state_vectors_.at(0).time_mjd_) / dt_)) - NV / 2 + 1, 0);
+        in = std::min(i0 + NV - 1, static_cast<int>(orbit_state_vectors_.size()) - 1);
+        i0 = (in < static_cast<int>(orbit_state_vectors_.size()) - 1 ? i0 : in - NV + 1);
+    }
+
+    // lagrangeInterpolatingPolynomial
+    auto pv = std::make_shared<PositionVelocity>();
+
+    for (int i = i0; i <= in; ++i) {
+        snapengine::OrbitStateVector orb_i = orbit_state_vectors_.at(i);
+
+        double weight = 1;
+        for (int j = i0; j <= in; ++j) {
+            if (j != i) {
+                double time2 = orbit_state_vectors_.at(j).time_mjd_;
+                weight *= (time - time2) / (orb_i.time_mjd_ - time2);
+            }
+        }
+
+        pv->position_.x += weight * orb_i.x_pos_;
+        pv->position_.y += weight * orb_i.y_pos_;
+        pv->position_.z += weight * orb_i.z_pos_;
+
+        pv->velocity_.x += weight * orb_i.x_vel_;
+        pv->velocity_.y += weight * orb_i.y_vel_;
+        pv->velocity_.z += weight * orb_i.z_vel_;
+    }
+
+    time_map_.insert_or_assign(time, pv);
+
+    return pv;
 }
-std::unique_ptr<snapengine::PosVector> OrbitStateVectors::GetPosition(double time, std::unique_ptr<snapengine::PosVector>
-    position) {
+std::unique_ptr<snapengine::PosVector> OrbitStateVectors::GetPosition(double time,
+                                                                      std::unique_ptr<snapengine::PosVector> position) {
     auto n = std::make_unique<snapengine::PosVector>();
     position = std::move(n);
-    int i0, in;
-    if (orbit_state_vectors_.size() <= NV_) {
+    int i0;
+    int in;
+    if (orbit_state_vectors_.size() <= NV) {
         i0 = 0;
-        in = orbit_state_vectors_.size() - 1;
+        in = static_cast<int>(orbit_state_vectors_.size()) - 1;
     } else {
-        i0 = std::max((int)((time - orbit_state_vectors_[0].time_mjd_) / dt_) - NV_ / 2 + 1, 0);
-        in = std::min(i0 + NV_ - 1, (int)orbit_state_vectors_.size() - 1);
-        i0 = (in < (int)orbit_state_vectors_.size() - 1 ? i0 : in - NV_ + 1);
+        i0 = std::max(static_cast<int>(((time - orbit_state_vectors_[0].time_mjd_) / dt_)) - NV / 2 + 1, 0);
+        in = std::min(i0 + NV - 1, static_cast<int>(orbit_state_vectors_.size()) - 1);
+        i0 = (in < static_cast<int>(orbit_state_vectors_.size()) - 1 ? i0 : in - NV + 1);
     }
 
     // lagrangeInterpolatingPolynomial
@@ -152,14 +147,15 @@ std::unique_ptr<snapengine::PosVector> OrbitStateVectors::GetPosition(double tim
 }
 
 std::unique_ptr<snapengine::PosVector> OrbitStateVectors::GetVelocity(double time) {
-    int i0, in;
-    if (orbit_state_vectors_.size() <= NV_) {
+    int i0;
+    int in;
+    if (orbit_state_vectors_.size() <= NV) {
         i0 = 0;
-        in = orbit_state_vectors_.size() - 1;
+        in = static_cast<int>(orbit_state_vectors_.size()) - 1;
     } else {
-        i0 = std::max((int)((time - orbit_state_vectors_.at(0).time_mjd_) / dt_) - NV_ / 2 + 1, 0);
-        in = std::min(i0 + NV_ - 1, (int)orbit_state_vectors_.size() - 1);
-        i0 = (in < (int)orbit_state_vectors_.size() - 1 ? i0 : in - NV_ + 1);
+        i0 = std::max(static_cast<int>(((time - orbit_state_vectors_.at(0).time_mjd_) / dt_)) - NV / 2 + 1, 0);
+        in = std::min(i0 + NV - 1, static_cast<int>(orbit_state_vectors_.size()) - 1);
+        i0 = (in < static_cast<int>(orbit_state_vectors_.size()) - 1 ? i0 : in - NV + 1);
     }
 
     // lagrangeInterpolatingPolynomial
@@ -181,6 +177,4 @@ std::unique_ptr<snapengine::PosVector> OrbitStateVectors::GetVelocity(double tim
     }
     return velocity;
 }
-
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::s1tbx

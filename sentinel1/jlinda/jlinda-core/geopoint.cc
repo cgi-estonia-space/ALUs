@@ -18,22 +18,21 @@
 #include <sstream>
 #include <string>
 
-namespace alus {
-namespace jlinda {
+namespace alus::jlinda {
 
 std::string GeoPoint::GetDegreeString(double value, bool longitudial) {
     int sign = (value == 0.0) ? 0 : (value < 0.0) ? -1 : 1;
     double rest = std::abs(value);
     int degree = FloorInt(rest);
     rest -= degree;
-    int minutes = FloorInt(_MIN_PER_DEG * rest);
-    rest -= minutes / _MIN_PER_DEG;
-    double seconds = (_SEC_PER_DEG * rest);
-    rest -= seconds / _SEC_PER_DEG;
-    if (seconds == 60) {
+    int minutes = FloorInt(MIN_PER_DEG * rest);
+    rest -= minutes / MIN_PER_DEG;
+    double seconds = (SEC_PER_DEG * rest);
+    rest -= seconds / SEC_PER_DEG;
+    if (seconds == SEC_PER_MIN) {
         seconds = 0;
         minutes++;
-        if (minutes == 60) {
+        if (minutes == MIN_PER_DEG) {
             minutes = 0;
             degree++;
         }
@@ -42,14 +41,15 @@ std::string GeoPoint::GetDegreeString(double value, bool longitudial) {
     std::stringstream ss;
     ss << degree;
     ss << '\260';  // degree
+    const int time_string_decimal{10};
     if (minutes != 0 || seconds != 0) {
-        if (minutes < 10) {
+        if (minutes < time_string_decimal) {
             ss << '0';
         }
         ss << minutes;
         ss << '\'';
         if (seconds != 0) {
-            if (seconds < 10) {
+            if (seconds < time_string_decimal) {
                 ss << '0';
             }
             ss << seconds;
@@ -63,7 +63,7 @@ std::string GeoPoint::GetDegreeString(double value, bool longitudial) {
         } else {
             ss << 'S';
         }
-    } else if (sign == 1) {
+    } else if (sign == 1) {  // TODO(anton): what about 0 case? Does no hemisphere letters are added?
         ss << ' ';
         if (longitudial) {
             ss << 'E';
@@ -75,7 +75,7 @@ std::string GeoPoint::GetDegreeString(double value, bool longitudial) {
     return ss.str();
 }
 
-bool GeoPoint::IsLatValid(double lat) { return lat >= -90.0 && lat <= 90.0; }
+bool GeoPoint::IsLatValid(double lat) { return lat >= MINIMAL_VALID_LATITUDE && lat <= MAXIMUM_VALID_LATITUDE; }
 
 bool GeoPoint::IsLonValid(double lon) { return !std::isnan(lon) && !std::isinf(lon); }
 
@@ -103,13 +103,16 @@ std::string GeoPoint::ToString() const { return "[" + GetLatString() + "," + Get
 void GeoPoint::Normalize() { lon_ = NormalizeLon(lon_); }
 
 double GeoPoint::NormalizeLon(double lon) {
-    if (lon < -360.0 || lon > 360.0) {
-        lon = std::fmod(lon, 360.0);
+    const double full_circle_degrees{360};
+    const double half_circle_degrees{180};
+    ;
+    if (lon < -full_circle_degrees || lon > full_circle_degrees) {
+        lon = std::fmod(lon, full_circle_degrees);
     }
-    if (lon < -180.0) {
-        lon += 360.0;
-    } else if (lon > 180.0) {
-        lon -= 360.0;
+    if (lon < -half_circle_degrees) {
+        lon += full_circle_degrees;
+    } else if (lon > half_circle_degrees) {
+        lon -= full_circle_degrees;
     }
     return lon;
 }
@@ -132,5 +135,4 @@ std::string GeoPoint::GetLonString(double lon) {
     return "Inv E";
 }
 
-}  // namespace jlinda
-}  // namespace alus
+}  // namespace alus::jlinda

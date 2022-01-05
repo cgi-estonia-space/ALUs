@@ -28,8 +28,7 @@
 #include "snap-core/core/datamodel/product_node.h"
 #include "snap-core/core/datamodel/product_node_list.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 /**
  * A type-safe list for elements of the type <code>ProductNode</code>.
@@ -228,5 +227,4 @@ public:
      */
     void Dispose();
 };
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

@@ -54,7 +54,7 @@ public:
 
     static void ValidateInput(const boost::filesystem::path& path);
 
-    Sentinel1ProductReaderPlugIn();
+    Sentinel1ProductReaderPlugIn() = default;
     /**
      * Checks whether the given object is an acceptable input for this product reader and if so, the method checks if it
      * is capable of decoding the input's content.
@@ -62,15 +62,15 @@ public:
      * @param input any input object
      * @return true if this product reader can decode the given input, otherwise false.
      */
-    snapengine::DecodeQualification GetDecodeQualification(const std::any& input);
+    snapengine::DecodeQualification GetDecodeQualification(const std::any& input) override;
 
     /**
      * Creates an instance of the actual product reader class. This method should never return <code>null</code>.
      *
      * @return a new reader instance, never <code>null</code>
      */
-    std::shared_ptr<snapengine::IProductReader> CreateReaderInstance();
+    std::shared_ptr<snapengine::IProductReader> CreateReaderInstance() override;
 
-    virtual ~Sentinel1ProductReaderPlugIn();
+    ~Sentinel1ProductReaderPlugIn() override = default;
 };
 }  // namespace alus::s1tbx

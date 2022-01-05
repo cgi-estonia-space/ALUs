@@ -27,8 +27,7 @@
 
 #include "snap-core/core/datamodel/product_node.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 class Band;
 class Product;
@@ -47,7 +46,6 @@ private:
     std::vector<std::shared_ptr<Band>> quicklook_bands_;
     boost::filesystem::path product_quicklook_folder_;
     bool product_can_append_files_;
-    bool save_with_product_;
 
     std::string quicklook_link_ = "";
 
@@ -110,5 +108,4 @@ public:
         return 0;
     }
 };
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

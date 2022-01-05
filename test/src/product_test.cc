@@ -45,7 +45,20 @@
 #include "snap-core/core/datamodel/virtual_band.h"
 
 namespace {
-using namespace alus::snapengine;
+
+using alus::snapengine::Band;
+using alus::snapengine::DGeoCoding;
+using alus::snapengine::DummyProductReader;
+using alus::snapengine::DummyProductReaderPlugIn;
+using alus::snapengine::MetadataElement;
+using alus::snapengine::Product;
+using alus::snapengine::ProductData;
+using alus::snapengine::ProductNode;
+using alus::snapengine::ProductNodeGroup;
+using alus::snapengine::SGeoCoding;
+using alus::snapengine::TiePointGrid;
+using alus::snapengine::VirtualBand;
+using alus::snapengine::custom::Dimension;
 
 class ProductTest : public ::testing::Test {
 protected:
@@ -63,7 +76,7 @@ protected:
 };
 
 TEST_F(ProductTest, testSetAndGetReader) {
-    auto product = Product::CreateProduct("name", "MER_RR__1P", 312, 213);
+    auto product = Product::CreateProduct("name", "MER_RR__1P", 312, 213);  // NOLINT
 
     ASSERT_FALSE(product->GetProductReader());
 
@@ -77,7 +90,7 @@ TEST_F(ProductTest, testSetAndGetReader) {
 
     try {
         product->SetProductReader(nullptr);
-        ASSERT_THROW("product->SetProductReader(nullptr)", std::invalid_argument);
+        ASSERT_THROW((void)"product->SetProductReader(nullptr)", std::invalid_argument);
     } catch (const std::invalid_argument& ignored) {
         ASSERT_STREQ("ProductReader argument is nullptr", ignored.what());
     }
@@ -115,21 +128,25 @@ TEST_F(ProductTest, testGetType) {
 TEST_F(ProductTest, testGetSceneRasterWidth) {
     std::shared_ptr<Product> prod;
 
-    prod = Product::CreateProduct("TestName", PROD_TYPE, 243, SCENE_HEIGHT);
-    ASSERT_EQ(243, prod->GetSceneRasterWidth());
+    const int raster_width_1{243};
+    prod = Product::CreateProduct("TestName", PROD_TYPE, raster_width_1, SCENE_HEIGHT);
+    ASSERT_EQ(raster_width_1, prod->GetSceneRasterWidth());
 
-    prod = Product::CreateProduct("TestName", PROD_TYPE, 789, SCENE_HEIGHT, nullptr);
-    ASSERT_EQ(789, prod->GetSceneRasterWidth());
+    const int raster_width_2{789};
+    prod = Product::CreateProduct("TestName", PROD_TYPE, raster_width_2, SCENE_HEIGHT, nullptr);
+    ASSERT_EQ(raster_width_2, prod->GetSceneRasterWidth());
 }
 
 TEST_F(ProductTest, testGetSceneRasterHeight) {
     std::shared_ptr<Product> prod;
 
-    prod = Product::CreateProduct("TestName", PROD_TYPE, SCENE_WIDTH, 373);
+    const int raster_height_1{373};
+    prod = Product::CreateProduct("TestName", PROD_TYPE, SCENE_WIDTH, raster_height_1);
     ASSERT_EQ(373, prod->GetSceneRasterHeight());
 
-    prod = Product::CreateProduct("TestName", PROD_TYPE, SCENE_WIDTH, 427, nullptr);
-    ASSERT_EQ(427, prod->GetSceneRasterHeight());
+    const int raster_height_2{427};
+    prod = Product::CreateProduct("TestName", PROD_TYPE, SCENE_WIDTH, raster_height_2, nullptr);
+    ASSERT_EQ(raster_height_2, prod->GetSceneRasterHeight());
 }
 
 // todo: when some sort of image logic gets integrated (e.g java snap version has class MultiLevelImage)
@@ -173,32 +190,34 @@ TEST_F(ProductTest, testGetAndSetRefNo) {
 
     try {
         product_->SetRefNo(0);
-        ASSERT_THROW("product_->SetRefNo(0)", std::invalid_argument);
+        ASSERT_THROW((void)"product_->SetRefNo(0)", std::invalid_argument);
     } catch (const std::invalid_argument& e) {
         std::string str1("[refNo] is [0]  but should be in the range [1] to [" +
                          std::to_string(std::numeric_limits<int>::max()) + "]");
         ASSERT_STREQ(str1.c_str(), e.what());
     }
 
-    product_->SetRefNo(14);
-    ASSERT_EQ(14, product_->GetRefNo());
+    const int ref_no_1{14};
+    product_->SetRefNo(ref_no_1);
+    ASSERT_EQ(ref_no_1, product_->GetRefNo());
 
     try {
-        product_->SetRefNo(23);
-        ASSERT_THROW("product_->SetRefNo(23)", std::runtime_error);
+        const int ref_no_2{23};
+        product_->SetRefNo(ref_no_2);
+        ASSERT_THROW((void)"product_->SetRefNo(ref_no_2)", std::runtime_error);  // NOLINT
     } catch (const std::runtime_error& e) {
         // expected if the reference number was alredy set
         ASSERT_STREQ("this.refNo != 0 && this.refNo != refNo", e.what());
     }
 
     // no exception expected when the reference number to be set is the same as the one already set
-    product_->SetRefNo(14);
-    ASSERT_EQ(14, product_->GetRefNo());
+    product_->SetRefNo(ref_no_1);
+    ASSERT_EQ(ref_no_1, product_->GetRefNo());
 }
 
 // currently we have not ported listeners which track property changes
 TEST_F(ProductTest, testGetAndSetFileLocationProperty) {
-    std::shared_ptr<Product> product = Product::CreateProduct("A", "B", 10, 10);
+    std::shared_ptr<Product> product = Product::CreateProduct("A", "B", 10, 10);  // NOLINT
 
     ASSERT_EQ("", product->GetFileLocation());
 
@@ -281,7 +300,7 @@ TEST_F(ProductTest, testModifiedFlagDelegation) {
 }
 
 TEST_F(ProductTest, testDefaultGroups) {
-    auto p = Product::CreateProduct("n", "t", 10, 10);
+    auto p = Product::CreateProduct("n", "t", 10, 10);  // NOLINT
     std::shared_ptr<ProductNodeGroup<std::shared_ptr<ProductNode>>> groups = p->GetGroups();
     ASSERT_TRUE(groups);
 
@@ -307,7 +326,7 @@ TEST_F(ProductTest, testDefaultGroups) {
 
 // events are not ported and removed from ported tests
 TEST_F(ProductTest, testAddAndRemoveGroup) {
-    auto p = Product::CreateProduct("n", "t", 10, 10);
+    auto p = Product::CreateProduct("n", "t", 10, 10);  // NOLINT
     std::shared_ptr<ProductNodeGroup<std::shared_ptr<ProductNode>>> groups = p->GetGroups();
     ASSERT_TRUE(groups);
 
@@ -328,7 +347,7 @@ TEST_F(ProductTest, testAddAndRemoveGroup) {
 }
 
 TEST_F(ProductTest, testUniqueGeoCodings) {
-    std::shared_ptr<Product> p = Product::CreateProduct("N", "T", 4, 4);
+    std::shared_ptr<Product> p = Product::CreateProduct("N", "T", 4, 4);  // NOLINT
 
     ASSERT_FALSE(p->IsUsingSingleGeoCoding());
 
@@ -355,18 +374,18 @@ TEST_F(ProductTest, testUniqueGeoCodings) {
 }
 
 TEST_F(ProductTest, testContainsPixel) {
-    std::shared_ptr<Product> p = Product::CreateProduct("x", "y", 1121, 2241);
+    std::shared_ptr<Product> p = Product::CreateProduct("x", "y", 1121, 2241);  // NOLINT
 
-    ASSERT_TRUE(p->ContainsPixel(0.0f, 0.0f));
-    ASSERT_TRUE(p->ContainsPixel(0.0f, 2241.0f));
-    ASSERT_TRUE(p->ContainsPixel(1121.0f, 0.0f));
-    ASSERT_TRUE(p->ContainsPixel(1121.0f, 2241.0f));
-    ASSERT_TRUE(p->ContainsPixel(500.0f, 1000.0f));
+    ASSERT_TRUE(p->ContainsPixel(0.0F, 0.0F));
+    ASSERT_TRUE(p->ContainsPixel(0.0F, 2241.0F));
+    ASSERT_TRUE(p->ContainsPixel(1121.0F, 0.0F));
+    ASSERT_TRUE(p->ContainsPixel(1121.0F, 2241.0F));
+    ASSERT_TRUE(p->ContainsPixel(500.0F, 1000.0F));
 
-    ASSERT_FALSE(p->ContainsPixel(-0.1f, 0.0f));
-    ASSERT_FALSE(p->ContainsPixel(0.0f, 2241.1f));
-    ASSERT_FALSE(p->ContainsPixel(1121.0f, -0.1f));
-    ASSERT_FALSE(p->ContainsPixel(1121.1f, 2241.0f));
+    ASSERT_FALSE(p->ContainsPixel(-0.1F, 0.0F));
+    ASSERT_FALSE(p->ContainsPixel(0.0F, 2241.1F));
+    ASSERT_FALSE(p->ContainsPixel(1121.0F, -0.1F));
+    ASSERT_FALSE(p->ContainsPixel(1121.1F, 2241.0F));
     ASSERT_FALSE(p->ContainsPixel(-1, -1));
 
     p->Dispose();
@@ -375,8 +394,9 @@ TEST_F(ProductTest, testContainsPixel) {
 // DISABLED_
 // todo: need events support for this test to pass
 TEST_F(ProductTest, DISABLED_testExpressionIsChangedIfANodeNameIsChanged) {
-    std::shared_ptr<Product> product = Product::CreateProduct("p", "t", 10, 10);
-    auto virtual_band = std::make_shared<VirtualBand>("vb", ProductData::TYPE_FLOAT32, 10, 10, "band1 + band2 - band3");
+    std::shared_ptr<Product> product = Product::CreateProduct("p", "t", 10, 10);  // NOLINT
+    auto virtual_band =
+        std::make_shared<VirtualBand>("vb", ProductData::TYPE_FLOAT32, 10, 10, "band1 + band2 - band3");  // NOLINT
     boost::filesystem::path file_location("dummy.dim");
     product->SetFileLocation(file_location);
     product->AddBand(virtual_band);
@@ -395,7 +415,7 @@ TEST_F(ProductTest, testThatAddBandThrowExceptionIfNameIsNotUnique) {
     std::shared_ptr<Product> product = Product::CreateProduct("p", "t", 1, 1);
     product->AddBand("band1", ProductData::TYPE_FLOAT32);
     product->AddTiePointGrid(
-        std::make_shared<TiePointGrid>("grid", 2, 2, 0, 0, 1, 1, std::vector<float>{0.0f, 0.0f, 0.0f, 0.0f}));
+        std::make_shared<TiePointGrid>("grid", 2, 2, 0, 0, 1, 1, std::vector<float>{0.0F, 0.0F, 0.0F, 0.0F}));
 
     try {
         product->AddBand("band1", ProductData::TYPE_FLOAT32);
@@ -414,18 +434,18 @@ TEST_F(ProductTest, testThatAddTiePointGridThrowExceptionIfNameIsNotUnique) {
     std::shared_ptr<Product> product = Product::CreateProduct("p", "t", 1, 1);
     product->AddBand("band1", ProductData::TYPE_FLOAT32);
     product->AddTiePointGrid(
-        std::make_shared<TiePointGrid>("grid", 2, 2, 0, 0, 1, 1, std::vector<float>{0.0f, 0.0f, 0.0f, 0.0f}));
+        std::make_shared<TiePointGrid>("grid", 2, 2, 0, 0, 1, 1, std::vector<float>{0.0F, 0.0F, 0.0F, 0.0F}));
 
     try {
         product->AddTiePointGrid(
-            std::make_shared<TiePointGrid>("grid", 2, 2, 0, 0, 1, 1, std::vector<float>{0.0f, 0.0f, 0.0f, 0.0f}));
+            std::make_shared<TiePointGrid>("grid", 2, 2, 0, 0, 1, 1, std::vector<float>{0.0F, 0.0F, 0.0F, 0.0F}));
     } catch (const std::invalid_argument& e) {
         ASSERT_TRUE(boost::contains(e.what(), "name"));
     }
 
     try {
         product->AddTiePointGrid(
-            std::make_shared<TiePointGrid>("band1", 2, 2, 0, 0, 1, 1, std::vector<float>{0.0f, 0.0f, 0.0f, 0.0f}));
+            std::make_shared<TiePointGrid>("band1", 2, 2, 0, 0, 1, 1, std::vector<float>{0.0F, 0.0F, 0.0F, 0.0F}));
     } catch (const std::invalid_argument& e) {
         ASSERT_TRUE(boost::contains(e.what(), "name"));
     }
@@ -434,13 +454,13 @@ TEST_F(ProductTest, testThatAddTiePointGridThrowExceptionIfNameIsNotUnique) {
 TEST_F(ProductTest, testPreferredTileSizeProperty) {
     std::shared_ptr<Product> product;
 
-    product = Product::CreateProduct("A", "B", 1000, 2000);
+    product = Product::CreateProduct("A", "B", 1000, 2000);  // NOLINT
     ASSERT_EQ(nullptr, product->GetPreferredTileSize());
 
-    auto dim = std::make_shared<custom::Dimension>(128, 256);
+    auto dim = std::make_shared<Dimension>(128, 256);  // NOLINT
     product->SetPreferredTileSize(dim);
     ASSERT_EQ(dim, product->GetPreferredTileSize());
-    auto dim2 = std::make_shared<custom::Dimension>(300, 400);
+    auto dim2 = std::make_shared<Dimension>(300, 400);  // NOLINT
     product->SetPreferredTileSize(dim2);
     ASSERT_EQ(dim2, product->GetPreferredTileSize());
 

@@ -59,9 +59,9 @@ class SampleCoding;
 class Band : public AbstractBand {
 private:
     int spectral_band_index_ = 0;
-    float spectral_wavelength_ = 0.0f;
-    float spectral_bandwidth_ = 0.0f;
-    float solar_flux_ = 0.0f;
+    float spectral_wavelength_ = 0.0F;
+    float spectral_bandwidth_ = 0.0F;
+    float solar_flux_ = 0.0F;
 
     /**
      * If this band contains flag data, this is the flag coding.
@@ -91,7 +91,7 @@ public:
      *
      * @return the (zero-based) spectral band index or <code>-1</code> if it is unknown
      */
-    int GetSpectralBandIndex() { return spectral_band_index_; }
+    [[nodiscard]] int GetSpectralBandIndex() const { return spectral_band_index_; }
 
     /**
      * Sets the (zero-based) spectral band index.
@@ -106,9 +106,9 @@ public:
      * @return the wave length in nanometers of this band, or zero if this is not a spectral band or the wave length is
      *         not known.
      */
-    float GetSpectralWavelength() { return spectral_wavelength_; }
+    [[nodiscard]] float GetSpectralWavelength() const { return spectral_wavelength_; }
     /**
-     * Sets the spectral wavelength in <code>nm</code> (nanomater) units.
+     * Sets the spectral wavelength in <code>nm</code> (nanometer) units.
      *
      * @param spectral_wavelength the wavelength in nanometers of this band, or zero if this is not a spectral band or
      *                           the wavelength is not known.
@@ -122,7 +122,7 @@ public:
      * @return the solar flux for the wavelength of this band, or zero if this is not a spectral band or the solar flux
      *         is not known.
      */
-    float GetSolarFlux() { return solar_flux_; }
+    [[nodiscard]] float GetSolarFlux() const { return solar_flux_; }
 
     /**
      * Sets the solar flux in <code>mW/(m^2 nm)</code> (milli-watts per square metre per nanometer)
@@ -134,15 +134,15 @@ public:
     void SetSolarFlux(float solar_flux);
 
     /**
-     * Gets the spectral bandwidth in <code>nm</code> (nanomater) units.
+     * Gets the spectral bandwidth in <code>nm</code> (nanometer) units.
      *
      * @return the bandwidth in nanometers of this band, or zero if this is not a spectral band or the bandwidth is not
      *         known.
      */
-    float GetSpectralBandwidth() { return spectral_bandwidth_; }
+    [[nodiscard]] float GetSpectralBandwidth() const { return spectral_bandwidth_; }
 
     /**
-     * Sets the spectral bandwidth in <code>nm</code> (nanomater) units.
+     * Sets the spectral bandwidth in <code>nm</code> (nanometer) units.
      *
      * @param spectral_bandwidth the spectral bandwidth in nanometers of this band, or zero if this is not a spectral
      * band or the spectral bandwidth is not known.

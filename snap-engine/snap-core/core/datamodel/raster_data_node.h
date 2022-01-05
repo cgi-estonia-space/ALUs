@@ -21,6 +21,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 //#include "mask.h"
@@ -32,8 +33,7 @@
 #include "snap-core/core/datamodel/product_data.h"
 #include "snap-core/core/datamodel/scaling.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 template <typename T>
 class ProductNodeGroup;
@@ -59,7 +59,7 @@ private:
     /**
      * Number of bytes used for internal read buffer.
      */
-    static int READ_BUFFER_MAX_SIZE;
+    static constexpr int READ_BUFFER_MAX_SIZE{8 * 1024 * 1024};  // 8 MB
 
     double scaling_factor_;
     double scaling_offset_;
@@ -92,9 +92,7 @@ private:
     void SetGeophysicalNoDataValue() { geophysical_no_data_value_ = Scale(GetNoDataValue()); }
 
 protected:
-    // todo: remove if tests are still ok
-    //    // looks like c++ needs this for init
-    //    RasterDataNode() = default;
+    RasterDataNode() = default;
     /**
      * Constructs an object of type <code>RasterDataNode</code>.
      *
@@ -103,7 +101,7 @@ protected:
      * <code>ProductData.TYPE_<i>X</i></code> constants, with the exception of <code>ProductData.TYPE_UINT32</code>
      * @param numElems the number of elements in this data node.
      */
-    RasterDataNode(std::string_view name, int data_type, long num_elems);
+    RasterDataNode(std::string_view name, int data_type, int64_t num_elems);
 
 public:
     static constexpr std::string_view PROPERTY_NAME_IMAGE_INFO = "imageInfo";
@@ -181,7 +179,7 @@ public:
      * @return the scaling factor
      * @see #isScalingApplied()
      */
-    double GetScalingFactor() const { return scaling_factor_; }
+    [[nodiscard]] double GetScalingFactor() const { return scaling_factor_; }
 
     /**
      * Returns the geo-coding of this {@link RasterDataNode}.
@@ -228,7 +226,7 @@ public:
      * @return the scaling offset
      * @see #isScalingApplied()
      */
-    double GetScalingOffset() const { return scaling_offset_; }
+    [[nodiscard]] double GetScalingOffset() const { return scaling_offset_; }
 
     /**
      * Gets whether or not the {@link ProductData} of this band has a negative binomial distribution and
@@ -238,7 +236,7 @@ public:
      * @return whether or not the data is logging-10 scaled
      * @see #isScalingApplied()
      */
-    bool IsLog10Scaled() const { return log10_scaled_; }
+    [[nodiscard]] bool IsLog10Scaled() const { return log10_scaled_; }
 
     /**
      * Sets the raster data of this dataset.
@@ -249,7 +247,7 @@ public:
      * @param rasterData The raster data for this raster data node.
      * @see #getRasterData()
      */
-    virtual void SetRasterData(std::shared_ptr<ProductData> raster_data);
+    [[maybe_unused]] virtual void SetRasterData(const std::shared_ptr<ProductData>& raster_data);
 
     /**
      * Returns the pixel located at (x,y) as an integer value.
@@ -518,7 +516,7 @@ public:
      * @see #readPixels(int, int, int, int, int[], ProgressMonitor)
      */
     std::vector<int> ReadPixels(int x, int y, int w, int h, std::vector<int> pixels) {
-        return ReadPixels(x, y, w, h, pixels, std::make_shared<ceres::NullProgressMonitor>());
+        return ReadPixels(x, y, w, h, std::move(pixels), std::make_shared<ceres::NullProgressMonitor>());
     }
 
     /**
@@ -545,7 +543,7 @@ public:
      * @see #readPixels(int, int, int, int, float[], ProgressMonitor)
      */
     std::vector<float> ReadPixels(int x, int y, int w, int h, std::vector<float> pixels) {
-        return ReadPixels(x, y, w, h, pixels, std::make_shared<ceres::NullProgressMonitor>());
+        return ReadPixels(x, y, w, h, std::move(pixels), std::make_shared<ceres::NullProgressMonitor>());
     }
 
     /**
@@ -571,7 +569,7 @@ public:
      * @see #readPixels(int, int, int, int, double[], ProgressMonitor)
      */
     std::vector<double> ReadPixels(int x, int y, int w, int h, std::vector<double> pixels) {
-        return ReadPixels(x, y, w, h, pixels, std::make_shared<ceres::NullProgressMonitor>());
+        return ReadPixels(x, y, w, h, std::move(pixels), std::make_shared<ceres::NullProgressMonitor>());
     }
 
     /**
@@ -754,7 +752,7 @@ public:
      * @see #getScalingFactor
      * @see #isLog10Scaled
      */
-    bool IsScalingApplied() const { return scaling_applied_; }
+    [[nodiscard]] bool IsScalingApplied() const { return scaling_applied_; }
 
     /**
      * Sets whether or not the no-data value is used.
@@ -799,7 +797,7 @@ public:
      * @see #setNoDataValueUsed(boolean)
      * @see #isNoDataValueSet()
      */
-    bool IsNoDataValueUsed() const { return no_data_value_used_; }
+    [[nodiscard]] bool IsNoDataValueUsed() const { return no_data_value_used_; }
 
     /**
      * Gets the expression that is used to determine whether a pixel is valid or not.
@@ -908,7 +906,6 @@ public:
     virtual std::vector<double> GetPixels(int x, int y, int w, int h, std::vector<double> pixels,
                                           std::shared_ptr<ceres::IProgressMonitor> pm) = 0;
 
-    virtual void SetModified(bool modified) override;
+    void SetModified(bool modified) override;
 };
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

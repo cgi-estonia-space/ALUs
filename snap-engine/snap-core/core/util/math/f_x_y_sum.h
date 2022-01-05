@@ -24,8 +24,7 @@
 
 #include "i_f_x_y.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 /**
  * The class <code>FXYSum</code> represents a sum of function terms <i>sum(c[i] * f[i](x,y), i=0, n-1)</i>
@@ -41,20 +40,20 @@ namespace snapengine {
  */
 class FXYSum {
 private:
-    std::vector<std::reference_wrapper<IFXY>> _f_;
-    std::vector<double> _c_;
-    int _order_;
-    std::vector<double> _error_statistics_;
+    std::vector<std::reference_wrapper<IFXY>> f_;
+    std::vector<double> c_;
+    int order_;
+    std::vector<double> error_statistics_;
 
 public:
-    static std::vector<std::reference_wrapper<IFXY>> FXY_LINEAR;
-    static std::vector<std::reference_wrapper<IFXY>> FXY_BI_LINEAR;
-    static std::vector<std::reference_wrapper<IFXY>> FXY_QUADRATIC;
-    static std::vector<std::reference_wrapper<IFXY>> FXY_BI_QUADRATIC;
-    static std::vector<std::reference_wrapper<IFXY>> FXY_CUBIC;
-    static std::vector<std::reference_wrapper<IFXY>> FXY_BI_CUBIC;
-    static std::vector<std::reference_wrapper<IFXY>> FXY_4TH;
-    static std::vector<std::reference_wrapper<IFXY>> FXY_BI_4TH;
+    static std::vector<std::reference_wrapper<IFXY>> fxy_linear_;
+    static std::vector<std::reference_wrapper<IFXY>> fxy_bi_linear_;
+    static std::vector<std::reference_wrapper<IFXY>> fxy_quadratic_;
+    static std::vector<std::reference_wrapper<IFXY>> fxy_bi_quadratic_;
+    static std::vector<std::reference_wrapper<IFXY>> fxy_cubic_;
+    static std::vector<std::reference_wrapper<IFXY>> fxy_bi_cubic_;
+    static std::vector<std::reference_wrapper<IFXY>> fxy_4_th_;
+    static std::vector<std::reference_wrapper<IFXY>> fxy_bi_4_th_;
 
     /**
      * Creates a {@link FXYSum} by the given order and coefficients.
@@ -135,42 +134,42 @@ public:
      *
      * @return the number of function terms
      */
-    int GetNumTerms() { return _f_.size(); }
+    int GetNumTerms() { return f_.size(); }
 
     /**
      * Gets the vector <i>f</i> of functions elements <i>f[i](x,y)</i>.
      *
      * @return the vector F of functions
      */
-    std::vector<std::reference_wrapper<IFXY>> GetFunctions() { return _f_; }
+    std::vector<std::reference_wrapper<IFXY>> GetFunctions() { return f_; }
 
     /**
      * Gets the vector <i>c</i> of coefficient elements <i>c[i]</i>.
      *
      * @return the vector F of functions
      */
-    std::vector<double> GetCoefficients() { return _c_; }
+    std::vector<double> GetCoefficients() { return c_; }
 
     /**
      * Gets the polynomial order, if any.
      *
      * @return the polynomial order or -1 if unknown
      */
-    [[nodiscard]] int GetOrder() const { return _order_; }
+    [[nodiscard]] int GetOrder() const { return order_; }
 
     /**
      * Gets the root mean square error.
      *
      * @return the root mean square error
      */
-    double GetRootMeanSquareError() { return _error_statistics_.at(0); }
+    double GetRootMeanSquareError() { return error_statistics_.at(0); }
 
     /**
      * Gets the maximum, absolute error of the approximation.
      *
      * @return the maximum, absolute error
      */
-    double GetMaxError() { return _error_statistics_.at(1); }
+    double GetMaxError() { return error_statistics_.at(1); }
 
     /**
      * Computes this sum of function terms <i>z(x,y) = sum(c[i] * f[i](x,y), i=0, n-1)</i>.
@@ -184,7 +183,7 @@ public:
      *
      * @see #computeZ(FXY[], double[], double, double)
      */
-    virtual double ComputeZ(double x, double y) { return ComputeZ(_f_, _c_, x, y); }
+    virtual double ComputeZ(double x, double y) { return ComputeZ(f_, c_, x, y); }
 
     /**
      * Approximates the given data points <i>x,y,z</i> by this sum of function terms so that <i>z ~ sum(c[i] *
@@ -201,7 +200,8 @@ public:
      * @see #computeZ(double, double)
      */
     void Approximate(const std::vector<std::vector<double>>& data, const std::vector<int>& indices);
+
+    virtual ~FXYSum() = default;
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

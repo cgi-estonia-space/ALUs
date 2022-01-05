@@ -1,3 +1,16 @@
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #pragma once
 
 #include "sentinel1_utils_computation.h"
@@ -6,11 +19,10 @@
 
 namespace alus {
 namespace s1tbx {
-__device__ inline Sentinel1Index ComputeIndex(double azimuth_time,
-                                                  double slant_range_time,
-                                                  DeviceSubswathInfo* subswath_info,
-                                                  const double* subswath_slant_range_times,
-                                                  const double* subswath_azimuth_times) {
+__device__ inline Sentinel1Index ComputeIndex(double azimuth_time, double slant_range_time,
+                                              DeviceSubswathInfo* subswath_info,
+                                              const double* subswath_slant_range_times,
+                                              const double* subswath_azimuth_times) {
     int j_0{-1};
     int j_1{-1};
     double mu_x{0.0};
@@ -54,9 +66,7 @@ __device__ inline Sentinel1Index ComputeIndex(double azimuth_time,
     return {i_0, i_1, j_0, j_1, mu_x, mu_y};
 }
 
-__device__ inline double GetLatitude(Sentinel1Index& index,
-                                         double const* latitudes,
-                                         int number_of_pixels_per_line) {
+__device__ inline double GetLatitude(Sentinel1Index& index, double const* latitudes, int number_of_pixels_per_line) {
     double lat_00 = latitudes[index.i0 * number_of_pixels_per_line + index.j0];
     double lat_01 = latitudes[index.i0 * number_of_pixels_per_line + index.j1];
     double lat_10 = latitudes[index.i1 * number_of_pixels_per_line + index.j0];
@@ -65,9 +75,7 @@ __device__ inline double GetLatitude(Sentinel1Index& index,
            index.mu_y * ((1 - index.mu_x) * lat_10 + index.mu_x * lat_11);
 }
 
-__device__ inline double GetLongitude(Sentinel1Index& index,
-                                          double const* longitudes,
-                                          int number_of_pixels_per_line) {
+__device__ inline double GetLongitude(Sentinel1Index& index, double const* longitudes, int number_of_pixels_per_line) {
     double lon_00 = longitudes[index.i0 * number_of_pixels_per_line + index.j0];
     double lon_01 = longitudes[index.i0 * number_of_pixels_per_line + index.j1];
     double lon_10 = longitudes[index.i1 * number_of_pixels_per_line + index.j0];

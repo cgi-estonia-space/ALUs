@@ -23,13 +23,14 @@
 #include "product_data_int.h"
 
 namespace {
-using namespace alus::snapengine;
+
+using alus::snapengine::ProductData;
 
 class ProductDataIntTest {};
 
 TEST(ProductDataInt, testSingleValueConstructor) {
     std::shared_ptr<ProductData> instance = ProductData::CreateInstance(ProductData::TYPE_INT32);
-    instance->SetElems(std::vector<int32_t>{2147483647});
+    instance->SetElems(std::vector<int32_t>{2147483647});  // NOLINT
 
     ASSERT_EQ(ProductData::TYPE_INT32, instance->GetType());
     ASSERT_EQ(2147483647, instance->GetElemInt());
@@ -47,28 +48,28 @@ TEST(ProductDataInt, testSingleValueConstructor) {
     ASSERT_EQ("2147483647", instance->ToString());
 
     std::shared_ptr<ProductData> expected_equal = ProductData::CreateInstance(ProductData::TYPE_INT32);
-    expected_equal->SetElems(std::vector<int32_t>{2147483647});
+    expected_equal->SetElems(std::vector<int32_t>{2147483647});  // NOLINT
     ASSERT_EQ(true, instance->EqualElems(expected_equal));
 
     std::shared_ptr<ProductData> expected_unequal = ProductData::CreateInstance(ProductData::TYPE_INT32);
-    expected_unequal->SetElems(std::vector<int32_t>{2147483646});
+    expected_unequal->SetElems(std::vector<int32_t>{2147483646});  // NOLINT
     ASSERT_EQ(false, instance->EqualElems(expected_unequal));
 
-//        StreamTest
-//    ProductData dataFromStream = null;
-//    try {
-//        instance.writeTo(_outputStream);
-//        dataFromStream = ProductData.createInstance(ProductData.TYPE_INT32);
-//        dataFromStream.readFrom(_inputStream);
-//    } catch (IOException e) {
-//        fail("IOException not expected");
-//    }
-//    ASSERT_EQ(true, instance->EqualElems(dataFromStream));
+    //        StreamTest
+    //    ProductData dataFromStream = null;
+    //    try {
+    //        instance.writeTo(_outputStream);
+    //        dataFromStream = ProductData.createInstance(ProductData.TYPE_INT32);
+    //        dataFromStream.readFrom(_inputStream);
+    //    } catch (IOException e) {
+    //        fail("IOException not expected");
+    //    }
+    //    ASSERT_EQ(true, instance->EqualElems(dataFromStream));
 }
 
 TEST(ProductDataInt, testConstructor) {
-    std::shared_ptr<ProductData> instance = ProductData::CreateInstance(ProductData::TYPE_INT32, 3);
-    instance->SetElems(std::vector<int32_t>{-1, 2147483647, -2147483648});
+    std::shared_ptr<ProductData> instance = ProductData::CreateInstance(ProductData::TYPE_INT32, 3);  // NOLINT
+    instance->SetElems(std::vector<int32_t>{-1, 2147483647, -2147483648});                            // NOLINT
 
     ASSERT_EQ(ProductData::TYPE_INT32, instance->GetType());
     ASSERT_EQ(-1, instance->GetElemIntAt(0));
@@ -97,41 +98,41 @@ TEST(ProductDataInt, testConstructor) {
     ASSERT_EQ(true, instance->IsInt());
     ASSERT_EQ("-1,2147483647,-2147483648", instance->ToString());
 
-    std::shared_ptr<ProductData> expectedEqual = ProductData::CreateInstance(ProductData::TYPE_INT32, 3);
-    expectedEqual->SetElems(std::vector<int32_t>{-1, 2147483647, -2147483648});
-    ASSERT_EQ(true, instance->EqualElems(expectedEqual));
+    std::shared_ptr<ProductData> expected_equal = ProductData::CreateInstance(ProductData::TYPE_INT32, 3);  // NOLINT
+    expected_equal->SetElems(std::vector<int32_t>{-1, 2147483647, -2147483648});                            // NOLINT
+    ASSERT_EQ(true, instance->EqualElems(expected_equal));
 
-    std::shared_ptr<ProductData> expectedUnequal = ProductData::CreateInstance(ProductData::TYPE_INT32, 3);
-    expectedUnequal->SetElems(std::vector<int32_t>{-1, 2147483647, -2147483647});
-    ASSERT_EQ(false, instance->EqualElems(expectedUnequal));
+    std::shared_ptr<ProductData> expected_unequal = ProductData::CreateInstance(ProductData::TYPE_INT32, 3);  // NOLINT
+    expected_unequal->SetElems(std::vector<int32_t>{-1, 2147483647, -2147483647});                            // NOLINT
+    ASSERT_EQ(false, instance->EqualElems(expected_unequal));
 
-//        StreamTest
-//    ProductData dataFromStream = null;
-//    try {
-//        instance.writeTo(_outputStream);
-//        dataFromStream = ProductData.createInstance(ProductData.TYPE_INT32, 3);
-//        dataFromStream.readFrom(_inputStream);
-//    } catch (IOException e) {
-//        fail("IOException not expected");
-//    }
-//    ASSERT_EQ(true, instance->EqualElems(dataFromStream));
+    //        StreamTest
+    //    ProductData dataFromStream = null;
+    //    try {
+    //        instance.writeTo(_outputStream);
+    //        dataFromStream = ProductData.createInstance(ProductData.TYPE_INT32, 3);
+    //        dataFromStream.readFrom(_inputStream);
+    //    } catch (IOException e) {
+    //        fail("IOException not expected");
+    //    }
+    //    ASSERT_EQ(true, instance->EqualElems(dataFromStream));
 }
 
 TEST(ProductDataInt, testSetElemsAsString) {
-    std::shared_ptr<ProductData> pd = ProductData::CreateInstance(ProductData::TYPE_INT32, 3);
-    pd->SetElems(std::vector<std::string>{
-        std::to_string((int32_t)INT32_MAX), std::to_string((int32_t)INT32_MIN), std::to_string(0)});
+    std::shared_ptr<ProductData> pd = ProductData::CreateInstance(ProductData::TYPE_INT32, 3);  // NOLINT
+    pd->SetElems(std::vector<std::string>{std::to_string(static_cast<int32_t> INT32_MAX),
+                                          std::to_string(static_cast<int32_t>(INT32_MIN)), std::to_string(0)});
     ASSERT_EQ(INT32_MAX, pd->GetElemIntAt(0));
     ASSERT_EQ(INT32_MIN, pd->GetElemIntAt(1));
     ASSERT_EQ(0, pd->GetElemIntAt(2));
 }
 
-TEST(ProductDataInt, testSetElemsAsString_OutOfRange) {
+TEST(ProductDataInt, TestSetElemsAsStringOutOfRange) {
     std::string expected{"value is not int32_t"};
 
     std::shared_ptr<ProductData> pd1 = ProductData::CreateInstance(ProductData::TYPE_INT32, 1);
     try {
-        auto str = std::to_string((int64_t)INT32_MAX + 1);
+        auto str = std::to_string(static_cast<int64_t> INT32_MAX + 1);
         pd1->SetElems(std::vector<std::string>{str});
     } catch (const std::exception& actual) {
         ASSERT_EQ(expected, actual.what());
@@ -139,7 +140,7 @@ TEST(ProductDataInt, testSetElemsAsString_OutOfRange) {
 
     std::shared_ptr<ProductData> pd2 = ProductData::CreateInstance(ProductData::TYPE_INT32, 1);
     try {
-        auto str = std::to_string((int64_t)INT32_MIN - 1);
+        auto str = std::to_string(static_cast<int64_t> INT32_MIN - 1);
         pd2->SetElems(std::vector<std::string>{str});
     } catch (const std::exception& actual) {
         ASSERT_EQ(expected, actual.what());

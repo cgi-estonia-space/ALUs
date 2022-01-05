@@ -18,10 +18,8 @@
  */
 #include "snap-core/core/datamodel/mask.h"
 
-namespace alus {
-namespace snapengine {
-
-Mask::Mask(std::string_view name, int width, int height, [[maybe_unused]] std::shared_ptr<ImageType> image_type)
+namespace alus::snapengine {
+Mask::Mask(std::string_view name, int width, int height, [[maybe_unused]] const std::shared_ptr<ImageType>& image_type)
     : Band(name, ProductData::TYPE_UINT8, width, height) {
     //    Assert::NotNull(image_type, "imageType");
     //    image_type_ = image_type;
@@ -42,5 +40,4 @@ Mask::Mask(std::string_view name, int width, int height, [[maybe_unused]] std::s
     //    image_config_ = image_type.CreateImageConfig();
     //    //        image_config_->AddPropertyChangeListener(image_config_listener_);
 }
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

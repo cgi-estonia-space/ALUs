@@ -20,8 +20,7 @@
 
 #include <string>
 
-namespace alus {
-namespace ceres {
+namespace alus::ceres {
 
 bool ceres::Dir::IsCompressed() { return false; }
 
@@ -62,6 +61,4 @@ void Dir::GetInputStream([[maybe_unused]] std::string_view path, [[maybe_unused]
 void Dir::Close() {
     // this does nothing
 }
-
-}  // namespace ceres
-}  // namespace alus
+}  // namespace alus::ceres

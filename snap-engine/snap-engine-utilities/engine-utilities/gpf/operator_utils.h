@@ -29,8 +29,7 @@
 #include "snap-core/core/datamodel/product.h"
 #include "snap-core/core/datamodel/tie_point_grid.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 /**
  * Helper methods for working with Operators
@@ -55,10 +54,11 @@ public:
     static std::shared_ptr<TiePointGrid> GetIncidenceAngle(const std::shared_ptr<snapengine::Product>& source_product) {
         return source_product->GetTiePointGrid(TPG_INCIDENT_ANGLE);
     }
-    static std::vector<std::shared_ptr<Band>> GetSourceBands(std::shared_ptr<Product> source_product, std::vector<std::string> source_band_names, bool include_virtual_bands);
+    static std::vector<std::shared_ptr<Band>> GetSourceBands(const std::shared_ptr<Product>& source_product,
+                                                             std::vector<std::string> source_band_names,
+                                                             bool include_virtual_bands);
     static std::string GetSuffixFromBandName(std::string_view band_name);
     static std::string GetAcquisitionDate(std::shared_ptr<MetadataElement>& root);
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

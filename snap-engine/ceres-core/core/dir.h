@@ -25,16 +25,13 @@
 
 #include "i_virtual_dir.h"
 
-namespace alus {
-namespace ceres {
+namespace alus::ceres {
 class Dir : public virtual IVirtualDir {
 private:
     boost::filesystem::path dir_;
 
 public:
-    explicit Dir(const boost::filesystem::path& file) : IVirtualDir(){
-        dir_ = file;
-    }
+    explicit Dir(const boost::filesystem::path& file) { dir_ = file; }
     bool IsCompressed() override;
     std::vector<std::string> List(std::string_view path) override;
     boost::filesystem::path GetFile(std::string_view path) override;
@@ -42,5 +39,4 @@ public:
     void GetInputStream([[maybe_unused]] std::string_view path, [[maybe_unused]] std::fstream& stream) override;
     void Close() override;
 };
-}  // namespace ceres
-}  // namespace alus
+}  // namespace alus::ceres

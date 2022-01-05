@@ -64,15 +64,16 @@ private:
     void AddProductInfoJSON(const std::shared_ptr<snapengine::MetadataElement>& orig_prod_root);
     void AddBandAbstractedMetadata(const std::shared_ptr<snapengine::MetadataElement>& abs_root,
                                    const std::shared_ptr<snapengine::MetadataElement>& orig_prod_root);
-    void AddOrbitStateVectors(const std::shared_ptr<snapengine::MetadataElement>& abs_root,
-                              const std::shared_ptr<snapengine::MetadataElement>& orbit_list);
-    void AddSRGRCoefficients(const std::shared_ptr<snapengine::MetadataElement>& abs_root,
-                             const std::shared_ptr<snapengine::MetadataElement>& coordinate_conversion);
-    void AddDopplerCentroidCoefficients(const std::shared_ptr<snapengine::MetadataElement>& abs_root,
-                                        const std::shared_ptr<snapengine::MetadataElement>& doppler_centroid);
-    void AddVector(std::string_view name, const std::shared_ptr<snapengine::MetadataElement>& orbit_vector_list_elem,
-                   const std::shared_ptr<snapengine::MetadataElement>& orbit_elem, std::size_t num);
-    double GetBandTerrainHeight(const std::shared_ptr<snapengine::MetadataElement>& prod_elem);
+    static void AddOrbitStateVectors(const std::shared_ptr<snapengine::MetadataElement>& abs_root,
+                                     const std::shared_ptr<snapengine::MetadataElement>& orbit_list);
+    static void AddSRGRCoefficients(const std::shared_ptr<snapengine::MetadataElement>& abs_root,
+                                    const std::shared_ptr<snapengine::MetadataElement>& coordinate_conversion);
+    static void AddDopplerCentroidCoefficients(const std::shared_ptr<snapengine::MetadataElement>& abs_root,
+                                               const std::shared_ptr<snapengine::MetadataElement>& doppler_centroid);
+    static void AddVector(std::string_view name,
+                          const std::shared_ptr<snapengine::MetadataElement>& orbit_vector_list_elem,
+                          const std::shared_ptr<snapengine::MetadataElement>& orbit_elem, std::size_t num);
+    static double GetBandTerrainHeight(const std::shared_ptr<snapengine::MetadataElement>& prod_elem);
     void AddCalibrationAbstractedMetadata(const std::shared_ptr<snapengine::MetadataElement>& orig_prod_root);
     void AddNoiseAbstractedMetadata(const std::shared_ptr<snapengine::MetadataElement>& orig_prod_root);
 
@@ -92,7 +93,7 @@ protected:
 public:
     static std::shared_ptr<snapengine::Utc> GetTime(const std::shared_ptr<snapengine::MetadataElement>& elem,
                                                     std::string_view tag, std::string_view sentinel_date_format);
-    static void GetListInEvenlySpacedGrid(int scene_raster_width, int SceneRasterHeight, int SourceGridWidth,
+    static void GetListInEvenlySpacedGrid(int scene_raster_width, int scene_raster_height, int source_grid_width,
                                           int source_grid_height, std::vector<int> x, std::vector<int> y,
                                           std::vector<double> source_point_list, int target_grid_width,
                                           int target_grid_height, double sub_sampling_x, double sub_sampling_y,
