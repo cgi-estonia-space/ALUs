@@ -1,3 +1,24 @@
+# Release 0.8.0
+
+## Breaking changes
+
+## Known Caveats
+
+* Auxiliary files must be separately downloaded and supplied via CLI arguments
+* Coherence estimation results can have missing pixels(or coherence 0 values) on north and east direction on coastlines.
+  Currently investigation is ongoing to find out the exact reason. See examples [A](docs/coh_missing_pixels.png) and [B](docs/beirut_iw1_b6_coastal.png)
+
+## Major Features and Improvements
+
+* ZIP archive support
+  * Sentinel 1 SLC scenes
+  * SRTM3 DEM files
+  * POEORB files
+
+## Bug Fixes and Other Changes
+
+## Thanks to our Contributors
+
 # Release 0.7.0
 
 [Pre release SNAP comparison](docs/SNAP_COMPARISON.md)
