@@ -122,7 +122,7 @@ pipelines:
             - echo "[profile sid_man]" > config
             - echo "aws_access_key_id = $SID_MAN_ACCESS_KEY_ID" >> config
             - echo "aws_secret_access_key = $SID_MAN_SECRET_ACCESS_KEY" >> config
-            - echo "region = eu-west-1" >> config
+            - echo "region = eu-central-1" >> config
             - echo "output = json" >> config
             - aws ec2 start-instances --instance-ids $NIGHTLY_INSTANCE_ID --profile sid_man
             - sleep 60
@@ -177,7 +177,7 @@ pipelines:
             - echo "[profile sid_man]" > config
             - echo "aws_access_key_id = $SID_MAN_ACCESS_KEY_ID" >> config
             - echo "aws_secret_access_key = $SID_MAN_SECRET_ACCESS_KEY" >> config
-            - echo "region = eu-west-1" >> config
+            - echo "region = eu-central-1" >> config
             - echo "output = json" >> config
             - aws ec2 start-instances --instance-ids $NIGHTLY_INSTANCE_ID --profile sid_man
             - sleep 60

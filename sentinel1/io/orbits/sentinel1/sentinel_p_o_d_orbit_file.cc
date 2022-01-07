@@ -24,11 +24,13 @@
 #include <boost/algorithm/string/replace.hpp>
 
 #include "alus_log.h"
-#include "snap-engine-utilities/engine-utilities/datamodel/metadata/abstract_metadata.h"
-#include "snap-engine-utilities/engine-utilities/util/maths.h"
+#include "ceres-core/core/zip.h"
+#include "gdal_util.h"
 #include "snap-core/core/util/alus_utils.h"
 #include "snap-core/core/util/string_utils.h"
 #include "snap-core/core/util/system_utils.h"
+#include "snap-engine-utilities/engine-utilities/datamodel/metadata/abstract_metadata.h"
+#include "snap-engine-utilities/engine-utilities/util/maths.h"
 
 namespace alus {
 namespace s1tbx {
@@ -209,9 +211,9 @@ boost::filesystem::path SentinelPODOrbitFile::GetDestFolder(std::string_view mis
     boost::filesystem::path dest_folder(/*pref_orbit_path + boost::filesystem::path::preferred_separator +*/
                                         // todo:hardcoded directory probably want to provide this from command line,
                                         // need to talk this over with others
-                                        snapengine::SystemUtils::GetAuxDataPath().string() +  std::string(mission_prefix) +
-                                        boost::filesystem::path::preferred_separator + std::to_string(year) +
-                                        boost::filesystem::path::preferred_separator +
+                                        snapengine::SystemUtils::GetAuxDataPath().string() +
+                                        std::string(mission_prefix) + boost::filesystem::path::preferred_separator +
+                                        std::to_string(year) + boost::filesystem::path::preferred_separator +
                                         snapengine::StringUtils::PadNum(month, 2, '0'));
 
     if (month < 10) {
@@ -232,15 +234,13 @@ std::optional<boost::filesystem::path> SentinelPODOrbitFile::FindOrbitFile(std::
                                                                            std::string_view orbit_type,
                                                                            double state_vector_time, int year,
                                                                            int month) {
-
     if (alus::snapengine::AlusUtils::IsOrbitFileAssigned()) {
         const auto orbit_file_path = alus::snapengine::AlusUtils::GetOrbitFilePath();
         if (IsWithinRange(orbit_file_path.filename().string(), state_vector_time)) {
             return orbit_file_path;
-        }
-        else {
+        } else {
             LOGE << "Orbit file '" << orbit_file_path
-                      << "' is not correct for given input (start and end time out of range).";
+                 << "' is not correct for given input (start and end time out of range).";
         }
     } else {
         boost::filesystem::path orbit_file_folder = GetDestFolder(mission_prefix, orbit_type, year, month);
@@ -319,7 +319,15 @@ void SentinelPODOrbitFile::ReadOrbitFile() {
         doc = documentBuilder.parse(orbitFile);
     }*/
     pugi::xml_document doc;
-    doc.load_file(boost::filesystem::canonical(*orbit_file_, boost::filesystem::current_path()).c_str());
+    if (orbit_file_->extension().string() == gdal::constants::ZIP_EXTENSION) {
+        ceres::Zip dir(orbit_file_.value());
+        const std::string path_to_orbit_file = "tmp/" + orbit_file_.value().stem().string();
+        const auto extracted_orbit_file = dir.GetFile(path_to_orbit_file);
+        orbit_file_.value() = extracted_orbit_file;
+        doc.load_file(boost::filesystem::canonical(*orbit_file_, boost::filesystem::current_path()).c_str());
+    } else {
+        doc.load_file(boost::filesystem::canonical(*orbit_file_, boost::filesystem::current_path()).c_str());
+    }
     pugi::xpath_variable_set vars;
     vars.add("name", pugi::xpath_type_string);
     std::string query_str{"//"};
@@ -454,7 +462,7 @@ std::vector<std::shared_ptr<snapengine::OrbitVector>> SentinelPODOrbitFile::Read
 
     if (count != osv_cnt) {
         LOGE << "SentinelPODOrbitFile::ReadOSVList: WARNING List_of_OSVs count = " << count << " but found only "
-                  << osv_cnt << " OSV";
+             << osv_cnt << " OSV";
     }
     return osv_list;
 }

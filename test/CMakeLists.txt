@@ -43,6 +43,7 @@ list(APPEND TEST_SOURCES
         src/cuda_util_test.cc
         src/geotiff_write_test.cc
         src/topsar_merge_test.cc
+        src/zip_test.cc
         )
 
 add_executable(unit_test ${TEST_SOURCES})
@@ -80,4 +81,5 @@ add_custom_command(TARGET unit_test
         POST_BUILD
         COMMAND cp -r ${CMAKE_CURRENT_LIST_DIR}/goods ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}/.
         COMMAND cd ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}/goods && unzip -oq ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}/goods/\\*.zip
+        COMMAND echo "${CMAKE_UNIT_TEST_BINARY_OUTPUT_DIR}"
         )

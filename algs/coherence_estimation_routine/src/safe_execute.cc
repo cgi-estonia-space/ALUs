@@ -42,7 +42,9 @@ int CoherenceEstimationRoutineExecute::ExecuteSafe() {
         std::string result_stem{};
         std::string predefined_end_result_name{};
         std::string output_folder{};
-        srtm3_manager_->HostToDevice();
+        srtm3_manager_
+            ->HostToDevice();  // TODO(anton): there is a segmentation fault here if no dems are provided. This should
+                               //              be changed.
 
         if (boost::filesystem::is_directory(boost::filesystem::path(output_name_))) {
             // For example "/tmp/" is given. Result would be "/tmp/MAIN_SCENE_ID_Orb_Split_Stack_Coh_TC.tif"

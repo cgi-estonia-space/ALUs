@@ -24,6 +24,8 @@
 
 #include "alus_log.h"
 #include "gdal_management.h"
+#include "zip_util.h"
+#include "general_utils.h"
 
 namespace {
 constexpr std::string_view EXECUTOR_NAME{"Coherence estimation routine"};
@@ -71,7 +73,7 @@ int CoherenceEstimationRoutineExecute::Execute() {
     alus::gdalmanagement::SetCacheMax(8e9);
 
     int exit_code{};
-    if (IsSafeInput()) {
+    if (utils::general::IsZipOrSafeInput(input_datasets_)) {
         exit_code = ExecuteSafe();
     } else {
         LOGE << "Did not detect a SAFE input";
@@ -149,7 +151,7 @@ std::string CoherenceEstimationRoutineExecute::GetArgumentsHelp() const {
                 << PARAMETER_ID_SECONDARY_SCENE_ORBIT_FILE
                 << " - string Full path of the secondary scene's orbit file\n"
                 << PARAMETER_ID_ORBIT_FILE_DIR
-                << " - string ESA SNAP compatible root folder of unzipped orbit files. "
+                << " - string ESA SNAP compatible root folder of orbit files. "
                    "For example: /home/user/.snap/auxData/Orbits/Sentinel-1/POEORB/\n"
                 << PARAMETER_ID_SUBSWATH << " - string Subswath to process - valid values: IW1, IW2, IW3\n"
                 << PARAMETER_ID_POLARIZATION << " - string Polarization to process - valid value: VV, VH\n"

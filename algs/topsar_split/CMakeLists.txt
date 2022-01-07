@@ -30,4 +30,5 @@ target_link_libraries(topsar-split-static
         sentinel1-util-static
         snap-engine-static
         common-util-static
+        staticZipper
         )

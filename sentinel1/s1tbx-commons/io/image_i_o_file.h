@@ -74,8 +74,19 @@ public:
 
     ImageIOFile(std::string_view name,
                 [[maybe_unused]] const std::shared_ptr<snapengine::custom::Dimension>& band_dimensions,
-                std::string_view img_path, const std::shared_ptr<snapengine::custom::IImageReader>& iio_reader, int num_images,
-                int num_bands, int data_type, const boost::filesystem::path& product_input_file);
+                std::string_view img_path, int num_images, int num_bands, int data_type,
+                const boost::filesystem::path& product_input_file)
+        : name_(name),
+          data_type_(data_type),
+          num_images_(num_images),
+          num_bands_(num_bands),
+          product_input_file_(product_input_file),
+          band_file_path_(img_path) {}
+
+    ImageIOFile(std::string_view name,
+                [[maybe_unused]] const std::shared_ptr<snapengine::custom::Dimension>& band_dimensions,
+                std::string_view img_path, const std::shared_ptr<snapengine::custom::IImageReader>& iio_reader,
+                int num_images, int num_bands, int data_type, const boost::filesystem::path& product_input_file);
 
     void InitReader();
 

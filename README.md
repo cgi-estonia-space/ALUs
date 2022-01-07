@@ -28,7 +28,7 @@ In order to load shared library components one should move to directory where bi
 ``LD_LIBRARY_PATH=$LD_LIBRARY_PATH:...<build_dir>/alus_package; export LD_LIBRARY_PATH``  
 or move/create symlinks to a location that is present in default ``LD_LIBRARY_PATH``.
 
-See ``--help`` and ``--alg_help`` for specific arguments/parameters how to invoke processing.
+See ``--help`` and ``--alg_help`` for specific arguments/parameters how to invoke processing. For more information see detailed explanation of [processing arguments](docs/PROCESSING_ARGUMENTS.md).
 
 
 ## Docker example
@@ -63,8 +63,6 @@ make -j8
 
 # [Performance](PERFORMANCE.md)
 
-# [Performance](PERFORMANCE.md)
-
 # Contributing
 
 [Contribution guidelines](CONTRIBUTING.md)
@@ -73,6 +71,6 @@ make -j8
 
 [GNU GPLv3](LICENSE.txt)
 
-# [Releases](RELEASE.md)
+# [Release notes](RELEASE.md)
 
 [Binary downloads](https://bitbucket.org/cgi-ee-space/alus/downloads/?tab=downloads)  

@@ -172,8 +172,8 @@ std::shared_ptr<snapengine::Utc> Sentinel1Level1Directory::GetTime(
     return snapengine::AbstractMetadata::ParseUtc(start, sentinel_date_format);
 }
 std::shared_ptr<snapengine::Product> Sentinel1Level1Directory::CreateProduct() {
-    std::shared_ptr<snapengine::MetadataElement> new_root = AddMetaData();
-    FindImages(new_root);
+    std::shared_ptr<snapengine::MetadataElement> new_root = AddMetaData();  // This reads all XML files.
+    FindImages(new_root);                                                   // This reads all raster files.
     std::shared_ptr<snapengine::MetadataElement> abs_root =
         new_root->GetElement(snapengine::AbstractMetadata::ABSTRACT_METADATA_ROOT);
     DetermineProductDimensions(abs_root);
@@ -470,9 +470,8 @@ void Sentinel1Level1Directory::AddImageFile(std::string_view img_path,
             //            todo:img_path should be solved similar to stream path solving using directory and getfile
 
             //            todo: check get_file for zip files
-            auto img = std::make_shared<ImageIOFile>(
-                name, band_dimensions, GetProductDir()->GetFile(img_path).generic_path().string(),
-                GeoTiffUtils::GetTiffIIOReader(), 1, 1, snapengine::ProductData::TYPE_INT32, product_input_file_);
+            auto img = std::make_shared<ImageIOFile>(name, band_dimensions, img_path, 1, 1,
+                                                     snapengine::ProductData::TYPE_INT32, product_input_file_);
             //                if (AbstractProductDirectory::IsSLC()) {
             //                    img = std::make_shared<ImageIOFile>(name, img_stream,
             //                    GeoTiffUtils::GetTiffIIOReader(img_stream), 1,

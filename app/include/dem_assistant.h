@@ -30,6 +30,9 @@ public:
     public:
         bool static IsValid(std::string_view dem_file);
         std::vector<std::string> static ExtractSrtm3Files(const std::vector<std::string>& cmd_line_arguments);
+
+    private:
+        static std::string AdjustSrtm3Path(std::string_view path);
     };
 
     DemAssistant() = delete;
