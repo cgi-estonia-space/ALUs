@@ -1,5 +1,6 @@
 list(APPEND FEATURE_EXTRACTION_GABOR_UNIT_TEST_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/filter_banks.cc
+        ${CMAKE_CURRENT_LIST_DIR}/patch_assembly.cc
         )
 
 #[[ A 'filter_banks_gabor_6or_4f.bin is a binary output of a 3D filter bank from 'EO_tools' utility, developed by UPB.
@@ -10,7 +11,8 @@ list(APPEND FEATURE_EXTRACTION_GABOR_UNIT_TEST_SOURCES
     objdump -t filter_banks_gabor_6or_4f.o - it contains '_binary_filter_banks_gabor_6or_4f_bin_{start|end|size}' symbols
 ]]
 set(PROJECT_EMBED_OBJ_FILES "")
-set(PROJECT_EMBED_FILES ${CMAKE_CURRENT_LIST_DIR}/filter_banks_gabor_6or_4f.bin)
+set(PROJECT_EMBED_FILES ${CMAKE_CURRENT_LIST_DIR}/filter_banks_gabor_6or_4f.bin ${CMAKE_CURRENT_LIST_DIR}/patch_input_band1_0_0_50_50.img
+        ${CMAKE_CURRENT_LIST_DIR}/patch_padded_band1_0_0_77_77.img)
 foreach(FILENAME ${PROJECT_EMBED_FILES})
     get_filename_component(INPUT_BIN ${FILENAME} NAME)
     get_filename_component(OUTPUT_OBJECT_STEM ${FILENAME} NAME_WLE)

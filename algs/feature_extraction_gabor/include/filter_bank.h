@@ -11,6 +11,7 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
+#pragma once
 
 #include <cstddef>
 #include <vector>
@@ -37,6 +38,13 @@ struct FilterBankItemParameters {
 };
 void ComputeFilterBankItem(float* buf, size_t buf_size, const FilterBankItemParameters& params);
 
-std::vector<std::vector<float>> CreateGaborFilterBank(size_t orientations, size_t frequencies);
+struct FilterBankItem {
+    size_t orientation_index;
+    size_t frequency_index;
+    size_t edge_size;
+    std::vector<float> filter_buffer;
+};
+std::vector<FilterBankItem> CreateGaborFilterBank(size_t orientations, size_t frequencies);
+std::vector<size_t> GetFilterDimensions(const std::vector<std::vector<float>>& filters);
 
 }  // namespace alus::featurextractiongabor
