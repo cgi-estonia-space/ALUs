@@ -83,3 +83,18 @@ add_custom_command(TARGET unit_test
         COMMAND cd ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}/goods && unzip -oq ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}/goods/\\*.zip
         COMMAND echo "${CMAKE_UNIT_TEST_BINARY_OUTPUT_DIR}"
         )
+
+list(APPEND ALUS_GMOCK_MAIN_SOURCES
+        ${CMAKE_CURRENT_LIST_DIR}/src/alus_gmock_main.cc
+        )
+
+add_library(alus-gmock-main-static
+        STATIC
+        ${ALUS_GMOCK_MAIN_SOURCES})
+
+target_link_libraries(alus-gmock-main-static
+        PUBLIC
+        gmock
+        common-util-static
+        gdal-util-static
+        )
