@@ -115,7 +115,8 @@ void ComputeFilterBankItem(float* buf, size_t buf_size, const FilterBankItemPara
         }
     }
 }
-std::vector<std::vector<float>> CreateGaborFilterBank(size_t orientations, size_t frequencies) {
+
+std::vector<FilterBankItem> CreateGaborFilterBank(size_t orientations, size_t frequencies) {
     const auto& theta_raw = GenerateOrientations(orientations);
     const auto& f_raw = GenerateFrequencies(frequencies);
     const auto& lambda = ComputeWavelengthsFrom(f_raw);
@@ -126,7 +127,7 @@ std::vector<std::vector<float>> CreateGaborFilterBank(size_t orientations, size_
     assert((f_raw.size() == lambda.size()) && (lambda.size() == sigmas.size()) && (f_raw.size() == frequencies));
     assert(theta_raw.size() == orientations);
 
-    std::vector<std::vector<float>> filter_bank(orientations * frequencies);
+    std::vector<FilterBankItem> filter_bank(orientations * frequencies);
     for (size_t freq_i{0}; freq_i < frequencies; freq_i++) {
         const auto filter_dimension_seed = ComputeFilterDimensionSeed(sigmas.at(freq_i));
         const auto matrix_dim = ComputeFilterDimension(filter_dimension_seed);
@@ -136,10 +137,13 @@ std::vector<std::vector<float>> CreateGaborFilterBank(size_t orientations, size_
             std::vector<float> theta_y(matrix_dim * matrix_dim);
             ComputeThetaY(theta_raw.at(theta_i), filter_dimension_seed, theta_y.data(), theta_y.size());
             const auto filter_item_index = freq_i * orientations + theta_i;
-            auto& bank_item_buf = filter_bank.at(filter_item_index);
-            bank_item_buf.resize(matrix_dim * matrix_dim);
+            auto& bank_item = filter_bank.at(filter_item_index);
+            bank_item.frequency_index = freq_i;
+            bank_item.orientation_index = theta_i;
+            bank_item.edge_size = matrix_dim;
+            bank_item.filter_buffer.resize(matrix_dim * matrix_dim);
             ComputeFilterBankItem(
-                bank_item_buf.data(), bank_item_buf.size(),
+                bank_item.filter_buffer.data(), bank_item.filter_buffer.size(),
                 {theta_x, theta_y, sigmas.at(freq_i), lambda.at(freq_i), phy, gamma, filter_dimension_seed});
         }
     }

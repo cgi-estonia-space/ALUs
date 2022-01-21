@@ -33,9 +33,7 @@ const std::array<float, 6> ORIENTATIONS_6_ELEMENT_SAMPLE{0.0f,        0.5235988f
                                                          1.57079637f, 2.09439516f, 2.61799383f};
 
 [[maybe_unused]] void saveFiltersAsImages(const std::vector<std::vector<float>>& filter_bank, std::string_view folder) {
-    GDALAllRegister();
-    GDALDriver* output_driver;
-    output_driver = GetGDALDriverManager()->GetDriverByName("GTiff");
+    GDALDriver* output_driver = GetGDALDriverManager()->GetDriverByName("GTiff");
 
     size_t dimension_last_bank{static_cast<size_t>(std::sqrt(filter_bank.at(0).size()))};
     std::vector<float> buffer{};
@@ -59,7 +57,7 @@ const std::array<float, 6> ORIENTATIONS_6_ELEMENT_SAMPLE{0.0f,        0.5235988f
                 GF_Write, 0, 0, dimension_last_bank, filters * dimension_last_bank, buffer.data(), dimension_last_bank,
                 filters * dimension_last_bank, GDALDataType::GDT_Float32, 0, 0, nullptr);
             if (err != CE_None) {
-                std::cout << "Saving filter resulted in error -" << CPLGetLastErrorMsg() << std::endl;
+                std::cerr << "Saving filter resulted in error -" << CPLGetLastErrorMsg() << std::endl;
             }
 
             GDALClose(output_dataset);
@@ -272,7 +270,7 @@ TEST(FilterBank, CreatesGaborFilterBankCorrectly) {
     double results_sum{};
     size_t etalon_index{};
     for (auto&& b : bank) {
-        for (auto&& f : b) {
+        for (auto&& f : b.filter_buffer) {
             etalon_sum += etalon_data[etalon_index];
             results_sum += f;
             EXPECT_THAT(f, FloatNear(etalon_data[etalon_index++], 1e-8));
