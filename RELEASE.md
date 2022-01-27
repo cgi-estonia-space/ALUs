@@ -1,3 +1,25 @@
+# Release 0.9.0
+
+This will be the last release with the current architecture (algorithms as shared libraries) and Ubuntu 18.04 as the officially supported platform.
+
+## Breaking changes
+
+## Known Caveats
+
+* Auxiliary files must be separately downloaded and supplied via CLI arguments.
+* Coherence estimation results can have missing pixels(or coherence 0 values) on north and east direction on coastlines.
+  Currently investigation is ongoing to find out the exact reason. See examples [A](docs/coh_missing_pixels.png) and [B](docs/beirut_iw1_b6_coastal.png).
+
+## Major Features and Improvements
+
+* All the files and directories are formatted and named according to rules.
+* License headers added where missing.
+* Scripts added for automated code style and content conformity. This is checked for every pull request now.
+
+## Bug Fixes and Other Changes
+
+## Thanks to our Contributors 
+
 # Release 0.8.0
 
 ## Breaking changes
