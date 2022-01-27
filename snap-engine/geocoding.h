@@ -17,11 +17,9 @@
 
 #include "raster_properties.h"
 
-namespace alus {
-namespace snapengine {
-namespace geocoding {
+namespace alus::snapengine::geocoding {
 class Geocoding {
-   public:
+public:
     [[nodiscard]] virtual Coordinates GetPixelCoordinates(PixelPosition pixel_position) const = 0;
     [[nodiscard]] virtual Coordinates GetPixelCoordinates(PrecisePixelPosition pixel_position) const = 0;
     [[nodiscard]] virtual Coordinates GetPixelCoordinates(std::tuple<double, double> pixel_position) const = 0;
@@ -34,8 +32,6 @@ class Geocoding {
     Geocoding() = default;
     Geocoding(const Geocoding&) = delete;
     Geocoding& operator=(const Geocoding&) = delete;
-    virtual ~Geocoding()  = default;
+    virtual ~Geocoding() = default;
 };
-}  // namespace geocoding
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine::geocoding

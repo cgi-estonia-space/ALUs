@@ -30,8 +30,7 @@ Zip::Zip(const boost::filesystem::path& file)
     : zip_file_(file),
       temp_zip_file_dir_{IVirtualDir::CreateUniqueTempDir()},
       unzipper_(zip_file_.string(), ""),
-      entries_{unzipper_.entries()} {
-}
+      entries_{unzipper_.entries()} {}
 
 std::vector<std::string> Zip::List(std::string_view path) {
     std::string path_str(path);
@@ -105,7 +104,8 @@ void Zip::GetInputStream(std::string_view path, std::fstream& stream) { return G
 zipper::ZipEntry Zip::GetEntry(std::string_view path) {
     //    todo: remove comment if this has been verified
     //        todo: make sure it gets result passed even if this gets closed
-    auto itr = std::find_if(entries_.begin(), entries_.end(), [=](const zipper::ZipEntry& e) { return e.name == path; });
+    auto itr =
+        std::find_if(entries_.begin(), entries_.end(), [=](const zipper::ZipEntry& e) { return e.name == path; });
     if (itr != entries_.end()) {
         return *itr;
     }
@@ -149,4 +149,4 @@ void Zip::GetInputStream(const zipper::ZipEntry& zip_entry, std::fstream& stream
     //    entry_unzipper.extractEntryToStream(zip_entry.name, stream);
 }
 
-}  // namespace ceres
+}  // namespace alus::ceres

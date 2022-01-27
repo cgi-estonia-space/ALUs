@@ -31,12 +31,12 @@ namespace alus::snapengine {
 
 class AbstractProductBuilder : public AbstractProductReader {
 public:
-    AbstractProductBuilder(bool source_product_owner);
+    explicit AbstractProductBuilder(bool source_product_owner);
 
     std::shared_ptr<Product>& GetSourceProduct() { return source_product_; }
-    int GetSceneRasterWidth() { return scene_raster_width_; }
+    int GetSceneRasterWidth() const { return scene_raster_width_; }
 
-    int GetSceneRasterHeight() { return scene_raster_height_; }
+    int GetSceneRasterHeight() const { return scene_raster_height_; }
 
 protected:
     bool source_product_owner_;

@@ -17,38 +17,40 @@
  */
 #pragma once
 
-#include <string>
+#include <string_view>
 #include <vector>
 
 #include "geopoint.h"
 #include "point.h"
+#include "snap-core/core/util/geo_utils.h"
 
-namespace alus {
-namespace jlinda {
+namespace alus::jlinda {
 
+// TODO(anton): could be just free functions in the namespace but these values could be potentially changeable in some
+// future code (at least there is such possibility in java)
 class Ellipsoid {
-   private:
-    static double e2_;   // squared first  eccentricity (derived)
-    static double e2b_;  // squared second eccentricity (derived)
+private:
+    static constexpr double E2{0.00669438003551279091};   // squared first  eccentricity (derived)
+    static constexpr double E2B{0.00673949678826153145};  // squared second eccentricity (derived)
     static double ComputeEllipsoidNormal(double phi);
-    double ComputeCurvatureRadiusInMeridianPlane(double phi);
+    //    static double ComputeCurvatureRadiusInMeridianPlane(double phi);
     // first ecc.
-    static void SetEcc1stSqr();
+    //    static void SetEcc1stSqr();
     // second ecc.
-    static void SetEcc2ndSqr();
+    //    static void SetEcc2ndSqr();
 
-   public:
-    static double a_;  // semi major
-    static double b_;  // semi minor
-    static std::string name_;
+public:
+    static constexpr double A{snapengine::WGS84::A};  // semi major
+    static constexpr double B{snapengine::WGS84::A};  // semi minor
+    static constexpr std::string_view NAME{"WGS84"};
 
-    Ellipsoid();
+    //    Ellipsoid();
 
-    Ellipsoid(double semi_major, double semi_minor);
+    //    Ellipsoid(double semi_major, double semi_minor);
 
-    Ellipsoid(const Ellipsoid& ell);
+    //    Ellipsoid(const Ellipsoid& ell);
 
-    void ShowData();
+    //    static void ShowData();
 
     /**
      *  Convert xyz cartesian coordinates to
@@ -64,7 +66,7 @@ class Ellipsoid {
      *  - void (returned double[] lam<-pi,pi>, phi<-pi,pi>, hei)
      *
      */
-    static std::vector<double> Xyz2Ell(const s1tbx::Point& xyz);
+    //    static std::vector<double> Xyz2Ell(const s1tbx::Point& xyz);
 
     /**
      * ell2xyz
@@ -76,16 +78,15 @@ class Ellipsoid {
      */
     static s1tbx::Point Ell2Xyz(double phi, double lambda, double height);
 
-    static s1tbx::Point Ell2Xyz(const std::vector<double>& phi_lambda_height);
-
-    static s1tbx::Point Ell2Xyz(const GeoPoint& geo_point, double height);
-
-    static s1tbx::Point Ell2Xyz(const GeoPoint& geo_point);
+    //    static s1tbx::Point Ell2Xyz(const std::vector<double>& phi_lambda_height);
+    //
+    //    static s1tbx::Point Ell2Xyz(const GeoPoint& geo_point, double height);
+    //
+    //    static s1tbx::Point Ell2Xyz(const GeoPoint& geo_point);
 
     static void Ell2Xyz(const GeoPoint& geo_point, std::vector<double>& xyz);
 
-    static void Ell2Xyz(const GeoPoint& geo_point, double height, std::vector<double>& xyz);
+    //    static void Ell2Xyz(const GeoPoint& geo_point, double height, std::vector<double>& xyz);
 };
 
-}  // namespace jlinda
-}  // namespace alus
+}  // namespace alus::jlinda

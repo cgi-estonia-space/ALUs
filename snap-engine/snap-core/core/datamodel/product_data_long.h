@@ -27,11 +27,10 @@
  * The @code{.cpp} Long @endcode class is a @code{.cpp} ProductData @endcode specialisation for signed 64-bit integer
  * fields. <p> Internally, data is stored in an array of the type @code{.cpp} long[] @endcode.
  */
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 class ProductData;
 class Long : public ProductData {
-   protected:
+protected:
     /**
      * The internal data array holding this value's data elements.
      */
@@ -44,7 +43,7 @@ class Long : public ProductData {
      */
     [[nodiscard]] std::shared_ptr<ProductData> CreateDeepClone() const override;
 
-   public:
+public:
     /**
      * Constructs a new @code{.cpp} Long @endcode instance.
      *
@@ -70,11 +69,11 @@ class Long : public ProductData {
     /**
      * Please refer to {@link ProductData#GetElemUIntAt(int)}.
      */
-    [[nodiscard]] long GetElemUIntAt(int index) const override;
+    [[nodiscard]] int64_t GetElemUIntAt(int index) const override;
     /**
      * Please refer to {@link ProductData#GetElemLongAt(int)}.
      */
-    [[nodiscard]] long GetElemLongAt(int index) const override;
+    [[nodiscard]] int64_t GetElemLongAt(int index) const override;
     /**
      * Please refer to {@link ProductData#GetElemFloatAt(int)}.
      */
@@ -94,11 +93,11 @@ class Long : public ProductData {
     /**
      * Please refer to {@link ProductData#SetElemUIntAt(int, long)}.
      */
-    void SetElemUIntAt(int index, long value) override;
+    void SetElemUIntAt(int index, int64_t value) override;
     /**
      * Please refer to {@link ProductData#SetElemLongAt(int, long)}.
      */
-    void SetElemLongAt(int index, long value) override;
+    void SetElemLongAt(int index, int64_t value) override;
     /**
      * Please refer to {@link ProductData#SetElemFloatAt(int, float)}.
      */
@@ -149,5 +148,4 @@ class Long : public ProductData {
     [[nodiscard]] bool EqualElems(std::shared_ptr<ProductData> other) const override;
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

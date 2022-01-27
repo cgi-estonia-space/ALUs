@@ -27,24 +27,23 @@
  * fields.
  * <p> Internally, data is stored in an array of the type {@code double[]}.
  */
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 class ProductData;
 class Double : public ProductData {
-   protected:
+protected:
     /**
      * The internal data array holding this value's data elements.
      */
     std::vector<double> array_;
 
     /**
-     * Retuns a "deep" copy of this product data.
+     * Returns a "deep" copy of this product data.
      *
      * @return a copy of this product data
      */
     [[nodiscard]] std::shared_ptr<ProductData> CreateDeepClone() const override;
 
-   public:
+public:
     /**
      * Constructs a new {@code Float} instance with the given number of elements.
      *
@@ -64,14 +63,14 @@ class Double : public ProductData {
      */
     [[nodiscard]] int GetNumElems() const override;
     [[nodiscard]] int GetElemIntAt(int index) const override;
-    [[nodiscard]] long GetElemUIntAt(int index) const override;
-    [[nodiscard]] long GetElemLongAt(int index) const override;
+    [[nodiscard]] int64_t GetElemUIntAt(int index) const override;
+    [[nodiscard]] int64_t GetElemLongAt(int index) const override;
     [[nodiscard]] float GetElemFloatAt(int index) const override;
     [[nodiscard]] double GetElemDoubleAt(int index) const override;
     [[nodiscard]] std::string GetElemStringAt(int index) const override;
     void SetElemIntAt(int index, int value) override;
-    void SetElemUIntAt(int index, long value) override;
-    void SetElemLongAt(int index, long value) override;
+    void SetElemUIntAt(int index, int64_t value) override;
+    void SetElemLongAt(int index, int64_t value) override;
     void SetElemFloatAt(int index, float value) override;
     void SetElemDoubleAt(int index, double value) override;
     /**
@@ -108,7 +107,7 @@ class Double : public ProductData {
     void Dispose() override;
     /**
     * Tests whether this ProductData is equal to another one.
-    * Performs an element-wise comparision if the other object is a {@link ProductData} instance of the same
+    * Performs an element-wise comparison if the other object is a {@link ProductData} instance of the same
     data type.
     * Otherwise the method behaves like {@link Object#equals(Object)}.
     *
@@ -124,5 +123,4 @@ class Double : public ProductData {
     [[nodiscard]] std::vector<double> GetArray() const { return array_; }
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

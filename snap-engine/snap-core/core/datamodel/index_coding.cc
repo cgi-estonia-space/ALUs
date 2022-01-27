@@ -21,8 +21,7 @@
 #include "../util/guardian.h"
 #include "metadata_attribute.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 IndexCoding::IndexCoding(std::string_view name) : SampleCoding(name) {}
 std::shared_ptr<MetadataAttribute> IndexCoding::GetIndex(std::string_view name) { return GetAttribute(name); }
@@ -41,5 +40,4 @@ int IndexCoding::GetIndexValue(std::string_view name) {
     //    Debug::AssertTrue(attribute->GetData()->IsScalar());
     return attribute->GetData()->GetElemInt();
 }
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

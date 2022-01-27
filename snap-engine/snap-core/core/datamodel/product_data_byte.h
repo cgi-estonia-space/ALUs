@@ -23,8 +23,7 @@
 
 #include "product_data.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 class ProductData;
 
 /**
@@ -93,8 +92,8 @@ public:
     [[nodiscard]] int GetNumElems() const override;
     void Dispose() override;
     [[nodiscard]] int GetElemIntAt(int index) const override;
-    [[nodiscard]] long GetElemUIntAt(int index) const override;
-    [[nodiscard]] long GetElemLongAt(int index) const override;
+    [[nodiscard]] int64_t GetElemUIntAt(int index) const override;
+    [[nodiscard]] int64_t GetElemLongAt(int index) const override;
     [[nodiscard]] float GetElemFloatAt(int index) const override;
     [[nodiscard]] double GetElemDoubleAt(int index) const override;
     [[nodiscard]] std::string GetElemStringAt(int index) const override;
@@ -105,8 +104,8 @@ public:
     void SetElemStringAt(int index, std::string_view value) override;
 
     void SetElemIntAt(int index, int value) override;
-    void SetElemUIntAt(int index, long value) override;
-    void SetElemLongAt(int index, long value) override;
+    void SetElemUIntAt(int index, int64_t value) override;
+    void SetElemLongAt(int index, int64_t value) override;
     void SetElemFloatAt(int index, float value) override;
     void SetElemDoubleAt(int index, double value) override;
 
@@ -128,5 +127,4 @@ public:
     [[nodiscard]] bool EqualElems(std::shared_ptr<ProductData> other) const override;
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

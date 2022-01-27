@@ -24,8 +24,7 @@
 #include "ceres-core/core/dir.h"
 #include "ceres-core/core/zip.h"
 
-namespace alus {
-namespace ceres {
+namespace alus::ceres {
 
 std::shared_ptr<IVirtualDir> IVirtualDir::Create(const boost::filesystem::path& file) {
     if (boost::filesystem::is_directory(file)) {
@@ -83,5 +82,4 @@ void IVirtualDir::DeleteFileTree(const boost::filesystem::path& tree_root) {
     }
 }
 
-}  // namespace ceres
-}  // namespace alus
+}  // namespace alus::ceres

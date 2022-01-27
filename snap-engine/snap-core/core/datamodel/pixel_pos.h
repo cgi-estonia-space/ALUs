@@ -20,8 +20,7 @@
 
 #include <cmath>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 class PixelPos {
     /**
      * Constructs and initializes a <code>PixelPos</code> with coordinate (0,&nbsp;0).
@@ -44,7 +43,7 @@ public:
      *
      * @return true, if so
      */
-    bool IsValid() { return !(std::isnan(x_) || std::isnan(y_)); }
+    [[nodiscard]] bool IsValid() const { return !(std::isnan(x_) || std::isnan(y_)); }
 
     /**
      * Sets this pixel position so that is becomes invalid.
@@ -54,5 +53,4 @@ public:
         y_ = std::nan("");
     }
 };
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

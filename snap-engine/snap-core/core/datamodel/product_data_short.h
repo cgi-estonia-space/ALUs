@@ -23,8 +23,7 @@
 
 #include "product_data.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 class ProductData;
 
 /**
@@ -55,7 +54,7 @@ protected:
     Short(std::vector<int16_t> array, bool is_unsigned);
 
     /**
-     * Retuns a "deep" copy of this product data.
+     * Returns a "deep" copy of this product data.
      *
      * @return a copy of this product data
      */
@@ -87,11 +86,11 @@ public:
     /**
      * Please refer to {@link ProductData#getElemUIntAt(int)}.
      */
-    [[nodiscard]] long GetElemUIntAt(int index) const override;
+    [[nodiscard]] int64_t GetElemUIntAt(int index) const override;
     /**
      * Please refer to {@link ProductData#getElemLongAt(int)}.
      */
-    [[nodiscard]] long GetElemLongAt(int index) const override;
+    [[nodiscard]] int64_t GetElemLongAt(int index) const override;
     /**
      * Please refer to {@link ProductData#getElemFloatAt(int)}.
      */
@@ -111,11 +110,11 @@ public:
     /**
      * Please refer to {@link ProductData#setElemUIntAt(int, long)}.
      */
-    void SetElemUIntAt(int index, long value) override;
+    void SetElemUIntAt(int index, int64_t value) override;
     /**
      * Please refer to {@link ProductData#setElemLongAt(int, long)}.
      */
-    void SetElemLongAt(int index, long value) override;
+    void SetElemLongAt(int index, int64_t value) override;
     /**
      * Please refer to {@link ProductData#setElemFloatAt(int, float)}.
      */
@@ -167,5 +166,4 @@ public:
     [[nodiscard]] bool EqualElems(std::shared_ptr<ProductData> other) const override;
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

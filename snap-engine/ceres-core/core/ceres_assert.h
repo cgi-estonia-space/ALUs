@@ -22,8 +22,7 @@
 #include <string>
 #include <string_view>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 class Assert {
 public:
     template <typename T>
@@ -64,5 +63,4 @@ public:
         NotNull(object, "Assert.notNull(null) called");  //$NON-NLS-1$
     }
 };
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

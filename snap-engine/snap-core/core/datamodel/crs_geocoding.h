@@ -15,11 +15,9 @@
 
 #include "geocoding.h"
 
-namespace alus {
-namespace snapengine {
-namespace geocoding {
+namespace alus::snapengine::geocoding {
 class CrsGeocoding : public Geocoding {
-   public:
+public:
     [[nodiscard]] Coordinates GetPixelCoordinates(PixelPosition pixel_position) const override;
     [[nodiscard]] Coordinates GetPixelCoordinates(PrecisePixelPosition pixel_position) const override;
     [[nodiscard]] Coordinates GetPixelCoordinates(std::tuple<double, double> pixel_position) const override;
@@ -36,6 +34,4 @@ class CrsGeocoding : public Geocoding {
 
     GeoTransformParameters geo_transform_parameters_;
 };
-}  // namespace geocoding
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine::geocoding

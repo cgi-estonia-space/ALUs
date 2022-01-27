@@ -39,8 +39,7 @@
 #include "snap-engine-utilities/engine-utilities/datamodel/unit.h"
 #include "snap-engine-utilities/engine-utilities/gpf/operator_utils.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 void ReaderUtils::AddMetadataIncidenceAngles(const std::shared_ptr<Product>& product) {
     std::shared_ptr<TiePointGrid> tpg = product->GetTiePointGrid(OperatorUtils::TPG_INCIDENT_ANGLE);
@@ -63,9 +62,9 @@ void ReaderUtils::AddMetadataProductSize(const std::shared_ptr<Product>& product
         AbstractMetadata::SetAttribute(abs_root, AbstractMetadata::TOT_SIZE, ReaderUtils::GetTotalSize(product));
     }
 }
-// todo: this might need rethinking for port
+// todo: this might need rethinking for port  // NOLINT
 int ReaderUtils::GetTotalSize(const std::shared_ptr<Product>& product) {
-    return static_cast<int>(product->ProductNode::GetRawStorageSize() / (1024.0f * 1024.0f));
+    return static_cast<int>(product->ProductNode::GetRawStorageSize() / (1024.0F * 1024.0F));  // NOLINT
 }
 
 std::shared_ptr<Band> ReaderUtils::CreateVirtualIntensityBand(const std::shared_ptr<Product>& product,
@@ -113,8 +112,8 @@ std::string ReaderUtils::CreateName(std::string_view orig_name, std::string_view
     return std::string(new_prefix) + std::string(orig_name.substr(sep_pos));
 }
 
-void ReaderUtils::AddGeoCoding(const std::shared_ptr<Product>& product, std::vector<float> lat_corners,
-                               std::vector<float> lon_corners) {
+void ReaderUtils::AddGeoCoding(const std::shared_ptr<Product>& product, const std::vector<float>& lat_corners,
+                               const std::vector<float>& lon_corners) {
     if (lat_corners.empty() || lon_corners.empty()) {
         return;
     }
@@ -122,22 +121,24 @@ void ReaderUtils::AddGeoCoding(const std::shared_ptr<Product>& product, std::vec
     const int grid_width = 10;
     const int grid_height = 10;
 
-    const std::vector<float> fine_lat_tie_points(grid_width * grid_height);
+    const std::vector<float> fine_lat_tie_points(static_cast<size_t>((grid_width * grid_height)));
     ReaderUtils::CreateFineTiePointGrid(2, 2, grid_width, grid_height, lat_corners, fine_lat_tie_points);
 
-    double sub_sampling_x = product->GetSceneRasterWidth() / (grid_width - 1);
-    double sub_sampling_y = product->GetSceneRasterHeight() / (grid_height - 1);
+    double sub_sampling_x = product->GetSceneRasterWidth() /  // NOLINT
+                            (grid_width - 1);  // NOLINT TODO: is loss of precision here intended? Seems a bit shady
+    double sub_sampling_y =
+        product->GetSceneRasterHeight() / (grid_height - 1);  // NOLINT TODO: same loss of precision is here...
     if (sub_sampling_x == 0 || sub_sampling_y == 0) return;
 
-    const auto lat_grid = std::make_shared<TiePointGrid>(OperatorUtils::TPG_LATITUDE, grid_width, grid_height, 0.5f,
-                                                         0.5f, sub_sampling_x, sub_sampling_y, fine_lat_tie_points);
+    const auto lat_grid = std::make_shared<TiePointGrid>(OperatorUtils::TPG_LATITUDE, grid_width, grid_height, 0.5F,
+                                                         0.5F, sub_sampling_x, sub_sampling_y, fine_lat_tie_points);
     lat_grid->SetUnit(Unit::DEGREES);
 
-    std::vector<float> fine_lon_tie_points(grid_width * grid_height);
+    std::vector<float> fine_lon_tie_points(static_cast<size_t>((grid_width * grid_height)));
     ReaderUtils::CreateFineTiePointGrid(2, 2, grid_width, grid_height, lon_corners, fine_lon_tie_points);
 
-    const auto lon_grid = std::make_shared<TiePointGrid>(OperatorUtils::TPG_LONGITUDE, grid_width, grid_height, 0.5f,
-                                                         0.5f, sub_sampling_x, sub_sampling_y, fine_lon_tie_points,
+    const auto lon_grid = std::make_shared<TiePointGrid>(OperatorUtils::TPG_LONGITUDE, grid_width, grid_height, 0.5F,
+                                                         0.5F, sub_sampling_x, sub_sampling_y, fine_lon_tie_points,
                                                          TiePointGrid::DISCONT_AT_180);
     lon_grid->SetUnit(Unit::DEGREES);
 
@@ -151,14 +152,14 @@ void ReaderUtils::AddGeoCoding(const std::shared_ptr<Product>& product, std::vec
 void ReaderUtils::CreateFineTiePointGrid(int coarse_grid_width, int coarse_grid_height, int fine_grid_width,
                                          int fine_grid_height, std::vector<float> coarse_tie_points,
                                          std::vector<float> fine_tie_points) {
-    if (coarse_tie_points.empty() ||
-        coarse_tie_points.size() != static_cast<std::size_t>(coarse_grid_width * coarse_grid_height)) {
+    if (coarse_tie_points.empty() || coarse_tie_points.size() != static_cast<std::size_t>(coarse_grid_width) *
+                                                                     static_cast<size_t>(coarse_grid_height)) {
         throw std::invalid_argument(
             "coarse tie point array size does not match 'coarseGridWidth' x 'coarseGridHeight'");
     }
 
     if (fine_tie_points.empty() ||
-        fine_tie_points.size() != static_cast<std::size_t>(fine_grid_width * fine_grid_height)) {
+        fine_tie_points.size() != static_cast<std::size_t>(fine_grid_width) * static_cast<size_t>(fine_grid_height)) {
         throw std::invalid_argument("fine tie point array size does not match 'fineGridWidth' x 'fineGridHeight'");
     }
 
@@ -171,7 +172,7 @@ void ReaderUtils::CreateFineTiePointGrid(int coarse_grid_width, int coarse_grid_
         const double wj = beta_r - j0;
 
         for (int c = 0; c < fine_grid_width; c++) {
-            const double lambda_c = c / (double)(fine_grid_width - 1);
+            const double lambda_c = c / static_cast<double>(fine_grid_width - 1);
             const double beta_c = lambda_c * (coarse_grid_width - 1);
             const int i0 = static_cast<int>(beta_c);
             const int i1 = std::min(i0 + 1, coarse_grid_width - 1);
@@ -202,7 +203,7 @@ std::string ReaderUtils::CreateValidUTCString(std::string_view name, std::vector
     Guardian::AssertNotNull("name", name);
     std::vector<char> sorted_valid_chars;
     if (valid_chars.empty()) {
-        sorted_valid_chars.resize(5);
+        sorted_valid_chars.resize(5);  // NOLINT
     } else {
         sorted_valid_chars.resize(valid_chars.size());
         std::copy(valid_chars.begin(), valid_chars.end(), sorted_valid_chars.begin());
@@ -212,9 +213,7 @@ std::string ReaderUtils::CreateValidUTCString(std::string_view name, std::vector
 
     std::stringstream valid_name;
     for (char ch : name) {
-        if (std::isdigit(ch)) {
-            valid_name << ch;
-        } else if (std::binary_search(sorted_valid_chars.begin(), sorted_valid_chars.end(), ch)) {
+        if (std::isdigit(ch) || std::binary_search(std::begin(sorted_valid_chars), std::end(sorted_valid_chars), ch)) {
             valid_name << ch;
         } else {
             valid_name << replace_char;
@@ -258,5 +257,4 @@ std::shared_ptr<Band> ReaderUtils::CreateVirtualPhaseBand(const std::shared_ptr<
     return virt_band;
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

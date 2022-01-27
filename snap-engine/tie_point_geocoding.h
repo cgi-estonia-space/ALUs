@@ -19,12 +19,10 @@
 #include "raster_properties.h"
 #include "tie_point_grid.h"
 
-namespace alus {
-namespace snapengine {
-namespace geocoding {
+namespace alus::snapengine::geocoding {
 
 class TiePointGeocoding : public Geocoding {
-   public:
+public:
     [[nodiscard]] Coordinates GetPixelCoordinates(PixelPosition pixel_position) const override;
     [[nodiscard]] Coordinates GetPixelCoordinates(PrecisePixelPosition pixel_position) const override;
     [[nodiscard]] Coordinates GetPixelCoordinates(std::tuple<double, double> pixel_position) const override;
@@ -43,10 +41,5 @@ class TiePointGeocoding : public Geocoding {
 
     tiepointgrid::TiePointGrid latitude_grid_;
     tiepointgrid::TiePointGrid longitude_grid_;
-
-   private:
-    bool approximations_computed_ = false;
 };
-}  // namespace geocoding
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine::geocoding

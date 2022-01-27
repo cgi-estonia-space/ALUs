@@ -101,8 +101,8 @@ std::shared_ptr<Product> AbstractProductReader::ReadProductNodes(std::any input,
 
     //    todo: do we want these logs? also class name might not be correct, might need more work based on intentsions
     auto start = std::chrono::high_resolution_clock::now();
-    LOGD << "Start reading the product from input '" << input.type().name() << "' using the '"
-              << typeid(*this).name() << "' reader class. The subset is '" << subset_def << "'.";
+    LOGD << "Start reading the product from input '" << input.type().name() << "' using the '" << typeid(*this).name()
+         << "' reader class. The subset is '" << subset_def << "'.";
 
     std::shared_ptr<Product> product = ReadProductNodesImpl();
     ConfigurePreferredTileSize(product);
@@ -113,14 +113,13 @@ std::shared_ptr<Product> AbstractProductReader::ReadProductNodes(std::any input,
 
     auto stop = std::chrono::high_resolution_clock::now();
     auto elapsed_seconds = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-    LOGD << "Finish reading the product from input '" << input.type().name() << "' using the '"
-              << typeid(*this).name() << "' reader class. The time elapsed is " << elapsed_seconds.count()
-              << " milliseconds.";
+    LOGD << "Finish reading the product from input '" << input.type().name() << "' using the '" << typeid(*this).name()
+         << "' reader class. The time elapsed is " << elapsed_seconds.count() << " milliseconds.";
 
     return product;
 }
 
-bool AbstractProductReader::IsInstanceOfValidInputType([[maybe_unused]] std::any input) {
+bool AbstractProductReader::IsInstanceOfValidInputType([[maybe_unused]] const std::any& input) {
     //    todo::replace plugin validation with some validator class?
     //    if (getReaderPlugIn() != null) {
     //        Class[] inputTypes = getReaderPlugIn().getInputTypes();
@@ -140,7 +139,7 @@ void AbstractProductReader::ConfigurePreferredTileSize(const std::shared_ptr<Pro
         //        todo: provide some config file to read default preferences from?
         //        GetConfiguredTileSize(product, Config.instance().preferences().get(SYSPROP_READER_TILE_WIDTH, 0),
         //        Config.instance().preferences().get(SYSPROP_READER_TILE_HEIGHT, 0));
-        GetConfiguredTileSize(product, 0, 0);
+        GetConfiguredTileSize(product, "", "");
     if (new_size != nullptr) {
         std::shared_ptr<custom::Dimension> old_size = product->GetPreferredTileSize();
         if (old_size == nullptr) {
@@ -155,11 +154,11 @@ void AbstractProductReader::ConfigurePreferredTileSize(const std::shared_ptr<Pro
     }
 }
 
-void AbstractProductReader::SetInput(std::any input) { input_ = input; }
+void AbstractProductReader::SetInput(std::any input) { input_ = std::move(input); }
 
-std::shared_ptr<custom::Dimension> AbstractProductReader::GetConfiguredTileSize(std::shared_ptr<Product> product,
-                                                                        std::string_view tile_width_str,
-                                                                        std::string_view tile_height_str) {
+std::shared_ptr<custom::Dimension> AbstractProductReader::GetConfiguredTileSize(const std::shared_ptr<Product>& product,
+                                                                                std::string_view tile_width_str,
+                                                                                std::string_view tile_height_str) {
     int tile_width = ParseTileSize(tile_width_str, product->GetSceneRasterWidth());
     int tile_height = ParseTileSize(tile_height_str, product->GetSceneRasterHeight());
     std::shared_ptr<custom::Dimension> new_size = nullptr;
@@ -167,11 +166,13 @@ std::shared_ptr<custom::Dimension> AbstractProductReader::GetConfiguredTileSize(
         std::shared_ptr<custom::Dimension> old_size = product->GetPreferredTileSize();
         if (tile_width == 0) {
             // Note: tile_height will not be null
-            tile_width = (old_size != 0 ? old_size->width : std::min(product->GetSceneRasterWidth(), tile_height));
+            tile_width =
+                (old_size != nullptr ? old_size->width : std::min(product->GetSceneRasterWidth(), tile_height));
         }
         if (tile_height == 0) {
             // Note: tile_width will not be null
-            tile_height = (old_size != 0 ? old_size->height : std::min(product->GetSceneRasterHeight(), tile_width));
+            tile_height =
+                (old_size != nullptr ? old_size->height : std::min(product->GetSceneRasterHeight(), tile_width));
         }
         new_size = std::make_shared<custom::Dimension>(tile_width, tile_height);
     }
@@ -189,11 +190,11 @@ int AbstractProductReader::ParseTileSize(std::string_view size_str, int max_size
             } catch (std::invalid_argument& e) {
                 // ignore
                 LOGW << "ParseTileSize string to integer operation got invalid argument exception, used parameter "
-                          << size_str << ", returned error message: " << e.what();
+                     << size_str << ", returned error message: " << e.what();
             } catch (std::out_of_range& e) {
                 // ignore
                 LOGW << "ParseTileSize string to integer operation got out of range exception, used parameter "
-                          << size_str << ", returned error message: " << e.what();
+                     << size_str << ", returned error message: " << e.what();
             }
         }
     }

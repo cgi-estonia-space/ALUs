@@ -78,7 +78,7 @@ public:
     void DeviceToHost() override;
     void DeviceFree() override;
 
-    ~EarthGravitationalModel96();
+    virtual ~EarthGravitationalModel96();
     EarthGravitationalModel96(const EarthGravitationalModel96&) = delete;  // class does not support copying(and moving)
     EarthGravitationalModel96& operator=(const EarthGravitationalModel96&) = delete;
 };

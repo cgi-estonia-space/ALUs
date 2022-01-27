@@ -23,26 +23,26 @@
 
 namespace alus::snapengine::custom {
 
-void GdalImageWriter::WriteSubSampledData(const custom::Rectangle& rectangle, std::vector<float>& data, int band_indx) {
-    if (data.size() > static_cast<std::size_t>(rectangle.width * rectangle.height)) {
+void GdalImageWriter::WriteSubSampledData(const custom::Rectangle& rectangle, std::vector<float>& data,
+                                          int band_index) {
+    if (data.size() > static_cast<std::size_t>(rectangle.width) * static_cast<size_t>(rectangle.height)) {
         throw std::runtime_error("Buffer overflow");
     }
-    CHECK_GDAL_ERROR(dataset_->GetRasterBand(band_indx)->RasterIO(GF_Write, rectangle.x, rectangle.y, rectangle.width,
-                                                                  rectangle.height, data.data(), rectangle.width,
-                                                                  rectangle.height, GDALDataType::GDT_Float32, 0, 0));
+    CHECK_GDAL_ERROR(dataset_->GetRasterBand(band_index)
+                         ->RasterIO(GF_Write, rectangle.x, rectangle.y, rectangle.width, rectangle.height, data.data(),
+                                    rectangle.width, rectangle.height, GDALDataType::GDT_Float32, 0, 0));
 }
-void GdalImageWriter::WriteSubSampledData(const alus::Rectangle& rectangle, std::vector<float>& data, int band_indx) {
+void GdalImageWriter::WriteSubSampledData(const alus::Rectangle& rectangle, std::vector<float>& data, int band_index) {
     custom::Rectangle region(rectangle);
-    WriteSubSampledData(region, data, band_indx);
+    WriteSubSampledData(region, data, band_index);
 }
 
 void GdalImageWriter::Open(std::string_view path_to_band_file, int raster_size_x, int raster_size_y,
                            std::vector<double> affine_geo_transform_out, const std::string_view data_projection_out,
                            bool in_memory_file) {
-    auto const po_driver =
-        in_memory_file ? GetGdalMemDriver() : GetGdalGeoTiffDriver();
+    auto* const po_driver = in_memory_file ? GetGdalMemDriver() : GetGdalGeoTiffDriver();
 
-    do_close_dataset_ = in_memory_file ? false : true;
+    do_close_dataset_ = !in_memory_file;
     CHECK_GDAL_PTR(po_driver);
     // po_driver reference gets checked by guard
     dataset_ = po_driver->Create(std::string(path_to_band_file).c_str(), raster_size_x, raster_size_y, 1, GDT_Float32,

@@ -18,8 +18,7 @@
  */
 #pragma once
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 /**
  * The scaling method used for geophysical value transformation in a {@link Band}.
  *
@@ -46,5 +45,4 @@ public:
      */
     virtual double ScaleInverse(double value) = 0;
 };
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

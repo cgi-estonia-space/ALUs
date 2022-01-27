@@ -1,3 +1,16 @@
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #pragma once
 
 #include <algorithm>
@@ -19,7 +32,7 @@ struct RasterDimension final {
         return this->columnsX == other.columnsX && this->rowsY == other.rowsY;
     }
 
-    [[nodiscard]] size_t getSize() const { return this->columnsX * this->rowsY; }
+    [[nodiscard]] size_t GetSize() const { return this->columnsX * this->rowsY; }
 };
 
 struct RasterPoint final {
@@ -54,11 +67,11 @@ struct GeoTransformParameters final {
 };
 
 class GeoTransformConstruct final {
-   public:
+public:
     static constexpr int GDAL_GEOTRANSFORM_PARAMETERS_LENGTH{6};
-    static GeoTransformParameters buildFromGDAL(double gdalGT[]) {
-        return GeoTransformParameters{
-            gdalGT[LON_ORIGIN_INDEX], gdalGT[LAT_ORIGIN_INDEX], gdalGT[PIXEL_X_SIZE_INDEX], gdalGT[PIXEL_Y_SIZE_INDEX]};
+    static GeoTransformParameters BuildFromGdal(double gdalGT[]) {
+        return GeoTransformParameters{gdalGT[LON_ORIGIN_INDEX], gdalGT[LAT_ORIGIN_INDEX], gdalGT[PIXEL_X_SIZE_INDEX],
+                                      gdalGT[PIXEL_Y_SIZE_INDEX]};
     }
 
     // These are the TOP LEFT / UPPER LEFT coordinates of the image.

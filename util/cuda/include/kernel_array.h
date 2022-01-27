@@ -15,7 +15,8 @@
 
 #include <cstddef>
 
-namespace alus {
+namespace alus {  // NOLINT TODO: clang-tidy warns about possible exceptions. This should be addressed outside of the
+                  // current task.
 namespace cuda {
 /**
  * Thrust containers' wrapper.
@@ -25,10 +26,10 @@ namespace cuda {
  */
 template <typename T>
 struct KernelArray {
-    T *array;
+    T* array;
     size_t size;
 
-    size_t ByteSize() const { return sizeof(T) * size; }
+    [[nodiscard]] size_t ByteSize() const { return sizeof(T) * size; }
 };
 
 }  // namespace cuda

@@ -29,8 +29,7 @@
 #include "product_utils.h"
 #include "snap-engine-utilities/engine-utilities/eo/constants.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 // todo: add when needed
 // std::unique_ptr<geos::geom::Geometry> GeoUtils::ComputeGeometryUsingPixelRegion(
@@ -127,7 +126,8 @@ namespace snapengine {
 //    return factory->createPolygon(factory->createLinearRing(coordinates), nullptr);
 //}
 
-std::shared_ptr<DistanceHeading> GeoUtils::VincentyInverse(std::shared_ptr<GeoPos> pos1, std::shared_ptr<GeoPos> pos2) {
+std::shared_ptr<DistanceHeading> GeoUtils::VincentyInverse(const std::shared_ptr<GeoPos>& pos1,
+                                                           const std::shared_ptr<GeoPos>& pos2) {
     std::shared_ptr<DistanceHeading> output = std::make_shared<DistanceHeading>();
     double lat1 = pos1->lat_;
     double lon1 = pos1->lon_;
@@ -147,62 +147,62 @@ std::shared_ptr<DistanceHeading> GeoUtils::VincentyInverse(std::shared_ptr<GeoPo
     lon2 *= eo::constants::DTOR;
 
     // Model WGS84:
-    //    F=1/298.25722210;	// flattening
-    double F = 0.0;  // defF;
+    //    f=1/298.25722210;	// flattening
+    double f = 0.0;  // defF;
 
-    double R = 1 - F;
-    double TU1 = R * std::tan(lat1);
-    double TU2 = R * std::tan(lat2);
-    double CU1 = 1.0 / std::sqrt(TU1 * TU1 + 1.0);
-    double SU1 = CU1 * TU1;
-    double CU2 = 1.0 / std::sqrt(TU2 * TU2 + 1.0);
-    double S = CU1 * CU2;
-    double BAZ = S * TU2;
-    double FAZ = BAZ * TU1;
-    double X = lon2 - lon1;
+    double r = 1 - f;
+    double tu_1 = r * std::tan(lat1);
+    double tu_2 = r * std::tan(lat2);
+    double cu_1 = 1.0 / std::sqrt(tu_1 * tu_1 + 1.0);
+    double su_1 = cu_1 * tu_1;
+    double cu_2 = 1.0 / std::sqrt(tu_2 * tu_2 + 1.0);
+    double s = cu_1 * cu_2;
+    double baz = s * tu_2;
+    double faz = baz * tu_1;
+    double x = lon2 - lon1;
 
-    double SX, CX, SY, CY, Y, SA, C2A, CZ, E, C, D;
+    double sx, cx, sy, cy, y, sa, c_2_a, cz, e, c,
+        d;  // NOLINT (too many variables are being declared with default initialisation)
     do {
-        SX = std::sin(X);
-        CX = std::cos(X);
-        TU1 = CU2 * SX;
-        TU2 = BAZ - SU1 * CU2 * CX;
-        SY = std::sqrt(TU1 * TU1 + TU2 * TU2);
-        CY = S * CX + FAZ;
-        Y = std::atan2(SY, CY);
-        SA = S * SX / SY;
-        C2A = -SA * SA + 1.;
-        CZ = FAZ + FAZ;
-        if (C2A > 0.) {
-            CZ = -CZ / C2A + CY;
+        sx = std::sin(x);
+        cx = std::cos(x);
+        tu_1 = cu_2 * sx;
+        tu_2 = baz - su_1 * cu_2 * cx;
+        sy = std::sqrt(tu_1 * tu_1 + tu_2 * tu_2);
+        cy = s * cx + faz;
+        y = std::atan2(sy, cy);
+        sa = s * sx / sy;
+        c_2_a = -sa * sa + 1.;
+        cz = faz + faz;
+        if (c_2_a > 0.) {
+            cz = -cz / c_2_a + cy;
         }
-        E = CZ * CZ * 2. - 1.;
-        C = ((-3. * C2A + 4.) * F + 4.) * C2A * F / 16.;
-        D = X;
-        X = ((E * CY * C + CZ) * SY * C + Y) * SA;
-        X = (1. - C) * X * F + lon2 - lon1;
-    } while (std::abs(D - X) > (0.01));
+        e = cz * cz * 2. - 1.;
+        c = ((-3. * c_2_a + 4.) * f + 4.) * c_2_a * f / 16.;  // NOLINT
+        d = x;
+        x = ((e * cy * c + cz) * sy * c + y) * sa;
+        x = (1. - c) * x * f + lon2 - lon1;
+    } while (std::abs(d - x) > (0.01));  // NOLINT
 
-    FAZ = std::atan2(TU1, TU2);
-    BAZ = std::atan2(CU1 * SX, BAZ * CX - SU1 * CU2) + eo::constants::PI;
-    X = std::sqrt((1. / R / R - 1.) * C2A + 1.) + 1.;
-    X = (X - 2.) / X;
-    C = 1. - X;
-    C = (X * X / 4. + 1.) / C;
-    D = (0.375 * X * X - 1.) * X;
-    X = E * CY;
-    S = 1. - E - E;
-    S = ((((SY * SY * 4. - 3.) * S * CZ * D / 6. - X) * D / 4. + CZ) * SY * D + Y) * C * WGS84::A * R;
+    faz = std::atan2(tu_1, tu_2);
+    baz = std::atan2(cu_1 * sx, baz * cx - su_1 * cu_2) + eo::constants::PI;
+    x = std::sqrt((1. / r / r - 1.) * c_2_a + 1.) + 1.;
+    x = (x - 2.) / x;
+    c = 1. - x;
+    c = (x * x / 4. + 1.) / c;     // NOLINT
+    d = (0.375 * x * x - 1.) * x;  // NOLINT
+    x = e * cy;
+    s = 1. - e - e;
+    s = ((((sy * sy * 4. - 3.) * s * cz * d / 6. - x) * d / 4. + cz) * sy * d + y) * c * WGS84::A * r;  // NOLINT
 
-    output->distance = S;
-    output->heading1 = FAZ * eo::constants::RTOD;
-    output->heading2 = BAZ * eo::constants::RTOD;
+    output->distance = s;
+    output->heading1 = faz * eo::constants::RTOD;
+    output->heading2 = baz * eo::constants::RTOD;
 
-    while (output->heading1 < 0) output->heading1 += 360;
-    while (output->heading2 < 0) output->heading2 += 360;
+    while (output->heading1 < 0) output->heading1 += 360;  // NOLINT
+    while (output->heading2 < 0) output->heading2 += 360;  // NOLINT
 
     return output;
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

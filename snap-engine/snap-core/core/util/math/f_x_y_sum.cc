@@ -26,8 +26,7 @@
 #include "snap-core/core/util/math/f_x_y_sum_linear.h"
 #include "snap-core/core/util/math/f_x_y_sum_quadric.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 FXYSum::FXYSum(const std::vector<std::reference_wrapper<IFXY>>& functions) : FXYSum(functions, -1) {}
 
@@ -39,53 +38,53 @@ FXYSum::FXYSum(const std::vector<std::reference_wrapper<IFXY>>& functions, int o
     if (functions.empty()) {
         throw std::invalid_argument("'functions' is null or empty");
     }
-    _f_ = functions;
+    f_ = functions;
     if (coefficients.empty()) {
-        _c_ = std::vector<double>(functions.size());
+        c_ = std::vector<double>(functions.size());
     } else {
         if (functions.size() != coefficients.size()) {
             throw std::invalid_argument("'functions.length' != 'coefficients.length'");
         }
-        _c_ = coefficients;
+        c_ = coefficients;
     }
-    _order_ = order;
+    order_ = order;
 }
 
 std::shared_ptr<FXYSum> FXYSum::CreateFXYSum(int order, const std::vector<double>& coefficients) {
     std::shared_ptr<FXYSum> sum;
     switch (order) {
         case 1:
-            if (coefficients.size() == 3) {
+            if (coefficients.size() == 3) {  // NOLINT
                 sum = std::make_shared<Linear>(coefficients);
             } else {
                 sum = nullptr;
             }
             break;
         case 2:
-            if (coefficients.size() == 4) {
+            if (coefficients.size() == 4) {  // NOLINT
                 sum = std::make_shared<BiLinear>(coefficients);
-            } else if (coefficients.size() == 6) {
+            } else if (coefficients.size() == 6) {  // NOLINT
                 sum = std::make_shared<Quadric>(coefficients);
             } else {
                 sum = nullptr;
             }
             break;
-        case 3:
-            if (coefficients.size() == 10) {
+        case 3:                               // NOLINT
+            if (coefficients.size() == 10) {  // NOLINT
                 sum = std::make_shared<Cubic>(coefficients);
             } else {
                 sum = nullptr;
             }
             break;
-        case 4:
-            if (coefficients.size() == 9) {
+        case 4:                              // NOLINT
+            if (coefficients.size() == 9) {  // NOLINT
                 sum = std::make_shared<BiQuadric>(coefficients);
             } else {
                 sum = nullptr;
             }
             break;
-        case 6:
-            if (coefficients.size() == 16) {
+        case 6:                               // NOLINT
+            if (coefficients.size() == 16) {  // NOLINT
                 sum = std::make_shared<BiCubic>(coefficients);
             } else {
                 sum = nullptr;
@@ -117,36 +116,35 @@ double FXYSum::ComputeZ(const std::vector<std::reference_wrapper<IFXY>>& f, cons
 
 void FXYSum::Approximate(const std::vector<std::vector<double>>& data, const std::vector<int>& indices) {
     //    todo: check if this works like snap solution
-    Approximator::ApproximateFXY(data, indices, _f_, _c_);
-    _error_statistics_ = Approximator::ComputeErrorStatistics(data, indices, _f_, _c_);
+    Approximator::ApproximateFXY(data, indices, f_, c_);
+    error_statistics_ = Approximator::ComputeErrorStatistics(data, indices, f_, c_);
 }
 
-std::vector<std::reference_wrapper<IFXY>> FXYSum::FXY_LINEAR{/*0*/ IFXY::ONE, /*1*/ IFXY::X, IFXY::Y};
-std::vector<std::reference_wrapper<IFXY>> FXYSum::FXY_BI_LINEAR{/*0*/ IFXY::ONE, /*1*/ IFXY::X, IFXY::Y,
-                                                                /*2*/ IFXY::XY};
-std::vector<std::reference_wrapper<IFXY>> FXYSum::FXY_QUADRATIC{/*0*/ IFXY::ONE, /*1*/ IFXY::X, IFXY::Y,
-                                                                /*2*/ IFXY::X2,  IFXY::XY,      IFXY::Y2};
-std::vector<std::reference_wrapper<IFXY>> FXYSum::FXY_BI_QUADRATIC{
+std::vector<std::reference_wrapper<IFXY>> FXYSum::fxy_linear_{/*0*/ IFXY::ONE, /*1*/ IFXY::X, IFXY::Y};
+std::vector<std::reference_wrapper<IFXY>> FXYSum::fxy_bi_linear_{/*0*/ IFXY::ONE, /*1*/ IFXY::X, IFXY::Y,
+                                                                 /*2*/ IFXY::XY};
+std::vector<std::reference_wrapper<IFXY>> FXYSum::fxy_quadratic_{/*0*/ IFXY::ONE, /*1*/ IFXY::X, IFXY::Y,
+                                                                 /*2*/ IFXY::X2,  IFXY::XY,      IFXY::Y2};
+std::vector<std::reference_wrapper<IFXY>> FXYSum::fxy_bi_quadratic_{
     /*0*/ IFXY::ONE, /*1*/ IFXY::X, IFXY::Y,
     /*2*/ IFXY::X2,  IFXY::XY,      IFXY::Y2,
     /*3*/ IFXY::X2Y, IFXY::XY2,     /*4*/ IFXY::X2Y2};
-std::vector<std::reference_wrapper<IFXY>> FXYSum::FXY_CUBIC{
+std::vector<std::reference_wrapper<IFXY>> FXYSum::fxy_cubic_{
     /*0*/ IFXY::ONE, /*1*/ IFXY::X,  IFXY::Y,   /*2*/ IFXY::X2, IFXY::XY,
     IFXY::Y2,        /*3*/ IFXY::X3, IFXY::X2Y, IFXY::XY2,      IFXY::Y3};
 
-std::vector<std::reference_wrapper<IFXY>> FXYSum::FXY_BI_CUBIC{
+std::vector<std::reference_wrapper<IFXY>> FXYSum::fxy_bi_cubic_{
     /*0*/ IFXY::ONE, /*1*/ IFXY::X,    IFXY::Y,    /*2*/ IFXY::X2,  IFXY::XY,        IFXY::Y2,
     /*3*/ IFXY::X3,  IFXY::X2Y,        IFXY::XY2,  IFXY::Y3,        /*4*/ IFXY::X3Y, IFXY::X2Y2,
     IFXY::XY3,       /*5*/ IFXY::X3Y2, IFXY::X2Y3, /*6*/ IFXY::X3Y3};
-std::vector<std::reference_wrapper<IFXY>> FXYSum::FXY_4TH{
+std::vector<std::reference_wrapper<IFXY>> FXYSum::fxy_4_th_{
     /*0*/ IFXY::ONE, /*1*/ IFXY::X,  IFXY::Y,    /*2*/ IFXY::X2, IFXY::XY,
     IFXY::Y2,        /*3*/ IFXY::X3, IFXY::X2Y,  IFXY::XY2,      IFXY::Y3,
     /*4*/ IFXY::X4,  IFXY::X3Y,      IFXY::X2Y2, IFXY::XY3,      IFXY::Y4};
-std::vector<std::reference_wrapper<IFXY>> FXYSum::FXY_BI_4TH{
+std::vector<std::reference_wrapper<IFXY>> FXYSum::fxy_bi_4_th_{
     /*0*/ IFXY::ONE, /*1*/ IFXY::X,    IFXY::Y,    /*2*/ IFXY::X2,  IFXY::XY,  IFXY::Y2,         /*3*/ IFXY::X3,
     IFXY::X2Y,       IFXY::XY2,        IFXY::Y3,   /*4*/ IFXY::X4,  IFXY::X3Y, IFXY::X2Y2,       IFXY::XY3,
     IFXY::Y4,        /*5*/ IFXY::X4Y,  IFXY::X3Y2, IFXY::X2Y3,      IFXY::XY4, /*6*/ IFXY::X4Y2, IFXY::X3Y3,
     IFXY::X2Y4,      /*7*/ IFXY::X4Y3, IFXY::X3Y4, /*8*/ IFXY::X4Y4};
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

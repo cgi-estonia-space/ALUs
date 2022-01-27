@@ -27,7 +27,7 @@ namespace s1tbx {
 /**
  * This class refers to SubSwathInfo private class from Sentinel1Utils class from s1tbx module
  */
-class SubSwathInfo : public cuda::CudaFriendlyObject {
+class SubSwathInfo final : public cuda::CudaFriendlyObject {
 public:
     DeviceSubswathInfo devicePointersHolder = {};
     // subswath info
@@ -92,15 +92,13 @@ public:
     void DeviceToHost() override;
     void DeviceFree() override;
 
-    double calc_avg_incidence_angle()
-    {
-        return incidence_angle_[num_of_geo_lines_/2][num_of_geo_points_per_line_/2];
+    [[nodiscard]] double CalcAvgIncidenceAngle() const {
+        return incidence_angle_[num_of_geo_lines_ / 2][num_of_geo_points_per_line_ / 2];
     }
 
-    bool isNearRangeOnLeft()
-    {
+    [[nodiscard]] bool IsNearRangeOnLeft() const {
         double angle_first_pixel = incidence_angle_[0][0];
-        double angle_last_pixel = incidence_angle_[0][num_of_geo_points_per_line_-1];
+        double angle_last_pixel = incidence_angle_[0][num_of_geo_points_per_line_ - 1];
         return angle_first_pixel < angle_last_pixel;
     }
 
@@ -108,8 +106,6 @@ public:
     ~SubSwathInfo();
     SubSwathInfo(const SubSwathInfo&) = delete;  // class does not support copying(and moving)
     SubSwathInfo& operator=(const SubSwathInfo&) = delete;
-
 };
-
 }  // namespace s1tbx
 }  // namespace alus

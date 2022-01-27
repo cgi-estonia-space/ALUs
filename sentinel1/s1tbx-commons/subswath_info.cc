@@ -16,10 +16,9 @@
 #include "allocators.h"
 #include "cuda_copies.h"
 
-namespace alus {
-namespace s1tbx {
+namespace alus::s1tbx {
 
-SubSwathInfo::SubSwathInfo() {}
+SubSwathInfo::SubSwathInfo() = default;
 SubSwathInfo::~SubSwathInfo() {
     Deallocate2DArray<double>(doppler_rate_);
     Deallocate2DArray<double>(doppler_centroid_);
@@ -40,7 +39,9 @@ void SubSwathInfo::HostToDevice() {
     int elems = doppler_size_x * doppler_size_y;
     DeviceSubswathInfo temp_pack;
 
-    // TODO: before copy make sure to check if these are even available. In our demo these are forced available
+    // TODO: before copy make sure to check if these are even available. In our demo these are forced available //
+    // NOLINT
+    // TODO(anton): should the above even be TODO? Seems like a notice than a future task
     CHECK_CUDA_ERR(cudaMalloc((void**)&temp_pack.device_doppler_rate, elems * sizeof(double)));
 
     CHECK_CUDA_ERR(cudaMalloc((void**)&temp_pack.device_doppler_centroid, elems * sizeof(double)));
@@ -49,10 +50,10 @@ void SubSwathInfo::HostToDevice() {
 
     CHECK_CUDA_ERR(cudaMalloc((void**)&temp_pack.device_range_depend_doppler_rate, elems * sizeof(double)));
 
-    cuda::copyArrayH2D(temp_pack.device_doppler_rate, doppler_rate_[0], elems);
-    cuda::copyArrayH2D(temp_pack.device_doppler_centroid, doppler_centroid_[0], elems);
-    cuda::copyArrayH2D(temp_pack.device_reference_time, reference_time_[0], elems);
-    cuda::copyArrayH2D(temp_pack.device_range_depend_doppler_rate, range_depend_doppler_rate_[0], elems);
+    cuda::CopyArrayH2D(temp_pack.device_doppler_rate, doppler_rate_[0], elems);
+    cuda::CopyArrayH2D(temp_pack.device_doppler_centroid, doppler_centroid_[0], elems);
+    cuda::CopyArrayH2D(temp_pack.device_reference_time, reference_time_[0], elems);
+    cuda::CopyArrayH2D(temp_pack.device_range_depend_doppler_rate, range_depend_doppler_rate_[0], elems);
 
     temp_pack.first_valid_pixel = this->first_valid_pixel_;
     temp_pack.last_valid_pixel = this->last_valid_pixel_;
@@ -81,8 +82,10 @@ void SubSwathInfo::HostToDevice() {
     CHECK_CUDA_ERR(
         cudaMalloc((void**)&temp_pack.device_burst_last_line_time, temp_pack.burst_line_times_count * sizeof(double)));
 
-    cuda::copyArrayH2D(temp_pack.device_burst_first_line_time, burst_first_line_time_.data(), temp_pack.burst_line_times_count);
-    cuda::copyArrayH2D(temp_pack.device_burst_last_line_time, burst_last_line_time_.data(), temp_pack.burst_line_times_count);
+    cuda::CopyArrayH2D(temp_pack.device_burst_first_line_time, burst_first_line_time_.data(),
+                       temp_pack.burst_line_times_count);
+    cuda::CopyArrayH2D(temp_pack.device_burst_last_line_time, burst_last_line_time_.data(),
+                       temp_pack.burst_line_times_count);
 
     const int subswath_geo_grid_size = num_of_geo_lines_ * num_of_geo_points_per_line_;
     CHECK_CUDA_ERR(cudaMalloc(&temp_pack.device_subswath_azimuth_times, sizeof(double) * subswath_geo_grid_size));
@@ -90,15 +93,15 @@ void SubSwathInfo::HostToDevice() {
     CHECK_CUDA_ERR(cudaMalloc(&temp_pack.device_longitudes, sizeof(double) * subswath_geo_grid_size));
     CHECK_CUDA_ERR(cudaMalloc(&temp_pack.device_latidudes, sizeof(double) * subswath_geo_grid_size));
 
-    cuda::copyArrayH2D(temp_pack.device_subswath_azimuth_times, azimuth_time_[0], subswath_geo_grid_size);
-    cuda::copyArrayH2D(temp_pack.device_subswath_slant_range_times, slant_range_time_[0], subswath_geo_grid_size);
-    cuda::copyArrayH2D(temp_pack.device_longitudes, longitude_[0], subswath_geo_grid_size);
-    cuda::copyArrayH2D(temp_pack.device_latidudes, latitude_[0], subswath_geo_grid_size);
+    cuda::CopyArrayH2D(temp_pack.device_subswath_azimuth_times, azimuth_time_[0], subswath_geo_grid_size);
+    cuda::CopyArrayH2D(temp_pack.device_subswath_slant_range_times, slant_range_time_[0], subswath_geo_grid_size);
+    cuda::CopyArrayH2D(temp_pack.device_longitudes, longitude_[0], subswath_geo_grid_size);
+    cuda::CopyArrayH2D(temp_pack.device_latidudes, latitude_[0], subswath_geo_grid_size);
 
     this->devicePointersHolder = temp_pack;
 
     CHECK_CUDA_ERR(cudaMalloc((void**)&this->device_subswath_info_, sizeof(DeviceSubswathInfo)));
-    cuda::copyH2D(device_subswath_info_, &temp_pack);
+    cuda::CopyH2D(device_subswath_info_, &temp_pack);
 }
 void SubSwathInfo::DeviceToHost() { CHECK_CUDA_ERR(cudaErrorNotYetImplemented); }
 void SubSwathInfo::DeviceFree() {
@@ -151,5 +154,4 @@ void SubSwathInfo::DeviceFree() {
     }
 }
 
-}  // namespace s1tbx
-}  // namespace alus
+}  // namespace alus::s1tbx

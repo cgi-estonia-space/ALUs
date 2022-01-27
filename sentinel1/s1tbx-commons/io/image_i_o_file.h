@@ -99,7 +99,7 @@ public:
                                int dest_offset_y, int dest_width, int dest_height, int image_i_d,
                                int band_sample_offset);
 
-    void Close();
+    static void Close();
 
     std::shared_ptr<snapengine::custom::IImageReader> GetReader();
 };

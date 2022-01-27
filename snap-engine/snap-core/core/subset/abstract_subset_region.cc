@@ -21,8 +21,7 @@
 #include <string>
 #include <string_view>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 AbstractSubsetRegion::AbstractSubsetRegion(int border_pixels) {
     if (border_pixels < 0) {
@@ -43,5 +42,4 @@ void AbstractSubsetRegion::ValidateDefaultSize(int default_product_width, int de
     }
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

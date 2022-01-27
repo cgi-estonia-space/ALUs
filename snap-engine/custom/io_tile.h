@@ -21,16 +21,16 @@ namespace alus::snapengine::custom {
 class IoTile {
 private:
     // tile location In cartesian system tile_x_ tile_y_
-    int tile_x_{};
-    int tile_y_{};
+    int tile_x_{};  // NOLINT
+    int tile_y_{};  // NOLINT
     // tile read from source using provided reader
     std::shared_ptr<snapengine::ITile> tile_in_;
     // tile written out using provided writer
     std::shared_ptr<snapengine::ITile> tile_out_;
 
 public:
-    IoTile(int tile_x, int tile_y, const std::shared_ptr<snapengine::ITile>& tile_in,
-           const std::shared_ptr<snapengine::ITile>& tile_out);
+    IoTile(int tile_x, int tile_y, std::shared_ptr<snapengine::ITile> tile_in,
+           std::shared_ptr<snapengine::ITile> tile_out);
     [[nodiscard]] const std::shared_ptr<snapengine::ITile>& GetTileIn() const;
     [[nodiscard]] const std::shared_ptr<snapengine::ITile>& GetTileOut() const;
     ~IoTile() = default;

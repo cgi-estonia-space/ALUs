@@ -25,8 +25,7 @@
 #include <string_view>
 #include <vector>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 class ProductData {
     //    todo:check over type mappings e.g in java Int is long int here?
@@ -46,8 +45,7 @@ protected:
      * @param type the value's type
      */
     explicit ProductData(int type);
-    ProductData(const ProductData&) = delete;
-    ProductData& operator=(const ProductData&) = delete;
+
     virtual ~ProductData() = default;
 
     /**
@@ -58,6 +56,9 @@ protected:
     [[nodiscard]] virtual std::shared_ptr<ProductData> CreateDeepClone() const = 0;
 
 public:
+    ProductData(const ProductData&) = delete;
+    ProductData& operator=(const ProductData&) = delete;
+
     /**
      * The ID for an undefined data type.
      */
@@ -200,9 +201,9 @@ public:
     static std::shared_ptr<ProductData> CreateInstance(std::string_view data);
     //    static ProductData* CreateInstance(std::vector<int8_t> data);
 
-    static std::shared_ptr<ProductData> CreateInstance(std::vector<float> elems);
+    static std::shared_ptr<ProductData> CreateInstance(const std::vector<float>& elems);
 
-    static std::shared_ptr<ProductData> CreateInstance(std::vector<int> elems);
+    static std::shared_ptr<ProductData> CreateInstance(const std::vector<int>& elems);
     /**
      * Returns a textual representation of the given data type.
      *
@@ -233,7 +234,7 @@ public:
             case TYPE_UTC:
                 return std::string(TYPESTRING_UTC);
             default:
-                return nullptr;
+                return "";
         }
     }
 
@@ -245,29 +246,38 @@ public:
     static int GetType(std::string_view type) {
         if (type == TYPESTRING_INT8) {
             return TYPE_INT8;
-        } else if (type == TYPESTRING_INT16) {
-            return TYPE_INT16;
-        } else if (type == TYPESTRING_INT32) {
-            return TYPE_INT32;
-        } else if (type == TYPESTRING_INT64) {
-            return TYPE_INT64;
-        } else if (type == TYPESTRING_UINT8) {
-            return TYPE_UINT8;
-        } else if (type == TYPESTRING_UINT16) {
-            return TYPE_UINT16;
-        } else if (type == TYPESTRING_UINT32) {
-            return TYPE_UINT32;
-        } else if (type == TYPESTRING_FLOAT32) {
-            return TYPE_FLOAT32;
-        } else if (type == TYPESTRING_FLOAT64) {
-            return TYPE_FLOAT64;
-        } else if (type == TYPESTRING_ASCII) {
-            return TYPE_ASCII;
-        } else if (type == TYPESTRING_UTC) {
-            return TYPE_UTC;
-        } else {
-            return TYPE_UNDEFINED;
         }
+        if (type == TYPESTRING_INT16) {
+            return TYPE_INT16;
+        }
+        if (type == TYPESTRING_INT32) {
+            return TYPE_INT32;
+        }
+        if (type == TYPESTRING_INT64) {
+            return TYPE_INT64;
+        }
+        if (type == TYPESTRING_UINT8) {
+            return TYPE_UINT8;
+        }
+        if (type == TYPESTRING_UINT16) {
+            return TYPE_UINT16;
+        }
+        if (type == TYPESTRING_UINT32) {
+            return TYPE_UINT32;
+        }
+        if (type == TYPESTRING_FLOAT32) {
+            return TYPE_FLOAT32;
+        }
+        if (type == TYPESTRING_FLOAT64) {
+            return TYPE_FLOAT64;
+        }
+        if (type == TYPESTRING_ASCII) {
+            return TYPE_ASCII;
+        }
+        if (type == TYPESTRING_UTC) {
+            return TYPE_UTC;
+        }
+        return TYPE_UNDEFINED;
     }
 
     /**
@@ -275,21 +285,21 @@ public:
      *
      * @return true, if so
      */
-    static bool IsUIntType(int type) { return type >= 20 && type < 30; }
+    static bool IsUIntType(int type) { return type >= 20 && type < 30; }  // NOLINT
 
     /**
      * Tests whether the given value type is a signed or unsigned integer type.
      *
      * @return true, if so
      */
-    static bool IsIntType(int type) { return type >= 10 && type < 30; }
+    static bool IsIntType(int type) { return type >= 10 && type < 30; }  // NOLINT
 
     /**
      * Tests whether the given value type is a floating point type.
      *
      * @return true, if so
      */
-    static bool IsFloatingPointType(int type) { return type >= 30 && type < 40; }
+    static bool IsFloatingPointType(int type) { return type >= 30 && type < 40; }  // NOLINT
 
     /**
      * Gets the element size of an element of this product data in bytes.
@@ -353,7 +363,7 @@ public:
      *
      * @throws IndexOutOfBoundsException if the index is out of bounds
      */
-    [[nodiscard]] virtual long GetElemUIntAt(int index) const = 0;
+    [[nodiscard]] virtual int64_t GetElemUIntAt(int index) const = 0;
 
     /**
      * Gets the value element with the given index as an {@code long}.
@@ -362,7 +372,7 @@ public:
      *
      * @throws IndexOutOfBoundsException if the index is out of bounds
      */
-    [[nodiscard]] virtual long GetElemLongAt(int index) const = 0;
+    [[nodiscard]] virtual int64_t GetElemLongAt(int index) const = 0;
 
     /**
      * Gets the value element with the given index as a {@code float}.
@@ -409,7 +419,7 @@ public:
      *
      * @throws IndexOutOfBoundsException if the index is out of bounds
      */
-    virtual void SetElemUIntAt(int index, long value) = 0;
+    virtual void SetElemUIntAt(int index, int64_t value) = 0;
 
     /**
      * Sets the value at the specified index as a {@code long}.
@@ -419,7 +429,7 @@ public:
      *
      * @throws IndexOutOfBoundsException if the index is out of bounds
      */
-    virtual void SetElemLongAt(int index, long value) = 0;
+    virtual void SetElemLongAt(int index, int64_t value) = 0;
 
     /**
      * Sets the value at the specified index as a {@code float}.
@@ -454,7 +464,7 @@ public:
 
     /**
      * Tests whether this ProductData is equal to another one.
-     * Performs an element-wise comparision if the other object is a {@link ProductData} instance of the same data
+     * Performs an element-wise comparison if the other object is a {@link ProductData} instance of the same data
      * type. Otherwise the method behaves like {@link Object#equals(Object)}.
      *
      * @param other the other one
@@ -484,7 +494,7 @@ public:
      *
      * @see #getElemUIntAt(int index)
      */
-    [[nodiscard]] long GetElemUInt() const { return GetElemUIntAt(0); }
+    [[nodiscard]] int64_t GetElemUInt() const { return GetElemUIntAt(0); }
 
     /**
      * Returns the value as a {@code long}.
@@ -492,7 +502,7 @@ public:
      *
      * @see #getElemLongAt(int index)
      */
-    [[nodiscard]] long GetElemLong() const { return GetElemLongAt(0); }
+    [[nodiscard]] int64_t GetElemLong() const { return GetElemLongAt(0); }
 
     /**
      * Returns the value as an {@code float}.
@@ -567,7 +577,7 @@ public:
      *
      * @see #setElemLongAt(int index, long value)
      */
-    void SetElemLong(long value);
+    void SetElemLong(int64_t value);
 
     /**
      * Sets the value at the specified index as a {@code boolean}.
@@ -632,5 +642,4 @@ public:
     friend class DataNode;           // friend class
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

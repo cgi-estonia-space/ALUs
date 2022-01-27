@@ -18,8 +18,7 @@
 #include "i_meta_data_writer.h"
 #include "pugixml.hpp"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 class MetadataElement;
 class Product;
 /**
@@ -43,5 +42,4 @@ public:
     ~PugixmlMetaDataWriter() override = default;
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

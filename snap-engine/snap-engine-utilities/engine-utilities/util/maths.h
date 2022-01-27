@@ -22,8 +22,7 @@
 
 #include "eigen3/Eigen/Dense"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 class Maths {
 public:
@@ -34,12 +33,11 @@ public:
      * @param warp_polynomial_order The warp polynomial order.
      * @return The Vandermonde matrix.
      */
-    static Eigen::MatrixXd CreateVandermondeMatrix(std::vector<double> d, int warp_polynomial_order);
+    static Eigen::MatrixXd CreateVandermondeMatrix(const std::vector<double>& d, int warp_polynomial_order);
 
-    static std::vector<double> PolyFit(Eigen::MatrixXd A, std::vector<double> y);
+    static std::vector<double> PolyFit(const Eigen::MatrixXd& A, std::vector<double> y);
 
-    static double PolyVal(double t, std::vector<double> coeff);
+    static double PolyVal(double t, const std::vector<double>& coeff);
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

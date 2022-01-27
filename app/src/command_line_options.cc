@@ -31,13 +31,7 @@ void CommandLineOptions::ParseArgs(int argc, const char* argv[]) {
     po::notify(vm_);
 }
 
-bool CommandLineOptions::DoRequireHelp() const {
-    if (vm_.count("help") || vm_.count("alg_name") == 0) {
-        return true;
-    }
-
-    return false;
-}
+bool CommandLineOptions::DoRequireHelp() const { return vm_.count("help") != 0 || vm_.count("alg_name") == 0; }
 
 std::string CommandLineOptions::GetHelp() const {
     std::stringstream help;
@@ -45,7 +39,7 @@ std::string CommandLineOptions::GetHelp() const {
     return help.str();
 }
 
-bool CommandLineOptions::DoRequireAlgorithmHelp() const { return vm_.count("alg_help"); }
+bool CommandLineOptions::DoRequireAlgorithmHelp() const { return vm_.count("alg_help") != 0; }
 
 void CommandLineOptions::ConstructCommandLineOptions() {
     // clang-format off
@@ -54,8 +48,8 @@ void CommandLineOptions::ConstructCommandLineOptions() {
         "alg_help", "Print algorithm configurable parameters")(
         "input,i", po::value<std::vector<std::string>>(&input_files_), "Input dataset path.")(
         "output,o", po::value<std::string>(&output_path_), "Output dataset location or name")(
-        "tile_width,x", po::value<size_t>(&tile_width_)->default_value(1000), "Tile width.")(
-        "tile_height,y", po::value<size_t>(&tile_height_)->default_value(1000), "Tile height.")
+        "tile_width,x", po::value<size_t>(&tile_width_)->default_value(1000), "Tile width.")(  // NOLINT
+        "tile_height,y", po::value<size_t>(&tile_height_)->default_value(1000), "Tile height.")  // NOLINT
         ("parameters,p", po::value<std::string>(&alg_params_)->default_value(""),
          "Algorithm specific configuration. Must be supplied as key=value "
          "pairs "

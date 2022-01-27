@@ -24,11 +24,12 @@
 #include "gmock/gmock.h"
 
 #include "gdal_util.h"
-#include "general_constants.h"
 #include "test_utils.h"
 
 namespace {
-using namespace alus;
+
+using alus::GeoTiffWriteFile;
+using alus::GetGdalMemDriver;
 
 class GeoTiffWriterTest : public ::testing::Test {
 public:
@@ -77,7 +78,8 @@ TEST_F(GeoTiffWriterTest, WriteCorrectOutput) {
     auto* comparand = static_cast<GDALDataset*>(GDALOpen(expected_output_file.data(), GA_ReadOnly));
     std::shared_ptr<GDALDataset> comparand_dataset(comparand, [](GDALDataset* dataset) { GDALClose(dataset); });
 
-    ASSERT_THAT(utils::test::AreDatasetsEqual(comparand_dataset, mem_dataset_, error_margin_), ::testing::IsTrue());
+    ASSERT_THAT(alus::utils::test::AreDatasetsEqual(comparand_dataset, mem_dataset_, error_margin_),
+                ::testing::IsTrue());
     ASSERT_THAT(boost::filesystem::remove(expected_output_file.data()), ::testing::IsTrue());
 }
 }  // namespace

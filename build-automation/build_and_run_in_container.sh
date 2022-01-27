@@ -37,7 +37,7 @@ rm -rf ~/ci-artifacts
 mkdir ~/ci-artifacts
 docker cp alus_container:/root/alus/build/unit-test/test-results ~/unit-test-results
 is_error_then_quit
-docker cp alus_container:/root/alus/build/test_integration/test-results ~/integration-test-results
+docker cp alus_container:/root/alus/build/test-integration/test-results ~/integration-test-results
 is_error_then_quit
 docker exec -t alus_container bash -c "gdal_translate -of PNG -ot Byte -scale /tmp/4_bands_cuda_coh.tif /tmp/4_bands_cuda_coh.png"
 docker cp alus_container:/tmp/4_bands_cuda_coh.png ~/ci-artifacts/.

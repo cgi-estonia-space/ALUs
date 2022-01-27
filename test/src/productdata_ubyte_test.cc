@@ -20,10 +20,12 @@
 #include <fstream>
 
 #include "gmock/gmock.h"
+
 #include "product_data_ushort.h"
 
 namespace {
-using namespace alus::snapengine;
+
+using alus::snapengine::ProductData;
 
 class ProductDataUByteTest {};
 
@@ -68,8 +70,8 @@ TEST(ProductDataUByte, testSingleValueConstructor) {
 }
 
 TEST(ProductDataUByte, testConstructor) {
-    std::shared_ptr<ProductData> instance = ProductData::CreateInstance(ProductData::TYPE_UINT8, 3);
-    instance->SetElems(std::vector<uint8_t>{static_cast<uint8_t>(-1), 127, static_cast<uint8_t>(-128)});
+    std::shared_ptr<ProductData> instance = ProductData::CreateInstance(ProductData::TYPE_UINT8, 3);      // NOLINT
+    instance->SetElems(std::vector<uint8_t>{static_cast<uint8_t>(-1), 127, static_cast<uint8_t>(-128)});  // NOLINT
 
     ASSERT_EQ(ProductData::TYPE_UINT8, instance->GetType());
     ASSERT_EQ(255, instance->GetElemIntAt(0));
@@ -97,12 +99,14 @@ TEST(ProductDataUByte, testConstructor) {
     ASSERT_EQ(true, instance->IsInt());
     ASSERT_EQ("255,127,128", instance->ToString());
 
-    std::shared_ptr<ProductData> expected_equal = ProductData::CreateInstance(ProductData::TYPE_UINT8, 3);
-    expected_equal->SetElems(std::vector<uint8_t>{static_cast<uint8_t>(-1), 127, static_cast<uint8_t>(-128)});
+    std::shared_ptr<ProductData> expected_equal = ProductData::CreateInstance(ProductData::TYPE_UINT8, 3);  // NOLINT
+    expected_equal->SetElems(
+        std::vector<uint8_t>{static_cast<uint8_t>(-1), 127, static_cast<uint8_t>(-128)});  // NOLINT
     ASSERT_EQ(true, instance->EqualElems(expected_equal));
 
-    std::shared_ptr<ProductData> expected_unequal = ProductData::CreateInstance(ProductData::TYPE_UINT8, 3);
-    expected_unequal->SetElems(std::vector<uint8_t>{static_cast<uint8_t>(-1), 127, static_cast<uint8_t>(-127)});
+    std::shared_ptr<ProductData> expected_unequal = ProductData::CreateInstance(ProductData::TYPE_UINT8, 3);  // NOLINT
+    expected_unequal->SetElems(
+        std::vector<uint8_t>{static_cast<uint8_t>(-1), 127, static_cast<uint8_t>(-127)});  // NOLINT
     ASSERT_EQ(false, instance->EqualElems(expected_unequal));
 
     //        StreamTest
@@ -118,7 +122,7 @@ TEST(ProductDataUByte, testConstructor) {
 }
 
 TEST(ProductDataUByte, testSetElemsAsString) {
-    std::shared_ptr<ProductData> pd = ProductData::CreateInstance(ProductData::TYPE_UINT8, 3);
+    std::shared_ptr<ProductData> pd = ProductData::CreateInstance(ProductData::TYPE_UINT8, 3);  // NOLINT
     pd->SetElems(std::vector<std::string>{
         std::to_string(UINT8_MAX),
         std::to_string(0),
@@ -130,7 +134,7 @@ TEST(ProductDataUByte, testSetElemsAsString) {
     ASSERT_EQ(0, pd->GetElemIntAt(2));
 }
 
-TEST(ProductDataUByte, testSetElemsAsString_OutOfRange) {
+TEST(ProductDataUByte, testSetElemsAsStringOutOfRange) {
     std::shared_ptr<ProductData> pd1 = ProductData::CreateInstance(ProductData::TYPE_UINT8, 1);
     EXPECT_THROW(pd1->SetElems(std::vector<std::string>{std::to_string((uint16_t)UINT8_MAX + 1)}), std::out_of_range);
 

@@ -34,8 +34,7 @@ public:
     std::shared_ptr<snapengine::Band> real_band_;
     std::shared_ptr<snapengine::Band> imaginary_band_;
 
-    BandInfo(const std::shared_ptr<snapengine::Band>& band, const std::shared_ptr<ImageIOFile>& img_file, int id,
-             int offset);
+    BandInfo(const std::shared_ptr<snapengine::Band>& band, std::shared_ptr<ImageIOFile> img_file, int id, int offset);
 
     void SetRealBand(const std::shared_ptr<snapengine::Band>& band) { real_band_ = band; }
 

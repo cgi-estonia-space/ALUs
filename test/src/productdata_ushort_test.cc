@@ -20,10 +20,12 @@
 #include <fstream>
 
 #include "gmock/gmock.h"
+
 #include "product_data_ushort.h"
 
 namespace {
-using namespace alus::snapengine;
+
+using alus::snapengine::ProductData;
 
 class ProductDataUShortTest {};
 
@@ -68,8 +70,9 @@ TEST(ProductDataUShort, testSingleValueConstructor) {
 }
 
 TEST(ProductDataUShort, testConstructor) {
-    std::shared_ptr<ProductData> instance = ProductData::CreateInstance(ProductData::TYPE_UINT16, 3);
-    instance->SetElems(std::vector<uint16_t>{static_cast<uint16_t>(-1), 32767, static_cast<uint16_t>(-32768)});
+    std::shared_ptr<ProductData> instance = ProductData::CreateInstance(ProductData::TYPE_UINT16, 3);  // NOLINT
+    instance->SetElems(
+        std::vector<uint16_t>{static_cast<uint16_t>(-1), 32767, static_cast<uint16_t>(-32768)});  // NOLINT
     ASSERT_EQ(ProductData::TYPE_UINT16, instance->GetType());
     ASSERT_EQ(65535, instance->GetElemIntAt(0));
     ASSERT_EQ(32767, instance->GetElemIntAt(1));
@@ -96,12 +99,14 @@ TEST(ProductDataUShort, testConstructor) {
     ASSERT_EQ(true, instance->IsInt());
     ASSERT_EQ("65535,32767,32768", instance->ToString());
 
-    std::shared_ptr<ProductData> expected_equal = ProductData::CreateInstance(ProductData::TYPE_UINT16, 3);
-    expected_equal->SetElems(std::vector<uint16_t>{static_cast<uint16_t>(-1), 32767, static_cast<uint16_t>(-32768)});
+    std::shared_ptr<ProductData> expected_equal = ProductData::CreateInstance(ProductData::TYPE_UINT16, 3);  // NOLINT
+    expected_equal->SetElems(
+        std::vector<uint16_t>{static_cast<uint16_t>(-1), 32767, static_cast<uint16_t>(-32768)});  // NOLINT
     ASSERT_EQ(true, instance->EqualElems(expected_equal));
 
-    std::shared_ptr<ProductData> expected_unequal = ProductData::CreateInstance(ProductData::TYPE_UINT16, 3);
-    expected_unequal->SetElems(std::vector<uint16_t>{static_cast<uint16_t>(-1), 32767, static_cast<uint16_t>(-32767)});
+    std::shared_ptr<ProductData> expected_unequal = ProductData::CreateInstance(ProductData::TYPE_UINT16, 3);  // NOLINT
+    expected_unequal->SetElems(
+        std::vector<uint16_t>{static_cast<uint16_t>(-1), 32767, static_cast<uint16_t>(-32767)});  // NOLINT
     ASSERT_EQ(false, instance->EqualElems(expected_unequal));
 
     ////        StreamTest
@@ -117,7 +122,7 @@ TEST(ProductDataUShort, testConstructor) {
 }
 
 TEST(ProductDataUShort, testSetElemsAsString) {
-    std::shared_ptr<ProductData> pd = ProductData::CreateInstance(ProductData::TYPE_UINT16, 3);
+    std::shared_ptr<ProductData> pd = ProductData::CreateInstance(ProductData::TYPE_UINT16, 3);  // NOLINT
     pd->SetElems(std::vector<std::string>{std::to_string(UINT16_MAX), std::to_string(0)});
 
     ASSERT_EQ(UINT16_MAX, pd->GetElemIntAt(0));
@@ -125,7 +130,7 @@ TEST(ProductDataUShort, testSetElemsAsString) {
     ASSERT_EQ(0, pd->GetElemIntAt(2));
 }
 
-TEST(ProductDataUShort,testSetElemsAsString_OutOfRange) {
+TEST(ProductDataUShort, testSetElemsAsStringOutOfRange) {
     std::shared_ptr<ProductData> pd1 = ProductData::CreateInstance(ProductData::TYPE_UINT16, 1);
     EXPECT_THROW(pd1->SetElems(std::vector<std::string>{std::to_string((uint32_t)UINT16_MAX + 1)}), std::out_of_range);
     std::shared_ptr<ProductData> pd2 = ProductData::CreateInstance(ProductData::TYPE_UINT16, 1);

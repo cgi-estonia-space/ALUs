@@ -26,7 +26,7 @@
 //#include "product.h"
 //#include "product_data.h"
 //#include "product_subset_def.h"
-//#include "snap-core/core/datamodel/tie_point_grid.h"
+//#include "snap-core/core/datamodel/tie-point-grid.h"
 namespace alus::ceres {
 class IProgressMonitor;
 }
@@ -95,11 +95,11 @@ public:
      */
     virtual std::shared_ptr<Product> ReadProductNodes(std::any input, std::shared_ptr<ProductSubsetDef> subset_def) = 0;
 
-    virtual void ReadTiePointGridRasterData([[maybe_unused]] std::shared_ptr<TiePointGrid> tpg,
+    virtual void ReadTiePointGridRasterData([[maybe_unused]] const std::shared_ptr<TiePointGrid>& tpg,
                                             [[maybe_unused]] int dest_offset_x, [[maybe_unused]] int dest_offset_y,
                                             [[maybe_unused]] int dest_width, [[maybe_unused]] int dest_height,
                                             [[maybe_unused]] const std::shared_ptr<ProductData>& dest_buffer,
-                                            [[maybe_unused]] std::shared_ptr<ceres::IProgressMonitor> pm) {
+                                            [[maybe_unused]] const std::shared_ptr<ceres::IProgressMonitor>& pm) {
         throw std::runtime_error("ReadTiePointGridRasterData not implemented");
     }
 

@@ -13,10 +13,15 @@
  */
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
+
+#include <driver_types.h>
+
 #include "delaunay_triangle2D.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus {        // NOLINT
+namespace snapengine {  // NOLINT
 namespace triangularinterpolation {
 
 /**
@@ -27,22 +32,22 @@ struct Window {
     /**
      * min line coordinate
      */
-    long linelo;
+    int64_t linelo;
 
     /**
      * max line coordinate
      */
-    long linehi;
+    int64_t linehi;
 
     /**
      * min pix coordinate
      */
-    long pixlo;
+    int64_t pixlo;
 
     /**
      * max pix coordinate
      */
-    long pixhi;
+    int64_t pixhi;
     /**
      * usually linehi - linelo + 1
      */
@@ -58,9 +63,9 @@ struct Window {
  * NB both input and output arrays are 2d arrays which are written column by column rather than the usual line by line.
  */
 struct Zdata {
-    double *input_arr;
+    double* input_arr;
     size_t input_width, input_height;
-    double *output_arr;
+    double* output_arr;
     size_t output_width, output_height;
     int min_int;
     int max_int;
@@ -85,7 +90,7 @@ struct TriangleInterpolationParams {
     Window window;
 };
 
-struct InterpolationParams{
+struct InterpolationParams {
     int z_data_count;
     double x_scale;
     double y_scale;
@@ -96,17 +101,17 @@ struct InterpolationParams{
 
 struct TriangleDto {
     PointInTriangle point_in_triangle;
-    long i_min;
-    long i_max;
-    long j_min;
-    long j_max;
+    int64_t i_min;
+    int64_t i_max;
+    int64_t j_min;
+    int64_t j_max;
     double xp;
     double yp;
-    double vx[3];
-    double vy[3];
+    double vx[3];  // NOLINT
+    double vy[3];  // NOLINT
 };
 
-cudaError_t LaunchInterpolation(delaunay::DelaunayTriangle2D *triangles, Zdata* zdata,
+cudaError_t LaunchInterpolation(delaunay::DelaunayTriangle2D* triangles, Zdata* zdata,
                                 TriangleInterpolationParams params);
 
 }  // namespace triangularinterpolation

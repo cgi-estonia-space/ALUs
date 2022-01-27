@@ -22,6 +22,4 @@ namespace alus::snapengine {
 AbstractProductBuilder::AbstractProductBuilder(bool source_product_owner)
     : AbstractProductReader(nullptr), source_product_owner_(source_product_owner) {}
 
-
-
 }  // namespace alus::snapengine

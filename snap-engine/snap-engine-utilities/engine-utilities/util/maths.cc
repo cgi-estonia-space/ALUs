@@ -20,34 +20,32 @@
 
 #include <cmath>
 
-namespace alus {
-namespace snapengine {
-
-Eigen::MatrixXd Maths::CreateVandermondeMatrix(std::vector<double> d, int warp_polynomial_order) {
+namespace alus::snapengine {
+Eigen::MatrixXd Maths::CreateVandermondeMatrix(const std::vector<double>& d, int warp_polynomial_order) {
     auto n = d.size();
     Eigen::MatrixXd array(n, warp_polynomial_order + 1);
-    for (int i = 0; i < (int)n; i++) {
+    for (int i = 0; i < static_cast<int>(n); i++) {
         for (int j = 0; j <= warp_polynomial_order; j++) {
-            array(i, j) = pow(d.at(i), (double)j);
+            array(i, j) = pow(d.at(i), static_cast<double>(j));
         }
     }
     return array;
 }
 
-std::vector<double> Maths::PolyFit(Eigen::MatrixXd A, std::vector<double> y) {
+std::vector<double> Maths::PolyFit(const Eigen::MatrixXd& A, std::vector<double> y) {
     //    todo:this might not be optimal solution, just needed it to work
-    auto Q = A.householderQr();
+    auto q = A.householderQr();
     // std::vector to eigen vector
-    double* ptr = &y[0];
-    Eigen::Map<Eigen::VectorXd> yvals(ptr, y.size());
-    Eigen::VectorXd result = Q.solve(yvals);
+    double* ptr = y.data();
+    Eigen::Map<Eigen::VectorXd> y_vals(ptr, y.size());
+    Eigen::VectorXd result = q.solve(y_vals);
     // eigen to std::vector
     return std::vector<double>(result.data(), result.data() + result.rows() * result.cols());
 }
 
-double Maths::PolyVal(double t, std::vector<double> coeff) {
+double Maths::PolyVal(double t, const std::vector<double>& coeff) {
     double val = 0.0;
-    int i = coeff.size() - 1;
+    int i = static_cast<int>(coeff.size()) - 1;
     //        todo::looks like some logical issue because size can only be >=0
     while (i >= 0) {
         val = val * t + coeff.at(i--);
@@ -55,5 +53,4 @@ double Maths::PolyVal(double t, std::vector<double> coeff) {
     return val;
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

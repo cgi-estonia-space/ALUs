@@ -27,8 +27,7 @@
 #include "product_node.h"
 #include "product_node_list.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 /**
  * A type-safe container for elements of the type <code>ProductNode</code>.
@@ -140,5 +139,4 @@ public:
     void Dispose() override;
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

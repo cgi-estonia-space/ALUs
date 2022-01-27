@@ -13,28 +13,25 @@
  */
 #include "dem.h"
 
-
 namespace alus {
 
 Dem::Dem(alus::Dataset<double> ds) : m_ds_{std::move(ds)} {
-    //m_ds.LoadRasterBand(1);
+    // m_ds.LoadRasterBand(1);
 }
 
-
-std::vector<double> Dem::GetLocalDemFor(Dataset<double>& image, unsigned int x_0,
-                                        unsigned int y_0, unsigned int width,
-                                        unsigned int height){
+std::vector<double> Dem::GetLocalDemFor(Dataset<double>& image, unsigned int x_0, unsigned int y_0, unsigned int width,
+                                        unsigned int height) {
     auto const& data_buffer = m_ds_.GetHostDataBuffer();
     auto const band_x_size = m_ds_.GetRasterSizeX();
     std::vector<double> altitudes;
     altitudes.reserve(data_buffer.size());
-    for (unsigned int iX = 0; iX < width; iX++) {
-        for (unsigned int iY = 0; iY < height; iY++) {
-            auto const coordinates = image.GetPixelCoordinatesFromIndex(x_0 + iX, y_0 + iY);
-            auto const demIndexes =
+    for (unsigned int i_x = 0; i_x < width; i_x++) {
+        for (unsigned int i_y = 0; i_y < height; i_y++) {
+            auto const coordinates =
+                image.GetPixelCoordinatesFromIndex(static_cast<int>(x_0 + i_x), static_cast<int>((y_0 + i_y)));
+            auto const dem_indexes =
                 m_ds_.GetPixelIndexFromCoordinates(std::get<0>(coordinates), std::get<1>(coordinates));
-            double value = data_buffer.at(band_x_size * std::get<1>(demIndexes) +
-                                         std::get<0>(demIndexes));
+            double value = data_buffer.at(band_x_size * std::get<1>(dem_indexes) + std::get<0>(dem_indexes));
 
             if (value < 0) value = 0;
 
@@ -45,6 +42,6 @@ std::vector<double> Dem::GetLocalDemFor(Dataset<double>& image, unsigned int x_0
     return altitudes;
 }
 
-alus::Dataset<double> *Dem::GetDataset() { return &this->m_ds_;}
+alus::Dataset<double>* Dem::GetDataset() { return &this->m_ds_; }
 
 }  // namespace alus

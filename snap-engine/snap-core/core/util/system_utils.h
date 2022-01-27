@@ -22,8 +22,7 @@
 
 #include <boost/filesystem.hpp>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 /**
  * A collection of (BEAM-) system level functions.
  * <p>
@@ -32,7 +31,7 @@ namespace snapengine {
  * java version original authors Norman Fomferra, Sabine Embacher
  */
 class SystemUtils {
-   public:
+public:
     /**
      * Name of SNAP's auxdata directory.
      */
@@ -44,15 +43,12 @@ class SystemUtils {
      * @since SNAP 2.0
      */
     static boost::filesystem::path GetAuxDataPath() {
-        //return GetApplicationDataDir().toPath().resolve(AUXDATA_DIR_NAME);
+        // return GetApplicationDataDir().toPath().resolve(AUXDATA_DIR_NAME);
         return aux_data_path_;
     }
 
     // Temporary solution for having a aux path usable for orbit file finding
-    static void SetAuxDataPath(const std::string& aux_data_path)
-    {
-        aux_data_path_ = aux_data_path;
-    }
+    static void SetAuxDataPath(const std::string& aux_data_path) { aux_data_path_ = aux_data_path; }
 
     /*
     **
@@ -78,9 +74,8 @@ class SystemUtils {
         return dir;
     }
     */
-    private:
-        inline static boost::filesystem::path aux_data_path_;
+private:
+    inline static boost::filesystem::path aux_data_path_;
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

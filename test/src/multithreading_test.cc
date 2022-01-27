@@ -22,17 +22,17 @@ namespace {
 
 TEST(MultiThreadingTest, ThreadSafeQueueWorksCorrectly) {
     std::atomic<uint64_t> test_atomic = 0;
-    constexpr uint64_t reruns = 100;
-    constexpr uint64_t increments = 10000;
+    constexpr uint64_t RERUNS = 100;
+    constexpr uint64_t INCREMENTS = 10000;
 
-    for (uint64_t i = 0; i < reruns; i++) {
+    for (uint64_t i = 0; i < RERUNS; i++) {
         test_atomic = 0;
         const int value = 2;
         alus::ThreadSafeTileQueue<int> tile_queue;
-        std::vector<int> data(increments, value);
+        std::vector<int> data(INCREMENTS, value);
         tile_queue.InsertData(std::move(data));
         std::vector<std::thread> pool;
-        for (uint64_t j = 0; j < 16; j++) {
+        for (uint64_t j = 0; j < 16; j++) {  // NOLINT
             pool.emplace_back([&]() {
                 while (true) {
                     int value = 0;
@@ -44,7 +44,7 @@ TEST(MultiThreadingTest, ThreadSafeQueueWorksCorrectly) {
             });
         }
         for (auto& t : pool) t.join();
-        ASSERT_EQ(increments * value, test_atomic);
+        ASSERT_EQ(INCREMENTS * value, test_atomic);
     }
 }
 }  // namespace

@@ -13,7 +13,7 @@
  */
 #pragma once
 
-namespace alus {
+namespace alus {  // NOLINT TODO: concatenate namespace and remove nolint after migrating to cuda 11+
 namespace snapengine {
 
 struct PosVector {

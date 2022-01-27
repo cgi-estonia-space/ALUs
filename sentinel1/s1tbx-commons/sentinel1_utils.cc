@@ -24,10 +24,10 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
+#include <utility>
 
 #include "abstract_metadata.h"
 #include "alus_log.h"
-#include "general_constants.h"
 #include "operator_utils.h"
 #include "product_data_utc.h"
 #include "pugixml_meta_data_reader.h"
@@ -35,8 +35,7 @@
 #include "s1tbx-commons/sar_utils.h"
 #include "snap-engine-utilities/engine-utilities/eo/constants.h"
 
-namespace alus {
-namespace s1tbx {
+namespace alus::s1tbx {
 
 Sentinel1Utils::Sentinel1Utils(std::string_view metadata_file_name) : num_of_sub_swath_(1) {
     metadata_reader_ = std::make_unique<snapengine::PugixmlMetaDataReader>(metadata_file_name);
@@ -75,10 +74,9 @@ void Sentinel1Utils::FillUtilsMetadata() {
 
     if (srgr_flag_) {
         throw std::runtime_error("Use of srgr flag currently not supported in Sentinel 1 utils.");
-    } else {
-        near_edge_slant_range_ = snapengine::AbstractMetadata::GetAttributeDouble(
-            abstract_metadata, snapengine::AbstractMetadata::SLANT_RANGE_TO_FIRST_PIXEL);
     }
+    near_edge_slant_range_ = snapengine::AbstractMetadata::GetAttributeDouble(
+        abstract_metadata, snapengine::AbstractMetadata::SLANT_RANGE_TO_FIRST_PIXEL);
 
     if (subswath_.empty()) {
         throw std::runtime_error("Subswath size 0 currently not supported in Sentinel 1 Utils");
@@ -86,7 +84,7 @@ void Sentinel1Utils::FillUtilsMetadata() {
     near_range_on_left_ = (subswath_.at(0)->incidence_angle_[0][0] < subswath_.at(0)->incidence_angle_[0][1]);
 }
 
-void Sentinel1Utils::FillSubswathMetaData(std::shared_ptr<snapengine::MetadataElement> subswath_metadata,
+void Sentinel1Utils::FillSubswathMetaData(const std::shared_ptr<snapengine::MetadataElement>& subswath_metadata,
                                           SubSwathInfo* subswath) {
     std::shared_ptr<snapengine::MetadataElement> product;
     if (legacy_init_) {
@@ -326,7 +324,7 @@ void Sentinel1Utils::FillSubswathMetaData(std::shared_ptr<snapengine::MetadataEl
 }
 
 [[nodiscard]] std::vector<double> Sentinel1Utils::GetDoubleVector(
-    const std::shared_ptr<snapengine::MetadataAttribute>& attribute, std::string_view delimiter) const {
+    const std::shared_ptr<snapengine::MetadataAttribute>& attribute, std::string_view delimiter) {
     std::vector<double> result;
 
     if (attribute->GetDataType() == snapengine::ProductData::TYPE_ASCII) {
@@ -345,7 +343,7 @@ void Sentinel1Utils::FillSubswathMetaData(std::shared_ptr<snapengine::MetadataEl
 }
 
 [[nodiscard]] std::vector<int> Sentinel1Utils::GetIntVector(
-    const std::shared_ptr<snapengine::MetadataAttribute>& attribute, std::string_view delimiter) const {
+    const std::shared_ptr<snapengine::MetadataAttribute>& attribute, std::string_view delimiter) {
     std::vector<int> result;
 
     if (attribute->GetDataType() == snapengine::ProductData::TYPE_ASCII) {
@@ -374,9 +372,15 @@ double* Sentinel1Utils::ComputeDerampDemodPhase(int subswath_index, int s_burst_
     const int s = subswath_index - 1;
     const int first_line_in_burst = s_burst_index * subswath_.at(s)->lines_per_burst_;
 
-    double* result = new double[h * w * sizeof(double)];
-    int yy, xx, x, y;
-    double ta, kt, deramp, demod;
+    auto* result = new double[h * w * sizeof(double)];
+    int yy;
+    int xx;
+    int x;
+    int y;
+    double ta;
+    double kt;
+    double deramp;
+    double demod;
 
     for (y = y0; y < y_max; y++) {
         yy = y - y0;
@@ -453,7 +457,7 @@ double Sentinel1Utils::GetSlantRangeTime(int x, int subswath_index) const {
            x * subswath_.at(subswath_index - 1)->range_pixel_spacing_ / snapengine::eo::constants::LIGHT_SPEED;
 }
 
-std::vector<DCPolynomial> Sentinel1Utils::GetDCEstimateList(std::string subswath_name) {
+std::vector<DCPolynomial> Sentinel1Utils::GetDCEstimateList(std::string_view subswath_name) {
     std::shared_ptr<snapengine::MetadataElement> product;
     if (legacy_init_) {
         product = metadata_reader_->Read("product");
@@ -503,18 +507,19 @@ std::vector<DCPolynomial> Sentinel1Utils::GetDCEstimateList(std::string subswath
 DCPolynomial Sentinel1Utils::ComputeDC(double center_time, std::vector<DCPolynomial> dc_estimate_list) {
     DCPolynomial dc_polynomial;
     double mu;
-    int i0 = 0, i1 = 0;
+    int i0{0};
+    int i1{0};
     if (center_time < dc_estimate_list.at(0).time) {
         i0 = 0;
         i1 = 1;
     } else if (center_time > dc_estimate_list.at(dc_estimate_list.size() - 1).time) {
-        i0 = dc_estimate_list.size() - 2;
-        i1 = dc_estimate_list.size() - 1;
+        i0 = static_cast<int>(dc_estimate_list.size()) - 2;
+        i1 = static_cast<int>(dc_estimate_list.size()) - 1;
     } else {
         for (unsigned int i = 0; i < dc_estimate_list.size() - 1; i++) {
             if (center_time >= dc_estimate_list.at(i).time && center_time < dc_estimate_list.at(i + 1).time) {
-                i0 = i;
-                i1 = i + 1;
+                i0 = static_cast<int>(i);
+                i1 = static_cast<int>(i) + 1;
                 break;
             }
         }
@@ -532,34 +537,36 @@ DCPolynomial Sentinel1Utils::ComputeDC(double center_time, std::vector<DCPolynom
     return dc_polynomial;
 }
 
-// TODO: Half of this function will not work due to missing data. We just got lucky atm.
+// TODO: Half of this function will not work due to missing data. We just got lucky atm. // NOLINT
 std::vector<DCPolynomial> Sentinel1Utils::ComputeDCForBurstCenters(std::vector<DCPolynomial> dc_estimate_list,
                                                                    int subswath_index) {
     double center_time;
-    if ((int)dc_estimate_list.size() >= subswath_.at(subswath_index - 1)->num_of_bursts_) {
+    if (static_cast<int>(dc_estimate_list.size()) >= subswath_.at(subswath_index - 1)->num_of_bursts_) {
         LOGV << "used the fast lane";
         return dc_estimate_list;
     }
 
-    std::vector<DCPolynomial> dcBurstList(subswath_.at(subswath_index - 1)->num_of_bursts_);
+    std::vector<DCPolynomial> dc_burst_list(subswath_.at(subswath_index - 1)->num_of_bursts_);
     for (int b = 0; b < subswath_.at(subswath_index - 1)->num_of_bursts_; b++) {
-        if (b < (int)dc_estimate_list.size()) {
-            dcBurstList[b] = dc_estimate_list[b];
+        if (b < static_cast<int>(dc_estimate_list.size())) {
+            dc_burst_list[b] = dc_estimate_list[b];
             LOGV << "using less list";
         } else {
             LOGV << "using more list";
             center_time = 0.5 * (subswath_.at(subswath_index - 1)->burst_first_line_time_[b] +
                                  subswath_.at(subswath_index - 1)->burst_last_line_time_[b]);
 
-            dcBurstList[b] = ComputeDC(center_time, dc_estimate_list);
+            dc_burst_list[b] = ComputeDC(center_time, dc_estimate_list);
         }
     }
 
-    return dcBurstList;
+    return dc_burst_list;
 }
 
 void Sentinel1Utils::ComputeDopplerCentroid() {
-    double slrt, dt, dc_value;
+    double slrt;
+    double dt;
+    double dc_value;
     for (int s = 0; s < num_of_sub_swath_; s++) {
         std::vector<DCPolynomial> dc_estimate_list = GetDCEstimateList(subswath_.at(s)->subswath_name_);
         std::vector<DCPolynomial> dc_burst_list = ComputeDCForBurstCenters(dc_estimate_list, s + 1);
@@ -582,7 +589,7 @@ void Sentinel1Utils::ComputeDopplerCentroid() {
     is_doppler_centroid_available_ = true;
 }
 
-std::vector<AzimuthFmRate> Sentinel1Utils::GetAzimuthFmRateList(std::string subswath_name) {
+std::vector<AzimuthFmRate> Sentinel1Utils::GetAzimuthFmRateList(std::string_view subswath_name) {
     std::shared_ptr<snapengine::MetadataElement> product;
     if (legacy_init_) {
         product = metadata_reader_->Read("product");
@@ -627,7 +634,8 @@ std::vector<AzimuthFmRate> Sentinel1Utils::GetAzimuthFmRateList(std::string subs
 }
 
 void Sentinel1Utils::ComputeRangeDependentDopplerRate() {
-    double slrt, dt;
+    double slrt;
+    double dt;
 
     for (int s = 0; s < num_of_sub_swath_; s++) {
         std::vector<AzimuthFmRate> az_fm_rate_list = GetAzimuthFmRateList(subswath_.at(s)->subswath_name_);
@@ -646,7 +654,8 @@ void Sentinel1Utils::ComputeRangeDependentDopplerRate() {
 }
 
 void Sentinel1Utils::ComputeReferenceTime() {
-    double tmp1, tmp2;
+    double tmp1;
+    double tmp2;
     if (!is_doppler_centroid_available_) {
         ComputeDopplerCentroid();
     }
@@ -672,25 +681,26 @@ void Sentinel1Utils::ComputeReferenceTime() {
     }
 }
 
-double Sentinel1Utils::GetLatitude(double azimuth_time, double slant_range_time, const SubSwathInfo* subswath) const {
+double Sentinel1Utils::GetLatitude(double azimuth_time, double slant_range_time, const SubSwathInfo* subswath) {
     return GetLatitudeValue(ComputeIndex(azimuth_time, slant_range_time, subswath), subswath);
 }
-double Sentinel1Utils::GetLongitude(double azimuth_time, double slant_range_time, const SubSwathInfo* subswath) const {
+double Sentinel1Utils::GetLongitude(double azimuth_time, double slant_range_time, const SubSwathInfo* subswath) {
     return GetLongitudeValue(ComputeIndex(azimuth_time, slant_range_time, subswath), subswath);
 }
 
-double Sentinel1Utils::GetSlantRangeTime(double azimuth_time, double slant_range_time, const SubSwathInfo* subswath) const {
+double Sentinel1Utils::GetSlantRangeTime(double azimuth_time, double slant_range_time, const SubSwathInfo* subswath) {
     return GetSlantRangeTimeValue(ComputeIndex(azimuth_time, slant_range_time, subswath), subswath);
 }
 
-double Sentinel1Utils::GetIncidenceAngle(double azimuth_time, double slant_range_time, const SubSwathInfo* subswath) const {
+double Sentinel1Utils::GetIncidenceAngle(double azimuth_time, double slant_range_time, const SubSwathInfo* subswath) {
     return GetIncidenceAngleValue(ComputeIndex(azimuth_time, slant_range_time, subswath), subswath);
 }
 
 Sentinel1Index Sentinel1Utils::ComputeIndex(double azimuth_time, double slant_range_time,
-                                            const SubSwathInfo* subswath) const {
+                                            const SubSwathInfo* subswath) {
     Sentinel1Index result;
-    int j0 = -1, j1 = -1;
+    int j0 = -1;
+    int j1 = -1;
     double mu_x = 0;
     if (slant_range_time < subswath->slant_range_time_[0][0]) {
         j0 = 0;
@@ -712,7 +722,8 @@ Sentinel1Index Sentinel1Utils::ComputeIndex(double azimuth_time, double slant_ra
     mu_x = (slant_range_time - subswath->slant_range_time_[0][j0]) /
            (subswath->slant_range_time_[0][j1] - subswath->slant_range_time_[0][j0]);
 
-    int i0 = -1, i1 = -1;
+    int i0 = -1;
+    int i1 = -1;
     double mu_y = 0;
     for (int i = 0; i < subswath->num_of_geo_lines_ - 1; i++) {
         double i0_az_time = (1 - mu_x) * subswath->azimuth_time_[i][j0] + mu_x * subswath->azimuth_time_[i][j1];
@@ -739,7 +750,7 @@ Sentinel1Index Sentinel1Utils::ComputeIndex(double azimuth_time, double slant_ra
     return result;
 }
 
-double Sentinel1Utils::GetLatitudeValue(const Sentinel1Index& index, const SubSwathInfo* subswath) const {
+double Sentinel1Utils::GetLatitudeValue(const Sentinel1Index& index, const SubSwathInfo* subswath) {
     double lat00 = subswath->latitude_[index.i0][index.j0];
     double lat01 = subswath->latitude_[index.i0][index.j1];
     double lat10 = subswath->latitude_[index.i1][index.j0];
@@ -749,7 +760,7 @@ double Sentinel1Utils::GetLatitudeValue(const Sentinel1Index& index, const SubSw
            index.mu_y * ((1 - index.mu_x) * lat10 + index.mu_x * lat11);
 }
 
-double Sentinel1Utils::GetLongitudeValue(const Sentinel1Index& index, const SubSwathInfo* subswath) const {
+double Sentinel1Utils::GetLongitudeValue(const Sentinel1Index& index, const SubSwathInfo* subswath) {
     double lon00 = subswath->longitude_[index.i0][index.j0];
     double lon01 = subswath->longitude_[index.i0][index.j1];
     double lon10 = subswath->longitude_[index.i1][index.j0];
@@ -759,7 +770,7 @@ double Sentinel1Utils::GetLongitudeValue(const Sentinel1Index& index, const SubS
            index.mu_y * ((1 - index.mu_x) * lon10 + index.mu_x * lon11);
 }
 
-double Sentinel1Utils::GetSlantRangeTimeValue(const Sentinel1Index& index, const SubSwathInfo* subswath) const {
+double Sentinel1Utils::GetSlantRangeTimeValue(const Sentinel1Index& index, const SubSwathInfo* subswath) {
     double slrt00 = subswath->slant_range_time_[index.i0][index.j0];
     double slrt01 = subswath->slant_range_time_[index.i0][index.j1];
     double slrt10 = subswath->slant_range_time_[index.i1][index.j0];
@@ -769,7 +780,7 @@ double Sentinel1Utils::GetSlantRangeTimeValue(const Sentinel1Index& index, const
            index.mu_y * ((1 - index.mu_x) * slrt10 + index.mu_x * slrt11);
 }
 
-double Sentinel1Utils::GetIncidenceAngleValue(const Sentinel1Index& index, const SubSwathInfo* subswath) const {
+double Sentinel1Utils::GetIncidenceAngleValue(const Sentinel1Index& index, const SubSwathInfo* subswath) {
     double inc00 = subswath->incidence_angle_[index.i0][index.j0];
     double inc01 = subswath->incidence_angle_[index.i0][index.j1];
     double inc10 = subswath->incidence_angle_[index.i1][index.j0];
@@ -792,8 +803,8 @@ void Sentinel1Utils::HostToDevice() {
 
     temp_pack.source_image_width = source_image_width_;
     temp_pack.source_image_height = source_image_height_;
-    temp_pack.near_range_on_left = near_range_on_left_;
-    temp_pack.srgr_flag = srgr_flag_;
+    temp_pack.near_range_on_left = static_cast<int>(near_range_on_left_);
+    temp_pack.srgr_flag = static_cast<int>(srgr_flag_);
 
     CHECK_CUDA_ERR(cudaMalloc((void**)&device_sentinel_1_utils_, sizeof(DeviceSentinel1Utils)));
     CHECK_CUDA_ERR(
@@ -809,7 +820,7 @@ void Sentinel1Utils::DeviceFree() {
     }
 }
 
-std::shared_ptr<snapengine::Utc> Sentinel1Utils::GetTime(std::shared_ptr<snapengine::MetadataElement> element,
+std::shared_ptr<snapengine::Utc> Sentinel1Utils::GetTime(const std::shared_ptr<snapengine::MetadataElement>& element,
                                                          std::string_view tag) {
     auto start = element->GetAttributeString(tag, snapengine::AbstractMetadata::NO_METADATA_STRING);
 
@@ -828,7 +839,7 @@ void AddToVector(std::vector<T>& vector, std::string_view csv_string, std::strin
 std::vector<CalibrationVector> Sentinel1Utils::GetCalibrationVectors(
     const std::shared_ptr<snapengine::MetadataElement>& calibration_vector_list_element, bool output_sigma_band,
     bool output_beta_band, bool output_gamma_band, bool output_dn_band) {
-    auto check_that_metadata_exists = [](std::shared_ptr<snapengine::MetadataElement> element,
+    auto check_that_metadata_exists = [](const std::shared_ptr<snapengine::MetadataElement>& element,
                                          std::string_view parent_element, std::string_view element_name) {
         if (!element) {
             throw std::runtime_error(std::string(parent_element) + " is missing " + std::string(element_name) +
@@ -836,7 +847,8 @@ std::vector<CalibrationVector> Sentinel1Utils::GetCalibrationVectors(
         }
     };
 
-    auto get_element = [&](std::shared_ptr<snapengine::MetadataElement> parent_element, std::string_view element_name) {
+    auto get_element = [&](const std::shared_ptr<snapengine::MetadataElement>& parent_element,
+                           std::string_view element_name) {
         auto element = parent_element->GetElement(element_name);
         check_that_metadata_exists(element, parent_element->GetName(), element_name);
 
@@ -897,7 +909,7 @@ const std::vector<std::string>& Sentinel1Utils::GetPolarizations() const { retur
 const std::vector<std::shared_ptr<SubSwathInfo>>& Sentinel1Utils::GetSubSwath() const { return subswath_; }
 int Sentinel1Utils::GetNumOfSubSwath() const { return num_of_sub_swath_; }
 
-Sentinel1Utils::Sentinel1Utils(const std::shared_ptr<snapengine::Product>& product) : source_product_{product} {
+Sentinel1Utils::Sentinel1Utils(std::shared_ptr<snapengine::Product> product) : source_product_{std::move(product)} {
     // todo: custom metadata reader for our custom format(DELETE IF WE REMOVE CUSTOM FORMAT FROM OUR CODEBASE)
     // metadata_reader_ = product->GetMetadataReader();
 
@@ -1043,12 +1055,13 @@ void Sentinel1Utils::GetProductSubSwathNames() {
         }
     }
 
-    if (sub_swath_name_list.size() < 1) {
+    if (sub_swath_name_list.empty()) {
         std::vector<std::string> source_band_names = source_product_->GetBandNames();
         for (const auto& band_name : source_band_names) {
             if (boost::algorithm::contains(band_name, acquisition_mode_)) {
                 auto idx = static_cast<int>(band_name.find(acquisition_mode_));
-                std::string sub_swath_name{band_name.substr(idx, 3)};
+                const int sub_swath_name_length{3};
+                std::string sub_swath_name{band_name.substr(idx, sub_swath_name_length)};
                 if (std::find(sub_swath_name_list.begin(), sub_swath_name_list.end(), sub_swath_name) ==
                     sub_swath_name_list.end()) {
                     sub_swath_name_list.emplace_back(sub_swath_name);
@@ -1160,11 +1173,6 @@ std::vector<int> Sentinel1Utils::GetCalibrationPixel(int sub_swath_index, std::s
     return pixel_array;
 }
 
-// void Sentinel1Utils::GetSubSwathParameters(const std::shared_ptr<snapengine::MetadataElement>& sub_swath_metadata,
-//                                           SubSwathInfo& sub_swath) {
-//   todo: implement if needed (currently clashes with custom code)
-//}
-
 void Sentinel1Utils::UpdateBandNames(std::shared_ptr<snapengine::MetadataElement>& abs_root,
                                      const std::set<std::string, std::less<>>& selected_pol_list,
                                      const std::vector<std::string>& band_names) {
@@ -1177,7 +1185,7 @@ void Sentinel1Utils::UpdateBandNames(std::shared_ptr<snapengine::MetadataElement
     };
 
     const auto children = abs_root->GetElements();
-    for (auto& child : children) {
+    for (const auto& child : children) {
         const auto& child_name = child->GetName();
         if (starts_with(child_name, snapengine::AbstractMetadata::BAND_PREFIX)) {
             const auto polarisation = child_name.substr(child_name.rfind('_') + 1);
@@ -1185,9 +1193,7 @@ void Sentinel1Utils::UpdateBandNames(std::shared_ptr<snapengine::MetadataElement
             if (set_contains(selected_pol_list, polarisation)) {
                 std::string band_name_array;
                 for (const auto& band_name : band_names) {
-                    if (string_contains(band_name, sw_polarisation)) {
-                        band_name_array += band_name + " ";
-                    } else if (string_contains(band_name, polarisation)) {
+                    if (string_contains(band_name, sw_polarisation) || string_contains(band_name, polarisation)) {
                         band_name_array += band_name + " ";
                     }
                 }
@@ -1272,6 +1278,4 @@ double Sentinel1Utils::GetIncidenceAngleValue(const Sentinel1Index& index, int s
 
     return GetIncidenceAngleValue(index, sub_swath.get());
 }
-
-}  // namespace s1tbx
-}  // namespace alus
+}  // namespace alus::s1tbx

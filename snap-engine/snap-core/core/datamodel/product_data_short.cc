@@ -24,8 +24,7 @@
 
 #include <boost/lexical_cast.hpp>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 Short::Short(int num_elems) : Short(num_elems, false) {}
 
@@ -43,17 +42,17 @@ int Short::GetNumElems() const { return array_.size(); }
 void Short::Dispose() { array_.clear(); }
 
 int Short::GetElemIntAt(int index) const { return array_.at(index); }
-long Short::GetElemUIntAt(int index) const { return array_.at(index); }
-long Short::GetElemLongAt(int index) const { return array_.at(index); }
+int64_t Short::GetElemUIntAt(int index) const { return array_.at(index); }
+int64_t Short::GetElemLongAt(int index) const { return array_.at(index); }
 float Short::GetElemFloatAt(int index) const { return array_.at(index); }
 double Short::GetElemDoubleAt(int index) const { return array_.at(index); }
 std::string Short::GetElemStringAt(int index) const { return std::to_string(array_.at(index)); }
 
-void Short::SetElemIntAt(int index, int value) { array_.at(index) = (int16_t)value; }
-void Short::SetElemUIntAt(int index, long value) { array_.at(index) = (int16_t)value; }
-void Short::SetElemLongAt(int index, long value) { array_.at(index) = (int16_t)value; }
-void Short::SetElemFloatAt(int index, float value) { array_.at(index) = (int16_t)std::round(value); }
-void Short::SetElemDoubleAt(int index, double value) { array_.at(index) = (int16_t)std::round(value); }
+void Short::SetElemIntAt(int index, int value) { array_.at(index) = static_cast<int16_t>(value); }
+void Short::SetElemUIntAt(int index, int64_t value) { array_.at(index) = static_cast<int16_t>(value); }
+void Short::SetElemLongAt(int index, int64_t value) { array_.at(index) = static_cast<int16_t>(value); }
+void Short::SetElemFloatAt(int index, float value) { array_.at(index) = static_cast<int16_t>(std::round(value)); }
+void Short::SetElemDoubleAt(int index, double value) { array_.at(index) = static_cast<int16_t>(std::round(value)); }
 void Short::SetElemStringAt(int index, std::string_view value) {
     array_.at(index) = boost::lexical_cast<int16_t>(value);
 }
@@ -76,9 +75,8 @@ void Short::SetElems(std::any data) {
             auto const v = std::stoi(s);
             if (INT16_MIN <= v && INT16_MAX >= v) {
                 return v;
-            } else {
-                throw std::out_of_range("value is not int16_t");
             }
+            throw std::out_of_range("value is not int16_t");
         });
     } else {
         throw std::invalid_argument("data is not std::vector<int16_t> or std::vector<std::string>");
@@ -88,11 +86,11 @@ void Short::SetElems(std::any data) {
 bool Short::EqualElems(const std::shared_ptr<ProductData> other) const {
     if (other.get() == this) {
         return true;
-    } else if (other->GetElems().type() == typeid(std::vector<int16_t>)) {
+    }
+    if (other->GetElems().type() == typeid(std::vector<int16_t>)) {
         return (array_ == std::any_cast<std::vector<int16_t>>(other->GetElems()));
     }
     return false;
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

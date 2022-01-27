@@ -20,10 +20,12 @@
 #include <fstream>
 
 #include "gmock/gmock.h"
+
 #include "product_data_ascii.h"
 
 namespace {
-using namespace alus::snapengine;
+
+using alus::snapengine::ProductData;
 
 class ProductDataASCIITest {};
 
@@ -53,16 +55,16 @@ TEST(ProductDataASCII, testSingleValueConstructor) {
     ASSERT_EQ("#", instance->ToString());
 
     std::shared_ptr<ProductData> expected_equal = ProductData::CreateInstance(ProductData::TYPE_ASCII);
-    expected_equal->SetElems(std::vector<int8_t>{35});
+    expected_equal->SetElems(std::vector<int8_t>{35});  // NOLINT
     ASSERT_EQ(true, instance->EqualElems(expected_equal));
 
     std::shared_ptr<ProductData> expected_unequal = ProductData::CreateInstance(ProductData::TYPE_ASCII);
-    expected_unequal->SetElems(std::vector<int8_t>{126});
+    expected_unequal->SetElems(std::vector<int8_t>{126});  // NOLINT
     ASSERT_EQ(false, instance->EqualElems(expected_unequal));
 }
 
 TEST(ProductDataASCII, testConstructor) {
-    std::shared_ptr<ProductData> instance = ProductData::CreateInstance(ProductData::TYPE_ASCII, 10);
+    std::shared_ptr<ProductData> instance = ProductData::CreateInstance(ProductData::TYPE_ASCII, 10);  // NOLINT
     instance->SetElems(std::vector<int8_t>{'a', 'A', 'e', 'i', 'n', ' ', 'T', 'e', 's', 't'});
 
     ASSERT_EQ(97, instance->GetElemIntAt(0));
@@ -89,11 +91,11 @@ TEST(ProductDataASCII, testConstructor) {
     ASSERT_EQ(false, instance->IsInt());
     ASSERT_EQ("aAein Test", instance->ToString());
 
-    std::shared_ptr<ProductData> expected_equal = ProductData::CreateInstance(ProductData::TYPE_ASCII, 10);
+    std::shared_ptr<ProductData> expected_equal = ProductData::CreateInstance(ProductData::TYPE_ASCII, 10);  // NOLINT
     expected_equal->SetElems(std::vector<int8_t>{'a', 'A', 'e', 'i', 'n', ' ', 'T', 'e', 's', 't'});
     ASSERT_EQ(true, instance->EqualElems(expected_equal));
 
-    std::shared_ptr<ProductData> expected_unequal = ProductData::CreateInstance(ProductData::TYPE_ASCII, 10);
+    std::shared_ptr<ProductData> expected_unequal = ProductData::CreateInstance(ProductData::TYPE_ASCII, 10);  // NOLINT
     expected_unequal->SetElems(std::vector<int8_t>{'A', 'a', 'e', 'i', 'n', ' ', 'T', 'e', 's', 't'});
     ASSERT_EQ(false, instance->EqualElems(expected_unequal));
 }

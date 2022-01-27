@@ -15,11 +15,10 @@
 
 #include <cstddef>
 
-namespace alus {
-namespace snapengine {
-namespace tiepointgrid {
+namespace alus {          // NOLINT
+namespace snapengine {    // NOLINT
+namespace tiepointgrid {  // NOLINT
 
-// TODO: deprecate in favour of snap-core/datamodel/tie_point_grid
 struct TiePointGrid {
     double offset_x;
     double offset_y;

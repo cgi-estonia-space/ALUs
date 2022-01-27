@@ -22,7 +22,7 @@
 
 #ifdef __DRIVER_TYPES_H__
 
-static const char* _cudaGetErrorEnum(cudaError_t error) { return cudaGetErrorName(error); }
+[[maybe_unused]] static const char* _cudaGetErrorEnum(cudaError_t error) { return cudaGetErrorName(error); }
 
 #endif
 
@@ -280,7 +280,6 @@ static const char* _cudaGetErrorEnum(cusolverStatus_t error) {
 
         default:
             break;
-
     }
 
     return "<unknown>";

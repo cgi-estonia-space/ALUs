@@ -50,14 +50,14 @@ class BandInfo;
 class AbstractProductDirectory : public ISentinel1Directory {
 public:
     std::string GetRootFolder();
-    virtual void ReadProductDirectory() override = 0;
+    void ReadProductDirectory() override = 0;
     [[nodiscard]] bool IsSLC() override { return is_s_l_c_; }
     [[nodiscard]] bool IsMapProjected() const { return is_map_projected_; }
     std::shared_ptr<BandInfo> GetBandInfo(const std::shared_ptr<snapengine::Band>& dest_band) override;
     void Close() override;
     std::vector<std::string> ListFiles(std::string_view path);
     std::vector<std::string> FindFilesContaining(std::string_view path, std::string_view search_string);
-    virtual std::shared_ptr<snapengine::Product> CreateProduct() override;
+    std::shared_ptr<snapengine::Product> CreateProduct() override;
     boost::filesystem::path GetFile(std::string_view path);
     bool Exists(std::string_view path);
 
@@ -88,9 +88,9 @@ protected:
 
     void FindImages(std::string_view parent_path, const std::shared_ptr<snapengine::MetadataElement>& new_root);
 
-    std::string GetBandFileNameFromImage(std::string_view img_path);
+    static std::string GetBandFileNameFromImage(std::string_view img_path);
 
-    std::shared_ptr<snapengine::custom::Dimension> GetBandDimensions(
+    static std::shared_ptr<snapengine::custom::Dimension> GetBandDimensions(
         const std::shared_ptr<snapengine::MetadataElement>& new_root, std::string_view band_metadata_name);
 
     void FindImages(const std::shared_ptr<snapengine::MetadataElement>& new_root);
@@ -107,7 +107,7 @@ protected:
 
     virtual std::string GetProductType() = 0;
 
-    std::string GetProductDescription() { return ""; }
+    static std::string GetProductDescription() { return ""; }
 
     virtual std::shared_ptr<snapengine::MetadataElement> AddMetaData() = 0;
 
@@ -115,7 +115,7 @@ protected:
 
     std::string GetBaseName() { return base_name_; }
 
-    std::shared_ptr<snapengine::custom::Dimension> GetProductDimensions(
+    static std::shared_ptr<snapengine::custom::Dimension> GetProductDimensions(
         const std::shared_ptr<snapengine::MetadataElement>& new_root);
 
     static void UpdateProduct(const std::shared_ptr<snapengine::Product>& product,

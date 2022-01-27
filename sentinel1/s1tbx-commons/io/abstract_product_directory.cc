@@ -106,7 +106,7 @@ void AbstractProductDirectory::FindImages(std::string_view parent_path,
 }
 
 std::string AbstractProductDirectory::GetBandFileNameFromImage(std::string_view img_path) {
-    if (img_path.find("/") != std::string::npos) {
+    if (img_path.find('/') != std::string::npos) {
         std::string output(img_path.substr(img_path.find_last_of('/') + 1));
         boost::algorithm::to_lower(output);
         return output;

@@ -27,8 +27,7 @@
 #include "orbit_state_vector_computation.h"
 #include "pos_vector.h"
 
-namespace alus {
-namespace s1tbx {
+namespace alus::s1tbx {
 class OrbitStateVectors {
 public:
     class PositionVelocity;  // forward declaration
@@ -48,8 +47,8 @@ public:
 private:
     double dt_ = 0.0;
     std::unordered_map<double, std::shared_ptr<PositionVelocity>> time_map_;
-    static constexpr int NV_{8};
 
+    static constexpr int NV{8};
     static std::vector<snapengine::OrbitStateVector> RemoveRedundantVectors(
         std::vector<snapengine::OrbitStateVector> orbit_state_vectors);
 };
@@ -69,6 +68,4 @@ namespace orbitstatevectors {
 snapengine::PosVector GetPosition(double time, cuda::KernelArray<snapengine::OrbitStateVectorComputation> vectors);
 
 }  // namespace orbitstatevectors
-
-}  // namespace s1tbx
-}  // namespace alus
+}  // namespace alus::s1tbx

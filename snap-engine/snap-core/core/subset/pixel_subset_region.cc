@@ -24,20 +24,20 @@
 
 #include "snap-core/core/util/geo_utils.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 std::shared_ptr<custom::Rectangle> PixelSubsetRegion::ComputeBandBoundsBasedOnPercent(
-    std::shared_ptr<custom::Rectangle> product_bounds, int default_product_width, int default_product_height,
+    const std::shared_ptr<custom::Rectangle>& product_bounds, int default_product_width, int default_product_height,
     int default_band_width, int default_band_height) {
-    float product_offset_x_percent = product_bounds->x / static_cast<float>(default_product_width);
-    float product_offset_y_percent = product_bounds->y / static_cast<float>(default_product_height);
-    float product_width_percent = product_bounds->width / static_cast<float>(default_product_width);
-    float product_height_percent = product_bounds->height / static_cast<float>(default_product_height);
-    int band_offset_x = static_cast<int>(product_offset_x_percent * default_band_width);
-    int band_offset_y = static_cast<int>(product_offset_y_percent * default_band_height);
-    int band_width = static_cast<int>(product_width_percent * default_band_width);
-    int band_height = static_cast<int>(product_height_percent * default_band_height);
+    float product_offset_x_percent = static_cast<float>(product_bounds->x) / static_cast<float>(default_product_width);
+    float product_offset_y_percent = static_cast<float>(product_bounds->y) / static_cast<float>(default_product_height);
+    float product_width_percent = static_cast<float>(product_bounds->width) / static_cast<float>(default_product_width);
+    float product_height_percent =
+        static_cast<float>(product_bounds->height) / static_cast<float>(default_product_height);
+    int band_offset_x = static_cast<int>(product_offset_x_percent * static_cast<float>(default_band_width));
+    int band_offset_y = static_cast<int>(product_offset_y_percent * static_cast<float>(default_band_height));
+    int band_width = static_cast<int>(product_width_percent * static_cast<float>(default_band_width));
+    int band_height = static_cast<int>(product_height_percent * static_cast<float>(default_band_height));
     return std::make_shared<custom::Rectangle>(band_offset_x, band_offset_y, band_width, band_height);
 }
 
@@ -73,7 +73,7 @@ std::shared_ptr<custom::Rectangle> PixelSubsetRegion::ComputeProductPixelRegion(
     return pixel_region_;
 }
 
-PixelSubsetRegion::PixelSubsetRegion(std::shared_ptr<custom::Rectangle> pixel_region, int border_pixels)
+PixelSubsetRegion::PixelSubsetRegion(const std::shared_ptr<custom::Rectangle>& pixel_region, int border_pixels)
     : AbstractSubsetRegion(border_pixels) {
     if (pixel_region == nullptr) {
         throw std::runtime_error("The pixel region is null.");
@@ -112,5 +112,4 @@ PixelSubsetRegion::PixelSubsetRegion(int x, int y, int width, int height, int bo
     pixel_region_ = std::make_shared<custom::Rectangle>(x, y, width, height);
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

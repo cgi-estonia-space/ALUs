@@ -20,16 +20,15 @@
 
 #include "snap-core/core/util/math/functions.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
-const std::reference_wrapper<IFX> IFX::XXXX = *new functions::FX_X4(); //todo object slicing might break something here
-const std::reference_wrapper<IFX> IFX::XXX = *new functions::FX_X3();
-const std::reference_wrapper<IFX> IFX::XX = *new functions::FX_X2();
-const std::reference_wrapper<IFX> IFX::X = *new functions::FX_X();
-const std::reference_wrapper<IFX> IFX::ONE = *new functions::FX_1();
+const std::reference_wrapper<IFX> IFX::XXXX = *new functions::FxX4();  // todo object slicing might break something
+                                                                       // here
+const std::reference_wrapper<IFX> IFX::XXX = *new functions::FxX3();
+const std::reference_wrapper<IFX> IFX::XX = *new functions::FxX2();
+const std::reference_wrapper<IFX> IFX::X = *new functions::FxX();
+const std::reference_wrapper<IFX> IFX::ONE = *new functions::Fx1();
 
-IFX::~IFX() {}
+IFX::~IFX() = default;
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

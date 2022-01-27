@@ -21,8 +21,7 @@
 #include <string>
 #include <string_view>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 /**
  * This class provides additional functionality in handling with files. All methods in this class dealing with
  * extensions, expect that an extension is the last part of a file name starting with the dot '.' character.
@@ -53,5 +52,4 @@ public:
 
     static int GetExtensionDotPos(std::string_view path);
 };
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

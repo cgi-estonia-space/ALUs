@@ -22,9 +22,7 @@
 #include "custom/i_image_reader.h"
 #include "custom/rectangle.h"
 
-namespace alus {
-namespace snapengine {
-namespace custom {
+namespace alus::snapengine::custom {
 
 // Placeholder interface for image readers, currently only viable solution is GDAL anyway.
 class GdalImageReader : virtual public IImageReader {
@@ -54,7 +52,6 @@ public:
      */
     void Open(std::string_view path_to_band_file, bool has_transform, bool has_correct_proj) override;
 
-
     void TakeExternalDataset(GDALDataset* dataset);
 
     /**
@@ -78,6 +75,4 @@ public:
     void Close() override;
     void ReleaseDataset();
 };
-}  // namespace custom
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine::custom

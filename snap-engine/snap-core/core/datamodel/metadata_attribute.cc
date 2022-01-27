@@ -19,6 +19,7 @@
 #include "snap-core/core/datamodel/metadata_attribute.h"
 
 #include <memory>
+#include <utility>
 
 #include "product_data.h"
 
@@ -29,7 +30,7 @@ MetadataAttribute::MetadataAttribute(std::string_view name, int type) : Metadata
 MetadataAttribute::MetadataAttribute(std::string_view name, int type, int num_elems)
     : MetadataAttribute(name, ProductData::CreateInstance(type, num_elems), false) {}
 MetadataAttribute::MetadataAttribute(std::string_view name, std::shared_ptr<ProductData> data, bool read_only)
-    : DataNode(name, data, read_only) {}
+    : DataNode(name, std::move(data), read_only) {}
 
 std::shared_ptr<MetadataAttribute> alus::snapengine::MetadataAttribute::CreateDeepClone() {
     auto clone = std::make_shared<MetadataAttribute>(GetName(), GetData()->CreateDeepClone(), IsReadOnly());

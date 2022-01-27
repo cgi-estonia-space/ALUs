@@ -34,8 +34,7 @@
 #include "product_data_ushort.h"
 #include "product_data_utc.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 ProductData::ProductData(int type) {
     type_ = type;
@@ -63,7 +62,7 @@ uint64_t ProductData::GetElemSize(int type) {
             return sizeof(float);
         case TYPE_UTC:
             // java uses int[3]
-            return 3 * sizeof(uint32_t);
+            return 3 * sizeof(uint32_t);  // NOLINT
         case TYPE_INT64:
             return sizeof(int64_t);
         case TYPE_FLOAT64:
@@ -123,7 +122,7 @@ std::string ProductData::GetElemString() {
 }
 
 std::shared_ptr<ProductData> ProductData::CreateInstance(std::string_view data) {
-    return (std::shared_ptr<ProductData>)std::make_shared<ASCII>(std::string(data));
+    return std::shared_ptr<ProductData>(std::make_shared<ASCII>(std::string(data)));
 }
 
 void ProductData::SetElemInt(int value) { SetElemIntAt(0, value); }
@@ -138,18 +137,17 @@ void ProductData::SetElemString(std::string_view value) { SetElemStringAt(0, val
 
 void ProductData::SetElemBoolean(bool value) { SetElemBooleanAt(0, value); }
 
-void ProductData::SetElemLong(long value) { SetElemLongAt(0, value); }
+void ProductData::SetElemLong(int64_t value) { SetElemLongAt(0, value); }
 
 void ProductData::SetElemBooleanAt(int index, bool value) { SetElemIntAt(index, value ? 1 : 0); }
 
-std::shared_ptr<ProductData> ProductData::CreateInstance(std::vector<float> elems) {
+std::shared_ptr<ProductData> ProductData::CreateInstance(const std::vector<float>& elems) {
     return std::make_shared<Float>(elems);
 }
-std::shared_ptr<ProductData> ProductData::CreateInstance(std::vector<int> elems) {
+std::shared_ptr<ProductData> ProductData::CreateInstance(const std::vector<int>& elems) {
     // vector is never nullptr
     //    snapengine::Guardian::AssertNotNull("elems", elems);
     return std::make_shared<Int>(elems);
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

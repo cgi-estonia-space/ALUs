@@ -15,17 +15,20 @@
 
 #include <cstdint>
 
-namespace alus {
-namespace snapengine{
+#include <driver_types.h>
+#include <vector_types.h>
 
-// TODO: Actual geotransform values are double types.
+namespace alus {  // NOLINT
+namespace snapengine {
+
+// TODO: Actual geotransform values are double types.  // NOLINT
 struct Srtm3FormatComputation {
-    float m00; // x-dimension of a pixel in map units
-    float m01; // rotation
-    float m02; // x-coordinate of center of upper left pixel
-    float m10; // rotation
-    float m11; // NEGATIVE of y-dimension of a pixel in map units
-    float m12; // y-coordinate of center of upper left pixel
+    float m00;  // x-dimension of a pixel in map units
+    float m01;  // rotation
+    float m02;  // x-coordinate of center of upper left pixel
+    float m10;  // rotation
+    float m11;  // NEGATIVE of y-dimension of a pixel in map units
+    float m12;  // y-coordinate of center of upper left pixel
     int16_t no_data_value;
     int x_size, y_size;
     int max_lats;
@@ -33,8 +36,8 @@ struct Srtm3FormatComputation {
     float* egm;
 };
 
-cudaError_t LaunchDemFormatter(dim3 grid_size, dim3 block_size, float *target, float *source,
+cudaError_t LaunchDemFormatter(dim3 grid_size, dim3 block_size, float* target, float* source,
                                Srtm3FormatComputation data);
 
-}//namespace
-}//namespace
+}  // namespace snapengine
+}  // namespace alus

@@ -22,8 +22,7 @@
 #include <string>
 #include <vector>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 /**
  * The <code>GeoPos</code> class represents a geographical position measured in longitudes and latitudes.
  *
@@ -46,8 +45,8 @@ private:
      * Creates a string representation of the given decimal degree value. The string returned has the format
      * DDD?[MM'[SS.sssss"]] [N|S|W|E].
      */
-    // SEP2018 - Daniel Knowles - Modified to support compassFormat and decimalFormat options
-    static std::string GetDegreeString(double value, bool longitudial, bool compassFormat, bool decimalFormat);
+    // SEP2018 - Daniel Knowles - Modified to support compass_format and decimal_format options
+    static std::string GetDegreeString(double value, bool longitudial, bool compass_format, bool decimal_format);
 
     static bool IsLatValid(double lat);
 
@@ -73,9 +72,9 @@ public:
     /**
      * Constructs a new geo-position with latitude and longitude set to that of the given geo-position.
      *
-     * @param GeoPos the  geo-position providing the latitude and longitude, must not be <code>null</code>
+     * @param geo_pos the  geo-position providing the latitude and longitude, must not be <code>null</code>
      */
-    GeoPos(const GeoPos& GeoPos);
+    GeoPos(const GeoPos& geo_pos);
 
     /**
      * Constructs a new geo-position with the given latitude and longitude values.
@@ -261,7 +260,7 @@ public:
      * @author Daniel Knowles
      * @since Sept 2018
      */
-    std::string GetLatString(bool compass_format, bool decimal_format);
+    [[nodiscard]] std::string GetLatString(bool compass_format, bool decimal_format) const;
 
     /**
      * Returns a string representation of the longitude value.
@@ -274,7 +273,6 @@ public:
      * @author Daniel Knowles
      * @since Sept 2018
      */
-    std::string GetLonString(bool compass_format, bool decimal_format);
+    [[nodiscard]] std::string GetLonString(bool compass_format, bool decimal_format) const;
 };
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

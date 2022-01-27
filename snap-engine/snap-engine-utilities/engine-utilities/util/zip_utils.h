@@ -24,8 +24,7 @@
 
 #include <boost/filesystem.hpp>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 /**
  * For zipping and unzipping compressed files
@@ -44,5 +43,4 @@ public:
     static bool FindInZip(const boost::filesystem::path& file, std::string_view prefix, std::string_view suffix);
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

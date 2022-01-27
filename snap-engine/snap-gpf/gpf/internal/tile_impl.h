@@ -34,9 +34,9 @@ private:
     int scanline_offset_{0};
     int scanline_stride_;
     // this instance should be created using reader?
-    std::shared_ptr<snapengine::ProductData> data_buffer_;
+    std::shared_ptr<snapengine::ProductData> data_buffer_;  // NOLINT
     std::vector<float> simple_data_buffer_;
-    const std::shared_ptr<RasterDataNode>& raster_data_node_;
+    const std::shared_ptr<RasterDataNode>& raster_data_node_;  // NOLINT
 
 public:
     inline TileImpl(const std::shared_ptr<RasterDataNode>& raster_data_node, const custom::Rectangle& rectangle)
@@ -69,12 +69,12 @@ public:
     }
     ~TileImpl() override = default;
 
-    inline int GetMinX() const override { return min_x_; }
-    inline int GetMaxX() const override { return max_x_; }
-    inline int GetMinY() const override { return min_y_; }
-    inline int GetMaxY() const override { return max_y_; }
-    inline int GetScanlineOffset() const override { return scanline_offset_; }
-    inline int GetScanlineStride() const override { return scanline_stride_; }
+    [[nodiscard]] inline int GetMinX() const override { return min_x_; }
+    [[nodiscard]] inline int GetMaxX() const override { return max_x_; }
+    [[nodiscard]] inline int GetMinY() const override { return min_y_; }
+    [[nodiscard]] inline int GetMaxY() const override { return max_y_; }
+    [[nodiscard]] inline int GetScanlineOffset() const override { return scanline_offset_; }
+    [[nodiscard]] inline int GetScanlineStride() const override { return scanline_stride_; }
 
     inline std::vector<float>& GetSimpleDataBuffer() override {
         simple_data_buffer_.resize(width_ * height_);

@@ -22,8 +22,8 @@
 namespace alus::snapengine::custom {
 
 void GdalImageReader::ReadSubSampledData(const custom::Rectangle& rectangle, int band_indx) {
-    // todo:    later add support for subsampled data, this will change parameters for this function
-    if (data_.size() != static_cast<std::size_t>(rectangle.width * rectangle.height)) {
+    // todo:    later add support for subsampled data, this will change parameters for this function  // NOLINT
+    if (data_.size() != static_cast<std::size_t>(rectangle.width) * static_cast<size_t>(rectangle.height)) {
         data_.resize(rectangle.width * rectangle.height);
     }
 
@@ -39,8 +39,8 @@ void GdalImageReader::ReadSubSampledData(const custom::Rectangle& rectangle, int
                                                                   GDALDataType::GDT_Float32, 0, 0));
 }
 
-void GdalImageReader::Open(std::string_view path_to_file, bool has_transform, bool has_correct_proj) {
-    file_ = path_to_file;
+void GdalImageReader::Open(std::string_view path_to_band_file, bool has_transform, bool has_correct_proj) {
+    file_ = path_to_band_file;
     dataset_ = static_cast<GDALDataset*>(GDALOpen(file_.c_str(), GA_ReadOnly));
     CHECK_GDAL_PTR(dataset_);
     InitializeDatasetProperties(dataset_, has_transform, has_correct_proj);
@@ -73,10 +73,10 @@ void GdalImageReader::InitializeDatasetProperties(GDALDataset* dataset, bool has
         data_projection_ = dataset->GetProjectionRef();
     }
     if (has_transform) {
-        affine_geo_transform_.resize(6);
+        affine_geo_transform_.resize(gdal::constants::GDAL_GEOTRANSFORM_PARAMETER_COUNT);
         const auto result = dataset->GetGeoTransform(affine_geo_transform_.data());
         if (result != CE_None) {
-            // TODO: Use logging system to log this message.
+            // TODO: Use logging system to log this message.  // NOLINT
             LOGW << "Geo transform parameters are missing in input dataset - " << file_;
             affine_geo_transform_.clear();
         }
@@ -86,8 +86,8 @@ void GdalImageReader::InitializeDatasetProperties(GDALDataset* dataset, bool has
 void GdalImageReader::ReadSubSampledData(const std::shared_ptr<custom::Rectangle>& rectangle,
                                          std::vector<int32_t>& data) {
     // todo:    later add support for subsampled data, this will change parameters for this function
-    if (data.size() != static_cast<std::size_t>(rectangle->width * rectangle->height)) {
-        data.resize(rectangle->width * rectangle->height);
+    if (data.size() != static_cast<std::size_t>(rectangle->width) * static_cast<size_t>(rectangle->height)) {
+        data.resize(static_cast<size_t>(rectangle->width) * static_cast<size_t>(rectangle->height));
     }
 
     CHECK_GDAL_ERROR(dataset_->RasterIO(GF_Read, rectangle->x, rectangle->y, rectangle->width, rectangle->height,

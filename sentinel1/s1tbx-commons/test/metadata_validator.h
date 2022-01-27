@@ -45,17 +45,18 @@ private:
     void VerifyOrbitStateVectors();
     void VerifyDopplerCentroids();
     void VerifyStr(std::string_view tag);
-    void VerifyStr(std::string_view tag, std::vector<std::string> allowed_str);
+    void VerifyStr(std::string_view tag, const std::vector<std::string>& allowed_str);
     void VerifyDouble(std::string_view tag);
     void VerifyInt(std::string_view tag);
     void VerifyUTC(std::string_view tag);
 
 public:
-    MetadataValidator(const std::shared_ptr<snapengine::Product>& product);
+    explicit MetadataValidator(const std::shared_ptr<snapengine::Product>& product);
     MetadataValidator(const std::shared_ptr<snapengine::Product>& product,
                       const std::shared_ptr<ValidationOptions>& options);
     void Validate();
-    void ValidateOptical();
     void ValidateSAR();
+
+    static void ValidateOptical();
 };
 }  // namespace alus::s1tbx

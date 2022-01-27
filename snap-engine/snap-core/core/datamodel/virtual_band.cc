@@ -27,7 +27,7 @@ VirtualBand::VirtualBand(std::string_view name, int data_type, int width, int he
     expression_ = expression;
 }
 void VirtualBand::SetExpression(std::string_view expression) {
-    if (expression != nullptr && expression_ != expression) {
+    if (!expression.empty() && expression_ != expression) {
         expression_ = expression;
         //        if (IsSourceImageSet()) {
         //            SetSourceImage(nullptr);

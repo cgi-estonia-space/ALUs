@@ -19,6 +19,7 @@
 #pragma once
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "geo_pos.h"
@@ -26,8 +27,7 @@
 
 #include "snap-core/core/datamodel/abstract_geo_coding.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 namespace custom {
 // pre-declare
 struct Rectangle;
@@ -45,30 +45,30 @@ class Datum;
 class Approximation final {
 private:
     //    todo: provide FCYSUM
-    const std::shared_ptr<FXYSum> _f_x_;
-    const std::shared_ptr<FXYSum> _f_y_;
-    const double _center_lat_;
-    const double _center_lon_;
-    const double _min_square_distance_;
+    const std::shared_ptr<FXYSum> f_x_;
+    const std::shared_ptr<FXYSum> f_y_;
+    const double center_lat_;
+    const double center_lon_;
+    const double min_square_distance_;
 
 public:
-    Approximation(const std::shared_ptr<FXYSum>& f_x, const std::shared_ptr<FXYSum>& f_y, double center_lat,
-                  double center_lon, double min_square_distance)
-        : _f_x_(f_x),
-          _f_y_(f_y),
-          _center_lat_(center_lat),
-          _center_lon_(center_lon),
-          _min_square_distance_(min_square_distance){};
+    Approximation(std::shared_ptr<FXYSum> f_x, std::shared_ptr<FXYSum> f_y, double center_lat, double center_lon,
+                  double min_square_distance)
+        : f_x_(std::move(f_x)),
+          f_y_(std::move(f_y)),
+          center_lat_(center_lat),
+          center_lon_(center_lon),
+          min_square_distance_(min_square_distance){};
 
-    std::shared_ptr<FXYSum> GetFX() { return _f_x_; }
+    std::shared_ptr<FXYSum> GetFX() { return f_x_; }
 
-    std::shared_ptr<FXYSum> GetFY() { return _f_y_; }
+    std::shared_ptr<FXYSum> GetFY() { return f_y_; }
 
-    double GetCenterLat() { return _center_lat_; }
+    [[nodiscard]] double GetCenterLat() const { return center_lat_; }
 
-    double GetCenterLon() { return _center_lon_; }
+    [[nodiscard]] double GetCenterLon() const { return center_lon_; }
 
-    double GetMinSquareDistance() { return _min_square_distance_; }
+    [[nodiscard]] double GetMinSquareDistance() const { return min_square_distance_; }
 
     /**
      * Computes the square distance to the given geographical coordinate.
@@ -77,9 +77,9 @@ public:
      * @param lon the longitude value
      * @return the square distance
      */
-    double GetSquareDistance(double lat, double lon) {
-        const double dx = lon - _center_lon_;
-        const double dy = lat - _center_lat_;
+    [[nodiscard]] double GetSquareDistance(double lat, double lon) const {
+        const double dx = lon - center_lon_;
+        const double dy = lat - center_lat_;
         return dx * dx + dy * dy;
     }
 };
@@ -111,7 +111,7 @@ private:
     // java version used synchronized !
     void ComputeApproximations();
 
-    bool IsValidGeoPos(double lat, double lon);
+    static bool IsValidGeoPos(double lat, double lon);
 
     /////////////////////////////////////////////////////////////////////////
     // Private stuff
@@ -122,7 +122,8 @@ private:
     std::vector<std::shared_ptr<Approximation>> InitApproximations(
         const std::shared_ptr<TiePointGrid>& normalized_lon_grid);
 
-    static std::shared_ptr<FXYSum> GetBestPolynomial(std::vector<std::vector<double>> data, std::vector<int> indices);
+    static std::shared_ptr<FXYSum> GetBestPolynomial(const std::vector<std::vector<double>>& data,
+                                                     const std::vector<int>& indices);
 
     std::vector<std::vector<double>> CreateWarpPoints(const std::shared_ptr<TiePointGrid>& lon_grid,
                                                       const std::shared_ptr<custom::Rectangle>& subset_rect);
@@ -142,11 +143,11 @@ private:
 
     std::shared_ptr<Approximation> FindRenormalizedApproximation(double lat, double renormalized_lon, double distance);
 
-    double GetNormalizedLonMin() { return normalized_lon_min_; }
+    [[nodiscard]] double GetNormalizedLonMin() const { return normalized_lon_min_; }
 
-    static double RescaleLongitude(double lon, double center_lon) { return (lon - center_lon) / 90.0; }
+    static double RescaleLongitude(double lon, double center_lon) { return (lon - center_lon) / 90.0; }  // NOLINT
 
-    static double RescaleLatitude(double lat) { return lat / 90.0; }
+    static double RescaleLatitude(double lat) { return lat / 90.0; }  // NOLINT
 
 public:
     /**
@@ -258,7 +259,7 @@ public:
      * @param lon the raw longitude value in the range -180 to +180 degrees
      * @return the normalized longitude value, <code>Double.NaN</code> else
      */
-    double NormalizeLon(double lon);
+    double NormalizeLon(double lon) const;
 
     //    bool Equals(const std::any& o) override {
     //        if (this == o) {
@@ -305,5 +306,4 @@ public:
                            const std::shared_ptr<ProductSubsetDef>& subset_def) override;
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

@@ -48,16 +48,12 @@ public:
     CudaErrorException(cudaError_t cuda_error, std::string file, int line)
         : std::runtime_error("CUDA error (" + std::to_string(static_cast<int>(cuda_error)) + ")-'" +
                              std::string{cudaGetErrorString(cuda_error)} + "' at " + file + ":" + std::to_string(line)),
-          cuda_error_{static_cast<int>(cuda_error)},
-          file_{std::move(file)},
-          line_{line} {}
+          file_{std::move(file)} {}
 
-    CudaErrorException(std::string what) : std::runtime_error(std::move(what)), cuda_error_{}, file_{}, line_{} {}
+    explicit CudaErrorException(const std::string& what) : std::runtime_error(std::move(what)) {}
 
 private:
-    const int cuda_error_;
     std::string file_;
-    const int line_;
 };
 
 inline void checkCudaError(cudaError_t const cudaErr, const char* file, int const line) {
@@ -105,7 +101,9 @@ public:
     PagedOrPinnedHostPtr(const PagedOrPinnedHostPtr&) = delete;
     PagedOrPinnedHostPtr& operator=(const PagedOrPinnedHostPtr&) = delete;
 
-    ~PagedOrPinnedHostPtr() { Free(); }
+    ~PagedOrPinnedHostPtr() {  // NOLINT
+        Free();
+    }  // NOLINT TODO: clang-tidy warns about possible exceptions. This should be addressed outside of the current task.
 
 private:
     T* host_ptr_ = nullptr;

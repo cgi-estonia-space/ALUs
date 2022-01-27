@@ -28,7 +28,7 @@ namespace alus::snapengine {
 
 class SGeoCoding : public IGeoCoding {
 public:
-    SGeoCoding():IGeoCoding(){};
+    SGeoCoding() = default;
     bool IsCrossingMeridianAt180() override { return false; }
     bool CanGetPixelPos() override { return true; }
     bool CanGetGeoPos() override { return false; }
@@ -41,7 +41,7 @@ public:
         pixel_pos->y_ = geo_pos->lat_;
         return pixel_pos;
     }
-    std::shared_ptr<GeoPos> GetGeoPos([[maybe_unused]]const std::shared_ptr<PixelPos>& pixel_pos,
+    std::shared_ptr<GeoPos> GetGeoPos([[maybe_unused]] const std::shared_ptr<PixelPos>& pixel_pos,
                                       std::shared_ptr<GeoPos>& geo_pos) override {
         return geo_pos;
     }

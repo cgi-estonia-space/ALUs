@@ -23,7 +23,8 @@
 #include "product_data_uint.h"
 
 namespace {
-using namespace alus::snapengine;
+
+using alus::snapengine::ProductData;
 
 class ProductDataUIntTest {};
 
@@ -68,9 +69,9 @@ TEST(ProductDataUInt, testSingleValueConstructor) {
 }
 
 TEST(ProductDataUInt, testConstructor) {
-    std::shared_ptr<ProductData> instance = ProductData::CreateInstance(ProductData::TYPE_UINT32, 3);
+    std::shared_ptr<ProductData> instance = ProductData::CreateInstance(ProductData::TYPE_UINT32, 3);  // NOLINT
     instance->SetElems(
-        std::vector<uint32_t>{static_cast<uint32_t>(-1), 2147483647, static_cast<uint32_t>(-2147483648)});
+        std::vector<uint32_t>{static_cast<uint32_t>(-1), 2147483647, static_cast<uint32_t>(-2147483648)});  // NOLINT
 
     ASSERT_EQ(ProductData::TYPE_UINT32, instance->GetType());
     ASSERT_EQ(-1, instance->GetElemIntAt(0));
@@ -98,14 +99,14 @@ TEST(ProductDataUInt, testConstructor) {
     ASSERT_EQ(true, instance->IsInt());
     ASSERT_EQ("4294967295,2147483647,2147483648", instance->ToString());
 
-    std::shared_ptr<ProductData> expected_equal = ProductData::CreateInstance(ProductData::TYPE_UINT32, 3);
+    std::shared_ptr<ProductData> expected_equal = ProductData::CreateInstance(ProductData::TYPE_UINT32, 3);  // NOLINT
     expected_equal->SetElems(
-        std::vector<uint32_t>{static_cast<uint32_t>(-1), 2147483647, static_cast<uint32_t>(-2147483648)});
+        std::vector<uint32_t>{static_cast<uint32_t>(-1), 2147483647, static_cast<uint32_t>(-2147483648)});  // NOLINT
     ASSERT_EQ(true, instance->EqualElems(expected_equal));
 
-    std::shared_ptr<ProductData> expected_unequal = ProductData::CreateInstance(ProductData::TYPE_UINT32, 3);
+    std::shared_ptr<ProductData> expected_unequal = ProductData::CreateInstance(ProductData::TYPE_UINT32, 3);  // NOLINT
     expected_unequal->SetElems(
-        std::vector<uint32_t>{static_cast<uint32_t>(-1), 2147483647, static_cast<uint32_t>(-2147483647)});
+        std::vector<uint32_t>{static_cast<uint32_t>(-1), 2147483647, static_cast<uint32_t>(-2147483647)});  // NOLINT
     ASSERT_EQ(false, instance->EqualElems(expected_unequal));
 
     ////        StreamTest
@@ -121,7 +122,7 @@ TEST(ProductDataUInt, testConstructor) {
 }
 
 TEST(ProductDataUInt, testSetElemsAsString) {
-    auto pd = ProductData::CreateInstance(ProductData::TYPE_UINT32, 3);
+    auto pd = ProductData::CreateInstance(ProductData::TYPE_UINT32, 3);  // NOLINT
     pd->SetElems(std::vector<std::string>{std::to_string(UINT32_MAX), std::to_string(0), std::to_string(0)});
 
     ASSERT_EQ(UINT32_MAX, pd->GetElemUIntAt(0));
@@ -129,7 +130,7 @@ TEST(ProductDataUInt, testSetElemsAsString) {
     ASSERT_EQ(0, pd->GetElemIntAt(2));
 }
 
-TEST(ProductDataUInt, testSetElemsAsString_OutOfRange) {
+TEST(ProductDataUInt, TestSetElemsAsStringOutOfRange) {
     auto pd1 = ProductData::CreateInstance(ProductData::TYPE_UINT32, 1);
     EXPECT_THROW(pd1->SetElems(std::vector<std::string>{std::to_string((uint64_t)UINT32_MAX + 1)}), std::out_of_range);
 

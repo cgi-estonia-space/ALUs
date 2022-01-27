@@ -21,8 +21,7 @@
 #include <cmath>
 #include <stdexcept>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 // void Approximator::ApproximateFXY(std::vector<std::vector<double>> data, std::vector<int> indices,
 //                                  std::vector<std::shared_ptr<IFXY>> f, std::vector<double> c) {
@@ -203,5 +202,4 @@ std::vector<double> Approximator::ComputeErrorStatistics(const std::vector<std::
 //    }
 //}
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

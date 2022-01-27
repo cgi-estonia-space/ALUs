@@ -37,12 +37,13 @@ double PolyUtils::PolyVal1D(double x, const std::vector<double>& coeffs) {
 }
 
 std::vector<double> PolyUtils::Solve33(const std::vector<std::vector<double>>& a, const std::vector<double>& rhs) {
-    std::vector<double> result(3);
+    const int correct_vector_length{3};
+    std::vector<double> result(correct_vector_length);
 
-    if (a.at(0).size() != 3 || a.size() != 3) {
+    if (a.at(0).size() != correct_vector_length || a.size() != correct_vector_length) {
         throw std::invalid_argument("Solve33: input: size of a not 33.");
     }
-    if (rhs.size() != 3) {
+    if (rhs.size() != correct_vector_length) {
         throw std::invalid_argument("Solve33: input: size rhs not 3x1.");
     }
 
@@ -72,25 +73,25 @@ std::vector<double> PolyUtils::Solve33(const std::vector<std::vector<double>>& a
 Eigen::VectorXd PolyUtils::PolyFit(const Eigen::VectorXd& xvals, const Eigen::VectorXd& yvals, int order) {
     // todo: assert(xvals.size() == yvals.size());
     // todo: assert(order >= 1 && order <= xvals.size() - 1);
-    Eigen::MatrixXd A(xvals.size(), order + 1);
+    Eigen::MatrixXd a(xvals.size(), order + 1);
 
     for (int i = 0; i < xvals.size(); i++) {
-        A(i, 0) = 1.0;
+        a(i, 0) = 1.0;
     }
 
     for (int j = 0; j < xvals.size(); j++) {
         for (int i = 0; i < order; i++) {
-            A(j, i + 1) = A(j, i) * xvals(j);
+            a(j, i + 1) = a(j, i) * xvals(j);
         }
     }
 
-    auto Q = A.householderQr();
-    auto result = Q.solve(yvals);
+    auto q = a.householderQr();
+    auto result = q.solve(yvals);
     return result;
 }
 
 Eigen::VectorXd PolyUtils::Normalize(const Eigen::VectorXd& t) {
-    int i = t.size() / 2;
+    int i = static_cast<int>(t.size()) / 2;
     return (t - (t(i) * Eigen::VectorXd::Ones(t.size()))) / 10.0;
 }
 
@@ -99,7 +100,7 @@ Eigen::VectorXd PolyUtils::PolyFitNormalized(const Eigen::VectorXd& t, const Eig
 }
 
 std::vector<double> PolyUtils::PolyFitNormalized(std::vector<double> t, std::vector<double> y, int degree) {
-    //todo likely don't need to send copies of input vectors
+    // todo likely don't need to send copies of input vectors
     auto result = PolyFit(Normalize(Eigen::Map<const Eigen::VectorXd, Eigen::Unaligned>(t.data(), t.size())),
                           Eigen::Map<const Eigen::VectorXd, Eigen::Unaligned>(y.data(), y.size()), degree);
     return std::vector<double>(result.data(), result.data() + result.rows() * result.cols());

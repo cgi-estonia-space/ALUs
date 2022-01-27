@@ -15,8 +15,7 @@
 
 #include <memory>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 class Product;
 
 /**
@@ -38,5 +37,4 @@ public:
     // in case of default constructor user needs to provide target product
     virtual void SetProduct(Product* product) = 0;
 };
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

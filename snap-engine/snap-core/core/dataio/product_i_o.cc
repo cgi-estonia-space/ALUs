@@ -41,12 +41,13 @@ std::shared_ptr<IProductReader> ProductIO::GetProductReaderForInput(const std::a
             if (decode_qualification == DecodeQualification::INTENDED) {
                 selected_plug_in = plug_in;
                 break;
-            } else if (decode_qualification == DecodeQualification::SUITABLE) {
+            }
+            if (decode_qualification == DecodeQualification::SUITABLE) {
                 selected_plug_in = plug_in;
             }
         } catch (const std::exception& e) {
             LOGW << "Error attempting to read " << input.type().name() << " with plugin reader "
-                      << typeid(plug_in).name() << ": " << e.what();
+                 << typeid(plug_in).name() << ": " << e.what();
         }
     }
     if (selected_plug_in) {

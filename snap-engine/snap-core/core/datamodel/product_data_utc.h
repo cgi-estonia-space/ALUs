@@ -23,8 +23,7 @@
 
 #include "product_data_uint.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 class ProductData;
 /**
  * The {@code ProductData.UTC} class is a {@code ProductData.UInt} specialisation for UTC date/time
@@ -68,6 +67,7 @@ public:
 private:
     static boost::posix_time::time_facet* CreateDateFormatOut(std::string_view pattern);
     static boost::posix_time::time_input_facet* CreateDateFormatIn(std::string_view pattern);
+
 public:
     /**
      * Gets the MJD 2000 calendar on which this UTC date/time is based. The date is initially set the 1st January
@@ -98,7 +98,7 @@ public:
 
     /**
      * Parses a UTC value given as text. The method also considers an optional
-     * mircoseconds fraction at the end of the text string. The mircoseconds fraction
+     * microseconds fraction at the end of the text string. The microseconds fraction
      * is a dot '.' followed by a maximum of 6 digits.
      *
      * @param text    a UTC value given as text
@@ -114,7 +114,7 @@ public:
 
     /**
      * Parses a UTC value given as text. The method also considers an optional
-     * mircoseconds fraction at the end of the text string. The mircoseconds fraction
+     * microseconds fraction at the end of the text string. The microseconds fraction
      * is a dot '.' followed by a maximum of 6 digits.
      *
      * @param text    a UTC value given as text
@@ -126,7 +126,7 @@ public:
      * @see #createCalendar
      * @see #createDateFormat
      */
-    //static std::shared_ptr<Utc> Parse(std::string_view text, boost::posix_time::time_input_facet*);
+    // static std::shared_ptr<Utc> Parse(std::string_view text, boost::posix_time::time_input_facet*);
 
     /**
      * Creates a new UTC instance based on the given time and microseconds fraction.
@@ -137,10 +137,10 @@ public:
      * @return a new UTC instance
      */
     //    todo: might need datetime, but implementation should be much simpler
-    static std::shared_ptr<Utc> Create(boost::posix_time::ptime date, long micros);
+    static std::shared_ptr<Utc> Create(boost::posix_time::ptime date, int64_t micros);
 
     /**
-     * Retuns a "deep" copy of this product data.
+     * Returns a "deep" copy of this product data.
      *
      * @return a copy of this product data
      */
@@ -155,7 +155,7 @@ public:
     /**
      * Constructs a MJD2000 date instance.
      *
-     * @param elems an array containg at least the three elements {@code {days, seconds, microSeconds}}
+     * @param elems an array contain at least the three elements {@code {days, seconds, microSeconds}}
      */
     explicit Utc(std::vector<uint32_t> elems);
     /**
@@ -214,13 +214,13 @@ public:
      * Formats this UTC date/time value as a string using the format {@link #DATE_FORMAT_PATTERN} and the default
      * MJD 2000 calendar.
      *
-     * @return a formated UTC date/time string
+     * @return a formatted UTC date/time string
      *
      * @see #createCalendar
      * @see #createDateFormat
      */
-    std::string Format() const;
-    std::string Format(std::string_view format) const;
+    [[nodiscard]] std::string Format() const;
+    [[nodiscard]] std::string Format(std::string_view format) const;
 
     /**
      * Gets the MJD 2000 calendar on which this UTC date/time is based.
@@ -232,15 +232,15 @@ public:
      * @see #getAsDate()
      */
     // this should be good enough to derive whatever was used in java
-    boost::posix_time::ptime GetAsCalendar() const;
+    [[nodiscard]] boost::posix_time::ptime GetAsCalendar() const;
 
     /**
-     * Returns this UTC date/time value as a Date. The method interpretes this UTC value as a MJD 2000 date
+     * Returns this UTC date/time value as a Date. The method interprets this UTC value as a MJD 2000 date
      * (Modified Julian Day where the  first day is the 01.01.2000).
      *
      * @see #getAsCalendar()
      */
-    boost::posix_time::ptime GetAsDate();
+    [[nodiscard]] boost::posix_time::ptime GetAsDate() const;
 
     /**
      * Returns this UTC date/time value as a string using the format {@link #DATE_FORMAT_PATTERN}. Simply calls
@@ -255,5 +255,4 @@ public:
     std::string GetTypeString() override { return ProductData::GetTypeString(TYPE_UTC); }
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

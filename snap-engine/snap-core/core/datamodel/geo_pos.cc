@@ -23,8 +23,7 @@
 #include <sstream>
 #include <string>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 std::string GeoPos::GetDegreeString(double value, bool longitudial, bool compass_format, bool decimal_format) {
     int sign = (value == 0.0F) ? 0 : (value < 0.0F) ? -1 : 1;
@@ -35,10 +34,10 @@ std::string GeoPos::GetDegreeString(double value, bool longitudial, bool compass
     rest -= minutes / MIN_PER_DEG;
     double seconds = (SEC_PER_DEG * rest);
     rest -= seconds / SEC_PER_DEG;
-    if (seconds == 60) {
+    if (seconds == 60) {  // NOLINT
         seconds = 0;
         minutes++;
-        if (minutes == 60) {
+        if (minutes == 60) {  // NOLINT
             minutes = 0;
             degree++;
         }
@@ -55,13 +54,13 @@ std::string GeoPos::GetDegreeString(double value, bool longitudial, bool compass
         ss << degree;
         ss << '\260';  // degree
         if (minutes != 0 || seconds != 0) {
-            if (minutes < 10) {
+            if (minutes < 10) {  // NOLINT
                 ss << '0';
             }
             ss << minutes;
             ss << '\'';
             if (seconds != 0) {
-                if (seconds < 10) {
+                if (seconds < 10) {  // NOLINT
                     ss << '0';
                 }
                 ss << seconds;
@@ -91,7 +90,7 @@ std::string GeoPos::GetDegreeString(double value, bool longitudial, bool compass
     return ss.str();
 }
 
-bool GeoPos::IsLatValid(double lat) { return lat >= -90.0 && lat <= 90.0; }
+bool GeoPos::IsLatValid(double lat) { return lat >= -90.0 && lat <= 90.0; }  // NOLINT
 
 bool GeoPos::IsLonValid(double lon) { return !std::isnan(lon) && !std::isinf(lon); }
 
@@ -99,7 +98,7 @@ int GeoPos::FloorInt(const double value) { return static_cast<int>(floor(value))
 
 GeoPos::GeoPos() = default;
 
-GeoPos::GeoPos(const GeoPos& geo_point) : GeoPos(geo_point.lat_, geo_point.lon_) {}
+GeoPos::GeoPos(const GeoPos& geo_pos) : GeoPos(geo_pos.lat_, geo_pos.lon_) {}
 
 GeoPos::GeoPos(double lat, double lon) : lat_{lat}, lon_{lon} {}
 void GeoPos::SetLocation(double lat, double lon) {
@@ -119,13 +118,13 @@ std::string GeoPos::ToString() const { return "[" + GetLatString() + "," + GetLo
 void GeoPos::Normalize() { lon_ = NormalizeLon(lon_); }
 
 double GeoPos::NormalizeLon(double lon) {
-    if (lon < -360.0f || lon > 360.0f) {
-        lon = std::fmod(lon, 360.0f);
+    if (lon < -360.0F || lon > 360.0F) {  // NOLINT
+        lon = std::fmod(lon, 360.0F);     // NOLINT
     }
-    if (lon < -180.0f) {
-        lon += 360.0f;
-    } else if (lon > 180.0f) {
-        lon -= 360.0f;
+    if (lon < -180.0F) {        // NOLINT
+        lon += 360.0F;          // NOLINT
+    } else if (lon > 180.0F) {  // NOLINT
+        lon -= 360.0F;          // NOLINT
     }
     return lon;
 }
@@ -140,7 +139,7 @@ std::string GeoPos::GetLatString(double lat, bool compass_format, bool decimal_f
 }
 std::string GeoPos::GetLatString(double lat) { return GetLatString(lat, true, false); }
 
-std::string GeoPos::GetLatString(bool compass_format, bool decimal_format) {
+std::string GeoPos::GetLatString(bool compass_format, bool decimal_format) const {
     return GetLatString(lat_, compass_format, decimal_format);
 }
 
@@ -154,9 +153,8 @@ std::string GeoPos::GetLonString(double lon, bool compass_format, bool decimal_f
 }
 
 std::string GeoPos::GetLonString(double lon) { return GetLonString(lon, true, false); }
-std::string GeoPos::GetLonString(bool compass_format, bool decimal_format) {
+std::string GeoPos::GetLonString(bool compass_format, bool decimal_format) const {
     return GetLonString(lon_, compass_format, decimal_format);
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

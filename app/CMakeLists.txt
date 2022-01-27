@@ -4,7 +4,7 @@ list(APPEND APP_SOURCES
 
 list(APPEND APP_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/include
-        ${CMAKE_CURRENT_LIST_DIR}/../algs/algorithm_bond/include
+        ${CMAKE_CURRENT_LIST_DIR}/../algs/algorithm-bond/include
         ${CMAKE_CURRENT_LIST_DIR}/../util/common/include
         )
 
@@ -28,7 +28,7 @@ set_target_properties(alus
 add_custom_command(TARGET alus
         POST_BUILD
         COMMAND cp ${CMAKE_CURRENT_LIST_DIR}/facility/*.sh ${ALUS_BINARY_OUTPUT_DIR}/.)
-    
+
 list(APPEND APP_UTIL_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/algorithm_parameters.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/dem_assistant.cc
@@ -49,6 +49,6 @@ set_target_properties(app-util-static
         OUTPUT_NAME app-util
         )
 
-if(ENABLE_TESTS)
-        add_subdirectory(unit_test)
-endif()
+if (ENABLE_TESTS)
+    add_subdirectory(unit-test)
+endif ()

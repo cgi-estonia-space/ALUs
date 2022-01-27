@@ -19,8 +19,13 @@
 #include "topsar_merge.h"
 
 namespace {
-using namespace alus;
-using namespace alus::topsarmerge;
+
+using alus::Rectangle;
+
+using alus::topsarmerge::GetSubSwathIndexFromName;
+using alus::topsarmerge::GetTargetBandNameFromSourceBandName;
+using alus::topsarmerge::MergeOperatorParameters;
+using alus::topsarmerge::SubSwathMergeInfo;
 
 class TopsarMergeTest : public ::testing::Test {
 protected:
@@ -106,7 +111,7 @@ TEST_F(TopsarMergeTest, FindFirstAndLastSubSwathIndicesTest) {
 
 TEST_F(TopsarMergeTest, ComputeTargetStartEndTimeTest) {
     MergeOperatorParameters computed_operator_parameters{};
-    computed_operator_parameters.number_of_subswaths = 3;
+    computed_operator_parameters.number_of_subswaths = 3;  // NOLINT
     ComputeTargetStartEndTime(computed_operator_parameters, one_sub_swath_merge_info_);
 
     ASSERT_THAT(computed_operator_parameters.target_first_line_time,
@@ -273,7 +278,7 @@ TEST_F(TopsarMergeTest, GetSourceRectanglesTest) {
 
 TEST_F(TopsarMergeTest, ComputeTargetSlantRangeTimeToFirstAndLastPixelsTest) {
     MergeOperatorParameters parameters{};
-    parameters.number_of_subswaths = 3;
+    parameters.number_of_subswaths = 3;  // NOLINT
 
     ComputeTargetSlantRangeTimeToFirstAndLastPixels(parameters, one_sub_swath_merge_info_);
     ASSERT_THAT(parameters.target_slant_range_time_to_first_pixel,

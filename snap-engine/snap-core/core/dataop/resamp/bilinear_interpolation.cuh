@@ -1,3 +1,16 @@
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #pragma once
 #include "pointer_holders.h"
 
@@ -17,8 +30,8 @@ namespace bilinearinterpolation {
         examples in our project can be found in algs/backgeocoding/src/bilinear.cu and
         util/snap-engine/include/srtm3_elevation_calc.cuh
 */
-inline __device__ void ComputeIndex(
-    const double x, const double y, const int width, const int height, snapengine::resampling::ResamplingIndex *index) {
+inline __device__ void ComputeIndex(const double x, const double y, const int width, const int height,
+                                    snapengine::resampling::ResamplingIndex* index) {
     index->x = x;
     index->y = y;
     index->width = width;
@@ -63,14 +76,9 @@ inline __device__ void ComputeIndex(
     }
 }
 
-inline __device__ double Resample(
-    PointerArray *tiles,
-    snapengine::resampling::ResamplingIndex *index,
-    int width,
-    double no_value,
-    int use_no_data,
-    int GetSamplesFunction(PointerArray *, int *, int *, double *, int, int, double, int)) {
-
+inline __device__ double Resample(PointerArray* tiles, snapengine::resampling::ResamplingIndex* index, int width,
+                                  double no_value, int use_no_data,
+                                  int GetSamplesFunction(PointerArray*, int*, int*, double*, int, int, double, int)) {
     int x[2] = {(int)index->i[0], (int)index->i[1]};
     int y[2] = {(int)index->j[0], (int)index->j[1]};
     double samples[2][2];
@@ -79,7 +87,8 @@ inline __device__ double Resample(
     if (GetSamplesFunction(tiles, x, y, samples[0], width, 2, no_value, use_no_data)) {
         const double ki = index->ki[0];
         const double kj = index->kj[0];
-        return samples[0][0] * (1.0 - ki) * (1.0 - kj) + samples[0][1] * ki * (1.0 - kj) + samples[1][0] * (1.0 - ki) * kj + samples[1][1] * ki * kj;
+        return samples[0][0] * (1.0 - ki) * (1.0 - kj) + samples[0][1] * ki * (1.0 - kj) +
+               samples[1][0] * (1.0 - ki) * kj + samples[1][1] * ki * kj;
     } else {
         return samples[0][0];
     }

@@ -27,8 +27,7 @@
 #include "snap-core/core/datamodel/product_data.h"
 #include "snap-core/core/util/math/math_utils.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 TiePointGrid::TiePointGrid(std::string_view name, int grid_width, int grid_height, double offset_x, double offset_y,
                            double sub_sampling_x, double sub_sampling_y)
@@ -128,7 +127,9 @@ void TiePointGrid::Dispose() {
     }
     RasterDataNode::Dispose();
 }
-float TiePointGrid::GetPixelFloat(int x, int y) { return static_cast<float>(GetPixelDouble(x + 0.5F, y + 0.5F)); }
+float TiePointGrid::GetPixelFloat(int x, int y) {
+    return static_cast<float>(GetPixelDouble(static_cast<float>(x) + 0.5F, static_cast<float>(y) + 0.5F));
+}
 double TiePointGrid::GetPixelDouble(int x, int y) { return GetPixelDouble(x + 0.5, y + 0.5); }
 
 std::shared_ptr<TiePointGrid> TiePointGrid::CloneTiePointGrid() {
@@ -147,7 +148,7 @@ std::shared_ptr<TiePointGrid> TiePointGrid::CreateZenithFromElevationAngleTiePoi
     std::vector<float> elevation_angles = elevation_angle_grid->GetTiePoints();
     std::vector<float> zenith_angles(elevation_angles.size());
     for (std::size_t i = 0; i < zenith_angles.size(); i++) {
-        zenith_angles.at(i) = 90.0F - elevation_angles.at(i);
+        zenith_angles.at(i) = 90.0F - elevation_angles.at(i);  // NOLINT
     }
     return std::make_shared<TiePointGrid>(elevation_angle_grid->GetName(), elevation_angle_grid->GetGridWidth(),
                                           elevation_angle_grid->GetGridHeight(), elevation_angle_grid->GetOffsetX(),
@@ -165,7 +166,7 @@ double TiePointGrid::Interpolate(double wi, double wj, int i0, int j0) {
 }
 
 void TiePointGrid::InitDiscont() {
-    auto base = this;
+    auto* base = this;
     std::vector<float> tie_points = base->GetTiePoints();
     std::vector<float> sin_tie_points(tie_points.size());
     std::vector<float> cos_tie_points(tie_points.size());
@@ -190,7 +191,7 @@ double TiePointGrid::GetPixelDouble(double x, double y) {
         double cos_angle = cos_grid_->GetPixelDouble(x, y);
         double v = MathUtils::RTOD * atan2(sin_angle, cos_angle);
         if (discontinuity_ == DISCONT_AT_360 && v < 0.0) {
-            return 360.0F + v;  // = 180 + (180 - abs(v))
+            return 360.0F + v;  // = 180 + (180 - abs(v))  // NOLINT
         }
         return v;
     }
@@ -292,14 +293,14 @@ void TiePointGrid::SetDiscontinuity(int discontinuity) {
 int TiePointGrid::GetDiscontinuity(std::vector<float> tie_points) {
     // todo: replaced with simpler std::max_element approach, if this causes issues in the future implement range like
     // in java
-    if (*std::max_element(tie_points.begin(), tie_points.end()) > 180.0) {
+    if (*std::max_element(tie_points.begin(), tie_points.end()) > 180.0) {  // NOLINT
         return DISCONT_AT_360;
     }
     return DISCONT_AT_180;
 }
 
 int TiePointGrid::GetRasterHeight() {
-    auto product = GetProduct();
+    auto* product = GetProduct();
     if (product != nullptr) {
         return product->GetSceneRasterHeight();
     }
@@ -307,7 +308,7 @@ int TiePointGrid::GetRasterHeight() {
 }
 
 int TiePointGrid::GetRasterWidth() {
-    auto product = GetProduct();
+    auto* product = GetProduct();
     if (product != nullptr) {
         return product->GetSceneRasterWidth();
     }
@@ -316,9 +317,9 @@ int TiePointGrid::GetRasterWidth() {
 std::shared_ptr<ProductData> TiePointGrid::ReadGridData() {
     std::shared_ptr<ProductData> product_data = CreateCompatibleRasterData(GetGridWidth(), GetGridHeight());
     throw std::runtime_error("ReadGridData not implemented");
-    //GetProductReader()->ReadTiePointGridRasterData(this, 0, 0, GetGridWidth(),
-    //                                               GetGridHeight(), product_data, nullptr);
-    return product_data; //NOSONAR
+    // GetProductReader()->ReadTiePointGridRasterData(this, 0, 0, GetGridWidth(),
+    //                                                GetGridHeight(), product_data, nullptr);
+    return product_data;  // NOSONAR
 }
 
 std::shared_ptr<TiePointGrid> TiePointGrid::CreateSubset(const std::shared_ptr<TiePointGrid>& source_tie_point_grid,
@@ -354,7 +355,7 @@ std::shared_ptr<TiePointGrid> TiePointGrid::CreateSubset(const std::shared_ptr<T
 
     const double new_t_p_g_sub_sampling_x = src_t_p_g_sub_sampling_x / subset_step_x;
     const double new_t_p_g_sub_sampling_y = src_t_p_g_sub_sampling_y / subset_step_y;
-    const float pixel_center = 0.5f;
+    const float pixel_center = 0.5F;
     const double new_t_p_g_offset_x =
         (source_tie_point_grid->GetOffsetX() - pixel_center - subset_offset_x) / subset_step_x + pixel_center;
     const double new_t_p_g_offset_y =
@@ -364,13 +365,13 @@ std::shared_ptr<TiePointGrid> TiePointGrid::CreateSubset(const std::shared_ptr<T
     const double diff_x = new_offset_x - new_t_p_g_offset_x;
     const double diff_y = new_offset_y - new_t_p_g_offset_y;
     int data_offset_x;
-    if (diff_x < 0.0f) {
+    if (diff_x < 0.0F) {
         data_offset_x = 0;
     } else {
         data_offset_x = static_cast<int>(round(diff_x / new_t_p_g_sub_sampling_x));
     }
     int data_offset_y;
-    if (diff_y < 0.0f) {
+    if (diff_y < 0.0F) {
         data_offset_y = 0;
     } else {
         data_offset_y = static_cast<int>(round(diff_y / new_t_p_g_sub_sampling_y));
@@ -386,7 +387,7 @@ std::shared_ptr<TiePointGrid> TiePointGrid::CreateSubset(const std::shared_ptr<T
     }
 
     std::vector<float> old_tie_points = source_tie_point_grid->GetTiePoints();
-    std::vector<float> tie_points(new_t_p_g_width * new_t_p_g_height);
+    std::vector<float> tie_points(static_cast<size_t>((new_t_p_g_width * new_t_p_g_height)));
     for (int y = 0; y < new_t_p_g_height; y++) {
         const int src_pos = src_t_p_g_width * (data_offset_y + y) + data_offset_x;
         //        todo:check if this works like expected
@@ -403,5 +404,4 @@ std::shared_ptr<TiePointGrid> TiePointGrid::CreateSubset(const std::shared_ptr<T
     return tie_point_grid;
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

@@ -13,7 +13,6 @@
  */
 #include "gmock/gmock.h"
 
-#include "cuda_friendly_object.h"
 #include "cuda_util.h"
 #include "dataset.h"
 #include "gdal_util.h"
@@ -21,9 +20,12 @@
 
 #include "range_doppler_geocoding_test.cuh"
 
-using namespace alus;
-using namespace alus::tests;
-using namespace alus::snapengine::resampling;
+using alus::Dataset;
+using alus::Rectangle;
+using alus::snapengine::resampling::ResamplingIndex;
+using alus::snapengine::resampling::ResamplingRaster;
+using alus::snapengine::resampling::Tile;
+using alus::tests::LaunchGetPixelValue;
 
 namespace {
 
@@ -43,8 +45,8 @@ protected:
     double range_index_;
     double azimuth_index_;
     int margin_{1};
-    int source_image_width_{23278};
-    int source_image_height_{1500};
+    const int source_image_width_{23278};
+    const int source_image_height_{1500};
     Tile source_tile_;
     ResamplingRaster raster_;
     ResamplingIndex index_;
@@ -99,7 +101,7 @@ public:
         cudaFree(d_sub_swath_index_);
     }
 
-    virtual ~RangeDopplerGeocodingTest() { DeviceFree(); }
+    ~RangeDopplerGeocodingTest() override { DeviceFree(); }
 };
 
 TEST_F(RangeDopplerGeocodingTest, GetPixelValueNoNewRectangleComputation) {
@@ -107,10 +109,10 @@ TEST_F(RangeDopplerGeocodingTest, GetPixelValueNoNewRectangleComputation) {
 
     const Rectangle source_rectangle{16195, 1008, 1019, 454};
 
-    this->range_index_ = 16478.63922364263;
-    this->azimuth_index_ = 1459.017842614426;
-    this->source_tile_ = {16195, 1008, 1019, 454, false, false, nullptr};
-    this->raster_ = {16478.63922364263, 1459.017842614426, 0, source_rectangle, &source_tile_, true};
+    this->range_index_ = 16478.63922364263;                                                            // NOLINT
+    this->azimuth_index_ = 1459.017842614426;                                                          // NOLINT
+    this->source_tile_ = {16195, 1008, 1019, 454, false, false, nullptr};                              // NOLINT
+    this->raster_ = {16478.63922364263, 1459.017842614426, 0, source_rectangle, &source_tile_, true};  // NOLINT
 
     double index_i[]{0, 0};
     double index_j[]{0, 0};
@@ -145,10 +147,10 @@ TEST_F(RangeDopplerGeocodingTest, GetPixelValueZeroCaseAndNoNewRectangleComputat
 
     const Rectangle source_rectangle{16195, 1008, 1019, 454};
 
-    this->range_index_ = 16658.41527141122;
-    this->azimuth_index_ = 1448.4087841209837;
-    this->source_tile_ = {16195, 1008, 1019, 454, false, false, nullptr};
-    this->raster_ = {16658.41527141122, 1448.4087841209837, 0, source_rectangle, &source_tile_, true};
+    this->range_index_ = 16658.41527141122;                                                             // NOLINT
+    this->azimuth_index_ = 1448.4087841209837;                                                          // NOLINT
+    this->source_tile_ = {16195, 1008, 1019, 454, false, false, nullptr};                               // NOLINT
+    this->raster_ = {16658.41527141122, 1448.4087841209837, 0, source_rectangle, &source_tile_, true};  // NOLINT
 
     double index_i[]{0, 0};
     double index_j[]{0, 0};

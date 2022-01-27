@@ -18,8 +18,7 @@
  */
 #include "snap-engine-utilities/engine-utilities/datamodel/orbit_vector.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 int OrbitVector::Compare(const std::shared_ptr<OrbitVector>& osv1, const std::shared_ptr<OrbitVector>& osv2) {
     //    if (osv1->utc_mjd_ < osv2->utc_mjd_) {
@@ -32,5 +31,4 @@ int OrbitVector::Compare(const std::shared_ptr<OrbitVector>& osv1, const std::sh
     return static_cast<int>(osv1->utc_mjd_ < osv2->utc_mjd_ && osv2->utc_mjd_ >= osv1->utc_mjd_);
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

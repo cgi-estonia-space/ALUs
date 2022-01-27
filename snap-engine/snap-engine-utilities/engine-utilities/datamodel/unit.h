@@ -20,8 +20,7 @@
 
 #include <memory>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 class Band;
 
@@ -72,5 +71,4 @@ public:
     static UnitType GetUnitType(const std::shared_ptr<Band>& source_band);
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

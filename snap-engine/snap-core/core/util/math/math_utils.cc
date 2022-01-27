@@ -26,10 +26,9 @@
 #include "custom/dimension.h"
 #include "custom/rectangle.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
-double MathUtils::LOG10 = log(10.0);
+double MathUtils::log_10_ = log(10.0);
 // float MathUtils::Interpolate2D(float wi, float wj, float x00, float x10, float x01, float x11) {
 //    return x00 + wi * (x10 - x00) + wj * (x01 - x00) + wi * wj * (x11 + x00 - x01 - x10);
 //}
@@ -62,11 +61,11 @@ std::shared_ptr<custom::Dimension> MathUtils::FitDimension(int n, double a, doub
     } else {
         h2 = h1 = 1;
     }
-    std::vector<double> d(4);
+    std::vector<double> d(4);  // NOLINT
     d.at(0) = std::abs(b * w1 - a * h1);
     d.at(1) = std::abs(b * w1 - a * h2);
     d.at(2) = std::abs(b * w2 - a * h1);
-    d.at(3) = std::abs(b * w2 - a * h2);
+    d.at(3) = std::abs(b * w2 - a * h2);  // NOLINT
     int index = -1;
     double d_min = std::numeric_limits<double>::max();
     for (std::size_t i = 0; i < d.size(); i++) {
@@ -91,11 +90,11 @@ std::vector<std::shared_ptr<custom::Rectangle>> MathUtils::SubdivideRectangle(in
                                                                               int num_tiles_y, int extra_border) {
     std::vector<std::shared_ptr<custom::Rectangle>> rectangles(num_tiles_x * num_tiles_y);
     int k = 0;
-    float w = static_cast<float>(width) / num_tiles_x;
-    float h = static_cast<float>(height) / num_tiles_y;
+    float w = static_cast<float>(width) / static_cast<float>(num_tiles_x);
+    float h = static_cast<float>(height) / static_cast<float>(num_tiles_y);
     for (int j = 0; j < num_tiles_y; j++) {
-        int y1 = static_cast<int>(std::floor((j + 0) * h));
-        int y2 = static_cast<int>(std::floor((j + 1) * h)) - 1;
+        int y1 = static_cast<int>(std::floor(static_cast<float>((j + 0)) * h));
+        int y2 = static_cast<int>(std::floor(static_cast<float>((j + 1)) * h)) - 1;
         if (y2 < y1) {
             y2 = y1;
         }
@@ -108,8 +107,8 @@ std::vector<std::shared_ptr<custom::Rectangle>> MathUtils::SubdivideRectangle(in
             y2 = height - 1;
         }
         for (int i = 0; i < num_tiles_x; i++) {
-            int x1 = static_cast<int>(std::floor((i + 0) * w));
-            int x2 = static_cast<int>(std::floor((i + 1) * w)) - 1;
+            int x1 = static_cast<int>(std::floor(static_cast<float>((i + 0)) * w));
+            int x2 = static_cast<int>(std::floor(static_cast<float>((i + 1)) * w)) - 1;
             if (x2 < x1) {
                 x2 = x1;
             }
@@ -134,5 +133,4 @@ bool MathUtils::EqualValues(double x1, double x2, double eps) {
     ;
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

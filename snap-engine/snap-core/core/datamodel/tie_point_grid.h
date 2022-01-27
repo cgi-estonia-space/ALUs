@@ -27,8 +27,7 @@
 #include "ceres-core/core/i_progress_monitor.h"
 #include "raster_data_node.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 class PixelsAreReadOnlyException : public std::runtime_error {
 public:
@@ -164,22 +163,22 @@ public:
     /**
      * @return The grid's width (= number of columns).
      */
-    int GetGridWidth() const { return grid_width_; }
+    [[nodiscard]] int GetGridWidth() const { return grid_width_; }
 
     /**
      * @return The grid's height (= number of rows).
      */
-    int GetGridHeight() const { return grid_height_; }
+    [[nodiscard]] int GetGridHeight() const { return grid_height_; }
 
     /**
      * Retrieves the x co-ordinate of the first (upper-left) tie-point in pixels.
      */
-    double GetOffsetX() const { return offset_x_; }
+    [[nodiscard]] double GetOffsetX() const { return offset_x_; }
 
     /**
      * Retrieves the y co-ordinate of the first (upper-left) tie-point in pixels.
      */
-    double GetOffsetY() const { return offset_y_; }
+    [[nodiscard]] double GetOffsetY() const { return offset_y_; }
 
     /**
      * Returns the sub-sampling in X-direction given in the pixel co-ordinates of the data product to which this
@@ -187,7 +186,7 @@ public:
      *
      * @return the sub-sampling in X-direction, never less than one.
      */
-    double GetSubSamplingX() const { return sub_sampling_x_; }
+    [[nodiscard]] double GetSubSamplingX() const { return sub_sampling_x_; }
 
     /**
      * Returns the sub-sampling in Y-direction given in the pixel co-ordinates of the data product to which this
@@ -195,7 +194,7 @@ public:
      *
      * @return the sub-sampling in Y-direction, never less than one.
      */
-    double GetSubSamplingY() const { return sub_sampling_y_; }
+    [[nodiscard]] double GetSubSamplingY() const { return sub_sampling_y_; }
 
     /**
      * @return The data array representing the single tie-points.
@@ -260,7 +259,7 @@ public:
      * #DISCONT_AT_180} or
      * {@link #DISCONT_AT_360}
      */
-    int GetDiscontinuity() const { return discontinuity_; }
+    [[nodiscard]] int GetDiscontinuity() const { return discontinuity_; }
 
     /**
      * Sets the angular discontinuity.
@@ -276,7 +275,7 @@ public:
      *
      * @param rasterData The raster data whose reference will be stored.
      */
-    void SetRasterData([[maybe_unused]] std::shared_ptr<ProductData> raster_data) override {
+    void SetRasterData([[maybe_unused]] const std::shared_ptr<ProductData>& raster_data) override {
         throw PixelsAreReadOnlyException();
     }
 
@@ -595,5 +594,4 @@ protected:
         return array;
     }
 };
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

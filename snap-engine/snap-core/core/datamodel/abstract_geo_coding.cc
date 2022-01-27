@@ -18,8 +18,7 @@
  */
 #include "snap-core/core/datamodel/abstract_geo_coding.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 MathTransformWKT AbstractGeoCoding::GetImageToMapTransform() {
     if (image_2_map_.empty()) {
@@ -38,5 +37,4 @@ MathTransformWKT AbstractGeoCoding::GetImageToMapTransform() {
     }
     return image_2_map_;
 }
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

@@ -21,8 +21,7 @@
 #include <optional>
 #include <string>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 /**
  * Struct representing Spectral_Band_Info tag of the BEAM-DIMAP format.
@@ -46,5 +45,4 @@ struct SpectralBandInfo {
     std::optional<double> no_data_value;
     std::optional<std::string> valid_mask_term;
 };
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

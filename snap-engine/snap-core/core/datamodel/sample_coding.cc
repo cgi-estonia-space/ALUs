@@ -23,16 +23,15 @@
 #include "../util/guardian.h"
 #include "snap-core/core/datamodel/metadata_attribute.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 SampleCoding::SampleCoding(std::string_view name) : MetadataElement(name) {}
 
-void SampleCoding::AddElement([[maybe_unused]] std::shared_ptr<MetadataElement> element) {
+void SampleCoding::AddElement([[maybe_unused]] const std::shared_ptr<MetadataElement>& element) {
     // just override to prevent add
     throw std::runtime_error("Add element not supported for SampleCoding");
 }
-void SampleCoding::AddAttribute(std::shared_ptr<MetadataAttribute> attribute) {
+void SampleCoding::AddAttribute(const std::shared_ptr<MetadataAttribute>& attribute) {
     if (!attribute->GetData()->IsInt()) {
         throw std::invalid_argument("attribute value is not a integer");
     }
@@ -50,13 +49,14 @@ std::shared_ptr<MetadataAttribute> SampleCoding::AddSample(std::string_view name
                                                            std::string_view description) {
     return AddSamples(name, std::vector<int>(value), description);
 }
-std::shared_ptr<MetadataAttribute> SampleCoding::AddSamples(std::string_view name, std::vector<int> values,
+std::shared_ptr<MetadataAttribute> SampleCoding::AddSamples(std::string_view name, const std::vector<int>& values,
                                                             std::string_view description) {
     Guardian::AssertNotNull("name", name);
-    std::shared_ptr<ProductData> product_data = ProductData::CreateInstance(ProductData::TYPE_UINT32, values.size());
+    std::shared_ptr<ProductData> product_data =
+        ProductData::CreateInstance(ProductData::TYPE_UINT32, static_cast<int>(values.size()));
     std::shared_ptr<MetadataAttribute> attribute = std::make_shared<MetadataAttribute>(name, product_data, false);
     attribute->SetDataElems(values);
-    if (description != nullptr) {
+    if (description != nullptr) {  // NOLINT
         attribute->SetDescription(description);
     }
     AddAttribute(attribute);
@@ -66,5 +66,4 @@ int SampleCoding::GetSampleCount() { return GetNumAttributes(); }
 std::string SampleCoding::GetSampleName(int index) { return GetAttributeAt(index)->GetName(); }
 int SampleCoding::GetSampleValue(int index) { return GetAttributeAt(index)->GetData()->GetElemInt(); }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

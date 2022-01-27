@@ -22,13 +22,15 @@
 #include <string>
 #include <vector>
 
-namespace alus {
-namespace jlinda {
+namespace alus::jlinda {
 
 class GeoPoint {
 private:
-    static constexpr double _MIN_PER_DEG{60.0};
-    static constexpr double _SEC_PER_DEG{_MIN_PER_DEG * 60.0};
+    static constexpr double MIN_PER_DEG{60.0};
+    static constexpr double SEC_PER_MIN{60.0};
+    static constexpr double SEC_PER_DEG{MIN_PER_DEG * SEC_PER_MIN};
+    static constexpr double MINIMAL_VALID_LATITUDE{-90};
+    static constexpr double MAXIMUM_VALID_LATITUDE{90};
 
     /**
      * Creates a string representation of the given decimal degree value. The string returned has the format
@@ -62,7 +64,7 @@ public:
      *
      * @param geoPoint the  geo-position providing the latitude and longitude, must not be <code>null</code>
      */
-    GeoPoint(const GeoPoint& geoPoint);
+    GeoPoint(const GeoPoint& geo_point);
 
     /**
      * Constructs a new geo-position with the given latitude and longitude values.
@@ -205,6 +207,4 @@ public:
      */
     static std::string GetLonString(double lon);
 };
-
-}  // namespace jlinda
-}  // namespace alus
+}  // namespace alus::jlinda

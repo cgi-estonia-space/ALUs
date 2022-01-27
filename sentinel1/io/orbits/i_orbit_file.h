@@ -27,8 +27,7 @@
 
 #include "snap-engine-utilities/engine-utilities/datamodel/orbit_vector.h"
 
-namespace alus {
-namespace s1tbx {
+namespace alus::s1tbx {
 class IOrbitFile {
 public:
     virtual std::vector<std::string> GetAvailableOrbitTypes() = 0;
@@ -58,5 +57,4 @@ public:
     IOrbitFile& operator=(const IOrbitFile&) = delete;
     virtual ~IOrbitFile() = default;
 };
-}  // namespace s1tbx
-}  // namespace alus
+}  // namespace alus::s1tbx

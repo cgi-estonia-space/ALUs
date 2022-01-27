@@ -13,10 +13,8 @@
  */
 #pragma once
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 constexpr int BILINEAR_INTERPOLATION_KERNEL_SIZE{4};
 
 }
-}  // namespace alus

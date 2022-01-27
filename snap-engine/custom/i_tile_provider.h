@@ -19,14 +19,10 @@
 #include "custom/io_tile.h"
 #include "snap-gpf/gpf/i_tile.h"
 
-namespace alus {
-namespace snapengine {
-namespace custom {
+namespace alus::snapengine::custom {
 class ITileProvider {
 public:
     [[nodiscard]] virtual std::vector<std::shared_ptr<IoTile>> GetTiles() const = 0;
     virtual ~ITileProvider() = default;
 };
-}  // namespace custom
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine::custom

@@ -14,6 +14,7 @@
 #pragma once
 
 #include <cmath>
+#include <iomanip>
 #include <ios>
 #include <iostream>
 #include <memory>
@@ -30,10 +31,8 @@
 #include "dataset.h"
 #include "gdal_util.h"
 
-namespace alus {
-namespace utils {
-namespace test {
-std::string HashFromBand(std::string_view file_path) {
+namespace alus::utils::test {
+inline std::string HashFromBand(std::string_view file_path) {
     auto* const dataset = static_cast<GDALDataset*>(GDALOpen(file_path.data(), GA_ReadOnly));
     const auto x_size = dataset->GetRasterXSize();
     const auto y_size = dataset->GetRasterYSize();
@@ -51,7 +50,7 @@ std::string HashFromBand(std::string_view file_path) {
     return s_out.str();
 }
 
-std::string Md5FromFile(const std::string& path) {
+inline std::string Md5FromFile(const std::string& path) {
     unsigned char result[MD5_DIGEST_LENGTH];
     boost::iostreams::mapped_file_source src(path);
     MD5(reinterpret_cast<const unsigned char*>(src.data()), src.size(), result);
@@ -61,8 +60,8 @@ std::string Md5FromFile(const std::string& path) {
     return sout.str();
 }
 
-bool AreDatasetsEqual(std::shared_ptr<GDALDataset> comparand_dataset, std::shared_ptr<GDALDataset> reference_dataset,
-                      double error_margin) {
+inline bool AreDatasetsEqual(const std::shared_ptr<GDALDataset>& comparand_dataset,
+                             const std::shared_ptr<GDALDataset>& reference_dataset, double error_margin) {
     const auto width = reference_dataset->GetRasterXSize();
     const auto height = reference_dataset->GetRasterYSize();
 
@@ -98,7 +97,7 @@ bool AreDatasetsEqual(std::shared_ptr<GDALDataset> comparand_dataset, std::share
     return true;
 }
 
-bool AreDatasetsEqual(const std::string_view comparand, const std::string_view reference, double error_margin) {
+inline bool AreDatasetsEqual(const std::string_view comparand, const std::string_view reference, double error_margin) {
     auto dataset_closer = [](GDALDataset* dataset) { GDALClose(dataset); };
 
     auto* const reference_dataset = static_cast<GDALDataset*>(GDALOpen(reference.data(), GA_ReadOnly));
@@ -109,6 +108,4 @@ bool AreDatasetsEqual(const std::string_view comparand, const std::string_view r
 
     return AreDatasetsEqual(comparand_dataset_pointer, reference_dataset_pointer, error_margin);
 }
-}  // namespace test
-}  // namespace utils
-}  // namespace alus
+}  // namespace alus::utils::test

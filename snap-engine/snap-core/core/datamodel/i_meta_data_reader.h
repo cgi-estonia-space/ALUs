@@ -17,8 +17,7 @@
 #include <string>
 #include <string_view>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 class MetadataElement;
 class Product;
 class IMetaDataReader {
@@ -43,7 +42,5 @@ public:
     [[nodiscard]] virtual std::shared_ptr<MetadataElement> Read(std::string_view name) = 0;
     // in case of default constructor user needs to provide source product
     virtual void SetProduct(Product* product) = 0;
-
 };
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

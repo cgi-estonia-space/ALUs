@@ -26,8 +26,7 @@
 #include "snap-core/core/datamodel/index_coding.h"
 #include "snap-core/core/datamodel/sample_coding.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 Band::Band(std::string_view name, int data_type, int width, int height) : AbstractBand(name, data_type, width, height) {
     SetSpectralBandIndex(-1);
@@ -106,5 +105,4 @@ void Band::WriteRasterData([[maybe_unused]] int offset_x, [[maybe_unused]] int o
                            [[maybe_unused]] int height, [[maybe_unused]] std::shared_ptr<ProductData> raster_data,
                            [[maybe_unused]] std::shared_ptr<ceres::IProgressMonitor> pm) {}
 void Band::WriteRasterDataFully([[maybe_unused]] std::shared_ptr<ceres::IProgressMonitor> pm) {}
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

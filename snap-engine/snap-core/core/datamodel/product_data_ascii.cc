@@ -20,8 +20,7 @@
 
 #include <algorithm>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 ASCII::ASCII(std::string_view data) : Byte(std::vector<int8_t>(data.begin(), data.end()), ProductData::TYPE_ASCII) {}
 
@@ -29,7 +28,7 @@ ASCII::ASCII(int length) : Byte(length, ProductData::TYPE_ASCII) {}
 
 std::string ASCII::GetElemString() { return std::string(this->array_.begin(), this->array_.end()); }
 
-std::string ASCII::GetElemStringAt(int index) const { return std::string{(char)array_.at(index)}; }
+std::string ASCII::GetElemStringAt(int index) const { return std::string{static_cast<char>(array_.at(index))}; }
 void ASCII::SetElems(std::any data) {
     if (data.type() == typeid(std::vector<int8_t>)) {
         array_ = std::any_cast<std::vector<int8_t>>(data);
@@ -39,9 +38,8 @@ void ASCII::SetElems(std::any data) {
             auto const v = std::stoi(s);
             if (INT8_MIN <= v && INT8_MAX >= v) {
                 return v;
-            } else {
-                throw std::out_of_range("value is not int8_t");
             }
+            throw std::out_of_range("value is not int8_t");
         });
     } else if (data.type() == typeid(std::string_view)) {
         auto assign_data = std::any_cast<std::string_view>(data);
@@ -68,5 +66,4 @@ std::shared_ptr<ProductData> ASCII::CreateDeepClone() const {
     return data;
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

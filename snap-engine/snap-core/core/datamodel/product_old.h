@@ -17,12 +17,10 @@
 
 #include "gdal_priv.h"
 
-#include "geocoding.h"
 #include "dataset.h"
+#include "geocoding.h"
 
-namespace alus {
-namespace snapengine {
-namespace old {
+namespace alus::snapengine::old {
 
 class Product {
 public:
@@ -30,6 +28,4 @@ public:
     std::shared_ptr<GDALDataset> dataset_;
     const char* FILE_FORMAT_;
 };
-}  // namespace old
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine::old

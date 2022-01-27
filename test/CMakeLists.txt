@@ -11,8 +11,8 @@ list(APPEND TEST_SOURCES
         src/dem_test.cc
         src/orbit_state_vectors_test.cc
         src/sentinel1_test.cc
-        src/geo_utils_test.cpp
-        src/product_data_test.cpp
+        src/geo_utils_test.cc
+        src/product_data_test.cc
         src/sar_geocoding_test.cc
         src/tie_point_grid_test.cc
         src/range_doppler_geocoding_test.cc
@@ -46,14 +46,14 @@ list(APPEND TEST_SOURCES
         src/zip_test.cc
         )
 
-add_executable(unit_test ${TEST_SOURCES})
+add_executable(unit-test ${TEST_SOURCES})
 
-target_include_directories(unit_test
+target_include_directories(unit-test
         PRIVATE
         ${TEST_INCLUDE_DIRS}
         )
 
-target_link_libraries(unit_test
+target_link_libraries(unit-test
         PRIVATE
         gmock
         gdal-util-static
@@ -73,13 +73,28 @@ target_link_libraries(unit_test
         topsar-merge-static
         )
 
-set_target_properties(unit_test
+set_target_properties(unit-test
         PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}
         )
-add_custom_command(TARGET unit_test
+add_custom_command(TARGET unit-test
         POST_BUILD
         COMMAND cp -r ${CMAKE_CURRENT_LIST_DIR}/goods ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}/.
         COMMAND cd ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}/goods && unzip -oq ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}/goods/\\*.zip
         COMMAND echo "${CMAKE_UNIT_TEST_BINARY_OUTPUT_DIR}"
+        )
+
+list(APPEND ALUS_GMOCK_MAIN_SOURCES
+        ${CMAKE_CURRENT_LIST_DIR}/src/alus_gmock_main.cc
+        )
+
+add_library(alus-gmock-main-static
+        STATIC
+        ${ALUS_GMOCK_MAIN_SOURCES})
+
+target_link_libraries(alus-gmock-main-static
+        PUBLIC
+        gmock
+        common-util-static
+        gdal-util-static
         )
