@@ -20,8 +20,7 @@
 #include "product.h"
 #include "snap-core/core/dataio/dimap/dimap_product_constants.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 void PugixmlMetaDataWriter::Write() {
     // todo: copy might be fast if is_modified = false for everything
@@ -98,5 +97,4 @@ void PugixmlMetaDataWriter::SetProduct(Product* product) { product_ = product; }
 
 PugixmlMetaDataWriter::PugixmlMetaDataWriter(Product* product) : IMetaDataWriter(product) {}
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

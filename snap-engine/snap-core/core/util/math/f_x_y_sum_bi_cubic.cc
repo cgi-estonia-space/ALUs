@@ -18,24 +18,21 @@
  */
 #include "f_x_y_sum_bi_cubic.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
-BiCubic::BiCubic() : FXYSum(FXY_BI_CUBIC, 3 + 3) {}
+BiCubic::BiCubic() : FXYSum(fxy_bi_cubic_, 3 + 3) {}  // NOLINT
 
-BiCubic::BiCubic(std::vector<double> coefficients) : FXYSum(FXY_BI_CUBIC, 3 + 3, coefficients) {}
+BiCubic::BiCubic(std::vector<double> coefficients) : FXYSum(fxy_bi_cubic_, 3 + 3, coefficients) {}  // NOLINT
 
-double BiCubic::ComputeZ(double x, double y) {
+double BiCubic::ComputeZ(double x, double y) {  // NOLINT
     std::vector<double> c = GetCoefficients();
     return c.at(0) +
            (c.at(1) +
-            (c.at(3) + (c.at(6) + (c.at(10) + (c.at(13) + c.at(15) * y) * y) * y) * x +
-             (c.at(7) + (c.at(11) + c.at(14) * y) * y) * y) *
+            (c.at(3) + (c.at(6) + (c.at(10) + (c.at(13) + c.at(15) * y) * y) * y) * x +  // NOLINT
+             (c.at(7) + (c.at(11) + c.at(14) * y) * y) * y) *                            // NOLINT
                 x +
-            (c.at(4) + (c.at(8) + c.at(12) * y) * y) * y) *
+            (c.at(4) + (c.at(8) + c.at(12) * y) * y) * y) *  // NOLINT
                x +
-           (c.at(2) + (c.at(5) + c.at(9) * y) * y) * y;
+           (c.at(2) + (c.at(5) + c.at(9) * y) * y) * y;  // NOLINT
 }
-
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

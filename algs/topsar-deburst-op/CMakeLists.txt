@@ -5,7 +5,7 @@ list(APPEND TOPSAR_DEBURST_OP_SOURCES
 
 list(APPEND TOPSAR_DEBURST_OP_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/include
-        ${CMAKE_CURRENT_LIST_DIR}/../algorithm_bond/include
+        ${CMAKE_CURRENT_LIST_DIR}/../algorithm-bond/include
         ${CMAKE_CURRENT_LIST_DIR}/../../app/include
         #      SENTINEL1
         ${CMAKE_CURRENT_LIST_DIR}/../../sentinel1
@@ -25,7 +25,7 @@ list(APPEND TOPSAR_DEBURST_OP_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine/snap-engine-utilities/engine-utilities/util
         ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine/snap-engine-utilities/engine-utilities/datamodel
         #      OTHER
-        ${CMAKE_CURRENT_LIST_DIR}/../../util/exotic_operations/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/exotic-operations/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/cuda/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/common/include
         ${CMAKE_CURRENT_LIST_DIR}/../../external/pugixml/include

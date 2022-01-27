@@ -13,16 +13,13 @@
  */
 #pragma once
 
-namespace alus{
-namespace transform{
+namespace alus::transform {
 
 // These are the TOP LEFT / UPPER LEFT coordinates of the image.
 static constexpr int TRANSFORM_LON_ORIGIN_INDEX{0};    // Or X origin
 static constexpr int TRANSFORM_PIXEL_X_SIZE_INDEX{1};  // Or pixel width
 static constexpr int TRANSFORM_ROTATION_1{2};
-static constexpr int TRANSFORM_LAT_ORIGIN_INDEX{3};    // Or Y origin
+static constexpr int TRANSFORM_LAT_ORIGIN_INDEX{3};  // Or Y origin
 static constexpr int TRANSFORM_ROTATION_2{4};
 static constexpr int TRANSFORM_PIXEL_Y_SIZE_INDEX{5};  // Or pixel height
-
-}
-}
+}  // namespace alus::transform

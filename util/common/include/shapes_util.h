@@ -15,19 +15,19 @@
 
 #include <climits>
 #include <cmath>
+#include <vector>
 
 #include "shapes.h"
 
-namespace alus {
-namespace shapeutils {
+namespace alus::shapeutils {
 
 inline Rectangle GetIntersection(const Rectangle& rectangle_1, const Rectangle& rectangle_2) {
     int target_x = rectangle_1.x;
     int target_y = rectangle_1.y;
-    long target_width = target_x + rectangle_1.width;
-    long target_height = target_y + rectangle_1.height;
-    long rx2 = rectangle_2.x + rectangle_2.width;
-    long ry2 = rectangle_2.y + rectangle_2.height;
+    int64_t target_width = target_x + rectangle_1.width;
+    int64_t target_height = target_y + rectangle_1.height;
+    int64_t rx2 = rectangle_2.x + rectangle_2.width;
+    int64_t ry2 = rectangle_2.y + rectangle_2.height;
     if (target_x < rectangle_2.x) {
         target_x = rectangle_2.x;
     }
@@ -51,11 +51,14 @@ inline Rectangle GetIntersection(const Rectangle& rectangle_1, const Rectangle& 
     return {target_x, target_y, static_cast<int>(target_width), static_cast<int>(target_height)};
 }
 
-inline std::vector<Rectangle> GenerateRectanglesForRaster(int raster_size_x, int raster_size_y, int rectangle_size_x, int rectangle_size_y) {
-    int x_rectangles = static_cast<short>(std::ceil(static_cast<float>(raster_size_x) / static_cast<float>(rectangle_size_x)));
-    int y_rectangles = static_cast<short>(std::ceil(static_cast<float>(raster_size_y) / static_cast<float>(rectangle_size_y)));
+inline std::vector<Rectangle> GenerateRectanglesForRaster(int raster_size_x, int raster_size_y, int rectangle_size_x,
+                                                          int rectangle_size_y) {
+    int x_rectangles =
+        static_cast<int16_t>(std::ceil(static_cast<float>(raster_size_x) / static_cast<float>(rectangle_size_x)));
+    int y_rectangles =
+        static_cast<int16_t>(std::ceil(static_cast<float>(raster_size_y) / static_cast<float>(rectangle_size_y)));
     std::vector<Rectangle> rectangles;
-    rectangles.reserve(static_cast<std::size_t>(y_rectangles * x_rectangles));
+    rectangles.reserve(static_cast<std::size_t>(y_rectangles) * static_cast<size_t>(x_rectangles));
 
     int y_max;
     int x_max;
@@ -104,5 +107,4 @@ inline std::vector<Rectangle> GenerateRectanglesForRaster(int raster_size_x, int
     return rectangles;
 }
 
-}  // namespace shapeutils
-}  // namespace alus
+}  // namespace alus::shapeutils

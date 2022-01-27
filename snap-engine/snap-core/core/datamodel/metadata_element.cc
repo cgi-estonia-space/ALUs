@@ -26,8 +26,7 @@
 #include "snap-core/core/dataio/product_subset_def.h"
 #include "snap-core/core/datamodel/metadata_attribute.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 MetadataElement::MetadataElement(std::string_view name, std::string_view description, IMetaDataReader* meta_data_reader)
     : ProductNode(name, description) {
@@ -44,7 +43,7 @@ MetadataElement::MetadataElement(std::string_view name, std::string_view descrip
  *
  * @param element the element to added, ignored if <code>null</code>
  */
-void MetadataElement::AddElement(std::shared_ptr<MetadataElement> element) {
+void MetadataElement::AddElement(const std::shared_ptr<MetadataElement>& element) {
     if (element == nullptr) {
         return;
     }
@@ -59,7 +58,7 @@ void MetadataElement::AddElement(std::shared_ptr<MetadataElement> element) {
  *
  * @param attribute the attribute to be added, <code>null</code> is ignored
  */
-void MetadataElement::AddAttribute(std::shared_ptr<MetadataAttribute> attribute) {
+void MetadataElement::AddAttribute(const std::shared_ptr<MetadataAttribute>& attribute) {
     if (attribute == nullptr) {
         return;
     }
@@ -91,7 +90,7 @@ int MetadataElement::GetNumAttributes() const {
     return attributes_->GetNodeCount();
 }
 
-bool MetadataElement::RemoveAttribute(std::shared_ptr<MetadataAttribute> attribute) {
+bool MetadataElement::RemoveAttribute(const std::shared_ptr<MetadataAttribute>& attribute) {
     return attribute != nullptr && attributes_ != nullptr && attributes_->Remove(attribute);
 }
 
@@ -361,5 +360,4 @@ std::vector<std::string> MetadataElement::GetElementNames() const {
     return elements_ ? elements_->GetNodeNames() : std::vector<std::string>(0);
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

@@ -23,13 +23,14 @@
 #include "product_data_byte.h"
 
 namespace {
-using namespace alus::snapengine;
+
+using alus::snapengine::ProductData;
 
 class ProductDataByteTest {};
 
 TEST(ProductDataByte, testSingleValueConstructor) {
     std::shared_ptr<ProductData> instance = ProductData::CreateInstance(ProductData::TYPE_INT8);
-    instance->SetElems(std::vector<int8_t>{127});
+    instance->SetElems(std::vector<int8_t>{127});  // NOLINT
 
     ASSERT_EQ(ProductData::TYPE_INT8, instance->GetType());
     ASSERT_EQ(127, instance->GetElemInt());
@@ -48,11 +49,11 @@ TEST(ProductDataByte, testSingleValueConstructor) {
     ASSERT_EQ("127", instance->ToString());
 
     std::shared_ptr<ProductData> expected_equal = ProductData::CreateInstance(ProductData::TYPE_INT8);
-    expected_equal->SetElems(std::vector<int8_t>{127});
+    expected_equal->SetElems(std::vector<int8_t>{127});  // NOLINT
     ASSERT_EQ(true, instance->EqualElems(expected_equal));
 
     std::shared_ptr<ProductData> expected_unequal = ProductData::CreateInstance(ProductData::TYPE_INT8);
-    expected_unequal->SetElems(std::vector<int8_t>{126});
+    expected_unequal->SetElems(std::vector<int8_t>{126});  // NOLINT
     ASSERT_EQ(false, instance->EqualElems(expected_unequal));
 
     ////        StreamTest
@@ -68,8 +69,8 @@ TEST(ProductDataByte, testSingleValueConstructor) {
 }
 
 TEST(ProductDataByte, testConstructor) {
-    std::shared_ptr<ProductData> instance = ProductData::CreateInstance(ProductData::TYPE_INT8, 4);
-    instance->SetElems(std::vector<int8_t>{-1, 127, -128, 0});
+    std::shared_ptr<ProductData> instance = ProductData::CreateInstance(ProductData::TYPE_INT8, 4);  // NOLINT
+    instance->SetElems(std::vector<int8_t>{-1, 127, -128, 0});                                       // NOLINT
 
     ASSERT_EQ(ProductData::TYPE_INT8, instance->GetType());
     ASSERT_EQ(-1, instance->GetElemIntAt(0));
@@ -100,12 +101,12 @@ TEST(ProductDataByte, testConstructor) {
     ASSERT_EQ(true, instance->IsInt());
     ASSERT_EQ("-1,127,-128,0", instance->ToString());
 
-    std::shared_ptr<ProductData> expected_equal = ProductData::CreateInstance(ProductData::TYPE_INT8, 4);
-    expected_equal->SetElems(std::vector<int8_t>{-1, 127, -128, 0});
+    std::shared_ptr<ProductData> expected_equal = ProductData::CreateInstance(ProductData::TYPE_INT8, 4);  // NOLINT
+    expected_equal->SetElems(std::vector<int8_t>{-1, 127, -128, 0});                                       // NOLINT
     ASSERT_EQ(true, instance->EqualElems(expected_equal));
 
-    std::shared_ptr<ProductData> expected_unequal = ProductData::CreateInstance(ProductData::TYPE_INT8, 4);
-    expected_unequal->SetElems(std::vector<int8_t>{-1, 127, -127, 0});
+    std::shared_ptr<ProductData> expected_unequal = ProductData::CreateInstance(ProductData::TYPE_INT8, 4);  // NOLINT
+    expected_unequal->SetElems(std::vector<int8_t>{-1, 127, -127, 0});                                       // NOLINT
     ASSERT_EQ(false, instance->EqualElems(expected_unequal));
 
     //        StreamTest
@@ -121,20 +122,20 @@ TEST(ProductDataByte, testConstructor) {
 }
 
 TEST(ProductDataByte, testSetElemsAsString) {
-    std::shared_ptr<ProductData> pd = ProductData::CreateInstance(ProductData::TYPE_INT8, 3);
-    pd->SetElems(std::vector<std::string>{
-        std::to_string((int8_t)INT8_MAX), std::to_string((int8_t)INT8_MIN), std::to_string(0)});
+    std::shared_ptr<ProductData> pd = ProductData::CreateInstance(ProductData::TYPE_INT8, 3);  // NOLINT
+    pd->SetElems(std::vector<std::string>{std::to_string(static_cast<int8_t> INT8_MAX),
+                                          std::to_string(static_cast<int8_t> INT8_MIN), std::to_string(0)});
 
     ASSERT_EQ(INT8_MAX, pd->GetElemIntAt(0));
     ASSERT_EQ(INT8_MIN, pd->GetElemIntAt(1));
     ASSERT_EQ(0, pd->GetElemIntAt(2));
 }
 
-TEST(ProductDataByte, testSetElemsAsString_OutOfRange) {
+TEST(ProductDataByte, testSetElemsAsStringOutOfRange) {
     std::string expected{"value is not int8_t"};
     std::shared_ptr<ProductData> pd1 = ProductData::CreateInstance(ProductData::TYPE_INT8, 1);
     try {
-        auto str = std::to_string((int16_t)INT8_MAX + 1);
+        auto str = std::to_string(static_cast<int16_t> INT8_MAX + 1);
         pd1->SetElems(std::vector<std::string>{str});
     } catch (const std::exception& actual) {
         ASSERT_EQ(expected, actual.what());
@@ -142,7 +143,7 @@ TEST(ProductDataByte, testSetElemsAsString_OutOfRange) {
 
     std::shared_ptr<ProductData> pd2 = ProductData::CreateInstance(ProductData::TYPE_INT8, 1);
     try {
-        auto str = std::to_string((int16_t)INT8_MIN - 1);
+        auto str = std::to_string(static_cast<int16_t> INT8_MIN - 1);
         pd2->SetElems(std::vector<std::string>{str});
     } catch (const std::exception& actual) {
         ASSERT_EQ(expected, actual.what());

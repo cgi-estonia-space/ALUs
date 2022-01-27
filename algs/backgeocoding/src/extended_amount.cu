@@ -152,7 +152,7 @@ cudaError_t LaunchComputeExtendedAmount(Rectangle bounds, AzimuthAndRangeBounds&
     h_az_rg_bounds.range_max = h_az_rg_bounds.azimuth_max = idx_min;
 
     cuda::CudaPtr<AzimuthAndRangeBounds> d_az_rg_bounds(1);
-    cuda::copyH2D(d_az_rg_bounds.Get(), &h_az_rg_bounds);
+    cuda::CopyH2D(d_az_rg_bounds.Get(), &h_az_rg_bounds);
 
     PrepareArguments(&args, tiles, d_vectors, nr_of_vectors, vectors_dt, subswath_info, d_sentinel_1_utils,
                      d_subswath_info, bounds, egm);
@@ -162,7 +162,7 @@ cudaError_t LaunchComputeExtendedAmount(Rectangle bounds, AzimuthAndRangeBounds&
                   cuda::GetGridDim(block_dim.y, cuda::GetGridDim(index_step, bounds.height)));
     ComputeExtendedAmountKernel<<<grid_dim, block_dim>>>(args, d_az_rg_bounds.Get());
 
-    cuda::copyD2H(&h_az_rg_bounds, d_az_rg_bounds.Get());
+    cuda::CopyD2H(&h_az_rg_bounds, d_az_rg_bounds.Get());
     cudaError error = cudaGetLastError();
 
     const int azimuth_min = h_az_rg_bounds.azimuth_min;

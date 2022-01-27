@@ -11,54 +11,36 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
- #include "tie_point_geocoding.h"
+#include "tie_point_geocoding.h"
 
-namespace alus {
-namespace snapengine {
-namespace geocoding {
-Coordinates TiePointGeocoding::GetPixelCoordinates(
-    alus::PixelPosition pixel_position) const {
+namespace alus::snapengine::geocoding {
+Coordinates TiePointGeocoding::GetPixelCoordinates(alus::PixelPosition pixel_position) const {
     return this->GetPixelCoordinates(pixel_position.x + 0.5, pixel_position.y + 0.5);
 }
-Coordinates TiePointGeocoding::GetPixelCoordinates(
-    std::tuple<double, double> pixel_position) const {
+Coordinates TiePointGeocoding::GetPixelCoordinates(std::tuple<double, double> pixel_position) const {
     return this->GetPixelCoordinates(std::get<0>(pixel_position), std::get<1>(pixel_position));
 }
-Coordinates TiePointGeocoding::GetPixelCoordinates(
-    double x, double y) const {
+Coordinates TiePointGeocoding::GetPixelCoordinates(double x, double y) const {
     double latitude = tiepointgrid::GetPixelDouble(x, y, &this->latitude_grid_);
     double longitude = tiepointgrid::GetPixelDouble(x, y, &this->longitude_grid_);
     return {longitude, latitude};
 }
 
-Coordinates TiePointGeocoding::GetPixelCoordinates(
-    PrecisePixelPosition pixel_position) const {
+Coordinates TiePointGeocoding::GetPixelCoordinates(PrecisePixelPosition pixel_position) const {
     return this->GetPixelCoordinates(pixel_position.x, pixel_position.y);
 }
 
-// TODO: should throw exception that this function is unimplemented (SNAPGPU-163)
-PrecisePixelPosition TiePointGeocoding::GetPixelPosition(
-    alus::Coordinates pixel_coordinates) const {
-    (void) pixel_coordinates;
-
-    return {};
+PrecisePixelPosition TiePointGeocoding::GetPixelPosition([[maybe_unused]] alus::Coordinates pixel_coordinates) const {
+    throw std::runtime_error("This function is not implemented yet.");
 }
 
-// TODO: should throw exception that this function is unimplemented (SNAPGPU-163)
 PrecisePixelPosition TiePointGeocoding::GetPixelPosition(
-    std::tuple<double, double> pixel_coordinates) const {
-    (void) pixel_coordinates;
-    return {};
+    [[maybe_unused]] std::tuple<double, double> pixel_coordinates) const {
+    throw std::runtime_error("This function is not implemented yet.");
 }
 
-// TODO: should throw exception that this function is unimplemented (SNAPGPU-163)
-PrecisePixelPosition TiePointGeocoding::GetPixelPosition(
-    double lon, double lat) const {
-    (void) lon;
-    (void) lat;
-
-    return {};
+PrecisePixelPosition TiePointGeocoding::GetPixelPosition([[maybe_unused]] double lon,
+                                                         [[maybe_unused]] double lat) const {
+    throw std::runtime_error("This function is not implemented yet.");
 }
-}  // namespace geocoding
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine::geocoding

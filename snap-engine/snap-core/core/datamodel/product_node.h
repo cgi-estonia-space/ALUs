@@ -25,8 +25,7 @@
 #include <string>
 #include <string_view>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 /**
  * The <code>ProductNode</code> is the base class for all nodes within a remote sensing data product and even the data
@@ -50,8 +49,6 @@ private:
 
 protected:
     ProductNode() = default;
-    ProductNode(const ProductNode&) = delete;
-    ProductNode& operator=(const ProductNode&) = delete;
     virtual ~ProductNode() = default;
     /**
      * Constructs a new product node with the given name.
@@ -69,7 +66,6 @@ protected:
      */
     ProductNode(std::string_view name, const std::optional<std::string_view>& description);
 
-
     void SetNodeName(std::string_view trimmed_name, bool silent);
 
     /**
@@ -79,7 +75,7 @@ protected:
      * @return <code>true</code> if the subset is not <code>null</code> and it contains a node name equal to this node's
      * name.
      */
-    bool IsPartOfSubset(const std::shared_ptr<ProductSubsetDef>& subset_def);
+    [[nodiscard]] bool IsPartOfSubset(const std::shared_ptr<ProductSubsetDef>& subset_def) const;
 
 public:
     static constexpr std::string_view PROPERTY_NAME_NAME{"name"};
@@ -87,6 +83,9 @@ public:
     // todo:make abstract?
     [[nodiscard]] virtual std::string GetName() const { return name_; };
     [[nodiscard]] virtual std::optional<std::string> GetDescription() const { return description_; }
+
+    ProductNode(const ProductNode&) = delete;
+    ProductNode& operator=(const ProductNode&) = delete;
 
     /**
      * Sets a short textual description for this products node.
@@ -214,6 +213,4 @@ public:
     virtual uint64_t GetRawStorageSize(const std::shared_ptr<ProductSubsetDef>& subset_def) = 0;
 };
 
-
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

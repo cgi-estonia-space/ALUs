@@ -13,10 +13,13 @@
  */
 #pragma once
 
+#include <driver_types.h>
+
 #include "orbit_state_vector_computation.h"
 #include "pointer_holders.h"
 #include "s1tbx-commons/sentinel1_utils_computation.h"
 #include "s1tbx-commons/subswath_info.h"
+#include "s1tbx-commons/subswath_info_computation.h"
 #include "shapes.h"
 
 namespace alus {
@@ -28,11 +31,9 @@ struct AzimuthAndRangeBounds {
     int range_max;
 };
 
-cudaError_t LaunchComputeExtendedAmount(Rectangle bounds,
-                                        AzimuthAndRangeBounds &extended_amount,
+cudaError_t LaunchComputeExtendedAmount(Rectangle bounds, AzimuthAndRangeBounds& extended_amount,
                                         snapengine::OrbitStateVectorComputation* d_orbit_state_vectors,
-                                        size_t nr_of_vectors,
-                                        double vectors_dt,
+                                        size_t nr_of_vectors, double vectors_dt,
                                         const s1tbx::SubSwathInfo& subswath_info,
                                         s1tbx::DeviceSentinel1Utils* d_sentinel_1_utils,
                                         s1tbx::DeviceSubswathInfo* d_subswath_info, const PointerArray& tiles,

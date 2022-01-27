@@ -23,18 +23,17 @@ void GdalDataCopy(const char* file_name_src, const char* file_name_dst) {
     auto const po_driver = GetGDALDriverManager()->GetDriverByName("GTiff");
     CHECK_GDAL_PTR(po_driver);
 
-    GDALDataset* src_dataset = (GDALDataset*)GDALOpen(file_name_src, GA_ReadOnly);;
+    auto* src_dataset = static_cast<GDALDataset*>(GDALOpen(file_name_src, GA_ReadOnly));
     GDALDataset* dest_dataset = nullptr;
 
-    if(src_dataset != nullptr) {
-        dest_dataset =
-            po_driver->CreateCopy(file_name_dst, src_dataset, FALSE, nullptr, nullptr, nullptr);
+    if (src_dataset != nullptr) {
+        dest_dataset = po_driver->CreateCopy(file_name_dst, src_dataset, FALSE, nullptr, nullptr, nullptr);
     }
 
-    GDALClose(src_dataset); // closing nullptr is fine
+    GDALClose(src_dataset);  // closing nullptr is fine
     GDALClose(dest_dataset);
 
-    CHECK_GDAL_PTR(src_dataset); // throw the exception if either op failed
+    CHECK_GDAL_PTR(src_dataset);  // throw the exception if either op failed
     CHECK_GDAL_PTR(dest_dataset);
 }
 }  // namespace alus

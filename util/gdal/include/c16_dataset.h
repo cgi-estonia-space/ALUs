@@ -35,12 +35,12 @@ public:
     void LoadRasterBand(int band_nr) override;
     std::vector<BufferType> const& GetHostDataBuffer() const override;
     BufferType* GetDeviceDataBuffer() override;
-    long unsigned int GetBufferByteSize() override;
+    uint64_t GetBufferByteSize() override;
     size_t GetBufferElemCount() override;
 
     Dataset<Iq16>* GetDataset() { return dataset_.get(); }
     void TryToCacheImage() override;
-    void SetReadingArea(Rectangle new_area) override {dataset_->SetReadingArea(new_area);};
+    void SetReadingArea(Rectangle new_area) override { dataset_->SetReadingArea(new_area); };
 
 private:
     std::unique_ptr<Dataset<Iq16>> dataset_;

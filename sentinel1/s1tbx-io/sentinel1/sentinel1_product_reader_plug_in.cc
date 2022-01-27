@@ -32,8 +32,6 @@
 
 namespace alus::s1tbx {
 
-Sentinel1ProductReaderPlugIn::Sentinel1ProductReaderPlugIn() : snapengine::IProductReaderPlugIn() {}
-
 bool Sentinel1ProductReaderPlugIn::IsLevel1(const boost::filesystem::path& path) {
     if (snapengine::ZipUtils::IsZip(path)) {
         if (snapengine::ZipUtils::FindInZip(path, "s1", ".tiff")) {
@@ -137,7 +135,4 @@ snapengine::DecodeQualification Sentinel1ProductReaderPlugIn::GetDecodeQualifica
 std::shared_ptr<snapengine::IProductReader> Sentinel1ProductReaderPlugIn::CreateReaderInstance() {
     return std::make_shared<Sentinel1ProductReader>(shared_from_this());
 }
-
-Sentinel1ProductReaderPlugIn::~Sentinel1ProductReaderPlugIn() {}
-
 }  // namespace alus::s1tbx

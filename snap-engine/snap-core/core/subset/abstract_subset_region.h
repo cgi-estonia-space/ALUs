@@ -23,8 +23,7 @@
 #include "custom/rectangle.h"
 #include "snap-core/core/datamodel/i_geo_coding.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 class AbstractSubsetRegion {
 protected:
     int border_pixels_;
@@ -35,11 +34,12 @@ protected:
                                      std::string_view exception_message_prefix);
 
     AbstractSubsetRegion() = default;
-    AbstractSubsetRegion(const AbstractSubsetRegion&) = delete;
-    AbstractSubsetRegion& operator=(const AbstractSubsetRegion&) = delete;
     virtual ~AbstractSubsetRegion() = default;
 
 public:
+    AbstractSubsetRegion(const AbstractSubsetRegion&) = delete;
+    AbstractSubsetRegion& operator=(const AbstractSubsetRegion&) = delete;
+
     virtual std::shared_ptr<custom::Rectangle> ComputeProductPixelRegion(
         std::shared_ptr<IGeoCoding> product_default_geo_coding, int default_product_width, int default_product_height,
         bool round_pixel_region) = 0;
@@ -49,5 +49,4 @@ public:
         int default_product_width, int default_product_height, int default_band_width, int default_band_height,
         bool round_pixel_region) = 0;
 };
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

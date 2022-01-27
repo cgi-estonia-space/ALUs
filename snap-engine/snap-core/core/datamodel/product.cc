@@ -19,6 +19,7 @@
 #include "product.h"
 
 #include <stdexcept>
+#include <utility>
 
 // TEMPORARY// todo: try to move behind IProductReader
 #include "custom/i_image_reader.h"
@@ -69,9 +70,8 @@ Product::Product(std::string_view name, std::string_view type,
     metadata_root_ = std::make_shared<MetadataElement>(METADATA_ROOT_NAME);
 }
 
-Product::~Product()
-{
-    Dispose(); //NB! for now leave the virtual function call here
+Product::~Product() {
+    Dispose();  // NB! for now leave the virtual function call here
 }
 
 void Product::SetModified(bool modified) {
@@ -124,7 +124,7 @@ std::shared_ptr<Band> Product::AddBand(std::string_view band_name, int data_type
     AddBand(band);
     return band;
 }
-void Product::AddBand(std::shared_ptr<Band> band) {
+void Product::AddBand(const std::shared_ptr<Band>& band) {
     Assert::NotNull(band, "band");
     Assert::Argument(!ContainsRasterDataNode(band->GetName()), "The Product '" + GetName() + "' already contains " +
                                                                    "a band with the name '" + band->GetName() + "'.");
@@ -148,8 +148,7 @@ std::shared_ptr<RasterDataNode> Product::GetRasterDataNode(std::string_view name
 
 std::vector<std::shared_ptr<RasterDataNode>> Product::GetRasterDataNodes() {
     std::vector<std::shared_ptr<RasterDataNode>> raster_data_nodes;
-    raster_data_nodes.reserve(32);
-    //    todo:why idea does not ask for cast for band_group and other groups need it!?
+    raster_data_nodes.reserve(32);  // NOLINT
     auto band_group = GetBandGroup();
     for (int i = 0; i < band_group->GetNodeCount(); i++) {
         raster_data_nodes.push_back(band_group->Get(i));
@@ -217,12 +216,12 @@ void Product::SetMetadataWriter(const std::shared_ptr<IMetaDataWriter>& metadata
 }
 
 bool Product::RemoveTiePointGrid(std::shared_ptr<TiePointGrid> tie_point_grid) {
-    return tie_point_grid_group_->Remove(tie_point_grid);
+    return tie_point_grid_group_->Remove(std::move(tie_point_grid));
 }
 int Product::GetNumTiePointGrids() { return tie_point_grid_group_->GetNodeCount(); }
 std::shared_ptr<TiePointGrid> Product::GetTiePointGridAt(int index) { return tie_point_grid_group_->Get(index); }
 std::vector<std::string> Product::GetTiePointGridNames() { return tie_point_grid_group_->GetNodeNames(); }
-bool Product::RemoveBand(std::shared_ptr<Band> band) { return band_group_->Remove(band); }
+bool Product::RemoveBand(std::shared_ptr<Band> band) { return band_group_->Remove(std::move(band)); }
 int Product::GetNumBands() { return band_group_->GetNodeCount(); }
 std::shared_ptr<Band> Product::GetBandAt(int index) { return band_group_->Get(index); }
 std::vector<std::string> Product::GetBandNames() { return band_group_->GetNodeNames(); }
@@ -236,16 +235,16 @@ std::shared_ptr<TiePointGrid> Product::GetTiePointGrid(std::string_view name) {
     return tie_point_grid_group_->Get(name);
 }
 
-void Product::SetProductReader(std::shared_ptr<IProductReader> reader) {
+void Product::SetProductReader(const std::shared_ptr<IProductReader>& reader) {
     Guardian::AssertNotNull("ProductReader", reader);
     reader_ = reader;
 }
 
 void Product::SetPreferredTileSize(std::shared_ptr<custom::Dimension> preferred_tile_size) {
-    preferred_tile_size_ = preferred_tile_size;
+    preferred_tile_size_ = std::move(preferred_tile_size);
 }
 
-void Product::SetStartTime(std::shared_ptr<Utc> start_time) {
+void Product::SetStartTime(const std::shared_ptr<Utc>& start_time) {
     std::shared_ptr<Utc> old = start_time_;
     if (start_time != old) {
         SetModified(true);
@@ -322,7 +321,7 @@ uint64_t Product::GetRawStorageSize(const std::shared_ptr<ProductSubsetDef>& sub
     return size;
 }
 
-void Product::AddTiePointGrid(std::shared_ptr<TiePointGrid> tie_point_grid) {
+void Product::AddTiePointGrid(const std::shared_ptr<TiePointGrid>& tie_point_grid) {
     if (ContainsRasterDataNode(tie_point_grid->GetName())) {
         throw std::invalid_argument("The Product '" + GetName() + "' already contains " +
                                     "a tie-point grid with the name '" + tie_point_grid->GetName() + "'.");
@@ -358,8 +357,8 @@ bool Product::IsCompatibleProduct(Product* product, float eps) {
         auto geo_pos1 = std::make_shared<GeoPos>();
         auto geo_pos2 = std::make_shared<GeoPos>();
 
-        pixel_pos->x_ = 0.5f;
-        pixel_pos->y_ = 0.5f;
+        pixel_pos->x_ = 0.5F;
+        pixel_pos->y_ = 0.5F;
         GetSceneGeoCoding()->GetGeoPos(pixel_pos, geo_pos1);
         product->GetSceneGeoCoding()->GetGeoPos(pixel_pos, geo_pos2);
         if (!EqualsLatLon(geo_pos1, geo_pos2, eps)) {
@@ -368,8 +367,8 @@ bool Product::IsCompatibleProduct(Product* product, float eps) {
             return false;
         }
 
-        pixel_pos->x_ = GetSceneRasterWidth() - 1 + 0.5f;
-        pixel_pos->y_ = 0.5f;
+        pixel_pos->x_ = static_cast<double>(GetSceneRasterWidth()) - 1 + 0.5F;
+        pixel_pos->y_ = 0.5F;
         GetSceneGeoCoding()->GetGeoPos(pixel_pos, geo_pos1);
         product->GetSceneGeoCoding()->GetGeoPos(pixel_pos, geo_pos2);
         if (!EqualsLatLon(geo_pos1, geo_pos2, eps)) {
@@ -377,8 +376,8 @@ bool Product::IsCompatibleProduct(Product* product, float eps) {
             return false;
         }
 
-        pixel_pos->x_ = 0.5f;
-        pixel_pos->y_ = GetSceneRasterHeight() - 1 + 0.5f;
+        pixel_pos->x_ = 0.5F;
+        pixel_pos->y_ = static_cast<double>(GetSceneRasterHeight()) - 1 + 0.5F;
         GetSceneGeoCoding()->GetGeoPos(pixel_pos, geo_pos1);
         product->GetSceneGeoCoding()->GetGeoPos(pixel_pos, geo_pos2);
         if (!EqualsLatLon(geo_pos1, geo_pos2, eps)) {
@@ -386,8 +385,8 @@ bool Product::IsCompatibleProduct(Product* product, float eps) {
             return false;
         }
 
-        pixel_pos->x_ = GetSceneRasterWidth() - 1 + 0.5f;
-        pixel_pos->y_ = GetSceneRasterHeight() - 1 + 0.5f;
+        pixel_pos->x_ = static_cast<double>(GetSceneRasterWidth()) - 1 + 0.5F;
+        pixel_pos->y_ = static_cast<double>(GetSceneRasterHeight()) - 1 + 0.5F;
         GetSceneGeoCoding()->GetGeoPos(pixel_pos, geo_pos1);
         product->GetSceneGeoCoding()->GetGeoPos(pixel_pos, geo_pos2);
         if (!EqualsLatLon(geo_pos1, geo_pos2, eps)) {
@@ -439,30 +438,27 @@ std::shared_ptr<Product> Product::CreateProduct(std::string_view name, std::stri
 }
 
 void Product::InitProductMembers(Product* product) {
-    //    TODO: THIS IS NOT CORRECT CONSTURCTOR!!! SWAP IT LATER
+    //    TODO: THIS IS NOT CORRECT CONSTURCTOR!!! SWAP IT LATER  // NOLINT WHEN LATER?!
 
     product->metadata_root_->SetOwner(product);
 
-    product->band_group_ =
-        std::make_shared<ProductNodeGroup<std::shared_ptr<Band>>>(product, "bands", true);
-    product->tie_point_grid_group_ = std::make_shared<ProductNodeGroup<std::shared_ptr<TiePointGrid>>>(
-        product, "tie_point_grids", true);
+    product->band_group_ = std::make_shared<ProductNodeGroup<std::shared_ptr<Band>>>(product, "bands", true);
+    product->tie_point_grid_group_ =
+        std::make_shared<ProductNodeGroup<std::shared_ptr<TiePointGrid>>>(product, "tie_point_grids", true);
     //    vector_data_group_ = new VectorDataNodeProductNodeGroup();
-    product->index_coding_group_ = std::make_shared<ProductNodeGroup<std::shared_ptr<IndexCoding>>>(
-        product, "index_codings", true);
-    product->flag_coding_group_ = std::make_shared<ProductNodeGroup<std::shared_ptr<FlagCoding>>>(
-        product, "flag_codings", true);
-    product->mask_group_ =
-        std::make_shared<ProductNodeGroup<std::shared_ptr<Mask>>>(product, "masks", true);
-    product->quicklook_group_ = std::make_shared<ProductNodeGroup<std::shared_ptr<Quicklook>>>(
-        product, "quicklooks", true);
+    product->index_coding_group_ =
+        std::make_shared<ProductNodeGroup<std::shared_ptr<IndexCoding>>>(product, "index_codings", true);
+    product->flag_coding_group_ =
+        std::make_shared<ProductNodeGroup<std::shared_ptr<FlagCoding>>>(product, "flag_codings", true);
+    product->mask_group_ = std::make_shared<ProductNodeGroup<std::shared_ptr<Mask>>>(product, "masks", true);
+    product->quicklook_group_ =
+        std::make_shared<ProductNodeGroup<std::shared_ptr<Quicklook>>>(product, "quicklooks", true);
 
     //    todo: implement if we use it
     //    pin_group_ = CreatePinGroup();
     //    gcp_group_ = CreateGcpGroup();
 
-    product->groups_ = std::make_shared<ProductNodeGroup<std::shared_ptr<ProductNode>>>(
-        product, "groups", false);
+    product->groups_ = std::make_shared<ProductNodeGroup<std::shared_ptr<ProductNode>>>(product, "groups", false);
 
     product->groups_->Add(product->band_group_);
     product->groups_->Add(product->quicklook_group_);
@@ -504,7 +500,7 @@ bool Product::IsUsingSingleGeoCoding() {
     return true;
 }
 bool Product::ContainsPixel(double x, double y) {
-    return x >= 0.0f && x <= GetSceneRasterWidth() && y >= 0.0f && y <= GetSceneRasterHeight();
+    return x >= 0.0F && x <= GetSceneRasterWidth() && y >= 0.0F && y <= GetSceneRasterHeight();
 }
 bool Product::ContainsPixel(const std::shared_ptr<PixelPos>& pixel_pos) {
     return ContainsPixel(pixel_pos->x_, pixel_pos->y_);
@@ -534,19 +530,19 @@ void Product::CloseIO() {
         e_1 = e;
         e_1_bool = true;
     }
-    std::exception e_O;
+    std::exception e_0;
     bool e_0_bool = false;
     try {
         CloseProductWriter();
     } catch (const std::exception& e) {
-        e_O = e;
+        e_0 = e;
         e_0_bool = true;
     }
     if (e_1_bool) {
-        throw e_1;
+        throw e_1;  // NOLINT
     }
     if (e_0_bool) {
-        throw e_O;
+        throw e_0;  // NOLINT
     }
 }
 void Product::Dispose() {

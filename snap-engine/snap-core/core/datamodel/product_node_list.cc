@@ -31,8 +31,7 @@
 #include "snap-core/core/datamodel/quicklooks/quicklook.h"
 #include "snap-core/core/datamodel/tie_point_grid.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 template <typename T>
 std::vector<std::string> ProductNodeList<T>::GetNames() {
     // map to names
@@ -146,7 +145,7 @@ void ProductNodeList<T>::Dispose() {
 }
 template <typename T>
 void ProductNodeList<T>::DisposeRemovedList() {
-    for (T removed_node : removed_nodes_) {
+    for (const T& removed_node : removed_nodes_) {
         removed_node->Dispose();
     }
     ClearRemovedList();
@@ -164,5 +163,4 @@ template class ProductNodeList<std::shared_ptr<FlagCoding>>;
 template class ProductNodeList<std::shared_ptr<IndexCoding>>;
 template class ProductNodeList<std::shared_ptr<Quicklook>>;
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

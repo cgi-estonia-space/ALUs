@@ -78,10 +78,10 @@ void Sentinel1Level1Directory::AddBands(const std::shared_ptr<snapengine::Produc
         if (AbstractProductDirectory::IsSLC()) {
             num_images *= 2;  // real + imaginary
             if (IsTOPSAR()) {
-                suffix = swath + '_' + pol;
+                (suffix = swath).append("_").append(pol);
                 tpg_prefix = swath;
             } else if (acq_mode_ == "WV") {
-                suffix = suffix + '_' + std::to_string(cnt);
+                suffix.append("_").append(std::to_string(cnt));
                 ++cnt;
             }
         }
@@ -153,11 +153,13 @@ void Sentinel1Level1Directory::AddBands(const std::shared_ptr<snapengine::Produc
 std::string Sentinel1Level1Directory::GetProductName() {
     std::string name = GetBaseName();
     boost::algorithm::to_upper(name);
+    const int safe_extension_length{5};
+    const int zip_extension_length{4};
     if (boost::algorithm::ends_with(name, ".SAFE")) {
-        return name.substr(0, name.length() - 5);
+        return name.substr(0, name.length() - safe_extension_length);
     }
     if (boost::algorithm::ends_with(name, ".ZIP")) {
-        return name.substr(0, name.length() - 4);
+        return name.substr(0, name.length() - zip_extension_length);
     }
     return name;
 }
@@ -333,7 +335,7 @@ void Sentinel1Level1Directory::AddTiePointGrids(const std::shared_ptr<snapengine
         product->GetTiePointGrid(pre + std::string(snapengine::OperatorUtils::TPG_LATITUDE));
     if (lat_grid == nullptr) {
         lat_grid = std::make_shared<snapengine::TiePointGrid>(
-            pre + std::string(snapengine::OperatorUtils::TPG_LATITUDE), new_grid_width, new_grid_height, 0.5f, 0.5f,
+            pre + std::string(snapengine::OperatorUtils::TPG_LATITUDE), new_grid_width, new_grid_height, 0.5F, 0.5F,
             sub_sampling_x, sub_sampling_y, new_lat_list);
         lat_grid->SetUnit(std::make_optional<std::string>(snapengine::Unit::DEGREES));
         product->AddTiePointGrid(lat_grid);
@@ -343,7 +345,7 @@ void Sentinel1Level1Directory::AddTiePointGrids(const std::shared_ptr<snapengine
         product->GetTiePointGrid(pre + std::string(snapengine::OperatorUtils::TPG_LONGITUDE));
     if (lon_grid == nullptr) {
         lon_grid = std::make_shared<snapengine::TiePointGrid>(
-            pre + std::string(snapengine::OperatorUtils::TPG_LONGITUDE), new_grid_width, new_grid_height, 0.5f, 0.5f,
+            pre + std::string(snapengine::OperatorUtils::TPG_LONGITUDE), new_grid_width, new_grid_height, 0.5F, 0.5F,
             sub_sampling_x, sub_sampling_y, new_lon_list, snapengine::TiePointGrid::DISCONT_AT_180);
         lon_grid->SetUnit(std::make_optional<std::string>(snapengine::Unit::DEGREES));
         product->AddTiePointGrid(lon_grid);
@@ -351,24 +353,24 @@ void Sentinel1Level1Directory::AddTiePointGrids(const std::shared_ptr<snapengine
 
     if (product->GetTiePointGrid(pre + std::string(snapengine::OperatorUtils::TPG_INCIDENT_ANGLE)) == nullptr) {
         std::shared_ptr<snapengine::TiePointGrid> incident_angle_grid = std::make_shared<snapengine::TiePointGrid>(
-            pre + std::string(snapengine::OperatorUtils::TPG_INCIDENT_ANGLE), new_grid_width, new_grid_height, 0.5f,
-            0.5f, sub_sampling_x, sub_sampling_y, new_inc_list);
+            pre + std::string(snapengine::OperatorUtils::TPG_INCIDENT_ANGLE), new_grid_width, new_grid_height, 0.5F,
+            0.5F, sub_sampling_x, sub_sampling_y, new_inc_list);
         incident_angle_grid->SetUnit(std::make_optional<std::string>(snapengine::Unit::DEGREES));
         product->AddTiePointGrid(incident_angle_grid);
     }
 
     if (product->GetTiePointGrid(pre + std::string(snapengine::OperatorUtils::TPG_ELEVATION_ANGLE)) == nullptr) {
         std::shared_ptr<snapengine::TiePointGrid> elev_angle_grid = std::make_shared<snapengine::TiePointGrid>(
-            pre + std::string(snapengine::OperatorUtils::TPG_ELEVATION_ANGLE), new_grid_width, new_grid_height, 0.5f,
-            0.5f, sub_sampling_x, sub_sampling_y, new_elev_list);
+            pre + std::string(snapengine::OperatorUtils::TPG_ELEVATION_ANGLE), new_grid_width, new_grid_height, 0.5F,
+            0.5F, sub_sampling_x, sub_sampling_y, new_elev_list);
         elev_angle_grid->SetUnit(std::make_optional<std::string>(snapengine::Unit::DEGREES));
         product->AddTiePointGrid(elev_angle_grid);
     }
 
     if (product->GetTiePointGrid(pre + std::string(snapengine::OperatorUtils::TPG_SLANT_RANGE_TIME)) == nullptr) {
         std::shared_ptr<snapengine::TiePointGrid> slant_range_grid = std::make_shared<snapengine::TiePointGrid>(
-            pre + std::string(snapengine::OperatorUtils::TPG_SLANT_RANGE_TIME), new_grid_width, new_grid_height, 0.5f,
-            0.5f, sub_sampling_x, sub_sampling_y, new_slrt_list);
+            pre + std::string(snapengine::OperatorUtils::TPG_SLANT_RANGE_TIME), new_grid_width, new_grid_height, 0.5F,
+            0.5F, sub_sampling_x, sub_sampling_y, new_slrt_list);
         slant_range_grid->SetUnit(std::make_optional<std::string>(snapengine::Unit::NANOSECONDS));
         product->AddTiePointGrid(slant_range_grid);
     }
@@ -387,12 +389,12 @@ void Sentinel1Level1Directory::GetListInEvenlySpacedGrid(const int scene_raster_
                                                          const int target_grid_width, const int target_grid_height,
                                                          const double sub_sampling_x, const double sub_sampling_y,
                                                          std::vector<float> target_point_list) {
-    if (source_point_list.size() != static_cast<std::size_t>(source_grid_width * source_grid_height)) {
+    if (source_point_list.size() != static_cast<size_t>(source_grid_width) * source_grid_height) {
         throw std::invalid_argument(
             "Original tie point array size does not match 'sourceGridWidth' x 'sourceGridHeight'");
     }
 
-    if (target_point_list.size() != static_cast<std::size_t>(target_grid_width * target_grid_height)) {
+    if (target_point_list.size() != static_cast<size_t>(target_grid_width) * target_grid_height) {
         throw std::invalid_argument(
             "Target tie point array size does not match 'targetGridWidth' x 'targetGridHeight'");
     }
@@ -509,11 +511,11 @@ void Sentinel1Level1Directory::AddGeoCoding(const std::shared_ptr<snapengine::Pr
     std::string acquisition_mode = abs_root->GetAttributeString(snapengine::AbstractMetadata::ACQUISITION_MODE);
     int num_of_sub_swath;
     if (acquisition_mode == "IW") {
-        num_of_sub_swath = 3;
+        num_of_sub_swath = 3;  // NOLINT
     } else if (acquisition_mode == "EW") {
-        num_of_sub_swath = 5;
+        num_of_sub_swath = 5;  // NOLINT
     } else {
-        num_of_sub_swath = 1;
+        num_of_sub_swath = 1;  // NOLINT
     }
 
     std::vector<std::string> band_names = product->GetBandNames();
@@ -688,12 +690,13 @@ void Sentinel1Level1Directory::AddManifestMetadata(std::string_view product_name
     //    const auto sentinel_date_format = snapengine::Utc::CreateDateFormatIn("yyyy-MM-dd_HH:mm:ss");
     //    todo: check if we need to use some special format (check utc class for examples)
     //    https://www.boost.org/doc/libs/1_75_0/doc/html/date_time/date_time_io.html#date_time.format_flags
-    const auto sentinel_date_format("%Y-%m-%d_%H:%M:%S");
+    const auto* const sentinel_date_format("%Y-%m-%d_%H:%M:%S");
 
     for (const auto& metadata_object : metadata_object_list) {
         const std::string id = metadata_object->GetAttributeString("ID", def_str);
 
-        if (boost::algorithm::ends_with(id, "Annotation") || boost::algorithm::ends_with(id, "Schema")) {
+        if (boost::algorithm::ends_with(id, "Annotation") || boost::algorithm::ends_with(id, "Schema") ||
+            id == "measurementFrameSet") {
             // continue;
         } else if (id == "processing") {
             const std::shared_ptr<snapengine::MetadataElement> processing = FindElement(metadata_object, "processing");
@@ -703,17 +706,18 @@ void Sentinel1Level1Directory::AddManifestMetadata(std::string_view product_name
             const std::string name = software->GetAttributeString("name");
             const std::string version = software->GetAttributeString("version");
             snapengine::AbstractMetadata::SetAttribute(
-                abs_root, snapengine::AbstractMetadata::ProcessingSystemIdentifier, org + ' ' + name + ' ' + version);
+                abs_root, snapengine::AbstractMetadata::PROCESSING_SYSTEM_IDENTIFIER,
+                std::string(org).append(" ").append(name).append(" ").append(version));
 
             const std::shared_ptr<snapengine::Utc> start = GetTime(processing, "start", sentinel_date_format);
             snapengine::AbstractMetadata::SetAttribute(abs_root, snapengine::AbstractMetadata::PROC_TIME, start);
         } else if (id == "acquisitionPeriod") {
-            const std::shared_ptr<snapengine::MetadataElement> acquisitionPeriod =
+            const std::shared_ptr<snapengine::MetadataElement> acquisition_period =
                 FindElement(metadata_object, "acquisitionPeriod");
             const std::shared_ptr<snapengine::Utc> start_time =
-                GetTime(acquisitionPeriod, "startTime", sentinel_date_format);
+                GetTime(acquisition_period, "startTime", sentinel_date_format);
             const std::shared_ptr<snapengine::Utc> stop_time =
-                GetTime(acquisitionPeriod, "stopTime", sentinel_date_format);
+                GetTime(acquisition_period, "stopTime", sentinel_date_format);
             snapengine::AbstractMetadata::SetAttribute(abs_root, snapengine::AbstractMetadata::FIRST_LINE_TIME,
                                                        start_time);
             snapengine::AbstractMetadata::SetAttribute(abs_root, snapengine::AbstractMetadata::LAST_LINE_TIME,
@@ -767,7 +771,6 @@ void Sentinel1Level1Directory::AddManifestMetadata(std::string_view product_name
                 pass = orbit_properties->GetAttributeString("pass", def_str);
             }
             snapengine::AbstractMetadata::SetAttribute(abs_root, snapengine::AbstractMetadata::PASS, pass);
-        } else if (id == "measurementFrameSet") {
         } else if (id == "generalProductInformation") {
             std::shared_ptr<snapengine::MetadataElement> general_product_information =
                 FindElement(metadata_object, "generalProductInformation");
@@ -859,7 +862,7 @@ void Sentinel1Level1Directory::AddBandAbstractedMetadata(
     bool common_metadata_retrieved = false;
     //    todo: use format string
     //    final DateFormat sentinelDateFormat = ProductData.UTC.createDateFormat("yyyy-MM-dd_HH:mm:ss");
-    const auto sentinel_date_format("%Y-%m-%d_%H:%M:%S");
+    const auto* const sentinel_date_format("%Y-%m-%d_%H:%M:%S");
 
     double height_sum = 0.0;
 
@@ -870,7 +873,7 @@ void Sentinel1Level1Directory::AddBandAbstractedMetadata(
     //    if (!filenames.empty()) {
     for (const auto& metadata_file : filenames) {
         std::fstream is;
-        GetInputStream(annot_folder + '/' + metadata_file, is);
+        GetInputStream(std::string().append(annot_folder).append("/").append(metadata_file), is);
         pugi::xml_document xml_doc;
         xml_doc.load(is);
         if (is.is_open()) {
@@ -889,7 +892,8 @@ void Sentinel1Level1Directory::AddBandAbstractedMetadata(
         const std::shared_ptr<snapengine::Utc> start_time = GetTime(ads_header, "startTime", sentinel_date_format);
         const std::shared_ptr<snapengine::Utc> stop_time = GetTime(ads_header, "stopTime", sentinel_date_format);
 
-        const std::string band_root_name = std::string(snapengine::AbstractMetadata::BAND_PREFIX) + swath + '_' + pol;
+        const std::string band_root_name =
+            std::string(snapengine::AbstractMetadata::BAND_PREFIX).append(swath).append("_").append(pol);
         const std::shared_ptr<snapengine::MetadataElement> band_abs_root =
             snapengine::AbstractMetadata::AddBandAbstractedMetadata(abs_root, band_root_name);
 
@@ -1198,7 +1202,7 @@ void Sentinel1Level1Directory::AddCalibrationAbstractedMetadata(
         for (const auto& metadata_file : filenames) {
             if (boost::algorithm::starts_with(metadata_file, "calibration")) {
                 std::fstream is;
-                GetInputStream(calib_folder + '/' + metadata_file, is);
+                GetInputStream(std::string(calib_folder).append("/").append(metadata_file), is);
                 if (is) {
                     pugi::xml_document xml_doc;
                     xml_doc.load(is);
@@ -1228,7 +1232,7 @@ void Sentinel1Level1Directory::AddNoiseAbstractedMetadata(
         for (const auto& metadata_file : filenames) {
             if (boost::algorithm::starts_with(metadata_file, "noise")) {
                 std::fstream is;
-                GetInputStream(calib_folder + '/' + metadata_file, is);
+                GetInputStream(std::string(calib_folder).append("/").append(metadata_file), is);
                 if (is) {
                     pugi::xml_document xml_doc;
                     xml_doc.load(is);

@@ -22,8 +22,10 @@
 #include <string_view>
 #include <vector>
 
+#include "snap-core/core/datamodel/band.h"
 #include "snap-core/core/datamodel/metadata_attribute.h"
 #include "snap-core/core/datamodel/metadata_element.h"
+
 namespace alus::snapengine {
 class Product;
 }

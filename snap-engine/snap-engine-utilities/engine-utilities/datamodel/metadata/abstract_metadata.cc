@@ -22,8 +22,7 @@
 #include "parse_exception.h"
 #include "snap-core/core/util/string_utils.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 bool AbstractMetadata::GetAttributeBoolean(const std::shared_ptr<MetadataElement>& element, std::string_view tag) {
     int val = element->GetAttributeInt(tag);
@@ -43,11 +42,11 @@ double AbstractMetadata::GetAttributeDouble(const std::shared_ptr<MetadataElemen
 
 std::shared_ptr<Utc> AbstractMetadata::ParseUtc(std::string_view time_str) {
     try {
-        if (time_str == nullptr) return NO_METADATA_UTC;
+        if (time_str == "") return NO_METADATA_UTC;
         return snapengine::Utc::Parse(time_str);
     } catch (alus::ParseException& e) {
         try {
-            auto dot_pos = time_str.find_last_of(".");
+            auto dot_pos = time_str.find_last_of('.');
             if (dot_pos != std::string::npos && dot_pos > 0) {
                 std::string fraction_string{time_str.substr(dot_pos + 1, time_str.length())};
                 // fix some ERS times
@@ -62,7 +61,8 @@ std::shared_ptr<Utc> AbstractMetadata::ParseUtc(std::string_view time_str) {
     return NO_METADATA_UTC;
 }
 
-std::shared_ptr<MetadataElement> AbstractMetadata::GetSlaveMetadata(std::shared_ptr<MetadataElement> target_root) {
+std::shared_ptr<MetadataElement> AbstractMetadata::GetSlaveMetadata(
+    const std::shared_ptr<MetadataElement>& target_root) {
     std::shared_ptr<MetadataElement> target_slave_metadata_root = target_root->GetElement("Slave_Metadata");
     if (target_slave_metadata_root == nullptr) {
         target_slave_metadata_root = std::make_shared<MetadataElement>("Slave_Metadata");
@@ -217,7 +217,7 @@ std::shared_ptr<MetadataElement> AbstractMetadata::AddAbstractedMetadataHeader(
     AddAbstractedAttribute(abs_root, BEAMS, ProductData::TYPE_ASCII, "", "Beams used");
     AddAbstractedAttribute(abs_root, SWATH, ProductData::TYPE_ASCII, "", "Swath name");
     AddAbstractedAttribute(abs_root, PROC_TIME, ProductData::TYPE_UTC, "utc", "Processed time");
-    AddAbstractedAttribute(abs_root, ProcessingSystemIdentifier, ProductData::TYPE_ASCII, "",
+    AddAbstractedAttribute(abs_root, PROCESSING_SYSTEM_IDENTIFIER, ProductData::TYPE_ASCII, "",
                            "Processing system identifier");
     //    todo: check issue here
     AddAbstractedAttribute(abs_root, CYCLE, ProductData::TYPE_INT32, "", "Cycle");
@@ -335,10 +335,10 @@ std::shared_ptr<MetadataElement> AbstractMetadata::AddAbstractedMetadataHeader(
 }
 
 std::vector<std::shared_ptr<MetadataElement>> AbstractMetadata::GetBandAbsMetadataList(
-    std::shared_ptr<MetadataElement> abs_root) {
+    const std::shared_ptr<MetadataElement>& abs_root) {
     std::vector<std::shared_ptr<MetadataElement>> band_metadata_list;
     std::vector<std::shared_ptr<MetadataElement>> children = abs_root->GetElements();
-    for (std::shared_ptr<MetadataElement> child : children) {
+    for (const auto& child : children) {
         if (child->GetName().find(BAND_PREFIX, 0) == 0) {
             band_metadata_list.push_back(child);
         }
@@ -352,7 +352,7 @@ void AbstractMetadata::SetOrbitStateVectors(const std::shared_ptr<MetadataElemen
 
     // remove old
     std::vector<std::shared_ptr<MetadataElement>> old_list = elem_root->GetElements();
-    for (std::shared_ptr<MetadataElement> old : old_list) {
+    for (const auto& old : old_list) {
         elem_root->RemoveElement(old);
     }
     // add new
@@ -402,7 +402,7 @@ void AbstractMetadata::PatchMissingMetadata(const std::shared_ptr<MetadataElemen
     std::shared_ptr<MetadataElement> complete_metadata = AddAbstractedMetadataHeader(tmp_elem);
 
     auto attribs = complete_metadata->GetAttributes();
-    for (std::shared_ptr<MetadataAttribute> at : attribs) {
+    for (const auto& at : attribs) {
         if (!abstracted_metadata->ContainsAttribute(at->GetName())) {
             abstracted_metadata->AddAttribute(at);
             abstracted_metadata->GetProduct()->SetModified(false);
@@ -419,10 +419,10 @@ void AbstractMetadata::MigrateToCurrentVersion(const std::shared_ptr<MetadataEle
 
 std::shared_ptr<Utc> AbstractMetadata::ParseUtc(std::string_view time_str, std::string_view date_format_pattern) {
     try {
-        int dot_pos = time_str.find_last_of('.');
+        int dot_pos = static_cast<int>(time_str.find_last_of('.'));
         if (dot_pos > 0) {
             std::string new_time_str =
-                std::string(time_str).substr(0, std::min(dot_pos + 7, static_cast<int>(time_str.length())));
+                std::string(time_str).substr(0, std::min(dot_pos + 7, static_cast<int>(time_str.length())));  // NOLINT
             try {
                 return Utc::Parse(new_time_str, date_format_pattern);
             } catch (const std::exception& e) {
@@ -525,12 +525,11 @@ int AbstractMetadata::GetAttributeInt(const std::shared_ptr<MetadataElement>& el
     return static_cast<int>(val);
 }
 
-bool AbstractMetadata::HasAbstractedMetadata(std::shared_ptr<Product> source_product) {
+bool AbstractMetadata::HasAbstractedMetadata(const std::shared_ptr<Product>& source_product) {
     if (const auto root = source_product->GetMetadataRoot(); root) {
         return root->GetElement(ABSTRACT_METADATA_ROOT) != nullptr;
     }
 
     return false;
 }
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

@@ -50,7 +50,7 @@ public:
     static void CreateVirtualIntensityBand(const std::shared_ptr<snapengine::Product>& product,
                                            const std::shared_ptr<snapengine::Band>& band, std::string_view count_str);
     static std::string FindPolarizationInBandName(std::string_view band_name);
-    static void DiscardUnusedMetadata(std::shared_ptr<snapengine::Product> product);
+    static void DiscardUnusedMetadata(const std::shared_ptr<snapengine::Product>& product);
     void HandleReaderException(const std::exception& e);
     static bool CheckIfCrossMeridian(std::vector<float> longitude_list);
     /**
@@ -65,18 +65,17 @@ public:
 protected:
     explicit SARReader(const std::shared_ptr<snapengine::IProductReaderPlugIn>& reader_plug_in);
     //    todo: intention is to override abstract method with abstract method like in original
-    virtual std::shared_ptr<alus::snapengine::Product> ReadProductNodesImpl() override = 0;
-    virtual void ReadBandRasterDataImpl(int source_offset_x, int source_offset_y, int source_width, int source_height,
-                                        int source_step_x, int source_step_y,
-                                        std::shared_ptr<snapengine::Band> dest_band, int dest_offset_x,
-                                        int dest_offset_y, int dest_width, int dest_height,
-                                        const std::shared_ptr<snapengine::ProductData>& dest_buffer,
-                                        std::shared_ptr<ceres::IProgressMonitor> pm) override = 0;
+    std::shared_ptr<alus::snapengine::Product> ReadProductNodesImpl() override = 0;
+    void ReadBandRasterDataImpl(int source_offset_x, int source_offset_y, int source_width, int source_height,
+                                int source_step_x, int source_step_y, std::shared_ptr<snapengine::Band> dest_band,
+                                int dest_offset_x, int dest_offset_y, int dest_width, int dest_height,
+                                const std::shared_ptr<snapengine::ProductData>& dest_buffer,
+                                std::shared_ptr<ceres::IProgressMonitor> pm) override = 0;
 
     static void SetQuicklookBandName(const std::shared_ptr<snapengine::Product>& product);
-    void AddQuicklook(const std::shared_ptr<snapengine::Product>& product, std::string_view name,
-                      const boost::filesystem::path& ql_file);
-    void AddCommonSARMetadata(const std::shared_ptr<snapengine::Product>& product);
+    static void AddQuicklook(const std::shared_ptr<snapengine::Product>& product, std::string_view name,
+                             const boost::filesystem::path& ql_file);
+    static void AddCommonSARMetadata(const std::shared_ptr<snapengine::Product>& product);
 
 private:
     static constexpr std::array<std::string_view, 5> ELEMS_TO_KEEP = {

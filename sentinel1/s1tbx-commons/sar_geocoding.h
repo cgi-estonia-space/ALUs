@@ -22,15 +22,15 @@
 #include "orbit_state_vector_computation.h"
 #include "pos_vector.h"
 
-namespace alus {
+namespace alus {  // NOLINT TODO: concatenate namespace and remove nolint after migrating to cuda 11+
 namespace s1tbx {
 namespace sargeocoding {
 /**
  * Compute zero Doppler time for given earth point using bisection method.
  *
  * Duplicate of a SNAP's SARGeocoding.java's getEarthPointZeroDopplerTime().
- * This actually exists as an inline version for CUDA calls as GetEarthPointZeroDopplerTimeImpl() in sar_geocoding.cuh
- * This procedure is duplicated by the nvcc for host processing in sar_geocoding.cu.
+ * This actually exists as an inline version for CUDA calls as GetEarthPointZeroDopplerTimeImpl() in sar-geocoding.cuh
+ * This procedure is duplicated by the nvcc for host processing in sar-geocoding.cu.
  *
  * @param first_line_utc     The zero Doppler time for the first range line.
  * @param line_time_interval The line time interval.
@@ -49,8 +49,8 @@ double GetEarthPointZeroDopplerTime(double first_line_utc, double line_time_inte
  * Compute slant range distance for given earth point and given time.
  *
  * Duplicate of a SNAP's SARGeocoding.java's computeSlantRange().
- * This actually exists as an inline version for CUDA calls as ComputeSlantRangeImpl() in sar_geocoding.cuh.
- * This procedure is duplicated by the nvcc for host processing in sar_geocoding.cu.
+ * This actually exists as an inline version for CUDA calls as ComputeSlantRangeImpl() in sar-geocoding.cuh.
+ * This procedure is duplicated by the nvcc for host processing in sar-geocoding.cu.
  *
  * @param time       The given time in days.
  * @param vectors    Orbit state vectors for GetPosition calculation happening inside this function.
@@ -65,8 +65,8 @@ double ComputeSlantRange(double time, cuda::KernelArray<snapengine::OrbitStateVe
  *
  * This is extracted from SARGeocoding.java class where it is used as part of computeRangeIndex() and
  * computeExtendedRangeIndex().
- * This actually exists as an inline version for CUDA calls as IsDopplerTimeValidImpl() in sar_geocoding.cuh.
- * This procedure is duplicated by the nvcc for host processing in sar_geocoding.cu.
+ * This actually exists as an inline version for CUDA calls as IsDopplerTimeValidImpl() in sar-geocoding.cuh.
+ * This procedure is duplicated by the nvcc for host processing in sar-geocoding.cu.
  *
  * @return true when zero_doppler_time value is between first and last line UTC times (inclusive)
  */
@@ -77,8 +77,8 @@ bool IsDopplerTimeValid(double first_line_utc, double last_line_utc, double zero
  *
  * This is adopted from SNAP's SARGeocoding::computeRangeIndex() with only SLC part implemented and stripped
  * doppler time validation separated as IsDopplerTimeValid().
- * This actually exists as an inline version for CUDA calls as ComputeRangeIndexSlcImpl() in sar_geocoding.cuh.
- * This procedure is duplicated by the nvcc for host processing in sar_geocoding.cu.
+ * This actually exists as an inline version for CUDA calls as ComputeRangeIndexSlcImpl() in sar-geocoding.cuh.
+ * This procedure is duplicated by the nvcc for host processing in sar-geocoding.cu.
  *
  * @param zeroDopplerTime The zero Doppler time in MJD.
  * @param slantRange      The slant range in meters.

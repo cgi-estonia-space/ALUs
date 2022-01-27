@@ -21,8 +21,7 @@
 #include "band.h"
 //#include "image_type.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 class ImageType;
 /**
  * A {@code Mask} is used to mask image pixels of other raster data nodes.
@@ -47,7 +46,7 @@ public:
      * @param height    The new mask's raster height.
      * @param imageType The new mask's image type.
      */
-    Mask(std::string_view name, int width, int height, std::shared_ptr<ImageType> image_type);
+    Mask(std::string_view name, int width, int height, const std::shared_ptr<ImageType>& image_type);
 
     //    /**
     //     * @return The image type of this mask.
@@ -70,5 +69,4 @@ public:
     //        image_config_->SetValue(ImageType::PROPERTY_NAME_TRANSPARENCY, transparency);
     //    }
 };
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

@@ -24,5 +24,6 @@ target_link_libraries(common-util-static
         Boost::log
         Boost::log_setup
         staticZipper
+        gdal-util-static
         )
 

@@ -20,8 +20,7 @@
 
 #include "f_x_y_sum.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 /**
  * Provides an optimized <code>computeZ</code> method for bi-linear polynomials (order = 1+1).
@@ -32,10 +31,9 @@ class BiLinear final : public virtual FXYSum {
 public:
     BiLinear();
 
-    explicit BiLinear(std::vector<double> coefficients);
+    explicit BiLinear(const std::vector<double>& coefficients);
 
     double ComputeZ(double x, double y) override;
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

@@ -24,8 +24,7 @@
 
 #include <boost/lexical_cast.hpp>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 UByte::UByte(int num_elems) : UByte(num_elems, true) {}
 
@@ -47,17 +46,17 @@ int UByte::GetNumElems() const { return array_.size(); }
 void UByte::Dispose() { array_.clear(); }
 
 int UByte::GetElemIntAt(int index) const { return array_.at(index); }
-long UByte::GetElemUIntAt(int index) const { return array_.at(index); }
-long UByte::GetElemLongAt(int index) const { return array_.at(index); }
+int64_t UByte::GetElemUIntAt(int index) const { return array_.at(index); }
+int64_t UByte::GetElemLongAt(int index) const { return array_.at(index); }
 float UByte::GetElemFloatAt(int index) const { return array_.at(index); }
 double UByte::GetElemDoubleAt(int index) const { return array_.at(index); }
 std::string UByte::GetElemStringAt(int index) const { return std::to_string(array_.at(index)); }
 
-void UByte::SetElemIntAt(int index, int value) { array_.at(index) = (uint8_t)value; }
-void UByte::SetElemUIntAt(int index, long value) { array_.at(index) = (uint8_t)value; }
-void UByte::SetElemLongAt(int index, long value) { array_.at(index) = (uint8_t)value; }
-void UByte::SetElemFloatAt(int index, float value) { array_.at(index) = (uint8_t)std::round(value); }
-void UByte::SetElemDoubleAt(int index, double value) { array_.at(index) = (uint8_t)std::round(value); }
+void UByte::SetElemIntAt(int index, int value) { array_.at(index) = static_cast<uint8_t>(value); }
+void UByte::SetElemUIntAt(int index, int64_t value) { array_.at(index) = static_cast<uint8_t>(value); }
+void UByte::SetElemLongAt(int index, int64_t value) { array_.at(index) = static_cast<uint8_t>(value); }
+void UByte::SetElemFloatAt(int index, float value) { array_.at(index) = static_cast<uint8_t>(std::round(value)); }
+void UByte::SetElemDoubleAt(int index, double value) { array_.at(index) = static_cast<uint8_t>(std::round(value)); }
 
 std::shared_ptr<ProductData> UByte::CreateDeepClone() const {
     //    todo:check if this is correct
@@ -75,9 +74,8 @@ void UByte::SetElems(std::any data) {
         std::transform(string_data.begin(), string_data.end(), array_.begin(), [](const std::string& s) {
             if (UINT8_MAX >= std::stoul(s)) {
                 return std::stoul(s);
-            } else {
-                throw std::out_of_range("value is not uint8_t");
             }
+            throw std::out_of_range("value is not uint8_t");
         });
     } else {
         throw std::invalid_argument("data is not std::vector<uint8_t> or std::vector<std::string>");
@@ -87,7 +85,8 @@ void UByte::SetElems(std::any data) {
 bool UByte::EqualElems(const std::shared_ptr<ProductData> other) const {
     if (other.get() == this) {
         return true;
-    } else if (other->GetElems().type() == typeid(std::vector<uint8_t>)) {
+    }
+    if (other->GetElems().type() == typeid(std::vector<uint8_t>)) {
         return (array_ == std::any_cast<std::vector<uint8_t>>(other->GetElems()));
     }
     return false;
@@ -96,5 +95,4 @@ void UByte::SetElemStringAt(int index, std::string_view value) {
     array_.at(index) = boost::lexical_cast<uint8_t>(value);
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

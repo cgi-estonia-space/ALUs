@@ -93,7 +93,7 @@ void ProductSubsetBuilder::UpdateMetadata(std::shared_ptr<Product> source_produc
     std::shared_ptr<MetadataAttribute> offset_y = trg_abs_root->GetAttribute("subset_offset_y");
     if (offset_y != nullptr && region != nullptr) offset_y->GetData()->SetElemUInt(region->y);
 
-    bool is_sar_product = trg_abs_root->GetAttributeDouble("radar_frequency", 99999) != 99999;
+    bool is_sar_product = trg_abs_root->GetAttributeDouble("radar_frequency", 99999) != 99999;  // NOLINT
     if (!is_sar_product) return;
 
     // update subset metadata for SAR products
@@ -120,28 +120,29 @@ void ProductSubsetBuilder::UpdateMetadata(std::shared_ptr<Product> source_produc
     }
 
     std::shared_ptr<MetadataAttribute> total_size = trg_abs_root->GetAttribute("total_size");
-    if (total_size != nullptr) total_size->GetData()->SetElemUInt(target_product->GetRawStorageSize());
+    if (total_size != nullptr)
+        total_size->GetData()->SetElemUInt(static_cast<int>(target_product->GetRawStorageSize()));
 
     if (near_range_on_left) {
-        SetLatLongMetadata(target_product, trg_abs_root, "first_near_lat", "first_near_long", 0.5f, 0.5f);
+        SetLatLongMetadata(target_product, trg_abs_root, "first_near_lat", "first_near_long", 0.5F, 0.5F);
         SetLatLongMetadata(target_product, trg_abs_root, "first_far_lat", "first_far_long",
-                           target_product->GetSceneRasterWidth() - 1 + 0.5f, 0.5f);
+                           static_cast<float>(target_product->GetSceneRasterWidth()) - 1 + 0.5F, 0.5F);
 
-        SetLatLongMetadata(target_product, trg_abs_root, "last_near_lat", "last_near_long", 0.5f,
-                           target_product->GetSceneRasterHeight() - 1 + 0.5f);
+        SetLatLongMetadata(target_product, trg_abs_root, "last_near_lat", "last_near_long", 0.5F,
+                           static_cast<float>(target_product->GetSceneRasterHeight()) - 1 + 0.5F);
         SetLatLongMetadata(target_product, trg_abs_root, "last_far_lat", "last_far_long",
-                           target_product->GetSceneRasterWidth() - 1 + 0.5f,
-                           target_product->GetSceneRasterHeight() - 1 + 0.5f);
+                           static_cast<float>(target_product->GetSceneRasterWidth()) - 1 + 0.5F,
+                           static_cast<float>(target_product->GetSceneRasterHeight()) - 1 + 0.5F);
     } else {
         SetLatLongMetadata(target_product, trg_abs_root, "first_near_lat", "first_near_long",
-                           target_product->GetSceneRasterWidth() - 1 + 0.5f, 0.5f);
-        SetLatLongMetadata(target_product, trg_abs_root, "first_far_lat", "first_far_long", 0.5f, 0.5f);
+                           static_cast<float>(target_product->GetSceneRasterWidth()) - 1 + 0.5F, 0.5F);
+        SetLatLongMetadata(target_product, trg_abs_root, "first_far_lat", "first_far_long", 0.5F, 0.5F);
 
         SetLatLongMetadata(target_product, trg_abs_root, "last_near_lat", "last_near_long",
-                           target_product->GetSceneRasterWidth() - 1 + 0.5f,
-                           target_product->GetSceneRasterHeight() - 1 + 0.5f);
-        SetLatLongMetadata(target_product, trg_abs_root, "last_far_lat", "last_far_long", 0.5f,
-                           target_product->GetSceneRasterHeight() - 1 + 0.5f);
+                           static_cast<float>(target_product->GetSceneRasterWidth()) - 1 + 0.5F,
+                           static_cast<float>(target_product->GetSceneRasterHeight()) - 1 + 0.5F);
+        SetLatLongMetadata(target_product, trg_abs_root, "last_far_lat", "last_far_long", 0.5F,
+                           static_cast<float>(target_product->GetSceneRasterHeight()) - 1 + 0.5F);
     }
 
     std::shared_ptr<MetadataAttribute> slant_range = trg_abs_root->GetAttribute("slant_range_to_first_pixel");
@@ -153,13 +154,14 @@ void ProductSubsetBuilder::UpdateMetadata(std::shared_ptr<Product> source_produc
             if (srgr_flag) {
                 double slant_range_time;
                 if (near_range_on_left) {
-                    slant_range_time = sr_tpg->GetPixelDouble(region->x, region->y) / 1000000000.0;  // ns to s
+                    slant_range_time =
+                        sr_tpg->GetPixelDouble(region->x, region->y) / 1000000000.0;  // ns to s  // NOLINT
                 } else {
                     slant_range_time = sr_tpg->GetPixelDouble(target_product->GetSceneRasterWidth() - region->x - 1,
                                                               region->y) /
-                                       1000000000.0;  // ns to s
+                                       1000000000.0;  // ns to s  // NOLINT
                 }
-                double half_light_speed = 299792458.0 / 2.0;
+                double half_light_speed = 299792458.0 / 2.0;  // NOLINT
                 slant_range_dist = slant_range_time * half_light_speed;
                 slant_range->GetData()->SetElemDouble(slant_range_dist);
             } else {
@@ -185,9 +187,8 @@ bool ProductSubsetBuilder::IsNearRangeOnLeft(std::shared_ptr<Product>& product) 
         double incidence_angle_to_first_pixel = incidence_angle->GetPixelDouble(0, 0);
         double incidence_angle_to_last_pixel = incidence_angle->GetPixelDouble(product->GetSceneRasterWidth() - 1, 0);
         return (incidence_angle_to_first_pixel < incidence_angle_to_last_pixel);
-    } else {
-        return true;
     }
+    return true;
 }
 
 void ProductSubsetBuilder::SetSubsetSRGRCoefficients(std::shared_ptr<Product>& source_product,
@@ -200,15 +201,15 @@ void ProductSubsetBuilder::SetSubsetSRGRCoefficients(std::shared_ptr<Product>& s
         double range_spacing = abs_root->GetAttributeDouble("RANGE_SPACING", 0);
         double col_index = subset_def->GetRegion() == nullptr ? 0 : subset_def->GetRegion()->x;
 
-        for (std::shared_ptr<MetadataElement> srgr_list : srgr_coefficients_elem->GetElements()) {
-            double grO = srgr_list->GetAttributeDouble("ground_range_origin", 0);
+        for (const auto& srgr_list : srgr_coefficients_elem->GetElements()) {
+            double ground_range_origin = srgr_list->GetAttributeDouble("ground_range_origin", 0);
             double ground_range_origin_subset;
             if (near_range_on_left) {
-                ground_range_origin_subset = grO + col_index * range_spacing;
+                ground_range_origin_subset = ground_range_origin + col_index * range_spacing;
             } else {
                 double col_index_from_right =
                     source_product->GetSceneRasterWidth() - col_index - target_product->GetSceneRasterWidth();
-                ground_range_origin_subset = grO + col_index_from_right * range_spacing;
+                ground_range_origin_subset = ground_range_origin + col_index_from_right * range_spacing;
             }
             srgr_list->SetAttributeDouble("ground_range_origin", ground_range_origin_subset);
         }
@@ -216,8 +217,8 @@ void ProductSubsetBuilder::SetSubsetSRGRCoefficients(std::shared_ptr<Product>& s
 }
 
 void ProductSubsetBuilder::SetLatLongMetadata(std::shared_ptr<Product>& product,
-                                              std::shared_ptr<MetadataElement>& abs_root, std::string tag_lat,
-                                              std::string tag_lon, float x, float y) {
+                                              std::shared_ptr<MetadataElement>& abs_root, std::string_view tag_lat,
+                                              std::string_view tag_lon, float x, float y) {
     std::shared_ptr<PixelPos> pixel_pos = std::make_shared<PixelPos>(x, y);
     std::shared_ptr<GeoPos> geo_pos = std::make_shared<GeoPos>();
     if (product->GetSceneGeoCoding() == nullptr) return;
@@ -241,8 +242,9 @@ std::shared_ptr<Product> ProductSubsetBuilder::CreateProduct() {
         new_product_name = new_product_name_;
     }
 
-    std::shared_ptr<Product> product = Product::CreateProduct(
-        new_product_name, source_product->GetProductType(), GetSceneRasterWidth(), GetSceneRasterHeight(), shared_from_this());
+    std::shared_ptr<Product> product =
+        Product::CreateProduct(new_product_name, source_product->GetProductType(), GetSceneRasterWidth(),
+                               GetSceneRasterHeight(), shared_from_this());
     // product->SetPointingFactory(sourceProduct.getPointingFactory());
     if (new_product_desc_.empty()) {
         product->SetDescription(source_product->GetDescription());
@@ -252,7 +254,8 @@ std::shared_ptr<Product> ProductSubsetBuilder::CreateProduct() {
     if (!IsMetadataIgnored()) {
         ProductUtils::CopyMetadata(source_product, product);
     }
-    // TODO: list of everything missing that perhaps we should have.
+    // List of everything missing that perhaps we should have.
+
     // AddTiePointGridsToProduct(product);
     AddBandsToProduct(product);
     // ProductUtils::CopyMasks(sourceProduct, product);
@@ -276,7 +279,7 @@ std::shared_ptr<Product> ProductSubsetBuilder::CreateProduct() {
     return product;
 }
 
-void ProductSubsetBuilder::AddBandsToProduct(std::shared_ptr<Product> product) {
+void ProductSubsetBuilder::AddBandsToProduct(const std::shared_ptr<Product>& product) {
     // Debug.assertNotNull(this.getSourceProduct());
     // Debug.assertNotNull(product);
 
@@ -357,7 +360,7 @@ void ProductSubsetBuilder::AddBandsToProduct(std::shared_ptr<Product> product) {
                 dest_band->SetSampleCoding(nullptr);
             }
 
-            // TODO: what is even stx?
+            // TODO: what is even stx?  // NOLINT
             /*if (IsFullScene(GetSubsetDef(), sourceBand) && sourceBand->IsStxSet()) {
                 CopyStx(sourceBand, std::dynamic_pointer_cast<RasterDataNode>(destBand));
             }*/
@@ -367,7 +370,7 @@ void ProductSubsetBuilder::AddBandsToProduct(std::shared_ptr<Product> product) {
         }
     }
 
-    // TODO: Image info? You'll know when you need it.
+    // TODO: Image info? You'll know when you need it.  // NOLINT
     /*auto var11 = band_map_.begin();
 
     for(var11; var11 != band_map_.end(); ++var11) {
@@ -383,7 +386,7 @@ void ProductSubsetBuilder::AddBandsToProduct(std::shared_ptr<Product> product) {
     }
 }*/
 
-// TODO: Once you start implementing the raster data copy, you need all of the following and perhaps more.
+// TODO: Once you start implementing the raster data copy, you need all of the following and perhaps more.  // NOLINT
 /*void ProductSubsetBuilder::ReadBandRasterDataImpl(int sourceOffsetX, int sourceOffsetY, int sourceWidth, int
 sourceHeight, int sourceStepX, int sourceStepY, std::shared_ptr<Band> destBand, int destOffsetX, int destOffsetY, int
 destWidth, int destHeight, const std::shared_ptr<ProductData>& dest_buffer, std::shared_ptr<ceres::IProgressMonitor>
@@ -403,7 +406,7 @@ sourceHeight, sourceStepX, sourceStepY);
     }
 
 }
-//TODO: So from 1 buffer to another?
+//TODO: So from 1 buffer to another?  // NOLINT
 void copyBandRasterDataFully(Band sourceBand, ProductData destBuffer, int destWidth, int destHeight) {
     copyData(sourceBand.getRasterData(),
              0,

@@ -1,3 +1,16 @@
+/**
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
+ */
 #include "gdal_util.h"
 
 #include "general_constants.h"
@@ -24,15 +37,16 @@ void GeoTiffWriteFile(GDALDataset* input_dataset, const std::string_view output_
     GDALClose(output_dataset);
 }
 
-std::string findOptimalTileSize(int raster_dimension) {
+std::string FindOptimalTileSize(int raster_dimension) {
     // TIFF specification 6.0, Section 15: Tiled Images
     // quote from paragraph TileWidth
     // TileWidth must be a multiple of 16.
 
-    int best = 256;
+    const int default_tile_size{256};
+    int best = default_tile_size;
 
     // find the best tile size with least empty paddding bytes
-    for (int tile_size = 256; tile_size <= 512; tile_size += 16) {
+    for (int tile_size = 256; tile_size <= 512; tile_size += 16) {  // NOLINT
         if (tile_size % raster_dimension == 0) {
             best = tile_size;
             continue;

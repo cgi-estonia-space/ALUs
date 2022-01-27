@@ -22,8 +22,7 @@
 #include <string_view>
 #include <vector>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 /**
  * consider using boost instead!
@@ -61,8 +60,7 @@ public:
      * @param valid_chars  the array of valid characters
      * @param replace_char the replace character
      */
-    static std::string CreateValidName(std::string name, std::string valid_chars, char replace_char);
+    static std::string CreateValidName(std::string_view name, std::string_view valid_chars, char replace_char);
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

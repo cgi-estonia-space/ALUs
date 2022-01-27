@@ -22,9 +22,9 @@
 
 #include <boost/algorithm/string.hpp>
 
+#include "custom/dimension.h"
 #include "guardian.h"
 #include "pixel_subset_region.h"
-#include "custom/dimension.h"
 
 namespace alus::snapengine {
 
@@ -145,26 +145,26 @@ std::shared_ptr<custom::Dimension> ProductSubsetDef::GetSceneRasterSize(int max_
     return GetSceneRasterSize(max_width, max_height, "");
 }
 
-std::shared_ptr<custom::Dimension> ProductSubsetDef::GetSceneRasterSize(int max_width, int max_height, std::string band_name) {
+std::shared_ptr<custom::Dimension> ProductSubsetDef::GetSceneRasterSize(int max_width, int max_height,
+                                                                        std::string_view band_name) {
     int width = max_width;
     int height = max_height;
 
     if (subset_region_ != nullptr && dynamic_cast<PixelSubsetRegion*>(subset_region_.get()) != nullptr) {
-        PixelSubsetRegion* pixel_subset_region = dynamic_cast<PixelSubsetRegion*>(subset_region_.get());
+        auto* pixel_subset_region = dynamic_cast<PixelSubsetRegion*>(subset_region_.get());
         width = pixel_subset_region->GetPixelRegion()->width;
         height = pixel_subset_region->GetPixelRegion()->height;
     }
 
-    auto the_band = region_map_.find(band_name);
+    auto the_band = region_map_.find(band_name.data());
     if (!band_name.empty() && !region_map_.empty() && the_band != region_map_.end()) {
-        width = region_map_.at(band_name).width;
-        height = region_map_.at(band_name).height;
+        width = region_map_.at(band_name.data()).width;
+        height = region_map_.at(band_name.data()).height;
     } else if (!region_map_.empty()) {
         int aux_width = -1;
         int aux_height = -1;
 
-        for (std::string node_name : node_name_list_) {
-
+        for (const auto& node_name : node_name_list_) {
             auto rec = region_map_.find(node_name);
             if (rec == region_map_.end()) {
                 continue;

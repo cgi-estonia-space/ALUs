@@ -30,6 +30,8 @@
 
 namespace {
 
+using testing::Sentinel1UtilsTester;
+
 /**
  * Important. Perform test with slave data as master does not have these 5 arrays.
  */
@@ -95,7 +97,7 @@ TEST(Sentinel1Utils, GetTime) {
 }
 
 void PrepareFirstCalibrationVector(
-    std::shared_ptr<alus::snapengine::MetadataElement> first_calibration_vector_element) {
+    const std::shared_ptr<alus::snapengine::MetadataElement>& first_calibration_vector_element) {
     first_calibration_vector_element->SetAttributeString(
         alus::snapengine::AbstractMetadata::AZIMUTH_TIME,
         alus::goods::calibrationdata::FIRST_CALIBRATION_SECOND_VECTOR_AZIMUTH_TIME);
@@ -143,7 +145,7 @@ void PrepareFirstCalibrationVector(
 }
 
 void PrepareSecondCalibrationVector(
-    std::shared_ptr<alus::snapengine::MetadataElement> second_calibration_vector_element) {
+    const std::shared_ptr<alus::snapengine::MetadataElement>& second_calibration_vector_element) {
     second_calibration_vector_element->SetAttributeString(
         alus::snapengine::AbstractMetadata::AZIMUTH_TIME,
         alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_AZIMUTH_TIME);
@@ -190,7 +192,8 @@ void PrepareSecondCalibrationVector(
                                 alus::goods::calibrationdata::SECOND_CALIBRATION_FIRST_VECTOR_DN_COUNT);
 }
 
-void PrepareCalibrationVectors(std::shared_ptr<alus::snapengine::MetadataElement> calibration_vector_list_element) {
+void PrepareCalibrationVectors(
+    const std::shared_ptr<alus::snapengine::MetadataElement>& calibration_vector_list_element) {
     // Prepare first calibration vector
     const auto first_calibration_vector_element =
         std::make_shared<alus::snapengine::MetadataElement>(alus::snapengine::AbstractMetadata::CALIBRATION_VECTOR);
@@ -274,7 +277,7 @@ TEST(Sentinel1Utils, SlaveTest) {
     alus::s1tbx::Sentinel1Utils slave_utils("./goods/slave_metadata.dim");
     Sentinel1UtilsTester tester;
     tester.ReadOriginalPlaceHolderFiles("./goods/backgeocoding/slaveBurstLineTimes.txt",
-                                        "./goods/backgeocoding/slaveGeoLocation.txt", 21, 21);
+                                        "./goods/backgeocoding/slaveGeoLocation.txt", 21, 21);  // NOLINT
 
     alus::s1tbx::SubSwathInfo* subswath = slave_utils.subswath_.at(0).get();
     alus::s1tbx::SubSwathInfo* tester_subswath = tester.subswath_.at(0).get();

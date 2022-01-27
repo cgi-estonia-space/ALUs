@@ -32,6 +32,15 @@ pipelines:
                   for file in *; do
                       [ -f "$file" ] && $BITBUCKET_CLONE_DIR/build-automation/put_to_alus_ci_artifacts.sh "${BITBUCKET_BUILD_NUMBER}_${BITBUCKET_BRANCH}_${date_stamp}" $file sid_man
                   done
+          - step: # Code Style checks
+              image: cgialus/alus-infra:latest
+              name: Code style checks
+              script:
+                - cd $BITBUCKET_CLONE_DIR
+                - git submodule update --init --recursive
+                - rm -rf build
+                - cmake . -Bbuild -DENABLE_TESTS=ON
+                - build-automation/check_code_style.sh $BITBUCKET_CLONE_DIR $BITBUCKET_PR_DESTINATION_BRANCH
           - step: #SonarCloud
               image: cgialus/alus-infra:latest
               name: SonarCloud scan
@@ -54,7 +63,7 @@ pipelines:
                 - cd build
                 - build-wrapper-linux-x86-64 --out-dir $BW_OUTPUT make -j8
                 - cd $BITBUCKET_CLONE_DIR
-                - sonar-scanner -Dsonar.cfamily.build-wrapper-output=$BW_OUTPUT -Dsonar.sources=algs,app,util -Dsonar.tests=test,test_integration -Dsonar.exclusions=external/**,build/**,.git/** -Dsonar.test.exclusions=external/**,build/**,.git/** -X
+                - sonar-scanner -Dsonar.cfamily.build-wrapper-output=$BW_OUTPUT -Dsonar.sources=algs,app,util -Dsonar.tests=test,test-integration -Dsonar.exclusions=external/**,build/**,.git/** -Dsonar.test.exclusions=external/**,build/**,.git/** -X
               artifacts:
                 - sonar-cfamily-reproducer.zip
 

@@ -24,8 +24,7 @@
 #include "snap-dem/dem/dataio/earth_gravitational_model96_computation.h"
 #include "srtm3_elevation_model_constants.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 Srtm3ElevationModel::Srtm3ElevationModel(std::vector<std::string> file_names) : file_names_(std::move(file_names)) {
     device_srtm3_tiles_count_ = 0;
@@ -45,7 +44,8 @@ Srtm3ElevationModel::~Srtm3ElevationModel() {
 void Srtm3ElevationModel::ReadSrtmTilesThread() {
     try {
         for (auto&& dem_file : file_names_) {
-            // TODO: Priority needed for keeping results as close as possible to SNAP.
+            // TODO: Priority needed for keeping results as close as possible to SNAP.  // NOLINT is this todo or just a
+            // simple comment
             auto& ds = srtms_.emplace_back(dem_file, GeoTransformSourcePriority::WORLDFILE_PAM_INTERNAL_TABFILE_NONE);
             ds.LoadRasterBand(1);
             const auto* geo_transform = ds.GetTransform();
@@ -91,7 +91,7 @@ void Srtm3ElevationModel::HostToDeviceThread() {
             const auto nr_of_tiles = srtms_.size();
             temp_tiles.resize(nr_of_tiles);
             device_formated_srtm_buffers_.resize(nr_of_tiles);
-            constexpr dim3 block_size(20, 20);
+            constexpr dim3 BLOCK_SIZE(20, 20);
 
             for (size_t i = 0; i < nr_of_tiles; i++) {
                 const auto x_size = this->srtms_.at(i).GetRasterSizeX();
@@ -104,9 +104,10 @@ void Srtm3ElevationModel::HostToDeviceThread() {
                                           cudaMemcpyHostToDevice));
                 this->srtm_format_info_.at(i).x_size = x_size;
                 this->srtm_format_info_.at(i).y_size = y_size;
-                const dim3 grid_size(cuda::GetGridDim(block_size.x, x_size), cuda::GetGridDim(block_size.y, y_size));
+                const dim3 grid_size(cuda::GetGridDim(BLOCK_SIZE.x, x_size),
+                                     cuda::GetGridDim(static_cast<int>(BLOCK_SIZE.y), y_size));
 
-                CHECK_CUDA_ERR(LaunchDemFormatter(grid_size, block_size, this->device_formated_srtm_buffers_.at(i),
+                CHECK_CUDA_ERR(LaunchDemFormatter(grid_size, BLOCK_SIZE, this->device_formated_srtm_buffers_.at(i),
                                                   temp_buffer, this->srtm_format_info_.at(i)));
                 temp_tiles.at(i).pointer = this->device_formated_srtm_buffers_.at(i);
                 // When converting to integer C++ rules cast down positive float numbers and towards zero for negative
@@ -121,6 +122,7 @@ void Srtm3ElevationModel::HostToDeviceThread() {
                 // (incrementing towards 180). Index 0 for latitude starts at 60 degrees (incrementing towards -60).
                 // Therefore SRTM3 file covering longitude 180 and latitude -60 index is 7224.
                 temp_tiles.at(i).id =
+                    // NOLINTNEXTLINE
                     (((srtm3elevationmodel::MAX_LON_COVERAGE + lon) / srtm3elevationmodel::DEGREE_RES) + 1) * 100 +
                     (((srtm3elevationmodel::MAX_LAT_COVERAGE - lat) / srtm3elevationmodel::DEGREE_RES) + 1);
                 LOGI << "Loading SRTM3 tile ID " << temp_tiles.at(i).id << " to GPU";
@@ -185,5 +187,4 @@ size_t Srtm3ElevationModel::GetDeviceSrtm3TilesCount() {
     return device_srtm3_tiles_count_;
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

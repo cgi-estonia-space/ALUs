@@ -23,8 +23,7 @@
 
 #include "band.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 /**
  * A band contains the data for geophysical parameter in remote sensing data products. Bands are two-dimensional images
@@ -70,5 +69,4 @@ public:
 
     void SetExpression(std::string_view expression);
 };
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

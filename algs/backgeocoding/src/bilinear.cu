@@ -25,9 +25,9 @@
 namespace alus {
 namespace backgeocoding {
 
-inline __device__ int GetSamples(
-    PointerArray *tiles, int *x, int *y, double *samples, int width, int height, double no_value, int use_no_data) {
-    double *values = (double *)tiles->array[0].pointer;
+inline __device__ int GetSamples(PointerArray* tiles, int* x, int* y, double* samples, int width, int height,
+                                 double no_value, int use_no_data) {
+    double* values = (double*)tiles->array[0].pointer;
     const int value_width = tiles->array[0].x;
     int i = 0, j = 0, is_valid = 1;
     while (i < height) {
@@ -46,14 +46,8 @@ inline __device__ int GetSamples(
     return is_valid;
 }
 
-__global__ void BilinearInterpolation(double *x_pixels,
-                                      double *y_pixels,
-                                      double *demod_phase,
-                                      double *demod_i,
-                                      double *demod_q,
-                                      BilinearParams params,
-                                      float *results_i,
-                                      float *results_q) {
+__global__ void BilinearInterpolation(double* x_pixels, double* y_pixels, double* demod_phase, double* demod_i,
+                                      double* demod_q, BilinearParams params, float* results_i, float* results_q) {
     double index_i[2];
     double index_j[2];
     double index_ki[1];
@@ -90,25 +84,21 @@ __global__ void BilinearInterpolation(double *x_pixels,
     const double x = x_pixels[thread_data_index];
     const double y = y_pixels[thread_data_index];
 
-    if ((x == INVALID_INDEX && y == INVALID_INDEX) ||
-        !(y >= params.subswath_start && y < params.subswath_end)) {
+    if ((x == INVALID_INDEX && y == INVALID_INDEX) || !(y >= params.subswath_start && y < params.subswath_end)) {
         results_i[thread_data_index] = params.no_data_value;
         results_q[thread_data_index] = params.no_data_value;
     } else {
-        snapengine::bilinearinterpolation::ComputeIndex(x - params.rectangle_x + 0.5,
-                                                        y - params.rectangle_y + 0.5,
-                                                        params.demod_width,
-                                                        params.demod_height,
-                                                        &index);
+        snapengine::bilinearinterpolation::ComputeIndex(x - params.rectangle_x + 0.5, y - params.rectangle_y + 0.5,
+                                                        params.demod_width, params.demod_height, &index);
         p_holder.pointer = demod_phase;
-        sample_phase = snapengine::bilinearinterpolation::Resample(
-            &p_array, &index, raster_width, params.no_data_value, use_no_data_phase, GetSamples);
+        sample_phase = snapengine::bilinearinterpolation::Resample(&p_array, &index, raster_width, params.no_data_value,
+                                                                   use_no_data_phase, GetSamples);
         p_holder.pointer = demod_i;
-        sample_i = snapengine::bilinearinterpolation::Resample(
-            &p_array, &index, raster_width, params.no_data_value, use_no_data_i, GetSamples);
+        sample_i = snapengine::bilinearinterpolation::Resample(&p_array, &index, raster_width, params.no_data_value,
+                                                               use_no_data_i, GetSamples);
         p_holder.pointer = demod_q;
-        sample_q = snapengine::bilinearinterpolation::Resample(
-            &p_array, &index, raster_width, params.no_data_value, use_no_data_q, GetSamples);
+        sample_q = snapengine::bilinearinterpolation::Resample(&p_array, &index, raster_width, params.no_data_value,
+                                                               use_no_data_q, GetSamples);
 
         if (!params.disable_reramp) {
             sincos(sample_phase, &sin_phase, &cos_phase);
@@ -121,23 +111,16 @@ __global__ void BilinearInterpolation(double *x_pixels,
             results_q[thread_data_index] = sample_q;
         }
     }
-
 }
 
-cudaError_t LaunchBilinearInterpolation(double *x_pixels,
-                                        double *y_pixels,
-                                        double *demod_phase,
-                                        double *demod_i,
-                                        double *demod_q,
-                                        BilinearParams params,
-                                        float *results_i,
-                                        float *results_q) {
+cudaError_t LaunchBilinearInterpolation(double* x_pixels, double* y_pixels, double* demod_phase, double* demod_i,
+                                        double* demod_q, BilinearParams params, float* results_i, float* results_q) {
     dim3 block_size(24, 24);
     dim3 grid_size(cuda::GetGridDim(block_size.x, params.point_width),
                    cuda::GetGridDim(block_size.y, params.point_height));
 
-    BilinearInterpolation<<<grid_size, block_size>>>(
-        x_pixels, y_pixels, demod_phase, demod_i, demod_q, params, results_i, results_q);
+    BilinearInterpolation<<<grid_size, block_size>>>(x_pixels, y_pixels, demod_phase, demod_i, demod_q, params,
+                                                     results_i, results_q);
     return cudaGetLastError();
 }
 

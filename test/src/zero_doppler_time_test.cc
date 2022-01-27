@@ -28,7 +28,7 @@ namespace {
 using ::testing::DoubleEq;
 using ::testing::Pointwise;
 
-using namespace alus::tests;
+using alus::tests::ZeroDopplerTimeData;
 
 class ZeroDopplerTimeTester : public alus::cuda::CudaFriendlyObject {
 private:
@@ -48,7 +48,7 @@ public:
     ZeroDopplerTimeTester() = default;
     ~ZeroDopplerTimeTester() { this->DeviceFree(); }
 
-    void readDataFiles() {
+    void ReadDataFiles() {
         std::ifstream doppler_stream("./goods/backgeocoding/masterZeroDopplerTime.txt");
         if (!doppler_stream.is_open()) {
             throw std::ios::failure("masterZeroDopplerTime.txt is not open");
@@ -69,7 +69,7 @@ public:
         doppler_stream.close();
     }
 
-    void HostToDevice() {
+    void HostToDevice() override {
         CHECK_CUDA_ERR(cudaMalloc((void**)&this->device_zero_doppler_times_, this->data_size_ * sizeof(double)));
         CHECK_CUDA_ERR(cudaMalloc((void**)&this->device_line_time_intervals_, this->data_size_ * sizeof(double)));
         CHECK_CUDA_ERR(cudaMalloc((void**)&this->device_wavelengths_, this->data_size_ * sizeof(double)));
@@ -84,12 +84,12 @@ public:
                                   this->data_size_ * sizeof(alus::snapengine::PosVector), cudaMemcpyHostToDevice));
     }
 
-    void DeviceToHost() {
+    void DeviceToHost() override {
         CHECK_CUDA_ERR(cudaMemcpy(this->calcd_zero_doppler_times_.data(), this->device_zero_doppler_times_,
                                   this->data_size_ * sizeof(double), cudaMemcpyDeviceToHost));
     }
 
-    void DeviceFree() {
+    void DeviceFree() override {
         if (this->device_line_time_intervals_ != nullptr) {
             cudaFree(this->device_line_time_intervals_);
             this->device_line_time_intervals_ = nullptr;
@@ -126,7 +126,7 @@ TEST(SarGeoCodingTestSimple, ZeroDopplerTimeTest) {
     d_master_orbit_vectors.size = master_orbit_vectors_computation.size();
 
     ZeroDopplerTimeTester tester;
-    tester.readDataFiles();
+    tester.ReadDataFiles();
     tester.HostToDevice();
 
     ZeroDopplerTimeData test_data{};
@@ -134,12 +134,12 @@ TEST(SarGeoCodingTestSimple, ZeroDopplerTimeTest) {
     test_data.device_wavelengths = tester.device_wavelengths_;
     test_data.device_earth_points = tester.device_earth_points_;
     test_data.orbit = d_master_orbit_vectors.array;
-    test_data.num_orbit_vec = d_master_orbit_vectors.size;
-    test_data.data_size = tester.data_size_;
+    test_data.num_orbit_vec = static_cast<int>(d_master_orbit_vectors.size);
+    test_data.data_size = static_cast<int>(tester.data_size_);
     test_data.dt = master_orbit->GetDt();
 
-    dim3 block_size(125);
-    dim3 grid_size(alus::cuda::GetGridDim(block_size.x, tester.data_size_));
+    const dim3 block_size(125);
+    dim3 grid_size(alus::cuda::GetGridDim(static_cast<int>(block_size.x), static_cast<int>(tester.data_size_)));
 
     CHECK_CUDA_ERR(LaunchZeroDopplerTimeTest(grid_size, block_size, tester.device_zero_doppler_times_, test_data));
 

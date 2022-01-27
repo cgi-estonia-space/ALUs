@@ -27,8 +27,7 @@
 #include "f_x_y_sum.h"
 #include "snap-core/core/util/math/i_f_x_y.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 /**
  * A utility class which can be used to find approximation functions for a given dataset.
  *
@@ -78,5 +77,4 @@ public:
                                                       const std::vector<double>& c);
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

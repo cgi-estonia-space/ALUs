@@ -20,15 +20,17 @@
 #include <fstream>
 
 #include "gmock/gmock.h"
+
 #include "product_data_long.h"
 
 namespace {
-using namespace alus::snapengine;
+
+using alus::snapengine::ProductData;
 
 class ProductDataLongTest {};
 
 TEST(ProductDataLong, testSingleValueConstructor) {
-    int64_t test_value = 2147483652L;
+    const int64_t test_value = 2147483652L;
     std::shared_ptr<ProductData> instance = ProductData::CreateInstance(ProductData::TYPE_INT64);
     instance->SetElems(std::vector<int64_t>{test_value});
 
@@ -70,8 +72,8 @@ TEST(ProductDataLong, testSingleValueConstructor) {
 }
 
 TEST(ProductDataLong, testConstructor) {
-    int64_t test_value = 2147483652L;
-    std::shared_ptr<ProductData> instance = ProductData::CreateInstance(ProductData::TYPE_INT64, 3);
+    const int64_t test_value = 2147483652L;
+    std::shared_ptr<ProductData> instance = ProductData::CreateInstance(ProductData::TYPE_INT64, 3);  // NOLINT
     instance->SetElems(std::vector<int64_t>{-1, test_value, -1 * test_value});
 
     ASSERT_EQ(ProductData::TYPE_INT64, instance->GetType());
@@ -104,12 +106,12 @@ TEST(ProductDataLong, testConstructor) {
     ASSERT_EQ(true, instance->IsInt());
     ASSERT_EQ("-1,2147483652,-2147483652", instance->ToString());
 
-    std::shared_ptr<ProductData> expected_equal = ProductData::CreateInstance(ProductData::TYPE_INT64, 3);
-    expected_equal->SetElems(std::vector<int64_t>{-1, 2147483652L, -1 * 2147483652L});
+    std::shared_ptr<ProductData> expected_equal = ProductData::CreateInstance(ProductData::TYPE_INT64, 3);  // NOLINT
+    expected_equal->SetElems(std::vector<int64_t>{-1, 2147483652L, -1 * 2147483652L});                      // NOLINT
     ASSERT_EQ(true, instance->EqualElems(expected_equal));
 
-    std::shared_ptr<ProductData> expected_unequal = ProductData::CreateInstance(ProductData::TYPE_INT64, 3);
-    expected_unequal->SetElems(std::vector<int64_t>{-1, 2147483652L, -1 * 2147483647 + 5});
+    std::shared_ptr<ProductData> expected_unequal = ProductData::CreateInstance(ProductData::TYPE_INT64, 3);  // NOLINT
+    expected_unequal->SetElems(std::vector<int64_t>{-1, 2147483652L, -1 * 2147483647 + 5});                   // NOLINT
     ASSERT_EQ(false, instance->EqualElems(expected_unequal));
 
     //        StreamTest
@@ -125,7 +127,7 @@ TEST(ProductDataLong, testConstructor) {
 }
 
 TEST(ProductDataLong, testSetElemsAsString) {
-    std::shared_ptr<ProductData> pd = ProductData::CreateInstance(ProductData::TYPE_INT64, 3);
+    std::shared_ptr<ProductData> pd = ProductData::CreateInstance(ProductData::TYPE_INT64, 3);  // NOLINT
     pd->SetElems(std::vector<std::string>{
         std::to_string(INT64_MAX),
         std::to_string(INT64_MIN),
@@ -137,7 +139,7 @@ TEST(ProductDataLong, testSetElemsAsString) {
     ASSERT_EQ(0, pd->GetElemLongAt(2));
 }
 
-TEST(ProductDataLong, testSetElemsAsString_OutOfRange) {
+TEST(ProductDataLong, testSetElemsAsStringOutOfRange) {
     std::string expected{"value is not int64_t"};
     std::shared_ptr<ProductData> pd1 = ProductData::CreateInstance(ProductData::TYPE_INT64, 1);
     EXPECT_THROW(pd1->SetElems(std::vector<std::string>{"9223372036854775808"}), std::out_of_range);

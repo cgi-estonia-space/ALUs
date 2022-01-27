@@ -21,13 +21,8 @@
 namespace alus {
 namespace backgeocoding {
 
-cudaError_t LaunchDerampDemod(Rectangle rectangle,
-                              int16_t *slave_i,
-                              int16_t *slave_q,
-                              double *demod_phase,
-                              double *demod_i,
-                              double *demod_q,
-                              s1tbx::DeviceSubswathInfo *sub_swath,
+cudaError_t LaunchDerampDemod(Rectangle rectangle, int16_t* slave_i, int16_t* slave_q, double* demod_phase,
+                              double* demod_i, double* demod_q, s1tbx::DeviceSubswathInfo* sub_swath,
                               int s_burst_index);
 
 }  // namespace backgeocoding

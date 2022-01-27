@@ -19,11 +19,11 @@
 
 namespace alus {
 class Dem {
-   public:
+public:
     Dem() = default;
-    Dem(Dataset<double> ds);
+    explicit Dem(Dataset<double> ds);
 
-    alus::Dataset<double> * GetDataset();
+    alus::Dataset<double>* GetDataset();
 
     /**
      * This is a ripoff of a Sentinel 1 Toolbox's code from
@@ -57,27 +57,24 @@ class Dem {
      * @image
      * @return 2D array of the elevation values for a specified area.
      */
-    std::vector<double> GetLocalDemFor(Dataset<double>& image, unsigned int x_0,
-                                       unsigned int y_0, unsigned int width,
+    std::vector<double> GetLocalDemFor(Dataset<double>& image, unsigned int x_0, unsigned int y_0, unsigned int width,
                                        unsigned int height);
 
-    std::vector<double> const& GetData() const { return m_ds_.GetHostDataBuffer(); }
-    void FillGeoTransform(double& origin_lon, double& origin_lat,
-                          double& pixel_size_lon, double& pixel_size_lat) const {
+    [[nodiscard]] std::vector<double> const& GetData() const { return m_ds_.GetHostDataBuffer(); }
+    void FillGeoTransform(double& origin_lon, double& origin_lat, double& pixel_size_lon,
+                          double& pixel_size_lat) const {
         origin_lon = m_ds_.GetOriginLon();
         origin_lat = m_ds_.GetOriginLat();
         pixel_size_lon = m_ds_.GetPixelSizeLon();
         pixel_size_lat = m_ds_.GetPixelSizeLat();
     }
 
-    int GetRasterSizeX() const { return m_ds_.GetRasterSizeX(); }
-    int GetRasterSizeY() const { return m_ds_.GetRasterSizeY(); }
-    int GetColumnCount() const { return GetRasterSizeX(); }
-    int GetRowCount() const { return GetRasterSizeY(); }
+    [[nodiscard]] int GetRasterSizeX() const { return m_ds_.GetRasterSizeX(); }
+    [[nodiscard]] int GetRasterSizeY() const { return m_ds_.GetRasterSizeY(); }
+    [[nodiscard]] int GetColumnCount() const { return GetRasterSizeX(); }
+    [[nodiscard]] int GetRowCount() const { return GetRasterSizeY(); }
 
-   private:
+private:
     Dataset<double> m_ds_;
-
-    double m_no_data_value_{};
 };
 }  // namespace alus

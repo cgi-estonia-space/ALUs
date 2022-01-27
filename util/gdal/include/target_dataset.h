@@ -39,8 +39,8 @@ struct TargetDatasetParams {
 template <typename OutputType>
 class TargetDataset : public AlusFileWriter<OutputType> {
 public:
-    TargetDataset(TargetDatasetParams params);  // TODO: any better way to pass confs?
-    TargetDataset();
+    explicit TargetDataset(TargetDatasetParams params);  // TODO: any better way to pass confs?  // NOLINT
+    TargetDataset() = default;
 
     /**
      * Writes to dataset using GDAL RasterIO().
@@ -52,8 +52,8 @@ public:
      */
     void WriteRectangle(OutputType* from, Rectangle area, int band_nr) override;
 
-    [[nodiscard]] size_t getSize() const { return this->dimensions.columnsX * this->dimensions.rowsY; }
-    [[nodiscard]] RasterDimension getDimensions() const { return this->dimensions; }
+    [[nodiscard]] size_t GetSize() const { return this->dimensions_.columnsX * this->dimensions_.rowsY; }
+    [[nodiscard]] RasterDimension GetDimensions() const { return this->dimensions_; }
 
     [[nodiscard]] std::vector<GDALDataset*> GetDataset() { return datasets_; }
     void ReleaseDataset() { datasets_.clear(); }
@@ -65,6 +65,6 @@ private:
     std::deque<std::mutex> mutexes_;
     bool dataset_per_band_;
     GDALDataType gdal_data_type_;
-    RasterDimension const dimensions{};
+    RasterDimension const dimensions_{};
 };
 }  // namespace alus

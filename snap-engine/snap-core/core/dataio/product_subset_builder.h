@@ -27,8 +27,8 @@ public:
     ProductSubsetBuilder();
 
 protected:
-    std::shared_ptr<Product> ReadProductNodesImpl();
-    void AddBandsToProduct(std::shared_ptr<Product> product);
+    std::shared_ptr<Product> ReadProductNodesImpl() override;
+    void AddBandsToProduct(const std::shared_ptr<Product>& product);
     /*void ReadBandRasterDataImpl(int sourceOffsetX, int sourceOffsetY, int sourceWidth, int sourceHeight,
                                 int sourceStepX, int sourceStepY, std::shared_ptr<Band> destBand, int destOffsetX,
                                 int destOffsetY, int destWidth, int destHeight,
@@ -44,7 +44,7 @@ private:
                                           std::shared_ptr<ProductSubsetDef>& subset_def,
                                           std::shared_ptr<MetadataElement>& abs_root, bool near_range_on_left);
     static void SetLatLongMetadata(std::shared_ptr<Product>& product, std::shared_ptr<MetadataElement>& abs_root,
-                                   std::string tag_lat, std::string tag_lon, float x, float y);
+                                   std::string_view tag_lat, std::string_view tag_lon, float x, float y);
 
     std::shared_ptr<Product> CreateProduct();
 };

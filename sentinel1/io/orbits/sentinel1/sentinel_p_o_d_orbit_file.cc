@@ -32,8 +32,7 @@
 #include "snap-engine-utilities/engine-utilities/datamodel/metadata/abstract_metadata.h"
 #include "snap-engine-utilities/engine-utilities/util/maths.h"
 
-namespace alus {
-namespace s1tbx {
+namespace alus::s1tbx {
 
 std::vector<std::shared_ptr<snapengine::OrbitVector>> SentinelPODOrbitFile::GetOrbitData(double start_utc,
                                                                                          double end_utc) {
@@ -43,12 +42,10 @@ std::vector<std::shared_ptr<snapengine::OrbitVector>> SentinelPODOrbitFile::GetO
 
     if (start_idx < 0) {
         size_t insertion_pt = -(start_idx + 1);
-        if (insertion_pt == osv_list_.size()) {
-            start_idx = insertion_pt - 1;
-        } else if (insertion_pt <= 0) {
-            start_idx = 0;
+        if (insertion_pt == osv_list_.size() || insertion_pt > 0) {
+            start_idx = static_cast<int>(insertion_pt) - 1;
         } else {
-            start_idx = insertion_pt - 1;
+            start_idx = 0;
         }
     }
 
@@ -59,16 +56,17 @@ std::vector<std::shared_ptr<snapengine::OrbitVector>> SentinelPODOrbitFile::GetO
     if (end_idx < 0) {
         size_t insertion_pt = -(end_idx + 1);
         if (insertion_pt == osv_list_.size()) {
-            end_idx = insertion_pt - 1;
+            end_idx = static_cast<int>(insertion_pt) - 1;
         } else if (insertion_pt == 0) {
             end_idx = 0;
         } else {
-            end_idx = insertion_pt;
+            end_idx = static_cast<int>(insertion_pt);
         }
     }
 
-    start_idx -= 3;
-    end_idx += 3;
+    const int index_step{3};
+    start_idx -= index_step;
+    end_idx += index_step;
 
     int num_osv = end_idx - start_idx + 1;
     std::vector<std::shared_ptr<snapengine::OrbitVector>> orbit_data_list(num_osv);
@@ -187,27 +185,28 @@ boost::filesystem::path SentinelPODOrbitFile::RetrieveOrbitFile(std::string_view
     return *orbit_file_;
 }
 
-std::string SentinelPODOrbitFile::GetMissionPrefix(std::shared_ptr<snapengine::MetadataElement> abs_root) {
+std::string SentinelPODOrbitFile::GetMissionPrefix(const std::shared_ptr<snapengine::MetadataElement>& abs_root) {
     std::string mission = abs_root->GetAttributeString(snapengine::AbstractMetadata::MISSION);
     return "S1" + mission.substr(mission.length() - 1);
 }
 
 boost::filesystem::path SentinelPODOrbitFile::GetDestFolder(std::string_view mission_prefix,
-                                                            std::string_view orbit_type, int year, int month) {
+                                                            [[maybe_unused]] std::string_view orbit_type, int year,
+                                                            int month) {
     std::string pref_orbit_path;
     // just using current directory (need to discuss where to keep this)
     //    std::string pref_orbit_path = ".";
     // todo: this should return correct data directory: ~/.snap/auxdata/Orbits/Sentinel-1/POEORB
     // todo: probably enough to use custom dedicated directory for start
-    if (orbit_type.rfind(RESTITUTED, 0) == 0) {
-        //        std::string def =
-        //            SystemUtils.getAuxDataPath().resolve("Orbits").resolve("Sentinel-1").resolve("RESORB").toString();
-        //        pref_orbit_path = Settings.instance().get("OrbitFiles.sentinel1RESOrbitPath", def);
-    } else {
-        //        std::string def =
-        //            SystemUtils.getAuxDataPath().resolve("Orbits").resolve("Sentinel-1").resolve("POEORB").toString();
-        //        pref_orbit_path = Settings.instance().get("OrbitFiles.sentinel1POEOrbitPath", def);
-    }
+    //    if (orbit_type.rfind(RESTITUTED, 0) == 0) {
+    //        std::string def =
+    //            SystemUtils.getAuxDataPath().resolve("Orbits").resolve("Sentinel-1").resolve("RESORB").toString();
+    //        pref_orbit_path = Settings.instance().get("OrbitFiles.sentinel1RESOrbitPath", def);
+    //    } else {
+    //        std::string def =
+    //            SystemUtils.getAuxDataPath().resolve("Orbits").resolve("Sentinel-1").resolve("POEORB").toString();
+    //        pref_orbit_path = Settings.instance().get("OrbitFiles.sentinel1POEOrbitPath", def);
+    //    }
     boost::filesystem::path dest_folder(/*pref_orbit_path + boost::filesystem::path::preferred_separator +*/
                                         // todo:hardcoded directory probably want to provide this from command line,
                                         // need to talk this over with others
@@ -216,7 +215,8 @@ boost::filesystem::path SentinelPODOrbitFile::GetDestFolder(std::string_view mis
                                         std::to_string(year) + boost::filesystem::path::preferred_separator +
                                         snapengine::StringUtils::PadNum(month, 2, '0'));
 
-    if (month < 10) {
+    const int november_int{10};
+    if (month < november_int) {
         boost::filesystem::path old_folder(/*pref_orbit_path + boost::filesystem::path::preferred_separator +*/
                                            std::string(mission_prefix) + boost::filesystem::path::preferred_separator +
                                            std::to_string(year) + boost::filesystem::path::preferred_separator +
@@ -238,10 +238,9 @@ std::optional<boost::filesystem::path> SentinelPODOrbitFile::FindOrbitFile(std::
         const auto orbit_file_path = alus::snapengine::AlusUtils::GetOrbitFilePath();
         if (IsWithinRange(orbit_file_path.filename().string(), state_vector_time)) {
             return orbit_file_path;
-        } else {
-            LOGE << "Orbit file '" << orbit_file_path
-                 << "' is not correct for given input (start and end time out of range).";
         }
+        LOGE << "Orbit file '" << orbit_file_path
+             << "' is not correct for given input (start and end time out of range).";
     } else {
         boost::filesystem::path orbit_file_folder = GetDestFolder(mission_prefix, orbit_type, year, month);
 
@@ -273,23 +272,27 @@ bool SentinelPODOrbitFile::IsWithinRange(std::string_view filename, double state
 }
 
 std::shared_ptr<snapengine::Utc> SentinelPODOrbitFile::GetValidityStartFromFilenameUTC(std::string_view filename) {
-    if (filename.substr(41, 1) == "V") {
-        std::string val = ExtractTimeFromFilename(filename, 42);
+    const int date_separator_position{41};
+    if (filename.at(date_separator_position) == 'V') {
+        std::string val = ExtractTimeFromFilename(filename, date_separator_position + 1);
         return snapengine::Utc::Parse(val, DATE_FORMAT);
     }
     return nullptr;
 }
 
 std::shared_ptr<snapengine::Utc> SentinelPODOrbitFile::GetValidityStopFromFilenameUTC(std::string_view filename) {
-    if (filename.substr(41, 1) == "V") {
-        std::string val = ExtractTimeFromFilename(filename, 58);
+    const int date_separator_position{41};
+    const int second_date_position{58};
+    if (filename.at(date_separator_position) == 'V') {
+        std::string val = ExtractTimeFromFilename(filename, second_date_position);
         return snapengine::Utc::Parse(val, DATE_FORMAT);
     }
     return nullptr;
 }
 
 std::string SentinelPODOrbitFile::ExtractTimeFromFilename(std::string_view filename, int offset) {
-    std::string str = std::string(filename.substr(offset, 15));
+    const int date_string_length{15};
+    std::string str = std::string(filename.substr(offset, date_string_length));
     boost::replace_all(str, "T", "-");
     return str;
 }
@@ -556,5 +559,4 @@ std::optional<boost::filesystem::path> SentinelPODOrbitFile::DownloadFromQCRestA
     return orbit_file;
 }
 
-}  // namespace s1tbx
-}  // namespace alus
+}  // namespace alus::s1tbx

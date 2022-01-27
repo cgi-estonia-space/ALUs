@@ -22,13 +22,14 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include <boost/filesystem.hpp>
 
 // TEMPORARY// todo: move readers writers behind IProductReader/writer interface
-#include "../algs/coherence_cuda/include/i_data_tile_reader.h"
-#include "../algs/coherence_cuda/include/i_data_tile_writer.h"
+#include "../algs/coherence-cuda/include/i_data_tile_reader.h"
+#include "../algs/coherence-cuda/include/i_data_tile_writer.h"
 
 #include "custom/dimension.h"
 //#include "custom/i_image_reader.h"
@@ -36,8 +37,7 @@
 #include "snap-core/core/dataio/i_product_reader.h"
 #include "snap-core/core/datamodel/product_node.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 /**
  * {@code Product} instances are an in-memory representation of a remote sensing data product. The product is more
@@ -227,23 +227,23 @@ public:
     //    // todo:probably good idea to provide single parent reader/writer which is composition of different
     //    implementations
     //    // e.g pugixml to write metadata and gdal to write geotiff etc.
-    const std::shared_ptr<IDataTileReader>& GetReader() const;
-    const std::shared_ptr<custom::IImageReader>& GetImageReader() const;
-    const std::shared_ptr<custom::IImageWriter>& GetImageWriter() const;
+    [[nodiscard]] const std::shared_ptr<IDataTileReader>& GetReader() const;
+    [[nodiscard]] const std::shared_ptr<custom::IImageReader>& GetImageReader() const;
+    [[nodiscard]] const std::shared_ptr<custom::IImageWriter>& GetImageWriter() const;
     void SetReader(const std::shared_ptr<IDataTileReader>& reader);
     // todo: another custom writer just to plug holes in our planning (remove if all done)
     void SetImageReader(const std::shared_ptr<custom::IImageReader>& reader);
 
-    const std::shared_ptr<IDataTileWriter>& GetWriter() const;
+    [[nodiscard]] const std::shared_ptr<IDataTileWriter>& GetWriter() const;
     void SetWriter(const std::shared_ptr<IDataTileWriter>& writer);
     // todo: another custom writer just to plug holes in our planning (remove if all done)
     void SetImageWriter(const std::shared_ptr<custom::IImageWriter>& writer);
 
-    const std::shared_ptr<IMetaDataReader>& GetMetadataReader() const;
+    [[nodiscard]] const std::shared_ptr<IMetaDataReader>& GetMetadataReader() const;
     void SetMetadataReader(const std::shared_ptr<IMetaDataReader>& metadata_reader);
-    const std::shared_ptr<IMetaDataWriter>& GetMetadataWriter() const;
+    [[nodiscard]] const std::shared_ptr<IMetaDataWriter>& GetMetadataWriter() const;
     void SetMetadataWriter(const std::shared_ptr<IMetaDataWriter>& metadata_writer);
-    bool HasMetaDataReader() const;
+    [[nodiscard]] bool HasMetaDataReader() const;
 
     /**
      * Workaround static function which calls constructor with same parameters and also inits members which need
@@ -290,7 +290,7 @@ public:
      * @see ProductReader
      */
     static std::shared_ptr<Product> CreateProduct(std::string_view name, std::string_view type,
-                                                   const std::shared_ptr<IProductReader>& reader);
+                                                  const std::shared_ptr<IProductReader>& reader);
 
     void SetModified(bool modified) override;
 
@@ -328,7 +328,7 @@ public:
      *
      * @param startTime the sensing start time, can be null
      */
-    void SetStartTime(std::shared_ptr<Utc> start_time);
+    void SetStartTime(const std::shared_ptr<Utc>& start_time);
 
     /**
      * Sets the product type of this product.
@@ -408,7 +408,7 @@ public:
      * @param reader the product reader.
      * @throws IllegalArgumentException if the given reader is null.
      */
-    void SetProductReader(std::shared_ptr<IProductReader> reader);
+    void SetProductReader(const std::shared_ptr<IProductReader>& reader);
 
     /**
      * Sets the preferred tile size which may be used for a the {@link java.awt.image.RenderedImage rendered image}
@@ -447,7 +447,7 @@ public:
     /**
      * @return The reference number of this product.
      */
-    int GetRefNo() const { return ref_no_; }
+    [[nodiscard]] int GetRefNo() const { return ref_no_; }
 
     /**
      * Sets the reference number.
@@ -467,7 +467,7 @@ public:
      *
      * @param fileLocation the file location, may be {@code null}
      */
-    void SetFileLocation(boost::filesystem::path file_location) { file_location_ = file_location; }
+    void SetFileLocation(boost::filesystem::path file_location) { file_location_ = std::move(file_location); }
 
     /**
      * Retrieves the disk location of this product. The return value can be {@code null} when the product has no
@@ -535,7 +535,8 @@ public:
      * Gets the tie-point grid group of this product.
      *
      * @return The group of all tie-point grids.
-     * @since BEAM 4.7
+     * @since BEAM 4
+     * .7
      */
     std::shared_ptr<ProductNodeGroup<std::shared_ptr<TiePointGrid>>> GetTiePointGridGroup();
 
@@ -544,7 +545,7 @@ public:
      *
      * @param tiePointGrid the tie-point grid to added, ignored if {@code null}
      */
-    void AddTiePointGrid(std::shared_ptr<TiePointGrid> tie_point_grid);
+    void AddTiePointGrid(const std::shared_ptr<TiePointGrid>& tie_point_grid);
 
     /**
      * Removes the tie-point grid from this product.
@@ -621,7 +622,7 @@ public:
      *
      * @param band the band to added, must not be {@code null}
      */
-    void AddBand(std::shared_ptr<Band> band);
+    void AddBand(const std::shared_ptr<Band>& band);
 
     /**
      * Creates a new band with the given name and data type and adds it to this product and returns it.
@@ -836,7 +837,7 @@ public:
      * @return the size in bytes.
      */
 
-    uint64_t GetRawStorageSize(const std::shared_ptr<ProductSubsetDef>& subsetDef) override;
+    uint64_t GetRawStorageSize(const std::shared_ptr<ProductSubsetDef>& subset_def) override;
 
     /**
      * Checks whether or not the given product is compatible with this product.
@@ -888,5 +889,4 @@ public:
     void Dispose() override;
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

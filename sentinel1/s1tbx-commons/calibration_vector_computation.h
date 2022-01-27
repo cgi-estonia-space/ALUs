@@ -13,7 +13,9 @@
  */
 #pragma once
 
-namespace alus {
+#include <cstddef>
+
+namespace alus {  // NOLINT TODO: concatenate namespace and remove nolint after migrating to cuda 11+
 namespace s1tbx {
 
 struct CalibrationVectorComputation {

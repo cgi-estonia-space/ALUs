@@ -26,8 +26,7 @@
 
 #include <boost/filesystem.hpp>
 
-namespace alus {
-namespace ceres {
+namespace alus::ceres {
 /**
  * A read-only directory that can either be a directory in the file system or a ZIP-file.
  * Files having '.gz' extensions are automatically decompressed.
@@ -108,5 +107,4 @@ public:
      */
     virtual void Close() = 0;
 };
-}  // namespace ceres
-}  // namespace alus
+}  // namespace alus::ceres

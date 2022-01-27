@@ -85,7 +85,7 @@ void MetadataValidator::VerifySRGR() {
         abs_root_->GetElement(snapengine::AbstractMetadata::SRGR_COEFFICIENTS);
     if (srgr_elem) {
         std::vector<std::shared_ptr<snapengine::MetadataElement>> elems = srgr_elem->GetElements();
-        if (elems.size() == 0) {
+        if (elems.empty()) {
             throw std::runtime_error("SRGR Coefficients not found");
         }
         auto coef_list = elems.at(0);
@@ -99,7 +99,7 @@ void MetadataValidator::VerifySRGR() {
         }
 
         std::vector<std::shared_ptr<snapengine::MetadataElement>> srgr_list = coef_list->GetElements();
-        if (srgr_list.size() == 0) {
+        if (srgr_list.empty()) {
             throw std::runtime_error("SRGR Coefficients not found");
         }
         auto srgr = srgr_list.at(0);
@@ -119,7 +119,7 @@ void MetadataValidator::VerifyOrbitStateVectors() {
         abs_root_->GetElement(snapengine::AbstractMetadata::ORBIT_STATE_VECTORS);
     if (orbit_elem) {
         std::vector<std::shared_ptr<snapengine::MetadataElement>> elems = orbit_elem->GetElements();
-        if (elems.size() == 0) {
+        if (elems.empty()) {
             throw std::runtime_error("Orbit State Vectors not found");
         }
     } else {
@@ -132,7 +132,7 @@ void MetadataValidator::VerifyDopplerCentroids() {
         abs_root_->GetElement(snapengine::AbstractMetadata::DOP_COEFFICIENTS);
     if (dop_elem) {
         std::vector<std::shared_ptr<snapengine::MetadataElement>> elems = dop_elem->GetElements();
-        if (elems.size() == 0) {
+        if (elems.empty()) {
             throw std::runtime_error("Doppler Centroids not found");
         }
         auto coef_list = elems.at(0);
@@ -157,7 +157,7 @@ void MetadataValidator::VerifyStr(std::string_view tag) {
     }
 }
 
-void MetadataValidator::VerifyStr(std::string_view tag, std::vector<std::string> allowed_str) {
+void MetadataValidator::VerifyStr(std::string_view tag, const std::vector<std::string>& allowed_str) {
     VerifyStr(tag);
     std::string value = abs_root_->GetAttributeString(tag);
     for (const auto& allowed : allowed_str) {

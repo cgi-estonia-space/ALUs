@@ -18,10 +18,11 @@
  */
 #include "snap-core/core/datamodel/quicklooks/quicklook.h"
 
+#include <utility>
+
 #include "snap-core/core/datamodel/product.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 Quicklook::Quicklook(const std::shared_ptr<Product>& product, std::string_view name,
                      const boost::filesystem::path& browse_file, const bool product_can_append_files,
@@ -31,7 +32,7 @@ Quicklook::Quicklook(const std::shared_ptr<Product>& product, std::string_view n
     browse_file_ = browse_file;
     product_can_append_files_ = product_can_append_files;
     product_quicklook_folder_ = product_quicklook_folder;
-    quicklook_bands_ = quicklook_bands;
+    quicklook_bands_ = std::move(quicklook_bands);
 
     SetProduct(product);
     // todo: provide config when needed
@@ -48,7 +49,7 @@ void Quicklook::SetProduct(const std::shared_ptr<Product>& product) {
 
 Quicklook::Quicklook(const std::shared_ptr<Product>& product, std::string_view name,
                      std::vector<std::shared_ptr<Band>> quicklook_bands)
-    : Quicklook(product, name, "", false, "", quicklook_bands) {}
+    : Quicklook(product, name, "", false, "", std::move(quicklook_bands)) {}
 
 Quicklook::Quicklook(const std::shared_ptr<Product>& product, std::string_view name,
                      const boost::filesystem::path& browse_file)
@@ -61,5 +62,4 @@ Quicklook::Quicklook(const boost::filesystem::path& product_file) : Quicklook(nu
     product_file_ = product_file;
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

@@ -18,21 +18,19 @@
  */
 #include "snap-core/core/util/string_utils.h"
 
-#include <iterator>
-#include <sstream>
 #include <algorithm>
 #include <cctype>
+#include <iterator>
+#include <sstream>
 
 #include "guardian.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 std::vector<std::string> StringUtils::StringToVectorByDelimiter(std::string_view strv, std::string_view delimiter) {
     std::string str(strv);
     std::vector<std::string> tokens;
     size_t pos = 0;
-    std::string_view token;
     while ((pos = str.find(delimiter)) != std::string::npos) {
         tokens.emplace_back(str.substr(0, pos));
         str.erase(0, pos + delimiter.size());
@@ -62,8 +60,8 @@ std::string StringUtils::ArrayToString(std::vector<std::string> vec, std::string
     return oss.str();
 }
 
-std::string StringUtils::CreateValidName(std::string name, std::string valid_chars, char replace_char) {
-    //Guardian.assertNotNull("name", name);
+std::string StringUtils::CreateValidName(std::string_view name, std::string_view valid_chars, char replace_char) {
+    // Guardian.assertNotNull("name", name);
     std::string sorted_valid_chars;
     if (valid_chars.empty()) {
         sorted_valid_chars.push_back(0);
@@ -72,11 +70,9 @@ std::string StringUtils::CreateValidName(std::string name, std::string valid_cha
     }
     std::sort(sorted_valid_chars.begin(), sorted_valid_chars.end());
     std::string valid_name;
-    for (size_t i = 0; i < name.size(); i++) {
-        char ch = name.at(i);
-        if (std::isdigit(ch) || std::isalpha(ch)) {
-            valid_name.push_back(ch);
-        } else if (std::binary_search(sorted_valid_chars.begin(), sorted_valid_chars.end(), ch)) {
+    for (const auto& ch : name) {
+        if (std::isdigit(ch) || std::isalpha(ch) ||
+            std::binary_search(sorted_valid_chars.begin(), sorted_valid_chars.end(), ch)) {
             valid_name.push_back(ch);
         } else {
             valid_name.push_back(replace_char);
@@ -85,5 +81,4 @@ std::string StringUtils::CreateValidName(std::string name, std::string valid_cha
     return valid_name;
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

@@ -15,7 +15,7 @@
 
 #include "pos_vector.h"
 
-namespace alus {
+namespace alus {  // NOLINT TODO: concatenate namespace and remove nolint after migrating to cuda 11+
 namespace s1tbx {
 
 /**
@@ -31,4 +31,4 @@ struct PositionData final {
 };
 
 }  // namespace s1tbx
-}  // namespace slap
+}  // namespace alus

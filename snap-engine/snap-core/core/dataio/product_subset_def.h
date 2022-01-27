@@ -25,8 +25,8 @@
 #include <vector>
 
 // todo:: find a better place for awt replacements (also dimension)
-#include "custom/rectangle.h"
 #include "custom/dimension.h"
+#include "custom/rectangle.h"
 #include "snap-core/core/subset/abstract_subset_region.h"
 
 namespace alus::snapengine {
@@ -216,7 +216,7 @@ public:
      */
     std::shared_ptr<custom::Dimension> GetSceneRasterSize(int max_width, int max_height);
 
-    std::shared_ptr<custom::Dimension> GetSceneRasterSize(int max_width, int max_height, std::string band_name);
+    std::shared_ptr<custom::Dimension> GetSceneRasterSize(int max_width, int max_height, std::string_view band_name);
 
     /**
      * Sets the ignore metadata information

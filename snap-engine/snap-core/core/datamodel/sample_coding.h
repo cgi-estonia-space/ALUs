@@ -25,8 +25,7 @@
 
 #include "snap-core/core/datamodel/metadata_element.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 /**
  * Provides the information required to decode integer sample values that
  * represent index values (e.g. types, classes, categories).
@@ -42,7 +41,7 @@ public:
      *
      * @param element the element to be added, always ignored
      */
-    void AddElement(std::shared_ptr<MetadataElement> element) override;
+    void AddElement(const std::shared_ptr<MetadataElement>& element) override;
 
     /**
      * Adds an attribute to this node. If an attribute with the same name already exists, the method does nothing.
@@ -50,7 +49,7 @@ public:
      * @param attribute the attribute to be added
      * @throws IllegalArgumentException if the attribute added is not an integer or does not have a scalar value
      */
-    void AddAttribute(std::shared_ptr<MetadataAttribute> attribute) override;
+    void AddAttribute(const std::shared_ptr<MetadataAttribute>& attribute) override;
 
     /**
      * Adds a new coding value to this sample coding.
@@ -72,7 +71,7 @@ public:
      * @return A new attribute representing the coded sample.
      * @throws IllegalArgumentException if <code>name</code> is null
      */
-    std::shared_ptr<MetadataAttribute> AddSamples(std::string_view name, std::vector<int> values,
+    std::shared_ptr<MetadataAttribute> AddSamples(std::string_view name, const std::vector<int>& values,
                                                   std::string_view description);
 
     /**
@@ -98,5 +97,4 @@ public:
      */
     int GetSampleValue(int index);
 };
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

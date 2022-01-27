@@ -51,8 +51,8 @@ protected:
     std::shared_ptr<snapengine::Product> TestReader(
         const boost::filesystem::path& input_path, const std::shared_ptr<Sentinel1ProductReaderPlugIn>& reader_plug_in);
 
-    void ValidateMetadata(const std::shared_ptr<snapengine::Product>& product,
-                          const std::shared_ptr<ValidationOptions>& options);
+    static void ValidateMetadata(const std::shared_ptr<snapengine::Product>& product,
+                                 const std::shared_ptr<ValidationOptions>& options);
 
     // todo: check what this is
     //    static {
@@ -63,8 +63,10 @@ public:
     explicit ReaderTest(const std::shared_ptr<Sentinel1ProductReaderPlugIn>& reader_plug_in);
 
     std::shared_ptr<snapengine::Product> TestReader(const boost::filesystem::path& input_path);
-    void ValidateProduct(const std::shared_ptr<snapengine::Product>& product);
-    void ValidateMetadata(const std::shared_ptr<snapengine::Product>& product);
-    void ValidateBands(const std::shared_ptr<snapengine::Product>& trg_product, std::vector<std::string> band_names);
+    void ValidateProduct(const std::shared_ptr<snapengine::Product>& product) const;
+
+    static void ValidateBands(const std::shared_ptr<snapengine::Product>& trg_product,
+                              const std::vector<std::string>& band_names);
+    static void ValidateMetadata(const std::shared_ptr<snapengine::Product>& product);
 };
 }  // namespace alus::s1tbx

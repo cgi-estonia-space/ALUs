@@ -26,8 +26,7 @@
 
 #include "snap-core/core/datamodel/product_data_utc.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 // pre-declare
 class Product;
@@ -90,10 +89,10 @@ public:
 
     static void CompareArrays(std::vector<float> actual, std::vector<float> expected, float threshold);
 
-    static bool ContainsProductType(std::vector<std::string> product_type_exemptions, std::string_view product_type);
+    static bool ContainsProductType(const std::vector<std::string>& product_type_exemptions,
+                                    std::string_view product_type);
 
     static bool SkipTest(const std::any& obj, std::string_view msg);
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

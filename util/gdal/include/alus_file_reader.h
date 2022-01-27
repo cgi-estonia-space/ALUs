@@ -13,8 +13,8 @@
  */
 #pragma once
 
-#include <vector>
 #include <map>
+#include <vector>
 
 #include "shapes.h"
 
@@ -25,16 +25,16 @@ namespace alus {
  */
 template <typename BufferType>
 class AlusFileReader {
-   public:
-    virtual void ReadRectangle(Rectangle rectangle, int band_nr, BufferType *data_buffer) = 0;
+public:
+    virtual void ReadRectangle(Rectangle rectangle, int band_nr, BufferType* data_buffer) = 0;
     virtual void ReadRectangle(Rectangle rectangle, std::map<int, BufferType*>& bands) = 0;
     virtual void LoadRasterBand(int band_nr) = 0;
     virtual std::vector<BufferType> const& GetHostDataBuffer() const = 0;
-    virtual BufferType *GetDeviceDataBuffer() = 0;
-    virtual long unsigned int GetBufferByteSize() = 0;
+    virtual BufferType* GetDeviceDataBuffer() = 0;
+    virtual uint64_t GetBufferByteSize() = 0;
     virtual size_t GetBufferElemCount() = 0;
     virtual void TryToCacheImage() = 0;
     virtual void SetReadingArea(Rectangle new_area) = 0;
 };
 
-}
+}  // namespace alus

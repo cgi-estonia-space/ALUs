@@ -54,7 +54,7 @@ private:
     void ReadSLCRasterBand(int source_offset_x, int source_offset_y, int source_step_x, int source_step_y,
                            const std::shared_ptr<snapengine::ProductData>& dest_buffer, int dest_offset_x,
                            int dest_offset_y, int dest_width, int dest_height,
-                           const std::shared_ptr<BandInfo>& band_info);
+                           const std::shared_ptr<BandInfo>& band_info) const;
 
     /**
      * Uses provided reader (from band_info->imageiofile->reader) to carry out actual io operation for reading band data
@@ -68,9 +68,9 @@ private:
      * @param dest_rect
      * @return std::vector which holds data
      */
-    std::vector<int32_t> ReadRect(const std::shared_ptr<BandInfo>& band_info, int source_offset_x, int source_offset_y,
-                                  int source_step_x, int source_step_y,
-                                  const std::shared_ptr<snapengine::custom::Rectangle>& dest_rect);
+    static std::vector<int32_t> ReadRect(const std::shared_ptr<BandInfo>& band_info, int source_offset_x,
+                                         int source_offset_y, int source_step_x, int source_step_y,
+                                         const std::shared_ptr<snapengine::custom::Rectangle>& dest_rect);
 
 protected:
     std::shared_ptr<ISentinel1Directory> data_dir_ = nullptr;

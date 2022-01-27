@@ -34,14 +34,8 @@ struct BilinearParams {
     float no_data_value;
 };
 
-cudaError_t LaunchBilinearInterpolation(double *x_pixels,
-                                        double *y_pixels,
-                                        double *demod_phase,
-                                        double *demod_i,
-                                        double *demod_q,
-                                        BilinearParams params,
-                                        float *results_i,
-                                        float *results_q);
+cudaError_t LaunchBilinearInterpolation(double* x_pixels, double* y_pixels, double* demod_phase, double* demod_i,
+                                        double* demod_q, BilinearParams params, float* results_i, float* results_q);
 
 }  // namespace backgeocoding
 }  // namespace alus

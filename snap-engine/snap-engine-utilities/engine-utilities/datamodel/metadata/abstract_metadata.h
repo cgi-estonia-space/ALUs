@@ -49,10 +49,10 @@ public:
     /**
      * Default no data values
      */
-    static inline std::shared_ptr<Utc> NO_METADATA_UTC = std::make_shared<Utc>(0.0);
+    static inline const std::shared_ptr<Utc> NO_METADATA_UTC = std::make_shared<Utc>(0.0);
 
     static constexpr int NO_METADATA = 99999;
-    static constexpr short NO_METADATA_BYTE = 0;
+    static constexpr int16_t NO_METADATA_BYTE = 0;
     static constexpr std::string_view NO_METADATA_STRING = "-";
 
     static constexpr std::string_view ABSTRACTED_METADATA_VERSION = "metadata_version";
@@ -82,9 +82,9 @@ public:
     static constexpr std::string_view BAND_NAMES = "band_names";
     static constexpr std::string_view SWATH = "SWATH";
     // Not following style policy because of the Metadata naming context.
-    static constexpr std::string_view swath = "swath";
+    static constexpr std::string_view swath = "swath";  // NOLINT
     static constexpr std::string_view PROC_TIME = "PROC_TIME";
-    static constexpr std::string_view ProcessingSystemIdentifier = "Processing_system_identifier";
+    static constexpr std::string_view PROCESSING_SYSTEM_IDENTIFIER = "Processing_system_identifier";
     static constexpr std::string_view CYCLE = "orbit_cycle";
     static constexpr std::string_view REL_ORBIT = "REL_ORBIT";
     static constexpr std::string_view ABS_ORBIT = "ABS_ORBIT";
@@ -108,7 +108,7 @@ public:
     static constexpr std::string_view PASS = "PASS";
     static constexpr std::string_view SAMPLE_TYPE = "SAMPLE_TYPE";
     // this is against our style policy, but what can I do ...
-    static constexpr std::string_view sample_type = "sample_type";
+    static constexpr std::string_view sample_type = "sample_type";  // NOLINT
 
     // SAR Specific
 
@@ -225,14 +225,14 @@ public:
     static constexpr std::string_view ADS_HEADER = "adsHeader";
     static constexpr std::string_view POLARISATION = "polarisation";
     static constexpr std::string_view MISSION_ID = "missionId";
-    static constexpr std::string_view product_type = "productType";
+    static constexpr std::string_view product_type = "productType";  // NOLINT
     static constexpr std::string_view MODE = "mode";
     static constexpr std::string_view START_TIME = "startTime";
     static constexpr std::string_view STOP_TIME = "stopTime";
     static constexpr std::string_view ABSOLUTE_ORBIT_NUMBER = "absoluteOrbitNumber";
     static constexpr std::string_view MISSION_DATA_TAKE_ID = "missionDataTakeId";
     static constexpr std::string_view IMAGE_NUMBER = "imageNumber";
-    static constexpr std::string_view product = "product";
+    static constexpr std::string_view product = "product";  // NOLINT
     static constexpr std::string_view IMAGE_ANNOTATION = "imageAnnotation";
     static constexpr std::string_view IMAGE_INFORMATION = "imageInformation";
     static constexpr std::string_view NUMBER_OF_LINES = "numberOfLines";
@@ -279,17 +279,17 @@ public:
     static constexpr std::string_view ESD_MEASUREMENT{"ESD Measurement"};
 
     static std::vector<std::shared_ptr<MetadataElement>> GetBandAbsMetadataList(
-        std::shared_ptr<MetadataElement> abs_root);
+        const std::shared_ptr<MetadataElement>& abs_root);
 
-    static bool GetAttributeBoolean(const std::shared_ptr<MetadataElement>& element, std::string_view view);
+    static bool GetAttributeBoolean(const std::shared_ptr<MetadataElement>& element, std::string_view tag);
 
-    static double GetAttributeDouble(const std::shared_ptr<MetadataElement>& element, std::string_view view);
+    static double GetAttributeDouble(const std::shared_ptr<MetadataElement>& element, std::string_view tag);
 
     static int GetAttributeInt(const std::shared_ptr<MetadataElement>& element, std::string_view tag);
 
     static std::shared_ptr<Utc> ParseUtc(std::string_view time_str);
 
-    static std::shared_ptr<MetadataElement> GetSlaveMetadata(std::shared_ptr<MetadataElement> target_root);
+    static std::shared_ptr<MetadataElement> GetSlaveMetadata(const std::shared_ptr<MetadataElement>& target_root);
     /**
      * Get orbit state vectors.
      *
@@ -354,7 +354,7 @@ public:
      * @param tag   the name of the attribute
      * @param value the string value
      */
-    static void SetAttribute(const std::shared_ptr<MetadataElement>& dest, std::string_view tag, const double value);
+    static void SetAttribute(const std::shared_ptr<MetadataElement>& dest, std::string_view tag, double value);
 
     /**
      * Abstract common metadata from products to be used uniformly by all operators
@@ -392,7 +392,7 @@ public:
 
     static std::shared_ptr<Utc> ParseUtc(std::string_view time_str, std::string_view date_format_pattern);
 
-    static void AddBandToBandMap(const std::shared_ptr<MetadataElement>& bandAbsRoot, std::string_view name);
+    static void AddBandToBandMap(const std::shared_ptr<MetadataElement>& band_abs_root, std::string_view name);
 
     static bool IsNoData(const std::shared_ptr<MetadataElement>& elem, std::string_view tag);
 
@@ -416,7 +416,7 @@ public:
      * @param source_product the product.
      * @return true if abstracted metadata exists.
      */
-    static bool HasAbstractedMetadata(std::shared_ptr<Product> source_product);
+    static bool HasAbstractedMetadata(const std::shared_ptr<Product>& source_product);
 };
 
 }  // namespace alus::snapengine

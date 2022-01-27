@@ -24,8 +24,7 @@
 
 #include <boost/lexical_cast.hpp>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 Float::Float(int num_elems) : ProductData(ProductData::TYPE_FLOAT32) { array_ = std::vector<float>(num_elems); }
 
@@ -35,18 +34,18 @@ int Float::GetNumElems() const { return array_.size(); }
 
 void Float::Dispose() { array_.clear(); }
 
-int Float::GetElemIntAt(int index) const { return std::round(array_.at(index)); }
-long Float::GetElemUIntAt(int index) const { return std::round(array_.at(index)); }
-long Float::GetElemLongAt(int index) const { return std::round(array_.at(index)); }
+int Float::GetElemIntAt(int index) const { return static_cast<int>(std::round(array_.at(index))); }
+int64_t Float::GetElemUIntAt(int index) const { return static_cast<int64_t>(std::round(array_.at(index))); }
+int64_t Float::GetElemLongAt(int index) const { return static_cast<int64_t>(std::round(array_.at(index))); }
 float Float::GetElemFloatAt(int index) const { return array_.at(index); }
 double Float::GetElemDoubleAt(int index) const { return array_.at(index); }
 std::string Float::GetElemStringAt(int index) const { return std::to_string(array_.at(index)); }
 
-void Float::SetElemIntAt(int index, int value) { array_.at(index) = value; }
-void Float::SetElemUIntAt(int index, long value) { array_.at(index) = value; }
-void Float::SetElemLongAt(int index, long value) { array_.at(index) = value; }
+void Float::SetElemIntAt(int index, int value) { array_.at(index) = static_cast<float>(value); }
+void Float::SetElemUIntAt(int index, int64_t value) { array_.at(index) = static_cast<float>(value); }
+void Float::SetElemLongAt(int index, int64_t value) { array_.at(index) = static_cast<float>(value); }
 void Float::SetElemFloatAt(int index, float value) { array_.at(index) = value; }
-void Float::SetElemDoubleAt(int index, double value) { array_.at(index) = (float)value; }
+void Float::SetElemDoubleAt(int index, double value) { array_.at(index) = static_cast<float>(value); }
 
 std::shared_ptr<ProductData> Float::CreateDeepClone() const {
     //    todo:check if this is correct
@@ -73,12 +72,10 @@ void Float::SetElems(std::any data) {
 bool Float::EqualElems(std::shared_ptr<ProductData> other) const {
     if (other.get() == this) {
         return true;
-    } else {
-        //        return array_ == ((std::shared_ptr<Float>)other)->GetArray();
-        return (array_ == std::any_cast<std::vector<float>>(other->GetElems()));
     }
+    //        return array_ == ((std::shared_ptr<Float>)other)->GetArray();
+    return (array_ == std::any_cast<std::vector<float>>(other->GetElems()));
 }
 void Float::SetElemStringAt(int index, std::string_view value) { array_.at(index) = boost::lexical_cast<float>(value); }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

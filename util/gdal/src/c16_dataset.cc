@@ -44,9 +44,9 @@ void C16Dataset<BufferType>::ReadRectangle(Rectangle rectangle, std::map<int, Bu
 
     dataset_->ReadRectangle(rectangle, 1, pairs.data());
 
-    for (std::vector<Iq16>::iterator it = pairs.begin(); it != pairs.end(); ++it) {
-        *i_band = (*it).i;
-        *q_band = (*it).q;
+    for (auto& pair : pairs) {
+        *i_band = pair.i;
+        *q_band = pair.q;
 
         i_band++;
         q_band++;
@@ -54,7 +54,7 @@ void C16Dataset<BufferType>::ReadRectangle(Rectangle rectangle, std::map<int, Bu
 }
 
 template <typename BufferType>
-void C16Dataset<BufferType>::TryToCacheImage(){
+void C16Dataset<BufferType>::TryToCacheImage() {
     dataset_->TryToCacheImage();
 }
 
@@ -74,7 +74,7 @@ BufferType* C16Dataset<BufferType>::GetDeviceDataBuffer() {
 }
 
 template <typename BufferType>
-long unsigned int C16Dataset<BufferType>::GetBufferByteSize() {
+long unsigned int C16Dataset<BufferType>::GetBufferByteSize() {  // NOLINT
     throw std::runtime_error("C16 Dataset does not have data buffers");
 }
 

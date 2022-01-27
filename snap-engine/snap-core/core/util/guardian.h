@@ -23,14 +23,13 @@
 #include <string>
 #include <string_view>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 class Guardian {
 public:
-    static void AssertNotNullOrEmpty(std::string_view expr_text, std::string_view text);
+    static void AssertNotNullOrEmpty(std::string_view expr_text, std::string_view expr_value);
     template <typename T>
     static void AssertNotNull(std::string_view expr_text, T expr_value) {
-        if (expr_value == nullptr) {
+        if (expr_value == nullptr) {  // NOLINT
             throw std::invalid_argument(std::string(expr_text) + " argument is nullptr");
         }
     }
@@ -52,7 +51,7 @@ public:
      * @param expected_value the expected value
      * @throws std::invalid_argument if the <code>expr_value</code> is not equal to <code>expected_value</code>
      */
-    static void AssertEquals(std::string_view expr_text, long expr_value, long expected_value);
+    static void AssertEquals(std::string_view expr_text, int64_t expr_value, int64_t expected_value);
 
     //     todo:might need to use std::any or use T and override equality...  check Product::CheckGeoCoding for usage
     //    static void AssertSame(std::string_view expr_text, std::any expr_value, std::any expected_value);
@@ -75,8 +74,7 @@ public:
      * @throws IllegalArgumentException if the <code>exprValue</code> is less than <code>rangeMin</code> or greater than
      * <code>rangeMax</code>
      */
-    static void AssertWithinRange(std::string_view expr_text, long expr_value, long range_min, long range_max);
+    static void AssertWithinRange(std::string_view expr_text, int64_t expr_value, int64_t range_min, int64_t range_max);
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

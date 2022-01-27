@@ -22,6 +22,7 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/math/special_functions/relative_difference.hpp>
+#include <utility>
 
 #include "alus_log.h"
 #include "ceres-core/core/i_progress_monitor.h"
@@ -36,8 +37,7 @@
 #include "snap-engine-utilities/engine-utilities/datamodel/metadata/abstract_metadata.h"
 #include "snap-engine-utilities/engine-utilities/datamodel/unit.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 const Utc& TestUtils::no_time_ = *new Utc();
 
@@ -61,7 +61,7 @@ std::shared_ptr<Product> TestUtils::ReadSourceProduct(const boost::filesystem::p
     }
     // todo: if we add more readers in the future, then we can switch to CommonReaders, current port made a shortcut
     //    const std::shared_ptr<Product> product = CommonReaders::ReadProduct(input_file);
-    const std::shared_ptr<Product> product = ProductIO::ReadProduct(input_file);
+    std::shared_ptr<Product> product = ProductIO::ReadProduct(input_file);
     if (product == nullptr) {
         throw std::runtime_error("Unable to read " + input_file.filename().string());
     }
@@ -141,7 +141,7 @@ void TestUtils::VerifyProduct(const std::shared_ptr<Product>& product, bool veri
 
 std::shared_ptr<Product> TestUtils::CreateProduct(std::string_view type, int w, int h) {
     //    const auto product = std::make_shared<Product>("name", type, w, h);
-    const auto product = Product::CreateProduct("name", type, w, h);
+    auto product = Product::CreateProduct("name", type, w, h);
 
     product->SetStartTime(AbstractMetadata::ParseUtc("10-MAY-2008 20:30:46.890683"));
     product->SetEndTime(AbstractMetadata::ParseUtc("10-MAY-2008 20:35:46.890683"));
@@ -156,7 +156,7 @@ std::shared_ptr<Product> TestUtils::CreateProduct(std::string_view type, int w, 
 
 std::shared_ptr<Band> TestUtils::CreateBand(const std::shared_ptr<Product>& test_product, std::string_view band_name,
                                             int w, int h) {
-    const std::shared_ptr<Band> band = test_product->AddBand(band_name, ProductData::TYPE_INT32);
+    std::shared_ptr<Band> band = test_product->AddBand(band_name, ProductData::TYPE_INT32);
     band->SetUnit(snapengine::Unit::AMPLITUDE);
     std::vector<int> int_values(w * h);
     for (int i = 0; i < w * h; i++) {
@@ -168,11 +168,11 @@ std::shared_ptr<Band> TestUtils::CreateBand(const std::shared_ptr<Product>& test
 
 void TestUtils::AddGeoCoding(const std::shared_ptr<Product>& product) {
     const auto lat_grid =
-        std::make_shared<TiePointGrid>("lat", 2, 2, 0.5f, 0.5f, product->GetSceneRasterWidth(),
-                                       product->GetSceneRasterHeight(), std::vector<float>{10.0f, 10.0f, 5.0f, 5.0f});
+        std::make_shared<TiePointGrid>("lat", 2, 2, 0.5F, 0.5F, product->GetSceneRasterWidth(),
+                                       product->GetSceneRasterHeight(), std::vector<float>{10.0F, 10.0F, 5.0F, 5.0F});
     const auto lon_grid = std::make_shared<TiePointGrid>(
-        "lon", 2, 2, 0.5f, 0.5f, product->GetSceneRasterWidth(), product->GetSceneRasterHeight(),
-        std::vector<float>{10.0f, 10.0f, 5.0f, 5.0f}, TiePointGrid::DISCONT_AT_360);
+        "lon", 2, 2, 0.5F, 0.5F, product->GetSceneRasterWidth(), product->GetSceneRasterHeight(),
+        std::vector<float>{10.0F, 10.0F, 5.0F, 5.0F}, TiePointGrid::DISCONT_AT_360);
     const auto tp_geo_coding = std::make_shared<TiePointGeoCoding>(lat_grid, lon_grid);
 
     product->AddTiePointGrid(lat_grid);
@@ -234,12 +234,12 @@ void TestUtils::CompareMetadata(const std::shared_ptr<Product>& test_product,
             auto condition2 = result->GetData()->ToString();
             boost::algorithm::trim(condition1);
             boost::algorithm::trim(condition2);
-            if ((expected_data->GetType() == ProductData::TYPE_FLOAT32 ||
-                 expected_data->GetType() == ProductData::TYPE_FLOAT64) &&
-                boost::math::epsilon_difference(expected_data->GetElemDouble(), result->GetData()->GetElemDouble()) ==
-                    0) {
-            } else if (boost::iequals(condition1, condition2)) {
-                // exactly like snap has it
+            if (((expected_data->GetType() == ProductData::TYPE_FLOAT32 ||
+                  expected_data->GetType() == ProductData::TYPE_FLOAT64) &&
+                 boost::math::epsilon_difference(expected_data->GetElemDouble(), result->GetData()->GetElemDouble()) ==
+                     0) ||
+                boost::iequals(condition1, condition2)) {
+                // DO NOTHING
             } else {
                 throw std::runtime_error("Metadata attribute " + expected_attrib->GetName() + " expecting " +
                                          expected_attrib->GetData()->ToString() + " got " +
@@ -258,7 +258,8 @@ void TestUtils::CompareProducts(const std::shared_ptr<Product>& target_product,
         throw std::runtime_error("Different number of bands");
     }
 
-    if (!target_product->IsCompatibleProduct(expected_product.get(), 0)) throw std::runtime_error("Geocoding is different");
+    if (!target_product->IsCompatibleProduct(expected_product.get(), 0))
+        throw std::runtime_error("Geocoding is different");
 
     for (const auto& expected_t_p_g : expected_product->GetTiePointGrids()) {
         const std::shared_ptr<TiePointGrid> trg_t_p_g = target_product->GetTiePointGrid(expected_t_p_g->GetName());
@@ -282,10 +283,11 @@ void TestUtils::CompareProducts(const std::shared_ptr<Product>& target_product,
         }
 
         const std::vector<float> float_values(2500);
-        trg_band->ReadPixels(40, 40, 50, 50, float_values, std::make_shared<ceres::NullProgressMonitor>());
+        trg_band->ReadPixels(40, 40, 50, 50, float_values, std::make_shared<ceres::NullProgressMonitor>());  // NOLINT
 
         const std::vector<float> expected_values(2500);
-        expected_band->ReadPixels(40, 40, 50, 50, expected_values, std::make_shared<ceres::NullProgressMonitor>());
+        expected_band->ReadPixels(40, 40, 50, 50, expected_values,  // NOLINT
+                                  std::make_shared<ceres::NullProgressMonitor>());
 
         if (float_values != expected_values) {
             throw std::runtime_error("Pixels are different in file " +
@@ -296,7 +298,7 @@ void TestUtils::CompareProducts(const std::shared_ptr<Product>& target_product,
 
 void TestUtils::ComparePixels(const std::shared_ptr<Product>& target_product, std::string_view band_name,
                               std::vector<float> expected) {
-    ComparePixels(target_product, band_name, 0, 0, expected);
+    ComparePixels(target_product, band_name, 0, 0, std::move(expected));
 }
 
 void TestUtils::ComparePixels(const std::shared_ptr<Product>& target_product, std::string_view band_name, int x, int y,
@@ -307,10 +309,11 @@ void TestUtils::ComparePixels(const std::shared_ptr<Product>& target_product, st
     }
 
     std::vector<float> actual(expected.size());
-    band->ReadPixels(x, y, expected.size(), 1, actual, std::make_shared<ceres::NullProgressMonitor>());
+    band->ReadPixels(x, y, static_cast<int>(expected.size()), 1, actual,
+                     std::make_shared<ceres::NullProgressMonitor>());
 
     for (std::size_t i = 0; i < expected.size(); ++i) {
-        if ((std::abs(expected.at(i) - actual.at(i)) > 0.0001)) {
+        if ((std::abs(expected.at(i) - actual.at(i)) > 0.0001)) {  // NOLINT
             std::string msg = "actual:";
             for (float an_actual : actual) {
                 msg += std::to_string(an_actual) + ", ";
@@ -338,7 +341,7 @@ void TestUtils::CompareProducts(const std::shared_ptr<Product>& target_product, 
 
     // readPixels: execute computeTiles()
     const std::vector<float> float_values(2500);
-    target_band->ReadPixels(40, 40, 50, 50, float_values, std::make_shared<ceres::NullProgressMonitor>());
+    target_band->ReadPixels(40, 40, 50, 50, float_values, std::make_shared<ceres::NullProgressMonitor>());  // NOLINT
 
     // compare with expected outputs:
     const boost::filesystem::path expected_file{std::string(expected_path)};
@@ -353,13 +356,14 @@ void TestUtils::CompareProducts(const std::shared_ptr<Product>& target_product, 
     const std::shared_ptr<Band> expected_band = expected_product->GetBandAt(0);
 
     const std::vector<float> expected_values(2500);
-    expected_band->ReadPixels(40, 40, 50, 50, expected_values, std::make_shared<ceres::NullProgressMonitor>());
+    expected_band->ReadPixels(40, 40, 50, 50, expected_values,                  // NOLINT
+                              std::make_shared<ceres::NullProgressMonitor>());  // NOLINT
     if (float_values != expected_values) {
         throw std::runtime_error("Pixels are different in file " + std::string(expected_path));
     }
 
     // compare updated metadata
-    CompareMetadata(target_product, expected_product, exemption_list);
+    CompareMetadata(target_product, expected_product, std::move(exemption_list));
 }
 
 void TestUtils::CompareArrays(std::vector<float> actual, std::vector<float> expected, float threshold) {
@@ -387,7 +391,8 @@ void TestUtils::CompareArrays(std::vector<float> actual, std::vector<float> expe
     }
 }
 
-bool TestUtils::ContainsProductType(std::vector<std::string> product_type_exemptions, std::string_view product_type) {
+bool TestUtils::ContainsProductType(const std::vector<std::string>& product_type_exemptions,
+                                    std::string_view product_type) {
     if (!product_type_exemptions.empty()) {
         for (const auto& str : product_type_exemptions) {
             if (product_type.find(str) != std::string::npos) {
@@ -406,5 +411,4 @@ bool TestUtils::SkipTest(const std::any& obj, std::string_view msg) {
     return true;
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

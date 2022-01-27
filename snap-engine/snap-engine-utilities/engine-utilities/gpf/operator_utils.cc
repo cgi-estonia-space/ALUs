@@ -1,3 +1,4 @@
+
 /**
  * This file is a filtered duplicate of a SNAP's
  * org.esa.snap.engine_utilities.gpf.OperatorUtils.java
@@ -32,8 +33,7 @@
 #include "snap-core/core/datamodel/virtual_band.h"
 #include "snap-engine-utilities/engine-utilities/datamodel/metadata/abstract_metadata.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 std::string OperatorUtils::GetPolarizationFromBandName(std::string_view band_name) {
     // Account for possibilities like "x_HH_dB" or "x_HH_times_VV_conj"
@@ -70,16 +70,16 @@ std::string OperatorUtils::GetPolarizationFromBandName(std::string_view band_nam
         pol += "rcv";
     }
 
-    if (pol.length() >= 2 && pol.length() <= 3) {
+    if (pol.length() >= 2 && pol.length() <= 3) {  // NOLINT
         return pol;
     }
-    if (pol.length() > 3) {
+    if (pol.length() > 3) {  // NOLINT
         throw std::runtime_error("Band name contains multiple polarizations: " + pol);
     }
     return "";
 }
 
-std::vector<std::shared_ptr<Band>> OperatorUtils::GetSourceBands(std::shared_ptr<Product> source_product,
+std::vector<std::shared_ptr<Band>> OperatorUtils::GetSourceBands(const std::shared_ptr<Product>& source_product,
                                                                  std::vector<std::string> source_band_names,
                                                                  bool include_virtual_bands) {
     if (source_band_names.empty()) {
@@ -134,5 +134,4 @@ std::string OperatorUtils::GetAcquisitionDate(std::shared_ptr<MetadataElement>& 
     return date_string;
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

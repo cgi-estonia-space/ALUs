@@ -26,8 +26,7 @@
 #include "snap-core/core/dataio/product_subset_def.h"
 #include "snap-core/core/datamodel/product.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 void ProductNode::SetDescription(std::string_view description) { description_ = description; }
 void ProductNode::SetDescription(const std::optional<std::string_view>& description) { description_ = description; }
@@ -52,8 +51,8 @@ Product* ProductNode::GetProduct() {
     if (product_ == nullptr) {
         auto* owner = this;
         do {
-            auto check_type = dynamic_cast<Product*>(owner);
-            if(check_type != nullptr) {
+            auto* check_type = dynamic_cast<Product*>(owner);
+            if (check_type != nullptr) {
                 product_ = check_type;
                 break;
             }
@@ -67,7 +66,7 @@ void ProductNode::SetModified(bool modified) {
     bool old_state = modified_;
     if (old_state != modified) {
         modified_ = modified;
-        auto owner = GetOwner();
+        auto* owner = GetOwner();
         if (modified_ && owner) {
             owner->SetModified(true);
         }
@@ -75,7 +74,7 @@ void ProductNode::SetModified(bool modified) {
 }
 
 std::shared_ptr<IProductReader> ProductNode::GetProductReader() {
-    auto product = GetProduct();
+    auto* product = GetProduct();
     if (product) {
         return product->GetProductReader();
     }
@@ -83,7 +82,7 @@ std::shared_ptr<IProductReader> ProductNode::GetProductReader() {
 }
 
 std::shared_ptr<IProductWriter> ProductNode::GetProductWriter() {
-    if (auto product = GetProduct(); product) {
+    if (auto* product = GetProduct(); product) {
         return product->GetProductWriter();
     }
     return nullptr;
@@ -98,14 +97,14 @@ std::string ProductNode::GetDisplayName() {
 }
 
 std::optional<std::string> ProductNode::GetProductRefString() {
-    auto product = GetProduct();
+    auto* product = GetProduct();
     if (product) {
         return std::make_optional(product->GetRefStr());
     }
     return std::nullopt;
 }
 void ProductNode::SetName(std::string_view name) {
-    Guardian::AssertNotNull("name", name);
+    Guardian::AssertNotNull("name", name);  // NOLINT
     std::string name_str(name);
     boost::algorithm::trim(name_str);
     SetNodeName(name_str, false);
@@ -114,7 +113,7 @@ void ProductNode::SetName(std::string_view name) {
 void ProductNode::SetNodeName(std::string_view trimmed_name, bool silent) {
     Guardian::AssertNotNullOrEmpty("name contains only spaces", trimmed_name);
     if (name_ != trimmed_name) {
-        auto product = GetProduct();
+        auto* product = GetProduct();
         if (product) {
             Assert::Argument(!product->ContainsRasterDataNode(trimmed_name),
                              "The Product '" + product->GetName() + "' already contains " +
@@ -137,7 +136,7 @@ bool ProductNode::IsValidNodeName(std::string_view name) {
     boost::algorithm::trim(name_str);
     return std::regex_match(name_str, std::regex(R"([^\\/:*?"<>|\.][^\\/:*?"<>|]*)"));
 }
-bool ProductNode::IsPartOfSubset(const std::shared_ptr<ProductSubsetDef>& subset_def) {
+bool ProductNode::IsPartOfSubset(const std::shared_ptr<ProductSubsetDef>& subset_def) const {
     return subset_def == nullptr || subset_def->ContainsNodeName(GetName());
 }
 void ProductNode::Dispose() {
@@ -147,5 +146,4 @@ void ProductNode::Dispose() {
     name_ = "";
 }
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

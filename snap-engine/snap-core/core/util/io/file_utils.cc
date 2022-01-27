@@ -22,8 +22,7 @@
 
 #include "../guardian.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 std::string FileUtils::ExchangeExtension(std::string_view path, std::string_view extension) {
     Guardian::AssertNotNullOrEmpty("path", path);
@@ -35,10 +34,9 @@ std::string FileUtils::ExchangeExtension(std::string_view path, std::string_view
     if (extension_dot_pos > 0) {
         // replace existing extension
         return std::string(path.substr(0, extension_dot_pos)) + std::string(extension);
-    } else {
-        // append extension
-        return std::string(path) + std::string(extension);
     }
+    // append extension
+    return std::string(path) + std::string(extension);
 }
 
 int FileUtils::GetExtensionDotPos(std::string_view path) {
@@ -65,5 +63,4 @@ int FileUtils::GetExtensionDotPos(std::string_view path) {
     }
     return -1;
 }
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

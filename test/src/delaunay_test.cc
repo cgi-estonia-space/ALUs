@@ -16,32 +16,31 @@
 
 #include "gmock/gmock.h"
 
+#include "backgeocoding_constants.h"
 #include "comparators.h"
 #include "delaunay_triangle2D.h"
 #include "delaunay_triangulator.h"
-#include "backgeocoding_constants.h"
-
 
 namespace {
 
-class DelaunayTriangulatonTester {
-   public:
+class DelaunayTriangulationTester {
+public:
     std::vector<double> x_coords_;
     std::vector<double> y_coords_;
     std::vector<alus::delaunay::DelaunayTriangle2D> triangles_;
     int width_, height_, triangle_size_;
-    double *device_x_coords_ = nullptr;
-    double *device_y_coords_ = nullptr;
-    alus::delaunay::DelaunayTriangle2D *device_triangles_ = nullptr;
+    double* device_x_coords_ = nullptr;
+    double* device_y_coords_ = nullptr;
+    alus::delaunay::DelaunayTriangle2D* device_triangles_ = nullptr;
     const double invalid_index = alus::backgeocoding::INVALID_INDEX;
 
-    DelaunayTriangulatonTester() = default;
+    DelaunayTriangulationTester() = default;
 
     void ReadSmallTestData() {
         alus::delaunay::DelaunayTriangle2D temp_triangle;
-        this->width_ = 6;
+        this->width_ = 6;  // NOLINT
         this->height_ = 1;
-        this->triangle_size_ = 5;  // maximum triangles include 2n -2 -b
+        this->triangle_size_ = 5;  // maximum triangles include 2n -2 -b   // NOLINT
         x_coords_.resize(this->width_);
         y_coords_.resize(this->width_);
 
@@ -49,19 +48,19 @@ class DelaunayTriangulatonTester {
         y_coords_.at(0) = 1;
 
         x_coords_.at(1) = 2;
-        y_coords_.at(1) = 2.5;
+        y_coords_.at(1) = 2.5;  // NOLINT
 
-        x_coords_.at(2) = 3;
+        x_coords_.at(2) = 3;  // NOLINT
         y_coords_.at(2) = 1;
 
-        x_coords_.at(3) = 4;
-        y_coords_.at(3) = 2.5;
+        x_coords_.at(3) = 4;    // NOLINT
+        y_coords_.at(3) = 2.5;  // NOLINT
 
-        x_coords_.at(4) = 3.5;
-        y_coords_.at(4) = 4;
+        x_coords_.at(4) = 3.5;  // NOLINT
+        y_coords_.at(4) = 4;    // NOLINT
 
-        x_coords_.at(5) = 2.5;
-        y_coords_.at(5) = 4;
+        x_coords_.at(5) = 2.5;  // NOLINT
+        y_coords_.at(5) = 4;    // NOLINT
 
         this->triangles_.resize(this->triangle_size_);
 
@@ -71,10 +70,10 @@ class DelaunayTriangulatonTester {
         temp_triangle.a_index = 0;
 
         temp_triangle.bx = 2;
-        temp_triangle.by = 2.5;
+        temp_triangle.by = 2.5;  // NOLINT
         temp_triangle.b_index = 1;
 
-        temp_triangle.cx = 3;
+        temp_triangle.cx = 3;  // NOLINT
         temp_triangle.cy = 1;
         temp_triangle.c_index = 2;
         this->triangles_.at(0) = temp_triangle;
@@ -85,62 +84,62 @@ class DelaunayTriangulatonTester {
         temp_triangle.a_index = 0;
 
         temp_triangle.bx = 2;
-        temp_triangle.by = 2.5;
+        temp_triangle.by = 2.5;  // NOLINT
         temp_triangle.b_index = 1;
 
-        temp_triangle.cx = 2.5;
-        temp_triangle.cy = 4;
-        temp_triangle.c_index = 5;
+        temp_triangle.cx = 2.5;     // NOLINT
+        temp_triangle.cy = 4;       // NOLINT
+        temp_triangle.c_index = 5;  // NOLINT
         this->triangles_.at(1) = temp_triangle;
 
         // triangle 3
-        temp_triangle.ax = 4;
-        temp_triangle.ay = 2.5;
-        temp_triangle.a_index = 3;
+        temp_triangle.ax = 4;       // NOLINT
+        temp_triangle.ay = 2.5;     // NOLINT
+        temp_triangle.a_index = 3;  // NOLINT
 
         temp_triangle.bx = 2;
-        temp_triangle.by = 2.5;
+        temp_triangle.by = 2.5;  // NOLINT
         temp_triangle.b_index = 1;
 
-        temp_triangle.cx = 3;
+        temp_triangle.cx = 3;  // NOLINT
         temp_triangle.cy = 1;
         temp_triangle.c_index = 2;
         this->triangles_.at(2) = temp_triangle;
 
         // triangle 4
-        temp_triangle.ax = 4;
-        temp_triangle.ay = 2.5;
-        temp_triangle.a_index = 3;
+        temp_triangle.ax = 4;       // NOLINT
+        temp_triangle.ay = 2.5;     // NOLINT
+        temp_triangle.a_index = 3;  // NOLINT
 
-        temp_triangle.bx = 3.5;
-        temp_triangle.by = 4;
-        temp_triangle.b_index = 4;
+        temp_triangle.bx = 3.5;     // NOLINT
+        temp_triangle.by = 4;       // NOLINT
+        temp_triangle.b_index = 4;  // NOLINT
 
-        temp_triangle.cx = 2.5;
-        temp_triangle.cy = 4;
-        temp_triangle.c_index = 5;
-        this->triangles_.at(3) = temp_triangle;
+        temp_triangle.cx = 2.5;                  // NOLINT
+        temp_triangle.cy = 4;                    // NOLINT
+        temp_triangle.c_index = 5;               // NOLINT
+        this->triangles_.at(3) = temp_triangle;  // NOLINT
 
         // triangle 5
         temp_triangle.bx = 2;
-        temp_triangle.by = 2.5;
+        temp_triangle.by = 2.5;  // NOLINT
         temp_triangle.b_index = 1;
 
-        temp_triangle.ax = 4;
-        temp_triangle.ay = 2.5;
-        temp_triangle.a_index = 3;
+        temp_triangle.ax = 4;       // NOLINT
+        temp_triangle.ay = 2.5;     // NOLINT
+        temp_triangle.a_index = 3;  // NOLINT
 
-        temp_triangle.cx = 2.5;
-        temp_triangle.cy = 4;
-        temp_triangle.c_index = 5;
-        this->triangles_.at(4) = temp_triangle;
+        temp_triangle.cx = 2.5;                  // NOLINT
+        temp_triangle.cy = 4;                    // NOLINT
+        temp_triangle.c_index = 5;               // NOLINT
+        this->triangles_.at(4) = temp_triangle;  // NOLINT
     }
 };
 
 // don't run this unless you are developing the delaunay gpu algorithm or it has been finished.
 /*TEST(DelaunayTest, TriangulationTest){
     alus::delaunay::DelaunayTriangle2D temp_triangle;
-    DelaunayTriangulatonTester tester;
+    DelaunayTriangulationTester tester;
     tester.readTestData();
     tester.HostToDevice();
 
@@ -160,25 +159,22 @@ tester.width_, tester.height_, tester.device_triangles_));
 }*/
 
 TEST(DelaunayTest, SmallCPUTriangulationTest) {
-    DelaunayTriangulatonTester tester;
+    DelaunayTriangulationTester tester;
     tester.ReadSmallTestData();
 
     alus::delaunay::DelaunayTriangulator trianglulator;
-    trianglulator.TriangulateCPU(tester.x_coords_.data(),
-                                 1.0,
-                                 tester.y_coords_.data(),
-                                 1.0,
-                                 tester.width_,
+    trianglulator.TriangulateCPU(tester.x_coords_.data(), 1.0, tester.y_coords_.data(), 1.0, tester.width_,
                                  tester.invalid_index);
 
-    size_t count = alus::EqualsTriangles(
-        trianglulator.host_triangles_.data(), tester.triangles_.data(), trianglulator.triangle_count_, 0.00001);
+    size_t count = alus::EqualsTriangles(trianglulator.host_triangles_.data(), tester.triangles_.data(),
+                                         trianglulator.triangle_count_, 0.00001);  // NOLINT
     EXPECT_EQ(count, 0) << "Triangle results do not match. Mismatches: " << count << '\n';
 }
 
+// NOLINTNEXTLINE
 // TODO: We will bring this back once we have the full algorithm, so we can test speeds and accuracies of end results.
 /*TEST(DelaunayTest, BigCPUTriangulationTest2){
-    DelaunayTriangulatonTester tester;
+    DelaunayTriangulationTester tester;
     tester.readBigTestData();
 
     alus::delaunay::DelaunayTriangulator trianglulator;

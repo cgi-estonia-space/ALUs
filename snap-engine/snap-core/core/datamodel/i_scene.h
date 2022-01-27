@@ -20,8 +20,7 @@
 
 #include <memory>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 class Product;
 class ProductSubsetDef;
@@ -49,5 +48,4 @@ public:
     virtual ~IScene() = default;
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

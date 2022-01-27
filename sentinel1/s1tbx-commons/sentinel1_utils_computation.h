@@ -13,7 +13,7 @@
  */
 #pragma once
 
-namespace alus {
+namespace alus {  // NOLINT TODO: concatenate namespace and remove nolint after migrating to cuda 11+
 namespace s1tbx {
 struct DeviceSentinel1Utils {
     double first_line_utc;
@@ -38,5 +38,5 @@ struct Sentinel1Index {
     double mu_x;
     double mu_y;
 };
-}
-}
+}  // namespace s1tbx
+}  // namespace alus

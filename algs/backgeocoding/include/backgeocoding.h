@@ -18,9 +18,9 @@
 #include <string_view>
 #include <vector>
 
-#include "orbit_state_vector_computation.h"
 #include "extended_amount_computation.h"
 #include "kernel_array.h"
+#include "orbit_state_vector_computation.h"
 #include "pointer_holders.h"
 #include "s1tbx-commons/sentinel1_utils.h"
 

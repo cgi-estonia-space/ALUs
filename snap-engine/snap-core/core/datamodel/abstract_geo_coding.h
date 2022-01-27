@@ -25,8 +25,7 @@
 
 #include "snap-core/core/datamodel/i_geo_coding.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 // pre-declare
 class IScene;
@@ -58,7 +57,7 @@ protected:
      *
      * @param geoCRS The CRS to be used as both the geographic CRS and map CRS.
      */
-    AbstractGeoCoding(const CoordinateReferenceSystemWKT& geo_c_r_s) {
+    explicit AbstractGeoCoding(const CoordinateReferenceSystemWKT& geo_c_r_s) {
         SetGeoCRS(geo_c_r_s);
         SetMapCRS(geo_c_r_s);
         SetImageCRS(GetMapCRS());
@@ -100,7 +99,5 @@ public:
     CoordinateReferenceSystemWKT GetGeoCRS() override { return geo_c_r_s_; }
 
     MathTransformWKT GetImageToMapTransform() override;
-
 };
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

@@ -22,20 +22,19 @@ constexpr double ELL_A{6378137.000};
 // also found from some other code: 6356752.314245179 (jlinda used shorter)
 constexpr double ELL_B{6356752.314245};
 
-//constexpr double MASTER_CONTAINER_META_DATA_GET_RADAR_WAVELENGTH{0.05546576};
-//constexpr double SLAVE_CONTAINER_META_DATA_GET_RADAR_WAVELENGTH{0.05546576};
+// constexpr double MASTER_CONTAINER_META_DATA_GET_RADAR_WAVELENGTH{0.05546576};
+// constexpr double SLAVE_CONTAINER_META_DATA_GET_RADAR_WAVELENGTH{0.05546576};
 
 // this has also multiple values, need ot check which was used for what
 constexpr double SNAP_PI{3.141592653589793};
 
-//JLINDA CONSTANTS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//    public static final double MeanEarthRadius = 6371008.7714;
+// JLINDA CONSTANTS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//     public static final double MeanEarthRadius = 6371008.7714;
 
-constexpr double GRS80_A{6378137.000};    // GRS80 semi-major axis
-constexpr double GRS80_B{6356752.314140}; // GRS80 semi-minor axis
+constexpr double GRS80_A{6378137.000};     // GRS80 semi-major axis
+constexpr double GRS80_B{6356752.314140};  // GRS80 semi-minor axis
 
-constexpr double SOL{2.99792458E8}; // speed-of-light
+constexpr double SOL{2.99792458E8};  // speed-of-light
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //!!!package org.esa.snap.engine_utilities.eo;
-
-}  // namespace alus::kcoh
+}  // namespace alus::jlinda

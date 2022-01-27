@@ -22,11 +22,11 @@
 #include <memory>
 #include <utility>
 
-#include "tie_point_grid.h"
 #include "i_product_reader.h"
 #include "i_product_reader_plug_in.h"
 #include "product_subset_def.h"
 #include "snap-core/core/datamodel/product.h"
+#include "tie_point_grid.h"
 
 namespace alus::snapengine {
 
@@ -78,9 +78,9 @@ protected:
     explicit AbstractProductReader(std::shared_ptr<IProductReaderPlugIn> reader_plug_in)
         : reader_plug_in_(std::move(reader_plug_in)) {}
 
-    static std::shared_ptr<custom::Dimension> GetConfiguredTileSize(std::shared_ptr<Product> product,
-                                                            std::string_view tile_width_str,
-                                                            std::string_view tile_height_str);
+    static std::shared_ptr<custom::Dimension> GetConfiguredTileSize(const std::shared_ptr<Product>& product,
+                                                                    std::string_view tile_width_str,
+                                                                    std::string_view tile_height_str);
     static int ParseTileSize(std::string_view size_str, int max_size);
     /**
      * Sets the subset information. This implemetation is protected to overwrite in the inherided class to ensure that
@@ -107,7 +107,7 @@ protected:
      * @return {@code true} if so
      * @see ProductReaderPlugIn#getInputTypes()
      */
-    bool IsInstanceOfValidInputType(std::any input);
+    static bool IsInstanceOfValidInputType(const std::any& input);
 
     void SetInput(std::any input);
 
@@ -156,7 +156,7 @@ public:
      * @return the subset information, can be {@code null}
      */
     std::shared_ptr<ProductSubsetDef> GetSubsetDef() override { return subset_def_; };
-    void ReadBandRasterData(std::shared_ptr<Band> dest_band, int dest_off_set_x, int dest_offset_y, int dest_width,
+    void ReadBandRasterData(std::shared_ptr<Band> dest_band, int dest_offset_x, int dest_offset_y, int dest_width,
                             int dest_height, std::shared_ptr<ProductData> dest_buffer,
                             std::shared_ptr<ceres::IProgressMonitor> pm) override;
     void Close() override;

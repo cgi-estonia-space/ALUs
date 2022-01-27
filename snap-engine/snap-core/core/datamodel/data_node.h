@@ -29,8 +29,7 @@
 
 #include "snap-core/core/datamodel/product_data.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 class ProductSubsetDef;
 
@@ -44,7 +43,7 @@ private:
      * The data type. Always one of <code>ProductData.TYPE_<i>X</i></code>.
      */
     int data_type_;
-    long num_elems_;
+    int64_t num_elems_;
     bool read_only_;
     std::optional<std::string> unit_;
     bool synthetic_;
@@ -57,8 +56,7 @@ private:
 
 protected:
     std::shared_ptr<ProductData> data_;
-    //    TODO:// looks like c++ needs this for init (ok this was due to virtual keyword, if tests get fixed remove)
-    //    DataNode() = default;
+    DataNode() = default;
 
 public:
     // these are really only needed for broadcasting which we don't use atm, but might...
@@ -70,7 +68,7 @@ public:
     /**
      * Constructs a new data node with the given name, data type and number of elements.
      */
-    DataNode(std::string_view name, int data_type, long num_elems);
+    DataNode(std::string_view name, int data_type, int64_t num_elems);
     DataNode(std::string_view name, std::shared_ptr<ProductData> data, bool read_only);
 
     void SetUnit(std::string_view unit);
@@ -201,5 +199,4 @@ public:
 
     uint64_t GetRawStorageSize(const std::shared_ptr<ProductSubsetDef>& subset_def) override;
 };
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

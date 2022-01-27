@@ -16,7 +16,7 @@
 #include "cuda_runtime_api.h"
 #include "cuda_util.h"
 
-namespace alus {
+namespace alus {  // NOLINT
 namespace cuda {
 
 /*
@@ -118,7 +118,7 @@ private:
     void* device_arena_ptr_ = nullptr;
     size_t used_byte_size_ = 0;
     size_t max_byte_size_ = 0;
-    static constexpr size_t ARENA_ALIGNMENT = 128;  // TODO investigate optimal value
+    static constexpr size_t ARENA_ALIGNMENT = 128;  // TODO investigate optimal value  // NOLINT
 };
 }  // namespace cuda
 }  // namespace alus

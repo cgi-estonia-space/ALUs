@@ -19,9 +19,10 @@
 #include "sentinel1_product_reader.h"
 
 #include <algorithm>
+#include <climits>
 
-#include "alus_log.h"
 #include "abstract_product_reader.h"
+#include "alus_log.h"
 #include "custom/i_image_reader.h"
 #include "s1tbx-io/sentinel1/i_sentinel1_directory.h"
 #include "s1tbx-io/sentinel1/sentinel1_constants.h"
@@ -50,20 +51,17 @@ std::shared_ptr<snapengine::Product> Sentinel1ProductReader::ReadProductNodesImp
             throw std::runtime_error(input_path.string() + " not found");
         }
 
-        if (Sentinel1ProductReaderPlugIn::IsLevel2(input_path)) {
+        if (Sentinel1ProductReaderPlugIn::IsLevel2(input_path) || Sentinel1ProductReaderPlugIn::IsLevel0(input_path)) {
             //            data_dir_ = std::make_shared<Sentinel1Level2Directory>(input_path);
             throw std::runtime_error("currently not supported");
-        } else if (Sentinel1ProductReaderPlugIn::IsLevel1(input_path)) {
-            data_dir_ = std::make_shared<Sentinel1Level1Directory>(input_path);
-        } else if (Sentinel1ProductReaderPlugIn::IsLevel0(input_path)) {
-            //            data_dir_ = std::make_shared<Sentinel1Level0Directory>(input_path);
-            throw std::runtime_error("currently not supported");
         }
+        data_dir_ = std::make_shared<Sentinel1Level1Directory>(input_path);
+
         if (data_dir_ == nullptr) {
             Sentinel1ProductReaderPlugIn::ValidateInput(input_path);
         }
         data_dir_->ReadProductDirectory();
-        std::shared_ptr<snapengine::Product> product = data_dir_->CreateProduct(); // Reads XML files and Raster files.
+        std::shared_ptr<snapengine::Product> product = data_dir_->CreateProduct();  // Reads XML files and Raster files.
         product->SetFileLocation(input_path);
         product->SetProductReader(SharedFromBase<Sentinel1ProductReader>());
         // todo: add support if needed
@@ -74,7 +72,7 @@ std::shared_ptr<snapengine::Product> Sentinel1ProductReader::ReadProductNodesImp
 
         SetQuicklookBandName(product);
         // Reading Quicklooks only decreases performance of the application
-        //AddQuicklook(product, snapengine::Quicklook::DEFAULT_QUICKLOOK_NAME, GetQuicklookFile());
+        // AddQuicklook(product, snapengine::Quicklook::DEFAULT_QUICKLOOK_NAME, GetQuicklookFile());
 
         product->SetModified(false);
 
@@ -135,7 +133,7 @@ void Sentinel1ProductReader::ReadSLCRasterBand(const int source_offset_x, const 
                                                const int source_step_x, const int source_step_y,
                                                const std::shared_ptr<snapengine::ProductData>& dest_buffer,
                                                const int dest_offset_x, const int dest_offset_y, int dest_width,
-                                               int dest_height, const std::shared_ptr<BandInfo>& band_info) {
+                                               int dest_height, const std::shared_ptr<BandInfo>& band_info) const {
     int length;
     std::vector<int32_t> src_array;
     std::shared_ptr<snapengine::custom::Rectangle> dest_rect =
@@ -156,17 +154,16 @@ void Sentinel1ProductReader::ReadSLCRasterBand(const int source_offset_x, const 
         //            length = src_array.size();
         //        }
         throw std::runtime_error("currently explicit cache support not yet implemented");
-    } else {
-        //        todo: make sure gdal does not use cache (probably some option)
-        //        DataCache.Data cached_data = ReadRect(nullptr, band_info, source_offset_x, source_offset_y,
-        //        source_step_x, source_step_y, dest_rect);
-        //
-        //        src_array = cached_data.int_array;
-
-        // now use gdal to read rectangle of data!?
-        src_array = ReadRect(band_info, source_offset_x, source_offset_y, source_step_x, source_step_y, dest_rect);
-        length = src_array.size();
     }
+    //        todo: make sure gdal does not use cache (probably some option)
+    //        DataCache.Data cached_data = ReadRect(nullptr, band_info, source_offset_x, source_offset_y,
+    //        source_step_x, source_step_y, dest_rect);
+    //
+    //        src_array = cached_data.int_array;
+
+    // now use gdal to read rectangle of data!?
+    src_array = ReadRect(band_info, source_offset_x, source_offset_y, source_step_x, source_step_y, dest_rect);
+    length = src_array.size();
 
     auto dest_array = std::any_cast<std::vector<int16_t>>(dest_buffer->GetElems());
     //    todo: check if we can read in int16_t (vs. currently 32bits if look into ReadRect) right away and awoid these
@@ -188,11 +185,11 @@ void Sentinel1ProductReader::ReadSLCRasterBand(const int source_offset_x, const 
         if (source_step_x == 1) {
             int i = 0;
             for (int src_val : src_array) {
-                dest_array.at(i++) = static_cast<int16_t>(src_val >> 16);
+                dest_array.at(i++) = static_cast<int16_t>(src_val >> sizeof(int16_t) * CHAR_BIT);
             }
         } else {
             for (int i = 0; i < length; i += source_step_x) {
-                dest_array.at(i) = static_cast<int16_t>(src_array.at(i) >> 16);
+                dest_array.at(i) = static_cast<int16_t>(src_array.at(i) >> sizeof(int16_t) * CHAR_BIT);
             }
         }
     }
@@ -292,9 +289,11 @@ std::vector<int32_t> Sentinel1ProductReader::ReadRect(const std::shared_ptr<Band
     // read into data using whichever reader it has
     //    todo: provide parameters needed to read using gdal..
 
-    // TODO: TO MAKE THINGS SIMPLE FIRST VERSION USES DESTINATION RECTANGLE MEANING SUBSET IS NOT DEFINED!!!!!!!!!!!,
-    // LATER ADD SUPPORT TO DESTINATION RECTANGLE since no subset is defined destination and source are the same, this
-    // means also dest_width and dest_height should be same as source_rectangle.width/height (good check for formula)
+    // NOLINTNEXTLINE
+    // TODO: TO MAKE THINGS SIMPLE FIRST VERSION USES DESTINATION RECTANGLE MEANING SUBSET IS NOT DEFINED!!!!!!!!!!!
+    // LATER ADD SUPPORT TO DESTINATION RECTANGLE since no subset is defined destination and source are the same,
+    // this means also dest_width and dest_height should be same as source_rectangle.width/height (good check for
+    // formula)
     band_info->img_->GetReader()->ReadSubSampledData(source_rectangle, data);
 
     // /*buffer_type*source_step_x, buffer_type * dest_width*source_step_y*/

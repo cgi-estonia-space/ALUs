@@ -20,8 +20,7 @@
 
 #include "ceres-core/core/i_progress_monitor.h"
 
-namespace alus {
-namespace ceres {
+namespace alus::ceres {
 
 /**
  * A default progress monitor implementation suitable for subclassing.
@@ -33,7 +32,6 @@ namespace ceres {
  * <a href="http://www.eclipse.org/">Eclipse</a> Core API.
  */
 class NullProgressMonitor : public IProgressMonitor {
-
 private:
     /**
      * Indicates whether cancel has been requested.
@@ -44,14 +42,14 @@ public:
     /**
      * Constructs a new progress monitor.
      */
-    NullProgressMonitor() : IProgressMonitor() {}
+    NullProgressMonitor() = default;
 
     /**
      * This implementation does nothing.
      * Subclasses may override this method to do interesting
      * processing when a task begins.
      */
-    void BeginTask([[maybe_unused]] std::string_view task_name, [[maybe_unused]] int total_work) override{
+    void BeginTask([[maybe_unused]] std::string_view task_name, [[maybe_unused]] int total_work) override {
         // do nothing
     }
 
@@ -68,7 +66,7 @@ public:
      * This implementation does nothing.
      * Subclasses may override this method.
      */
-    void InternalWorked([[maybe_unused]] double work) override{
+    void InternalWorked([[maybe_unused]] double work) override {
         // do nothing
     }
 
@@ -114,5 +112,4 @@ public:
         // do nothing
     }
 };
-}  // namespace ceres
-}  // namespace alus
+}  // namespace alus::ceres

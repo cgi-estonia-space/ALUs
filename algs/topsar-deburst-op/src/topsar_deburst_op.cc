@@ -92,7 +92,8 @@ void TOPSARDeburstOp::ComputeTargetStartEndTime() {
 void TOPSARDeburstOp::ComputeTargetSlantRangeTimeToFirstAndLastPixels() {
     target_slant_range_time_to_first_pixel_ = su_->subswath_.at(0)->slr_time_to_first_pixel_;
     target_slant_range_time_to_last_pixel_ = su_->subswath_.at(num_of_sub_swath_ - 1)->slr_time_to_last_pixel_;
-    target_delta_slant_range_time_ = su_->subswath_.at(0)->range_pixel_spacing_ / snapengine::eo::constants::LIGHT_SPEED;
+    target_delta_slant_range_time_ =
+        su_->subswath_.at(0)->range_pixel_spacing_ / snapengine::eo::constants::LIGHT_SPEED;
 }
 
 void TOPSARDeburstOp::ComputeTargetWidthAndHeight() {

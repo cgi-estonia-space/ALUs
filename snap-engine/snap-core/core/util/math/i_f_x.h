@@ -22,8 +22,7 @@
 #include <memory>
 #include <string>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 /**
  * Represents a function <i>f(x)</i>.
@@ -71,5 +70,4 @@ public:
     virtual std::string GetCCodeExpr() = 0;
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

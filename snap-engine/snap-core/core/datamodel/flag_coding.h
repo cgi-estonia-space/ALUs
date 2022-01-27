@@ -26,8 +26,7 @@
 #include "metadata_attribute.h"
 #include "sample_coding.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 /**
  * Provides the information required to decode integer sample values that
@@ -92,5 +91,4 @@ public:
      */
     int GetFlagMask(std::string_view name);
 };
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

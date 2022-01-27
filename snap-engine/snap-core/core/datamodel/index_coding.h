@@ -25,8 +25,7 @@
 
 #include "sample_coding.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 class MetadataAttribute;
 
@@ -80,5 +79,4 @@ public:
      */
     int GetIndexValue(std::string_view name);
 };
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

@@ -22,8 +22,7 @@
 #include <memory>
 #include <vector>
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 namespace custom {
 struct Rectangle;
 struct Dimension;
@@ -68,7 +67,7 @@ public:
     /**
      * The natural logarithm of 10 as given by <code>Math.logging(10)</code>
      */
-    static double LOG10;
+    static double log_10_;
 
     /**
      * Pi half
@@ -125,7 +124,7 @@ public:
      * @param min the minimum crop limit
      * @param max the maximum crop limit
      */
-    static short Crop(short val, short min, short max) { return val < min ? min : val > max ? max : val; }
+    static int16_t Crop(int16_t val, int16_t min, int16_t max) { return val < min ? min : val > max ? max : val; }
 
     /**
      * Crops the value to the range <code>min</code> to <code>max</code>.
@@ -143,7 +142,7 @@ public:
      * @param min the minimum crop limit
      * @param max the maximum crop limit
      */
-    static long Crop(long val, long min, long max) { return val < min ? min : val > max ? max : val; }
+    static int64_t Crop(int64_t val, int64_t min, int64_t max) { return val < min ? min : val > max ? max : val; }
 
     /**
      * Crops the value to the range <code>min</code> to <code>max</code>.
@@ -200,5 +199,4 @@ public:
     static bool EqualValues(double x1, double x2, double eps);
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine

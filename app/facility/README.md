@@ -5,10 +5,11 @@ Scripts that help in processing SAR images
 ## dem_supply.sh
 
 ### Requirements
+
 One needs to install python tool **elevation**. For this project slightly modified version of this one at
-https://github.com/svenKautlenbach/elevation should be downloaded. This project require **.ftw** files which
-are otherwise not used in the original project.
-Install:
+https://github.com/svenKautlenbach/elevation should be downloaded. This project require **.ftw** files which are
+otherwise not used in the original project. Install:
+
 ```
 # Clone or download .zip and unpack it
 cd elevation
@@ -17,9 +18,8 @@ sudo python3 setup.py install
 
 ### Usage
 
-Supply input data product as argument - it determines the bounds of the scene and downloads needed
-DEM files (if needed) using tool **eio**. Supported are SAFE archives (unpacked or zipped) and DIMAP
-products (.dim should be supplied)
+Supply input data product as argument - it determines the bounds of the scene and downloads needed DEM files (if needed)
+using tool **eio**. Supported are SAFE archives (unpacked or zipped) and DIMAP products (.dim should be supplied)
 Script outputs DEM file list as a last line which can be automatically supplied to **alus** executable.
 
 ```

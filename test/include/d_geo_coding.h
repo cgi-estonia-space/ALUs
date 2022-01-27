@@ -28,7 +28,7 @@ namespace alus::snapengine {
 
 class DGeoCoding : public IGeoCoding {
 public:
-    DGeoCoding() : IGeoCoding(){};
+    DGeoCoding() = default;
     bool IsCrossingMeridianAt180() override { return true; }
     bool CanGetPixelPos() override { return false; }
     bool CanGetGeoPos() override { return true; }

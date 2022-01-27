@@ -14,21 +14,21 @@
 
 #include "cuda_util.h"
 
-namespace alus {
+namespace alus {  // NOLINT TODO: concatenate namespace and remove nolint after migrating to cuda 11+
 namespace cuda {
 
 // DO NOT USE math::ceil here. it was removed because of its inaccuracy.
 int GetGridDim(int blockDim, int dataDim) {
-    double temp = dataDim / blockDim;
-    int tempInt;
+    double temp = dataDim / blockDim;  // NOLINT
+    int temp_int;
     if (temp < 1) {
         return 1;
     }
-    tempInt = (int)temp;
-    if (tempInt * blockDim < dataDim) {
-        tempInt++;
+    temp_int = static_cast<int>(temp);
+    if (temp_int * blockDim < dataDim) {
+        temp_int++;
     }
-    return tempInt;
+    return temp_int;
 }
 
 }  // namespace cuda

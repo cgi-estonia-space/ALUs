@@ -24,13 +24,11 @@
 #include "dataset.h"
 #include "pointer_holders.h"
 #include "shapes.h"
-#include "shapes.h"
 #include "snap-dem/dem/dataio/earth_gravitational_model96.h"
 #include "srtm3_elevation_model_constants.h"
 #include "srtm3_format_computation.h"
 
-namespace alus {
-namespace snapengine {
+namespace alus::snapengine {
 
 /*
     Majority of this class is from SRTM3GeoTiffElevationModel.java and BaseElevationModel.java.
@@ -68,8 +66,8 @@ private:
     void HostToDeviceThread();
 
 public:
-    Srtm3ElevationModel(std::vector<std::string> file_names);
-    ~Srtm3ElevationModel();
+    explicit Srtm3ElevationModel(std::vector<std::string> file_names);
+    virtual ~Srtm3ElevationModel();
 
     void ReadSrtmTiles(std::shared_ptr<EarthGravitationalModel96>& egm_96);
     PointerHolder* GetSrtmBuffersInfo();
@@ -86,5 +84,4 @@ public:
     Srtm3ElevationModel& operator=(const Srtm3ElevationModel&) = delete;
 };
 
-}  // namespace snapengine
-}  // namespace alus
+}  // namespace alus::snapengine
