@@ -5,7 +5,6 @@ list(APPEND TOPSAR_DEBURST_OP_SOURCES
 
 list(APPEND TOPSAR_DEBURST_OP_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/include
-        ${CMAKE_CURRENT_LIST_DIR}/../algorithm-bond/include
         ${CMAKE_CURRENT_LIST_DIR}/../../app/include
         #      SENTINEL1
         ${CMAKE_CURRENT_LIST_DIR}/../../sentinel1

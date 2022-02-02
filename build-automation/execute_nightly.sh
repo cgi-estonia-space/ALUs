@@ -30,6 +30,7 @@ fi
 products_output=~/nightly_results
 echo $products_output
 mkdir -p $products_output
+rm -rf $products_output/*
 
 set +e
 

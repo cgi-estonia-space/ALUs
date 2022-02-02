@@ -16,42 +16,29 @@
 #include <iostream>
 #include <string>
 
-#include "../../../VERSION"
+#include "algorithm_exception.h"
 #include "alus_log.h"
-#include "../include/command_line_options.h"
-#include "../include/execute.h"
-
-namespace {
-void PrintHelp(const std::string& options_help) {
-    std::cout << "ALUs - Gabor feature extraction" << std::endl;
-    std::cout << "Version " << VERSION_MAJOR << "." << VERSION_MINOR << "." << VERSION_PATCH << std::endl;
-    std::cout << std::endl;
-    std::cout << options_help << std::endl;
-    std::cout << std::endl;
-    std::cout << "https://bitbucket.org/cgi-ee-space/alus" << std::endl;
-}
-}  // namespace
+#include "app_error_code.h"
+#include "command_line_options.h"
+#include "constants.h"
+#include "execute.h"
 
 int main(int argc, char* argv[]) {
     std::string help_string{};
     try {
         alus::common::log::Initialize();
 
-#ifdef NDEBUG
-        alus::common::log::SetLevel(alus::common::log::Level::INFO);
-#endif
         alus::featurextractiongabor::Arguments args;
         help_string = args.GetHelp();
-        std::vector<char*> args_raw(argc);
-        for (auto i{0}; i < argc; i++) {
-            args_raw.at(i) = argv[i];
-        }
-        args.ParseArgs(args_raw);
+        args.ParseArgs(std::vector<char*>(argv, argv + argc));
 
         if (args.IsHelpRequested()) {
-            PrintHelp(help_string);
-            return 0;
+            std::cout << alus::app::GenerateHelpMessage(alus::featurextractiongabor::ALG_NAME, help_string);
+            return alus::app::errorcode::ALG_SUCCESS;
         }
+
+        args.Check();
+        alus::common::log::SetLevel(args.GetLogLevel());
 
         alus::featurextractiongabor::Execute exe(args.GetOrientationCount(), args.GetFrequencyCount(),
                                                  args.GetPatchSize(), args.GetInput());
@@ -64,16 +51,19 @@ int main(int argc, char* argv[]) {
 
     } catch (const boost::program_options::error& e) {
         LOGE << e.what();
-        PrintHelp(help_string);
-        return 1;
+        std::cout << alus::app::GenerateHelpMessage(alus::featurextractiongabor::ALG_NAME, help_string);
+        return alus::app::errorcode::ARGUMENT_PARSE;
+    } catch (const alus::common::AlgorithmException& e) {
+        LOGE << e.what();
+        return alus::app::errorcode::ALGORITHM_EXCEPTION;
     } catch (const std::exception& e) {
         LOGE << e.what();
         LOGE << "Exiting because of an error." << std::endl;
-        return 2;
+        return alus::app::errorcode::GENERAL_EXCEPTION;
     } catch (...) {
         LOGE << "Caught an unknown exception." << std::endl;
-        return 3;
+        return alus::app::errorcode::UNKNOWN_EXCEPTION;
     }
 
-    return 0;
+    return alus::app::errorcode::ALG_SUCCESS;
 }

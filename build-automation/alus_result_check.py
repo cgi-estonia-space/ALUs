@@ -9,7 +9,7 @@ from gdalcompare import compare_db
 
 
 def compare_golden(input, verification):
-    return compare_db(input, verification)
+    return compare_db(verification, input)
 
 
 def compare_geotransform(input, verification):

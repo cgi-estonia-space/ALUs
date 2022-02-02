@@ -12,13 +12,12 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 
-#include "../include/patched_image.h"
-
-#include <cmath>
+#include "patched_image.h"
 
 #include "algorithm_exception.h"
+#include "constants.h"
 #include "dataset.h"
-#include "../include/patch_assembly.h"
+#include "patch_assembly.h"
 
 namespace alus::featurextractiongabor {
 
@@ -77,7 +76,7 @@ const PatchedImage::Item& PatchedImage::GetPatchedImageFor(size_t band, size_t f
         }
     }
 
-    THROW_ALGORITHM_EXCEPTION("Gabor feature extraction", "No patch found for band " + std::to_string(band) +
-                                                              " with filter edge " + std::to_string(filter_edge_size));
+    THROW_ALGORITHM_EXCEPTION(ALG_NAME, "No patch found for band " + std::to_string(band) + " with filter edge " +
+                                            std::to_string(filter_edge_size));
 }
 }  // namespace alus::featurextractiongabor

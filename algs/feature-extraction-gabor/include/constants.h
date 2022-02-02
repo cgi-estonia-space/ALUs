@@ -12,12 +12,10 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 
-#include "coherence_execute.h"
+#pragma once
 
-#include "alg_bond.h"
+#include <string_view>
 
-extern "C" {
-alus::AlgBond* CreateAlgorithm() { return new alus::CoherenceExecuter(); }  // NOSONAR
-
-void DeleteAlgorithm(alus::AlgBond* instance) { delete (alus::CoherenceExecuter*)instance; }  // NOSONAR
+namespace alus::featurextractiongabor {
+constexpr std::string_view ALG_NAME{"Gabor feature extraction"};
 }
