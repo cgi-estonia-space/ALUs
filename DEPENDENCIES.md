@@ -16,7 +16,7 @@ In order to build or develop code platforms' dependency installation manual is p
 
 Officially Ubuntu 18.04 is supported.
 
-Compatible docker image is available on [dockerhub](https://hub.docker.com/repository/docker/cgialus/alus-infra).
+Compatible docker image is available on [dockerhub](https://hub.docker.com/repository/docker/cgialus/alus-devel).
 
 Development team has used also other flavor of Ubuntu which setup is also listed, but is not officially supported.
 

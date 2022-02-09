@@ -139,7 +139,7 @@ void AbstractProductReader::ConfigurePreferredTileSize(const std::shared_ptr<Pro
         //        todo: provide some config file to read default preferences from?
         //        GetConfiguredTileSize(product, Config.instance().preferences().get(SYSPROP_READER_TILE_WIDTH, 0),
         //        Config.instance().preferences().get(SYSPROP_READER_TILE_HEIGHT, 0));
-        GetConfiguredTileSize(product, "", "");
+        GetConfiguredTileSize(product, {}, {});
     if (new_size != nullptr) {
         std::shared_ptr<custom::Dimension> old_size = product->GetPreferredTileSize();
         if (old_size == nullptr) {

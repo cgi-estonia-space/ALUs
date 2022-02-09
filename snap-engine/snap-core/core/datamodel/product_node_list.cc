@@ -56,7 +56,7 @@ T ProductNodeList<T>::Get(std::string_view name) {
 
 template <typename T>
 int ProductNodeList<T>::IndexOf(std::string_view name) {
-    Guardian::AssertNotNull("name", name);
+    Guardian::AssertNotNullOrEmpty("name", name);
     int n = Size();
     for (int i = 0; i < n; i++) {
         if (boost::iequals(GetAt(i)->GetName(), name)) {
@@ -68,7 +68,7 @@ int ProductNodeList<T>::IndexOf(std::string_view name) {
 
 template <typename T>
 T ProductNodeList<T>::GetByDisplayName(std::string_view display_name) {
-    Guardian::AssertNotNull("display_name", display_name);
+    Guardian::AssertNotNullOrEmpty("display_name", display_name);
     for (T node : nodes_) {
         if (node->GetDisplayName() == display_name) {
             return node;

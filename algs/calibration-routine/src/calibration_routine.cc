@@ -51,7 +51,7 @@ constexpr std::string_view EXECUTOR_NAME{"Calibration routine"};
 constexpr std::string_view PARAMETER_SUB_SWATH{"subswath"};
 constexpr std::string_view PARAMETER_POLARISATION{"polarisation"};
 constexpr std::string_view PARAMETER_CALIBRATION_TYPE{"calibration_type"};
-constexpr std::string_view PARAMETER_COMPLEX_OUTPUT{"complex"};
+[[maybe_unused]] constexpr std::string_view PARAMETER_COMPLEX_OUTPUT{"complex"};  // TODO(anton): SNAPGPU-254
 constexpr std::string_view PARAMETER_VALUE_BETA{"beta"};
 constexpr std::string_view PARAMETER_VALUE_SIGMA{"sigma"};
 constexpr std::string_view PARAMETER_VALUE_GAMMA{"gamma"};

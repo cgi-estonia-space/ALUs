@@ -197,9 +197,6 @@ target_link_libraries(integration-test-coherence-cuda
         coherence-cuda-static
         crypto
         )
-target_compile_options(integration-test-coherence-cuda
-        PRIVATE
-        )
 
 add_dependencies(integration-test-coherence-cuda integration-test-prepare-data)
 
@@ -222,6 +219,11 @@ target_include_directories(integration-test-backgeocoding
         PUBLIC
         ${TEST_INCLUDE}
         )
+# Only because of thrust::device_vector include
+target_compile_options(integration-test-backgeocoding
+        PRIVATE
+       $<$<COMPILE_LANGUAGE:CXX>:-Wno-unused-parameter>
+       )
 target_link_libraries(integration-test-backgeocoding
         PRIVATE
         alus-gmock-main

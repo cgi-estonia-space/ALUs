@@ -52,6 +52,12 @@ set_target_properties(coherence-cuda-static
         PROPERTIES
         OUTPUT_NAME coherence-cuda
         )
+# Only because of thrust::device_vector include
+target_compile_options(coherence-cuda-static
+        PUBLIC
+        $<$<COMPILE_LANGUAGE:CXX>:-Wno-unused-parameter>
+        )
+
 target_link_libraries(coherence-cuda-static
         PUBLIC
         Boost::filesystem
@@ -61,6 +67,6 @@ target_link_libraries(coherence-cuda-static
         sentinel1-util-static
         pugixml-static
         cuda-util-static
-        ${CUDA_CUBLAS_LIBRARIES}
-        ${CUDA_cusolver_LIBRARY}
+        CUDA::cublasLt
+        CUDA::cusolver
         )

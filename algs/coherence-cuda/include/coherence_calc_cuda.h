@@ -34,7 +34,7 @@ private:
     const int srp_polynomial_degree_;
     const bool subtract_flat_earth_;
     CohWindow coh_win_;
-    const int orbit_degree_;
+    [[maybe_unused]] const int orbit_degree_;
     MetaData& meta_master_;
     MetaData& meta_slave_;
     BandParams band_params_;

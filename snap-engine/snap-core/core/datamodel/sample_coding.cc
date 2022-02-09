@@ -51,12 +51,11 @@ std::shared_ptr<MetadataAttribute> SampleCoding::AddSample(std::string_view name
 }
 std::shared_ptr<MetadataAttribute> SampleCoding::AddSamples(std::string_view name, const std::vector<int>& values,
                                                             std::string_view description) {
-    Guardian::AssertNotNull("name", name);
-    std::shared_ptr<ProductData> product_data =
-        ProductData::CreateInstance(ProductData::TYPE_UINT32, static_cast<int>(values.size()));
+    Guardian::AssertNotNullOrEmpty("name", name);
+    std::shared_ptr<ProductData> product_data = ProductData::CreateInstance(ProductData::TYPE_UINT32, values.size());
     std::shared_ptr<MetadataAttribute> attribute = std::make_shared<MetadataAttribute>(name, product_data, false);
     attribute->SetDataElems(values);
-    if (description != nullptr) {  // NOLINT
+    if (!description.empty()) {
         attribute->SetDescription(description);
     }
     AddAttribute(attribute);

@@ -26,7 +26,7 @@ namespace alus::snapengine {
 
 std::string FileUtils::ExchangeExtension(std::string_view path, std::string_view extension) {
     Guardian::AssertNotNullOrEmpty("path", path);
-    Guardian::AssertNotNull("extension", extension);
+    Guardian::AssertNotNullOrEmpty("extension", extension);
     if (extension.length() > 0 && boost::algorithm::ends_with(path, extension)) {
         return std::string(path);
     }

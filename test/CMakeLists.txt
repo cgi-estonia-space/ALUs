@@ -73,6 +73,12 @@ target_link_libraries(unit-test
         topsar-merge-static
         )
 
+# Only because of thrust::device_vector included
+target_compile_options(unit-test
+       PRIVATE
+       $<$<COMPILE_LANGUAGE:CXX>:-Wno-unused-parameter>
+       )
+
 set_target_properties(unit-test
         PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}

@@ -35,6 +35,7 @@ public:
     virtual size_t GetBufferElemCount() = 0;
     virtual void TryToCacheImage() = 0;
     virtual void SetReadingArea(Rectangle new_area) = 0;
+    virtual ~AlusFileReader() = default;
 };
 
 }  // namespace alus
