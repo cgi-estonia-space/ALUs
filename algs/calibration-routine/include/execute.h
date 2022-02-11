@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 
-#include "dem_assistant.h"
+#include "cuda_device_init.h"
 #include "sentinel1_calibrate.h"
 
 namespace alus::calibrationroutine {
@@ -40,7 +40,7 @@ public:
     Execute() = delete;
     Execute(Parameters params, const std::vector<std::string>& dem_files);
 
-    void Run();
+    void Run(alus::cuda::CudaInit& cuda_init, size_t gpu_mem_percentage);
 
     Execute(const Execute& other) = delete;
     Execute& operator=(const Execute& other) = delete;
@@ -55,7 +55,7 @@ private:
     void ValidateParameters() const;
 
     const Parameters params_;
-    std::shared_ptr<app::DemAssistant> dem_assistant_;
     sentinel1calibrate::SelectedCalibrationBands calibration_types_selected_{};
+    const std::vector<std::string>& dem_files_;
 };
 }  // namespace alus::calibrationroutine

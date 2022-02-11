@@ -25,6 +25,8 @@
 #include "app_utils.h"
 #include "cli_args.h"
 #include "constants.h"
+#include "cuda_device_init.h"
+#include "cuda_util.h"
 #include "execute.h"
 
 namespace {
@@ -63,12 +65,19 @@ alus::coherenceestimationroutine::Execute::Parameters AssembleParameters(
     return params;
 }
 
+template <typename T>
+void ExceptionMessagePrint(const T& e) {
+    LOGE << "Caught an exception" << std::endl << e.what();
+    LOGE << "Exiting.";
+}
+
 }  // namespace
 
 int main(int argc, char* argv[]) {
     std::string args_help{};
     try {
         alus::common::log::Initialize();
+        auto cuda_init = alus::cuda::CudaInit();
 
         alus::coherenceestimationroutine::Arguments args;
         args_help = args.GetHelp();
@@ -83,19 +92,20 @@ int main(int argc, char* argv[]) {
         alus::common::log::SetLevel(args.GetLogLevel());
 
         alus::coherenceestimationroutine::Execute exe(AssembleParameters(args), args.GetDemFiles());
-        exe.Run();
+        exe.Run(cuda_init, args.GetGpuMemoryPercentage());
 
     } catch (const boost::program_options::error& e) {
         std::cout << alus::app::GenerateHelpMessage(alus::coherenceestimationroutine::ALG_NAME, args_help);
-        LOGE << e.what();
+        ExceptionMessagePrint(e);
         return alus::app::errorcode::ARGUMENT_PARSE;
+    } catch (const alus::CudaErrorException& e) {
+        ExceptionMessagePrint(e);
+        return alus::app::errorcode::GPU_DEVICE_ERROR;
     } catch (const alus::common::AlgorithmException& e) {
-        LOGE << e.what();
-        LOGE << "Exiting because of an algorithm error.";
+        ExceptionMessagePrint(e);
         return alus::app::errorcode::ALGORITHM_EXCEPTION;
     } catch (const std::exception& e) {
-        LOGE << e.what();
-        LOGE << "Exiting because of an error.";
+        ExceptionMessagePrint(e);
         return alus::app::errorcode::GENERAL_EXCEPTION;
     } catch (...) {
         LOGE << "Caught an unknown exception.";

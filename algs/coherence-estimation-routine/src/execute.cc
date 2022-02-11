@@ -15,9 +15,11 @@
 #include "execute.h"
 
 #include <filesystem>
+#include <future>
 #include <string>
 
 #include "abstract_metadata.h"
+#include "algorithm_exception.h"
 #include "alus_log.h"
 #include "coh_tiles_generator.h"
 #include "coh_window.h"
@@ -35,18 +37,35 @@
 #include "terrain_correction_metadata.h"
 #include "topsar_deburst_op.h"
 
-namespace alus::coherenceestimationroutine {
-
-Execute::Execute(Parameters params, const std::vector<std::string>& dem_files) : params_{std::move(params)} {
-    alus::gdalmanagement::Initialize();
-    dem_assistant_ = app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(dem_files);
+namespace {
+constexpr size_t GPU_DEVICE_TIMEOUT_SECONDS{10};
+constexpr size_t GDAL_CACHE_SIZE{static_cast<size_t>(4e9)};
 }
 
-void Execute::Run() const {
+namespace alus::coherenceestimationroutine {
+
+Execute::Execute(Parameters params, const std::vector<std::string>& dem_files)
+    : params_{std::move(params)}, dem_files_{dem_files} {
+    alus::gdalmanagement::Initialize();
+    alus::gdalmanagement::SetCacheMax(GDAL_CACHE_SIZE);
+}
+
+void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) const {
     std::string result_stem{};
     std::string predefined_end_result_name{};
     std::string output_folder{};
-    dem_assistant_->GetSrtm3Manager()->HostToDevice();
+
+    std::shared_ptr<app::DemAssistant> dem_assistant{nullptr};
+    auto cuda_init_dem_load = std::async(std::launch::async, [&dem_assistant, &cuda_init, this]() {
+        // Eagerly load DEM files in case there will be only single GPU - this will speed up things.
+        dem_assistant = app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(this->dem_files_);
+        dem_assistant->GetSrtm3Manager()->HostToDevice();
+
+        while (!cuda_init.IsFinished());
+        cuda_init.CheckErrors();
+
+        // Here load DEM files onto other GPU devices too if support added.
+    });
 
     if (std::filesystem::is_directory(std::filesystem::path(params_.output))) {
         // For example "/tmp/" is given. Result would be "/tmp/MAIN_SCENE_ID_Orb_Split_Stack_Coh_TC.tif"
@@ -79,18 +98,31 @@ void Execute::Run() const {
         coreg_params.subswath = params_.subswath;
         coreg_params.aoi = params_.aoi;
         coreg_params.output_file = cor_output_file;
-        coreg.Initialize(coreg_params);
 
-        coreg.DoWork(dem_assistant_->GetEgm96Manager()->GetDeviceValues(),
-                     {dem_assistant_->GetSrtm3Manager()->GetSrtmBuffersInfo(),
-                      dem_assistant_->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()});
+        coreg.Initialize(coreg_params);
+        const auto coreg_middle = std::chrono::steady_clock::now();
+        if (cuda_init_dem_load.wait_for(std::chrono::seconds(GPU_DEVICE_TIMEOUT_SECONDS)) ==
+            std::future_status::timeout) {
+            THROW_ALGORITHM_EXCEPTION(ALG_NAME, "CUDA device init and DEM loading has exceeded timeout");
+        }
+        cuda_init_dem_load.get();
+        const auto cuda_device = cuda_init.GetDevices().front();
+        cuda_device.Set();
+        LOGI << "Using '" << cuda_device.GetName() << "' device nr " << cuda_device.GetDeviceNr()
+             << " for calculations";
+
+        const auto coreg_gpu_start = std::chrono::steady_clock::now();
+        coreg.DoWork(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
+                     {dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo(),
+                      dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()});
         main_product = coreg.GetMasterProduct();
         secondary_product = coreg.GetSlaveProduct();
         auto coreg_target_dataset = coreg.GetTargetDataset();
         coreg_output_datasets = coreg_target_dataset->GetDataset();
         coreg_target_dataset->ReleaseDataset();
         LOGI << "S-1 TOPS Coregistration done - "
-             << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - coreg_start)
+             << std::chrono::duration_cast<std::chrono::milliseconds>(
+                    (std::chrono::steady_clock::now() - coreg_gpu_start) + (coreg_middle - coreg_start))
                     .count()
              << "ms";
         if (params_.wif) {
@@ -120,7 +152,7 @@ void Execute::Run() const {
         std::vector<int> band_map_out{1};
         int band_count_out = 1;
 
-        int coh_az_win = static_cast<int>(params_.az_window);
+        auto coh_az_win = static_cast<int>(params_.az_window);
         if (params_.az_window == 0) {
             // derived from pixel spacings
             coh_az_win = static_cast<int>(
@@ -145,9 +177,17 @@ void Execute::Run() const {
         alus::coherence_cuda::GdalTileWriter coh_data_writer{
             GetGDALDriverManager()->GetDriverByName("MEM"), band_params, {}, {}};
 
-        alus::coherence_cuda::CohTilesGenerator tiles_generator{
-            coh_data_reader.GetBandXSize(), coh_data_reader.GetBandYSize(),      static_cast<int>(2000),
-            static_cast<int>(2000),         static_cast<int>(params_.rg_window), coh_az_win};
+        const auto total_dimension_edge = 4096;
+        const auto x_range_tile_size = static_cast<int>(
+            (static_cast<double>(params_.rg_window) / static_cast<double>(params_.rg_window + coh_az_win)) *
+            total_dimension_edge);
+        const auto y_az_tile_size = total_dimension_edge - x_range_tile_size;
+        alus::coherence_cuda::CohTilesGenerator tiles_generator{coh_data_reader.GetBandXSize(),
+                                                                coh_data_reader.GetBandYSize(),
+                                                                x_range_tile_size,
+                                                                y_az_tile_size,
+                                                                static_cast<int>(params_.rg_window),
+                                                                coh_az_win};
 
         alus::coherence_cuda::CohWindow coh_window{static_cast<int>(params_.rg_window), coh_az_win};
         alus::coherence_cuda::CohCuda coherence{static_cast<int>(params_.srp_number_points),
@@ -180,7 +220,7 @@ void Execute::Run() const {
     main_product->SetImageReader(data_reader);
     {
         const auto& bands = main_product->GetBands();
-        for (auto& band : bands) {
+        for (const auto& band : bands) {
             main_product->RemoveBand(band);
         }
     }
@@ -209,17 +249,24 @@ void Execute::Run() const {
     const auto tc_start = std::chrono::steady_clock::now();
     terraincorrection::Metadata metadata(debursted_product);
 
-    const auto* d_srtm_3_tiles = dem_assistant_->GetSrtm3Manager()->GetSrtmBuffersInfo();
-    const size_t srtm_3_tiles_length = dem_assistant_->GetSrtm3Manager()->GetDeviceSrtm3TilesCount();
+    const auto* d_srtm_3_tiles = dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo();
+    const size_t srtm_3_tiles_length = dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount();
     const int selected_band{1};
-    terraincorrection::TerrainCorrection tc(data_writer->GetDataset(), metadata.GetMetadata(),
-                                            metadata.GetLatTiePointGrid(), metadata.GetLonTiePointGrid(),
-                                            d_srtm_3_tiles, srtm_3_tiles_length, selected_band);
+    auto* tc_in_dataset = data_writer->GetDataset();
+    const auto total_dimension_edge = 4096;
+    const auto x_tile_size =
+        static_cast<int>((tc_in_dataset->GetRasterXSize() /
+                          static_cast<double>(tc_in_dataset->GetRasterXSize() + tc_in_dataset->GetRasterYSize())) *
+                         total_dimension_edge);
+    const auto y_tile_size = total_dimension_edge - x_tile_size;
+    terraincorrection::TerrainCorrection tc(tc_in_dataset, metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
+                                            metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length,
+                                            selected_band);
     std::string tc_output_file = predefined_end_result_name.empty()
                                      ? boost::filesystem::change_extension(deb_output_file, "").string() + "_tc.tif"
                                      : predefined_end_result_name;
-    tc.ExecuteTerrainCorrection(tc_output_file, 2000, 2000);
-    dem_assistant_->GetSrtm3Manager()->DeviceFree();
+    tc.ExecuteTerrainCorrection(tc_output_file, x_tile_size, y_tile_size);
+    dem_assistant->GetSrtm3Manager()->DeviceFree();
     LOGI << "Terrain correction done - "
          << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - tc_start).count()
          << "ms";

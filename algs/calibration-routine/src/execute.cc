@@ -41,16 +41,19 @@ template <typename T>
 bool EqualsAnyOf(std::string_view comparand, T begin, T end) {
     return std::any_of(begin, end, [&comparand](std::string_view value) { return boost::iequals(comparand, value); });
 }
+
+constexpr size_t TILE_SIZE_DIMENSION{2048};
+constexpr size_t GDAL_CACHE_SIZE{static_cast<size_t>(4e9)};
 }  // namespace
 
 namespace alus::calibrationroutine {
 
-Execute::Execute(Parameters params, const std::vector<std::string>& dem_files) : params_{std::move(params)} {
+Execute::Execute(Parameters params, const std::vector<std::string>& dem_files)
+    : params_{std::move(params)}, dem_files_{dem_files} {
     alus::gdalmanagement::Initialize();
-    dem_assistant_ = app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(dem_files);
 }
 
-void Execute::Run() {
+void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
     ParseCalibrationType(params_.calibration_type);
     PrintProcessingParameters();
     ValidateParameters();
@@ -69,7 +72,7 @@ void Execute::Run() {
 
     // SLC input x 1 = ~1.25GB
     // TC ouput = ~1GB
-    alus::gdalmanagement::SetCacheMax(4e9);
+    alus::gdalmanagement::SetCacheMax(GDAL_CACHE_SIZE);
 
     // split
     const auto subswath_case_up = boost::to_upper_copy(params_.subswath);
@@ -93,6 +96,14 @@ void Execute::Run() {
         << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - split_start).count()
         << "ms";
 
+    while (!cuda_init.IsFinished());
+    cuda_init.CheckErrors();
+    const auto cuda_device = cuda_init.GetDevices().front();
+    cuda_device.Set();
+
+    LOGI << "Using '" << cuda_device.GetName() << "' device nr " << cuda_device.GetDeviceNr()
+         << " for calculations";
+
     // calibration
     const auto cal_start = std::chrono::steady_clock::now();
     std::shared_ptr<snapengine::Product> calibrated_product;
@@ -104,8 +115,8 @@ void Execute::Run() {
                                                        calibration_types_selected_,
                                                        output_dir,
                                                        false,
-                                                       2000,
-                                                       2000};
+                                                       TILE_SIZE_DIMENSION,
+                                                       TILE_SIZE_DIMENSION};
     calibrator.Execute();
     calibrated_product = calibrator.GetTargetProduct();
     const auto calibration_tmp_file = calibrator.GetTargetPath(subswath_case_up);
@@ -115,14 +126,15 @@ void Execute::Run() {
          << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - cal_start).count()
          << "ms";
 
+    auto dem_assistant = app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(dem_files_);
+    // start thread for srtm calculations parallel with CPU deburst
+    // rethink this part if we add support for larger GPUs with full chain on GPU processing
+    dem_assistant->GetSrtm3Manager()->HostToDevice();
+
     if (params_.wif) {
         LOGI << "Calibration output @ " << calibration_tmp_file << ".tif";
         GeoTiffWriteFile(calibrated_ds.get(), calibration_tmp_file);
     }
-
-    // start thread for srtm calculations parallel with CPU deburst
-    // rethink this part if we add support for larger GPUs with full chain on GPU processing
-    dem_assistant_->GetSrtm3Manager()->HostToDevice();
 
     // deburst
     const auto deb_start = std::chrono::steady_clock::now();
@@ -156,17 +168,25 @@ void Execute::Run() {
     const auto tc_start = std::chrono::steady_clock::now();
     terraincorrection::Metadata metadata(debursted_product);
 
-    const auto* d_srtm_3_tiles = dem_assistant_->GetSrtm3Manager()->GetSrtmBuffersInfo();
-    const size_t srtm_3_tiles_length = dem_assistant_->GetSrtm3Manager()->GetDeviceSrtm3TilesCount();
+    const auto* d_srtm_3_tiles = dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo();
+    const size_t srtm_3_tiles_length = dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount();
     const int selected_band{1};
-    terraincorrection::TerrainCorrection tc(data_writer->GetDataset(), metadata.GetMetadata(),
-                                            metadata.GetLatTiePointGrid(), metadata.GetLonTiePointGrid(),
-                                            d_srtm_3_tiles, srtm_3_tiles_length, selected_band);
+    auto* tc_in_dataset = data_writer->GetDataset();
+    terraincorrection::TerrainCorrection tc(tc_in_dataset, metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
+                                            metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length,
+                                            selected_band);
 
     std::string tc_output_file = final_path.empty()
                                      ? boost::filesystem::change_extension(deburst_tmp_path, "").string() + "_tc.tif"
                                      : final_path;
-    tc.ExecuteTerrainCorrection(tc_output_file, 2000, 2000);
+    const auto total_dimension_edge = 4096;
+    const auto x_tile_size =
+        static_cast<int>((tc_in_dataset->GetRasterXSize() /
+                          static_cast<double>(tc_in_dataset->GetRasterXSize() + tc_in_dataset->GetRasterYSize())) *
+                         total_dimension_edge);
+    const auto y_tile_size = total_dimension_edge - x_tile_size;
+
+    tc.ExecuteTerrainCorrection(tc_output_file, x_tile_size, y_tile_size);
 
     LOGI << "Terrain correction done - "
          << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - tc_start).count()

@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "constants.h"
-#include "dem_assistant.h"
+#include "cuda_device_init.h"
 
 namespace alus::coherenceestimationroutine {
 
@@ -51,7 +51,7 @@ public:
     Execute() = delete;
     Execute(Parameters params, const std::vector<std::string>& dem_files);
 
-    void Run() const;
+    void Run(alus::cuda::CudaInit& cuda_init, size_t gpu_mem_percentage) const;
 
     Execute(const Execute& other) = delete;
     Execute& operator=(const Execute& other) = delete;
@@ -60,7 +60,7 @@ public:
 
 private:
     const Parameters params_;
-    std::shared_ptr<app::DemAssistant> dem_assistant_;
+    const std::vector<std::string>& dem_files_;
 };
 
 }  // namespace alus::coherenceestimationroutine
