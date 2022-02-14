@@ -16,8 +16,6 @@
 #include "cuda_runtime_api.h"
 #include "cuda_util.h"
 
-#include <iostream>
-
 namespace alus {  // NOLINT TODO: concatenate namespace and remove nolint after migrating to cuda 11+
 namespace cuda {
 
@@ -26,49 +24,49 @@ namespace cuda {
     and the T type is a POD
  */
 template <class T>
-void CopyAsyncH2D(T* d_dest, T* h_src, cudaStream_t stream) {
+void CopyAsyncH2D(T* d_dest, const T* h_src, cudaStream_t stream) {
     static_assert(std::is_pod<T>::value, "non-POD types don't make much sense with Cuda!");
     CHECK_CUDA_ERR(cudaMemcpyAsync(d_dest, h_src, sizeof(T), cudaMemcpyHostToDevice, stream));
 }
 
 template <class T>
-void CopyAsyncD2H(T* h_dest, T* d_src, cudaStream_t stream) {
+void CopyAsyncD2H(T* h_dest, const T* d_src, cudaStream_t stream) {
     static_assert(std::is_pod<T>::value, "non-POD types don't make much sense with Cuda!");
     CHECK_CUDA_ERR(cudaMemcpyAsync(h_dest, d_src, sizeof(T), cudaMemcpyDeviceToHost, stream));
 }
 
 template <class T>
-void CopyArrayAsyncH2D(T* d_dest, T* h_src, size_t n_elem, cudaStream_t stream) {
+void CopyArrayAsyncH2D(T* d_dest, const T* h_src, size_t n_elem, cudaStream_t stream) {
     static_assert(std::is_pod<T>::value, "non-POD types don't make much sense with Cuda!");
     CHECK_CUDA_ERR(cudaMemcpyAsync(d_dest, h_src, sizeof(T) * n_elem, cudaMemcpyHostToDevice, stream));
 }
 
 template <class T>
-void CopyArrayAsyncD2H(T* h_dest, T* d_src, size_t n_elem, cudaStream_t stream) {
+void CopyArrayAsyncD2H(T* h_dest, const T* d_src, size_t n_elem, cudaStream_t stream) {
     static_assert(std::is_pod<T>::value, "non-POD types don't make much sense with Cuda!");
     CHECK_CUDA_ERR(cudaMemcpyAsync(h_dest, d_src, sizeof(T) * n_elem, cudaMemcpyDeviceToHost, stream));
 }
 
 template <class T>
-void CopyH2D(T* d_dest, T* h_src) {
+void CopyH2D(T* d_dest, const T* h_src) {
     static_assert(std::is_pod<T>::value, "non-POD types don't make much sense with Cuda!");
     CHECK_CUDA_ERR(cudaMemcpy(d_dest, h_src, sizeof(T), cudaMemcpyHostToDevice));
 }
 
 template <class T>
-void CopyD2H(T* h_dest, T* d_src) {
+void CopyD2H(T* h_dest, const T* d_src) {
     static_assert(std::is_pod<T>::value, "non-POD types don't make much sense with Cuda!");
     CHECK_CUDA_ERR(cudaMemcpy(h_dest, d_src, sizeof(T), cudaMemcpyDeviceToHost));
 }
 
 template <class T>
-void CopyArrayH2D(T* d_dest, T* h_src, size_t n_elem) {
+void CopyArrayH2D(T* d_dest, const T* h_src, size_t n_elem) {
     static_assert(std::is_pod<T>::value, "non-POD types don't make much sense with Cuda!");
     CHECK_CUDA_ERR(cudaMemcpy(d_dest, h_src, sizeof(T) * n_elem, cudaMemcpyHostToDevice));
 }
 
 template <class T>
-void CopyArrayD2H(T* h_dest, T* d_src, size_t n_elem) {
+void CopyArrayD2H(T* h_dest, const T* d_src, size_t n_elem) {
     static_assert(std::is_pod<T>::value, "non-POD types don't make much sense with Cuda!");
     CHECK_CUDA_ERR(cudaMemcpy(h_dest, d_src, sizeof(T) * n_elem, cudaMemcpyDeviceToHost));
 }

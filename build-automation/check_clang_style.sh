@@ -5,7 +5,7 @@ destination_branch=$2
 build_dir=$3
 
 exclude_regex="$repository_path.*\/(((external|build|cmake-build-.*|\.git|\.idea|resources|docs|goods)\/.*)|(.*\.(txt|sh|py|md|cu|cuh)))"
-include_regex='.*\/(app|sentinel1|snap-engine|test|test-integration|util)/.*\.(cc|h)' # TODO(anton): check that cuda files are analysed as well
+include_regex='.*\/(app|sentinel1|snap-engine|test|test-integration|util|algs)/.*\.(cc|h)' # TODO(anton): check that cuda files are analysed as well
 
 file_count=0
 

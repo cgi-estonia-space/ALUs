@@ -15,7 +15,7 @@ repository_path=$1
 destination_branch=$2
 
 exclude_regex="$repository_path.*\/(((external|build|cmake-build-.*|\.git|\.idea|resources|docs|goods)\/.*)|(.*\.(txt|sh|py|md)))"
-include_regex='.*\/(app|sentinel1|snap-engine|test|test-integration|util)/.*\.(cc|h|cuh|cu)'
+include_regex='.*\/(app|sentinel1|snap-engine|test|test-integration|util|algs)/.*\.(cc|h|cuh|cu)'
 
 error_count=0
 

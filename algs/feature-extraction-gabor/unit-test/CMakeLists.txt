@@ -1,6 +1,7 @@
 list(APPEND FEATURE_EXTRACTION_GABOR_UNIT_TEST_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/filter_banks.cc
         ${CMAKE_CURRENT_LIST_DIR}/patch_assembly.cc
+        ${CMAKE_CURRENT_LIST_DIR}/math_tests.cc
         )
 
 #[[ A 'filter_banks_gabor_6or_4f.bin is a binary output of a 3D filter bank from 'EO_tools' utility, developed by UPB.
