@@ -71,10 +71,6 @@ else()
 	message(WARNING "Building the project may fail with not supported compiler - " ${CMAKE_CXX_COMPILER_ID})
 endif()
 
-set(CMAKE_SKIP_BUILD_RPATH  FALSE)
-set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-set(CMAKE_INSTALL_RPATH $ORIGIN)
-
 if (SONARCLOUD_BUILD)
     # fix build errors with SonarCloud code scanner
     # workaround for parser crash with boost::asio - SonarCFamily CPP-2696
@@ -94,7 +90,6 @@ add_subdirectory(util/cuda)
 add_subdirectory(snap-engine)
 
 # Algorithms
-add_subdirectory(algs/algorithm-bond)
 add_subdirectory(algs/coherence-cuda)
 add_subdirectory(algs/range-doppler-terrain-correction)
 add_subdirectory(algs/backgeocoding)

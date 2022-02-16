@@ -14,19 +14,17 @@
 
 #pragma once
 
-#include <boost/log/trivial.hpp>
+#include <array>
+#include <string_view>
 
-namespace alus::common::log {
+namespace alus::calibrationroutine {
 
-enum class Level { VERBOSE, DEBUG, INFO, WARNING, ERROR };
-
-void Initialize();
-void SetLevel(Level level);
-
-}  // namespace alus::common::log
-
-#define LOGV BOOST_LOG_TRIVIAL(trace)
-#define LOGD BOOST_LOG_TRIVIAL(debug)
-#define LOGI BOOST_LOG_TRIVIAL(info)
-#define LOGW BOOST_LOG_TRIVIAL(warning)
-#define LOGE BOOST_LOG_TRIVIAL(error)
+constexpr std::string_view ALG_NAME{"Calibration"};
+constexpr std::array<std::string_view, 3> SUBSWATHS{"IW1", "IW2", "IW3"};
+constexpr std::array<std::string_view, 2> POLARISATIONS{"VV", "VH"};
+constexpr size_t INVALID_BURST_INDEX{0};
+constexpr std::string_view CALIBRATION_TYPE_BETA{"beta"};
+constexpr std::string_view CALIBRATION_TYPE_SIGMA{"sigma"};
+constexpr std::string_view CALIBRATION_TYPE_GAMMA{"gamma"};
+constexpr std::string_view CALIBRATION_TYPE_DN{"dn"};
+}  // namespace alus::calibrationroutine

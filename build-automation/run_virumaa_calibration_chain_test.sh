@@ -30,9 +30,9 @@ fi
 mkdir -p $output_dir
 
 test_1_prod_path=$output_dir/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_Calib_IW1_tc.tif
-time alus --alg_name calibration-routine -i $test_dataset_dir/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563.SAFE \
+time alus-cal -i $test_dataset_dir/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563.SAFE \
      -o $test_1_prod_path \
-     -x 4000 -y 4000 -p "subswath=IW1,polarisation=VV,calibration_type=beta" --dem $dem_files_dir/srtm_42_01.tif
+     --sw IW1 --polarisation VV -t beta --dem $dem_files_dir/srtm_42_01.tif --ll info
 
 if [[ -z "${NIGHTLY_GOLDEN_DIR}" ]]; then
   echo "no golden directory defined, no verification executed"

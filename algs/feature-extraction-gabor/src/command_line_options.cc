@@ -38,12 +38,17 @@ void Arguments::ConstructCliArgs() {
         ("conv_destination", po::value<std::string>(&convolution_inputs_path_), "Path to save convolution inputs");
     // clang-format on
 
-    combined_args_.add(app_args_);
+    combined_args_.add(app_args_).add(alus_args_.Get());
 }
 
 void Arguments::ParseArgs(const std::vector<char*>& args) {
     po::store(po::parse_command_line(static_cast<int>(args.size()), args.data(), app_args_), vm_);
     po::notify(vm_);
+}
+
+void Arguments::Check() {
+    po::notify(vm_);
+    alus_args_.Check();
 }
 
 bool Arguments::IsHelpRequested() const { return vm_.count("help"); }

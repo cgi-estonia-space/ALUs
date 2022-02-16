@@ -12,13 +12,15 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 
-#include "alg_bond.h"
-#include "sentinel1_calibrate_executor.h"
+#pragma once
 
-extern "C" {
-alus::AlgBond* CreateAlgorithm() { return new alus::sentinel1calibrate::Sentinel1CalibrateExecutor(); }  // NOSONAR
+#include <array>
+#include <string_view>
 
-void DeleteAlgorithm(alus::AlgBond* instance) {
-    delete (alus::sentinel1calibrate::Sentinel1CalibrateExecutor*)instance;  // NOSONAR
-}
-}
+namespace alus::coherenceestimationroutine {
+constexpr std::string_view ALG_NAME{"Coherence estimation routine"};
+constexpr size_t INVALID_BURST_INDEX{0};
+constexpr std::array<std::string_view, 3> SUBSWATHS{"IW1", "IW2", "IW3"};
+constexpr std::array<std::string_view, 2> POLARISATIONS{"VV", "VH"};
+
+}  // namespace alus::coherenceestimationroutine

@@ -366,6 +366,7 @@ void Sentinel1Calibrator::SetTargetImages() {
     cal_data.max_width = tile_width_;
 
     const auto target_bands = target_product_->GetBands();
+    LOGI << "target bands count " << target_bands.size();
     int sub_dataset_id{1};  // TODO: currently this is unimplemented (SNAPGPU-250)
     for (const auto& band : target_bands) {
         if (string_contains(band->GetName(), selected_sub_swaths_.at(0))) {
@@ -408,8 +409,6 @@ void Sentinel1Calibrator::SetTargetImages() {
         }
         sub_dataset_id++;
     }
-
-    LOGI << "Calibration done";
 }
 
 void Sentinel1Calibrator::AddSelectedBands(std::vector<std::string>& source_band_names) {

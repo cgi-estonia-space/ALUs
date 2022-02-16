@@ -12,7 +12,6 @@ list(APPEND COHERENCE_SOURCES
 
 list(APPEND COHERENCE_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/include
-        ${CMAKE_CURRENT_LIST_DIR}/../algorithm-bond/include
         ${CMAKE_CURRENT_LIST_DIR}/../../app/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/common/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/exotic-operations/include

@@ -17,10 +17,10 @@
 #include <gdal_priv.h>
 
 #include "alus_log.h"
-#include "../include/filter_bank.h"
+#include "filter_bank.h"
 #include "gdal_management.h"
 #include "gdal_util.h"
-#include "../include/patch_assembly.h"
+#include "patch_assembly.h"
 
 namespace alus::featurextractiongabor {
 
@@ -90,7 +90,6 @@ void Execute::SaveFilterBanks(std::string_view path) const {
 
             GDALClose(output_dataset);
             CHECK_GDAL_ERROR(err);
-
 
             if (i == filter_banks_.size() - 1) {
                 break;

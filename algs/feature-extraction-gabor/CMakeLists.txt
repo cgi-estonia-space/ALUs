@@ -20,6 +20,7 @@ target_include_directories(feature-extraction-gabor-static
 target_link_libraries(feature-extraction-gabor-static
         PUBLIC
         gdal
+        app-util-static
         common-util-static
         gdal-util-static
         )
