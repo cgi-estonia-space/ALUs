@@ -4,6 +4,8 @@ list(APPEND FEATURE_EXTRACTION_GABOR_SOURCES
         src/filter_bank.cc
         src/patch_assembly.cc
         src/patched_image.cc
+        src/conv_kernel.cu
+        src/patch_reduction.cu
         )
 
 list(APPEND FEATURE_EXTRACTION_GABOR_INCLUDES
