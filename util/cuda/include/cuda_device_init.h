@@ -14,13 +14,29 @@
 
 #pragma once
 
-namespace alus::app::errorcode {
+#include <future>
+#include <thread>
+#include <vector>
 
-constexpr int ALG_SUCCESS{0};
-constexpr int ARGUMENT_PARSE{1};
-constexpr int ALGORITHM_EXCEPTION{2};
-constexpr int GENERAL_EXCEPTION{3};
-constexpr int UNKNOWN_EXCEPTION{4};
-constexpr int GPU_DEVICE_ERROR{5};
+#include "cuda_device.h"
 
-}  // namespace alus::app::errorcode
+namespace alus::cuda {
+class CudaInit final {
+public:
+    CudaInit();
+
+    [[nodiscard]] bool IsFinished() const;
+    void CheckErrors();
+
+    [[nodiscard]] const std::vector<CudaDevice>& GetDevices() const { return devices_; }
+
+    ~CudaInit();
+
+private:
+    void QueryDevices();
+
+    std::vector<CudaDevice> devices_;
+    std::future<void> init_future_;
+    std::vector<std::thread> device_warmups_;
+};
+}  // namespace alus::cuda
