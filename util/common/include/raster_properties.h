@@ -23,6 +23,7 @@ struct RasterDimension final {
     int rowsY;
 
     RasterDimension& operator=(RasterDimension const& other) = default;
+    RasterDimension(const RasterDimension& other) = default;
 
     RasterDimension operator+(int increase) const { return {this->columnsX + increase, this->rowsY + increase}; }
 

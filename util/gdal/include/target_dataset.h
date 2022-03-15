@@ -31,7 +31,7 @@ struct TargetDatasetParams {
     std::string_view filename;
     int band_count;
     bool dataset_per_band;
-    RasterDimension dimension;
+    RasterDimension dimension{};
     const double* transform;
     const char* projectionRef;
 };
