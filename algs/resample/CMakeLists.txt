@@ -1,7 +1,8 @@
 
 list(APPEND RESAMPLE_SOURCES
         src/cli_args.cc
-        src/execute.cc)
+        src/execute.cc
+        src/projection.cc)
 
 list(APPEND RESAMPLE_INCLUDES
         ${CMAKE_CURRENT_LIST_DIR}/include)
