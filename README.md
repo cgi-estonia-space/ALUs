@@ -5,8 +5,10 @@ or
 ALU for Space/Surveillance etc.
 
 A software project that targets to utilize Nvidia GPUs for processing earth observation data (faster).  
-Kickstart of this project was funded through [ESA's EOEP programme](http://www.esa.int/About_Us/Business_with_ESA/Business_Opportunities/Earth_Observation_Envelope_Programme)  
-Current development is funded through [ESA's GSTP programme](https://www.esa.int/Enabling_Support/Space_Engineering_Technology/Shaping_the_Future/About_the_General_Support_Technology_Programme_GSTP)
+Kickstart of this project was funded
+through [ESA's EOEP programme](http://www.esa.int/About_Us/Business_with_ESA/Business_Opportunities/Earth_Observation_Envelope_Programme)  
+Current development is funded
+through [ESA's GSTP programme](https://www.esa.int/Enabling_Support/Space_Engineering_Technology/Shaping_the_Future/About_the_General_Support_Technology_Programme_GSTP)
 
 Developed by [CGI Estonia](https://www.cgi.com/ee/et).
 
@@ -14,11 +16,13 @@ Developed by [CGI Estonia](https://www.cgi.com/ee/et).
 
 Latest build can be downloaded from - https://alus-builds.s3.eu-central-1.amazonaws.com/alus-nightly-latest.tar.gz  
 Verified releases can be downloaded from - https://bitbucket.org/cgi-ee-space/alus/downloads/  
-One can download prepared image with all of the needed dependencies from [dockerhub](https://hub.docker.com/repository/docker/cgialus/alus-devel) 
+One can download prepared image with all of the needed dependencies
+from [dockerhub](https://hub.docker.com/repository/docker/cgialus/alus-devel)
 
 ## Executing
 
 Each algorithm is a separate executable. Currently available ones are:
+
 * Sentinel 1 coherence estimation routine - ``alus-coh``
 * Sentinel 1 calibration routine - ``alus-cal``
 * Gabor feature extraction - ``alus-gfe``
@@ -28,8 +32,8 @@ They are located at ``<build_dir>/alus_package``
 Update **PATH** environment variable in order to execute everywhere:  
 ``export PATH=$PATH:/path/to/<alus_package>``
 
-See ``--help`` for specific arguments/parameters how to invoke processing. For more information see detailed explanation of [processing arguments](docs/PROCESSING_ARGUMENTS.md).
-
+See ``--help`` for specific arguments/parameters how to invoke processing. For more information see detailed explanation
+of [processing arguments](docs/PROCESSING_ARGUMENTS.md).
 
 ## Docker example
 
@@ -64,6 +68,33 @@ cmake . -Bbuild
 cd build
 make -j8
 ```
+
+# Jupyter Notebook
+
+There is a Jupyter Notebook with a user-friendly interface included into the repository.
+It can be used in conjunction with binaries to easily execute code.
+
+## Requirements
+
+- [Core requirements](DEPENDENCIES.md)
+- Python 3.8+ for executing this notebook
+- python3-tk package
+
+## Running instructions
+
+It is best to run the notebook from its own python virtual environment. Environment can be created with
+command  `python3 -m venv env` and it can be activated by the following command `source env/bin/activate`. In order to
+deactivate the virtual environment use `deactivate`.
+
+- Install all the necessary requirements:
+
+`pip install -r requirements.txt`
+
+- Launch Jupyter Notebook or Jupyter Lab:
+
+`jupyter notebook` or `jupyter lab`
+
+- Execute all the cells in order providing all the necessary input.
 
 # [Performance](PERFORMANCE.md)
 
