@@ -14,23 +14,29 @@
 
 #pragma once
 
-#include <cmath>
-#include <cstddef>
+#include <stdexcept>
+#include <string>
 #include <string_view>
-
-#include <gdal_priv.h>
-#include <ogr_spatialref.h>
+#include <unordered_map>
 
 namespace alus::resample {
 
-inline double CalculatePixelSize(size_t input_dimension, size_t resampled_dimension, double input_pixel_size) {
-    return (input_dimension / static_cast<double>(resampled_dimension)) * input_pixel_size;
-}
+class Sentinel2DatasetNameParseException final : public std::runtime_error {
+    using std::runtime_error::runtime_error;
+};
 
-void Reprojection(GDALDataset* from, GDALDataset* reprojected, std::string_view projection,
-                  double longitude_factor = NAN, double latitude_factor = NAN);
+struct S2Fields {
+    std::string mission;
+    std::string level;
+    std::string sensing_start;
+    std::string processing_baseline;
+    std::string orbit;
+    std::string tile;
+    std::string discriminator;
+};
 
-void Reprojection(const OGRSpatialReference* source, OGRSpatialReference* dest_srs, double* dest_gt,
-                  std::string_view projection);
+S2Fields TryParseS2Fields(std::string_view product);
+std::string TryCreateSentinel2GdalDatasetName(std::string_view path);
+std::unordered_map<std::string, std::string> ParseBandMetadata(char** metadata_list, size_t item_count);
 
 }  // namespace alus::resample

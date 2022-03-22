@@ -14,23 +14,20 @@
 
 #pragma once
 
-#include <cmath>
 #include <cstddef>
-#include <string_view>
+#include <type_traits>
 
-#include <gdal_priv.h>
-#include <ogr_spatialref.h>
+namespace alus {
 
-namespace alus::resample {
+struct TypeParameters {
+    template <typename T>
+    static TypeParameters CreateFor() {
+        return {sizeof(T), std::is_signed_v<T>, std::is_floating_point_v<T>};
+    }
 
-inline double CalculatePixelSize(size_t input_dimension, size_t resampled_dimension, double input_pixel_size) {
-    return (input_dimension / static_cast<double>(resampled_dimension)) * input_pixel_size;
-}
+    size_t size_bytes;
+    bool is_signed;
+    bool is_float;
+};
 
-void Reprojection(GDALDataset* from, GDALDataset* reprojected, std::string_view projection,
-                  double longitude_factor = NAN, double latitude_factor = NAN);
-
-void Reprojection(const OGRSpatialReference* source, OGRSpatialReference* dest_srs, double* dest_gt,
-                  std::string_view projection);
-
-}  // namespace alus::resample
+}  // namespace alus

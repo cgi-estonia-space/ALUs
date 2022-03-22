@@ -65,12 +65,15 @@ void GdalErrorHandle(CPLErr level, CPLErrorNum errorNum, const char* message) {
 namespace alus::gdalmanagement {
 
 void Initialize() {
-    // Driver registration example from https://github.com/OSGeo/gdal/blob/master/gdal/frmts/gdalallregister.cpp
+    CPLSetErrorHandler(GdalErrorHandle);
+    // Driver registration example from https://github.com/OSGeo/gdal/blob/master/frmts/gdalallregister.cpp
     GDALRegister_GTiff();
     GDALRegister_VRT();
     GDALRegister_MEM();
     GDALRegister_ENVI();  // ENVI .img and .hdr
-    CPLSetErrorHandler(GdalErrorHandle);
+    GDALRegister_JP2OpenJPEG();
+    GDALRegister_SENTINEL2();
+    GDALRegister_netCDF();
 }
 
 void Deinitialize() { CPLSetErrorHandler(CPLDefaultErrorHandler); }

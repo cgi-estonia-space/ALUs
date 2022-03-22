@@ -107,6 +107,7 @@ public:
     [[nodiscard]] int GetRasterSizeY() const { return reading_area_.height; }
     [[nodiscard]] RasterDimension GetRasterDimensions() const { return {GetRasterSizeX(), GetRasterSizeY()}; }
     std::vector<BufferType> const& GetHostDataBuffer() const override { return data_buffer_; }
+    [[nodiscard]] size_t GetBandCount() const { return dataset_->GetBands().size(); }
     double GetNoDataValue(int band_nr) { return dataset_->GetRasterBand(band_nr)->GetNoDataValue(); }
     uint64_t GetBufferByteSize() override { return data_buffer_.size() * sizeof(BufferType); };
     size_t GetBufferElemCount() override { return data_buffer_.size(); };

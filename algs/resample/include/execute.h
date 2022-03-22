@@ -14,13 +14,17 @@
 
 #pragma once
 
+#include <future>
+#include <list>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "cuda_device_init.h"
 #include "raster_properties.h"
 #include "resample_method.h"
+#include "sentinel2_dataset.h"
 
 namespace alus::resample {
 
@@ -50,6 +54,22 @@ public:
     ~Execute();
 
 private:
+    void WaitForCudaInit(const alus::cuda::CudaInit& cuda_init);
+    [[nodiscard]] bool CanDeviceFit(size_t bytes, size_t percentage_available) const;
+    void TryCertifyResampleDimensions(RasterDimension dim);
+    void ReviseOutputFactories();
+    // band_index starting from 1.
+    [[nodiscard]] bool DoesRequireResampling(size_t band_index, RasterDimension band_dim) const;
+    [[nodiscard]] bool IsBandInExcludeList(size_t band_index) const;
+    [[nodiscard]] bool DoesBandNeedResampling(alus::RasterDimension band_dim) const;
+    // per Domain -> [key, value]
+    void AddMetadata(std::vector<std::pair<std::string, std::pair<std::string, std::string>>>& from_ds) const;
+
     Parameters params_;
+    bool cuda_init_done_{false};
+    const cuda::CudaDevice* gpu_device_;
+    bool resample_dim_certified_{false};
+    RasterDimension resample_dim_{};
+    std::list<std::future<void>> output_factories_{};
 };
 }  // namespace alus::resample

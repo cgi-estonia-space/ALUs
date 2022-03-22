@@ -70,9 +70,13 @@ struct GeoTransformParameters final {
 class GeoTransformConstruct final {
 public:
     static constexpr int GDAL_GEOTRANSFORM_PARAMETERS_LENGTH{6};
-    static GeoTransformParameters BuildFromGdal(double gdalGT[]) {
+    static GeoTransformParameters BuildFromGdal(const double gdalGT[]) {
         return GeoTransformParameters{gdalGT[LON_ORIGIN_INDEX], gdalGT[LAT_ORIGIN_INDEX], gdalGT[PIXEL_X_SIZE_INDEX],
                                       gdalGT[PIXEL_Y_SIZE_INDEX]};
+    }
+
+    static std::array<double, GDAL_GEOTRANSFORM_PARAMETERS_LENGTH> ConvertToGdal(const GeoTransformParameters& params) {
+        return {params.originLon, params.pixelSizeLon, 0.0, params.originLat, 0.0, params.pixelSizeLat};
     }
 
     // These are the TOP LEFT / UPPER LEFT coordinates of the image.

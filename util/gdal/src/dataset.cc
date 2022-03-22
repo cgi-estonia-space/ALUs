@@ -200,11 +200,6 @@ void Dataset<BufferType>::ReadRectangle(Rectangle rectangle, int band_nr, Buffer
 
 template <typename BufferType>
 void Dataset<BufferType>::LoadDataset(std::string_view filename, GDALAccess access) {
-    if (dataset_ == nullptr) {
-        // TODO: move this to a place where it is unifiedly called once when system  // NOLINT
-        // starts.
-        this->dataset_ = static_cast<GDALDataset*>(GDALOpen(filename.data(), GA_ReadOnly));
-    }
 
     this->dataset_ = static_cast<GDALDataset*>(GDALOpen(filename.data(), access));
     if (this->dataset_ == nullptr) {
@@ -277,6 +272,7 @@ void Dataset<BufferType>::TryToCacheImage() {
 template class Dataset<double>;
 template class Dataset<float>;
 template class Dataset<int16_t>;
+template class Dataset<uint16_t>;
 template class Dataset<int>;
 template class Dataset<Iq16>;
 }  // namespace alus
