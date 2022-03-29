@@ -101,6 +101,7 @@ add_subdirectory(algs/coherence-estimation-routine)
 add_subdirectory(algs/coregistration)
 add_subdirectory(algs/topsar-split)
 add_subdirectory(algs/calibration-routine)
+add_subdirectory(algs/resample)
 add_subdirectory(algs/topsar-merge)
 
 # Test helpers
