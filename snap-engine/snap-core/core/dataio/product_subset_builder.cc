@@ -256,7 +256,7 @@ std::shared_ptr<Product> ProductSubsetBuilder::CreateProduct() {
     }
     // List of everything missing that perhaps we should have.
 
-    // AddTiePointGridsToProduct(product);
+    AddTiePointGridsToProduct(product);
     AddBandsToProduct(product);
     // ProductUtils::CopyMasks(sourceProduct, product);
     // AddFlagCodingsToProduct(product);
@@ -277,6 +277,18 @@ std::shared_ptr<Product> ProductSubsetBuilder::CreateProduct() {
     // product->SetAutoGrouping(sourceProduct->GetAutoGrouping());
 
     return product;
+}
+
+void ProductSubsetBuilder::AddTiePointGridsToProduct(const std::shared_ptr<Product>& product) {
+
+    for(int i = 0; i < GetSourceProduct()->GetNumTiePointGrids(); i++)
+    {
+        auto src_tpg = GetSourceProduct()->GetTiePointGridAt(i);
+        if(IsNodeAccepted(src_tpg->GetName())) {
+            auto tpg = TiePointGrid::CreateSubset(src_tpg, AbstractProductReader::GetSubsetDef());
+            product->AddTiePointGrid(tpg);
+        }
+    }
 }
 
 void ProductSubsetBuilder::AddBandsToProduct(const std::shared_ptr<Product>& product) {

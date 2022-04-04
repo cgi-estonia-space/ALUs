@@ -31,11 +31,11 @@ namespace alus::topsarsplit {
 
 class TopsarSplit {
 public:
-    TopsarSplit(std::string_view filename, std::string_view selected_subswath, std::string_view selected_polarisation);
+    TopsarSplit(std::string_view filename, std::string_view selected_subswath, std::string_view selected_polarisation, bool open_img = true);
     TopsarSplit(std::string_view filename, std::string_view selected_subswath, std::string_view selected_polarisation,
-                size_t first_burst, size_t last_burst);
+                size_t first_burst, size_t last_burst, bool open_img = true);
     TopsarSplit(std::string_view filename, std::string_view selected_subswath, std::string_view selected_polarisation,
-                std::string_view aoi_polygon_wkt);
+                std::string_view aoi_polygon_wkt, bool open_img = true);
 
     void initialize();
     std::shared_ptr<snapengine::Product> GetTargetProduct() const { return target_product_; }
@@ -58,6 +58,7 @@ private:
     int last_burst_index_ = 9999;
     std::string burst_aoi_wkt_{};
     s1tbx::SubSwathInfo* selected_subswath_info_ = nullptr;
+    bool open_img_ = true;
 
     void LoadInputDataset(std::string_view filename);
     void UpdateAbstractedMetadata();

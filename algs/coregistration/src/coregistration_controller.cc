@@ -108,7 +108,7 @@ void Coregistration::Initialize(const Coregistration::Parameters& params) {
 
     auto* master_temp = master_reader->GetDataset();
 
-    alus::TargetDatasetParams out_ds_params;
+    alus::TargetDatasetParams out_ds_params = {};
     out_ds_params.filename = params.output_file;
     out_ds_params.band_count = 4;
     out_ds_params.dataset_per_band = true;

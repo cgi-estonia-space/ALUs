@@ -25,6 +25,7 @@ target_link_libraries(alus-coh
         gdal-util-static
         snap-engine-static
         topsar-deburst-op-static
+        topsar-merge-static
         terrain-correction-static
         common-util-static
         )

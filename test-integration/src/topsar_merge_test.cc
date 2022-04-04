@@ -160,7 +160,7 @@ TEST_F(TopsarMergeTest, NotOverlappingSubSwathsMerge) {
     }
 
     ASSERT_THAT(boost::filesystem::exists(OUTPUT_FILE_OVERLAP.data()), ::testing::IsTrue());
-    const std::string expected_md5{"2a153d75958562b6"};
+    const std::string expected_md5{"cad5da7b60ac469e"};
     ASSERT_THAT(alus::utils::test::HashFromBand(OUTPUT_FILE_OVERLAP), ::testing::Eq(expected_md5));
 }
 
@@ -183,9 +183,10 @@ TEST_F(TopsarMergeTest, OverlappingSubSwathsMerge) {
     }
 
     ASSERT_THAT(boost::filesystem::exists(OUTPUT_FILE_NO_OVERLAP.data()), ::testing::IsTrue());
-    const std::string expected_md5{"3fea7a4cd0335778"};
+    const std::string expected_md5{"f1a42120cbd87b31"};
     ASSERT_THAT(alus::utils::test::HashFromBand(OUTPUT_FILE_NO_OVERLAP), ::testing::Eq(expected_md5));
 }
+
 TEST_F(TopsarMergeTest, OverlappingSubSwathsMergeWithTC) {
     {
         auto source_product_1 = PrepareIW1B3Product();
@@ -223,7 +224,8 @@ TEST_F(TopsarMergeTest, OverlappingSubSwathsMergeWithTC) {
     }
 
     ASSERT_THAT(boost::filesystem::exists(OUTPUT_FILE_TC.data()), ::testing::IsTrue());
-    const std::string expected_md5{"f102824403551d9c"};
+    const std::string expected_md5{"10e4f5caf320fa15"};
     ASSERT_THAT(alus::utils::test::HashFromBand(OUTPUT_FILE_TC), ::testing::Eq(expected_md5));
 }
+
 }  // namespace
