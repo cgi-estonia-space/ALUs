@@ -44,8 +44,8 @@ protected:
         "S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD_split_Orb_Stack_coh_Deb"};
     boost::filesystem::path file_directory_out_{"./goods/topsar_deburst_op/custom-format/" + file_name_out_};
 
-    std::string expected_md5_tiff_{
-        "36ca94e52e73835009404bab54cc5cf3"};  // S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD_split_Orb_Stack_coh_Deb.tif
+    std::string expected_sha256_tiff_{
+        "ea2bfc2a1fe11c27e1efbf061ebc9bdf5e1414982bdb2b7d89a1f6a7b77f7e36"};  // S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD_split_Orb_Stack_coh_Deb.tif
 
     boost::filesystem::path file_location_in_{
         "./goods/topsar_deburst_op/custom-format/"
@@ -100,7 +100,7 @@ TEST_F(TOPSARDeburstOpIntegrationTest, singleSwathBeirut) {
                         file_name_out_ + ".tif";
         // alus::GeoTiffWriteFile(data_writer->GetDataset(), std::string_view(out_path));
         ASSERT_TRUE(boost::filesystem::exists(file_directory_out_));
-        ASSERT_EQ(expected_md5_tiff_, alus::utils::test::Md5FromFile(out_path));
+        ASSERT_EQ(expected_sha256_tiff_, alus::utils::test::SHA256FromFile(out_path));
     }
 }
 }  // namespace

@@ -13,14 +13,10 @@
  */
 #include <cstddef>
 #include <memory>
-#include <sstream>
 #include <string>
 #include <vector>
 
 #include <boost/filesystem.hpp>
-#include <boost/iostreams/device/mapped_file.hpp>
-
-#include <openssl/md5.h>
 
 #include "gmock/gmock.h"
 
@@ -33,19 +29,9 @@
 #include "snap-core/core/util/alus_utils.h"
 #include "snap-core/core/util/system_utils.h"
 #include "snap-engine-utilities/engine-utilities/datamodel/metadata/abstract_metadata.h"
+#include "test_utils.h"
 
 namespace {
-
-// todo:move to testing utility
-std::string Md5FromFile(const std::string& path) {
-    unsigned char result[MD5_DIGEST_LENGTH];
-    boost::iostreams::mapped_file_source src(path);
-    MD5(reinterpret_cast<unsigned char*>(const_cast<char*>(src.data())), src.size(), result);
-    std::ostringstream sout;
-    sout << std::hex << std::setfill('0');
-    for (auto c : result) sout << std::setw(2) << static_cast<int>(c);
-    return sout.str();
-}
 
 void VerifyOrbitStateVectorResult(const std::vector<alus::snapengine::OrbitStateVector>& alus_vec,
                                   const std::vector<alus::snapengine::OrbitStateVector>& snap_vec) {
@@ -137,30 +123,30 @@ protected:
     // tie point grids
     boost::filesystem::path output_tie_point_grids_directory_{
         file_directory_out_.generic_path().string() + boost::filesystem::path::preferred_separator + "tie_point_grids"};
-    std::vector<std::string> expected_output_tie_point_grid_md5sums_{
-        "02661f091f30f538bb89ae07e9f7c926",  // elevation_angle.hdr
-        "8f4ecc9ec3c39195b5fa0ea2a10046d7",  // elevation_angle.img
-        "d139cd2cd472db6c7b87f3a7f45d3484",  // incident_angle.hdr
-        "881c78f8183eb204dee1e7d332a46b5c",  // incident_angle.img
-        "2b33da8213155d24cdd95fef17112e53",  // latitude.hdr
-        "7a853c4107a64049d5d0accef5fb134e",  // latitude.img
-        "f4cfcfc41c253f3d69fd23dc3cc732f4",  // longitude.hdr
-        "34ab35c27fcb6a797de0e5b65106c08a",  // longitude.img
-        "5fe11e3f6b522c32d29f122f8df97d9d",  // slant_range_time.hdr
-        "39740a5a09aec7629cfd7bdf27b4861d"   // slant_range_time.img
+    std::vector<std::string> expected_output_tie_point_grid_sha256sums_{
+        "3707a6c958521e0b58f27af77beaa9f9240c25934d58645e0340e2c1a0c84ed3",  // elevation_angle.hdr
+        "bb25b9968c0443e8308f77a84e9f3248dde1fb92cfa960ebd78b70484f26bdf7",  // elevation_angle.img
+        "42f490b3472d42190a6e73ed164b6397206e7e8e6f5e93bce6ef0bb59ab6e1ae",  // incident_angle.hdr
+        "71a1bc198a924d9d3d64de4e0574a4fc64e6308ec9fd0a7fd909f6b2d6844cac",  // incident_angle.img
+        "a9883a63f6a5ee3aa76ced1117092cb7bd1a350b8f9a31e0454a542f9038f4d9",  // latitude.hdr
+        "2eeb51d179c416e888645c2a34a542ac63e7c1198f8841760c50e0b2517e1fd9",  // latitude.img
+        "037ac9fcafbe2b0f7d9e98b91f89802a7ded74cf13d4171ac32c6ce31d713c33",  // longitude.hdr
+        "87efd0b725343a8d6422ed9de5879adae751dbdef46e87bd61ca91715307a798",  // longitude.img
+        "7645662f213c561208e7689410d28ada50c4ecb25f01544ed9125d81713a06b0",  // slant_range_time.hdr
+        "7735ecac95f405332879eed330c725340c321ebd12dfb159cfc325d6070ec074"   // slant_range_time.img
     };
 
     boost::filesystem::path output_vector_data_directory_{file_directory_out_.generic_path().string() +
                                                           boost::filesystem::path::preferred_separator + "vector_data"};
-    std::vector<std::string> expected_output_vector_data_md5sums_{
-        "c21783ffb783a5fd51923988475fcc86",  // ground_control_points.csv
-        "3dc66adbc064f14ce0b60df4836a2afe"   // pins.csv
+    std::vector<std::string> expected_output_vector_data_sha256sums_{
+        "9dc61053b7ad494fe269e1704a1820a5255639fab4670d1694b7a9a9c854a8e5",  // ground_control_points.csv
+        "6792d3166487f08ab4f89b616fae40bcaef99f0e852e95b898460e9ff2d68aac"   // pins.csv
     };
 
-    std::string expected_md5_tiff_{
-        "d472b06289859f9d142f057a0c4e1afe"};  // S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_split_Orb.tif
-    std::string expected_md5_xml_{
-        "0eac9e50c070c21d293d749cd5d5e84c"};  // S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_split_Orb.xml
+    std::string expected_sha256_tiff_{
+        "fc48071b4ab03d5816bddc104ff88783492f03e6b0e4c4c01f4ae510931c731f"};  // S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_split_Orb.tif
+    std::string expected_sha256_xml_{
+        "07dff22fc3b570f3180430fb0d0c82537ccf7ef8d794d1c27081bb049d6d9630"};  // S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_split_Orb.xml
 
     boost::filesystem::path file_location_in_{
         "./goods/apply_orbit_file_op/custom-format/"
@@ -196,37 +182,37 @@ TEST_F(ApplyOrbitFileOpIntegrationTest, SingleBurstData2018) {
         operation.WriteProductFiles(std::make_shared<alus::snapengine::PugixmlMetaDataWriter>());
 
         ASSERT_TRUE(boost::filesystem::exists(file_directory_out_));
-        ASSERT_EQ(expected_md5_tiff_,
-                  Md5FromFile(file_directory_out_.generic_string() + boost::filesystem::path::preferred_separator +
-                              file_name_out_ + ".tif"));
-        ASSERT_EQ(expected_md5_xml_,
-                  Md5FromFile(file_directory_out_.generic_string() + boost::filesystem::path::preferred_separator +
-                              file_name_out_ + ".xml"));
+        ASSERT_EQ(expected_sha256_tiff_, alus::utils::test::SHA256FromFile(
+                                             file_directory_out_.generic_string() +
+                                             boost::filesystem::path::preferred_separator + file_name_out_ + ".tif"));
+        ASSERT_EQ(expected_sha256_xml_, alus::utils::test::SHA256FromFile(file_directory_out_.generic_string() +
+                                                                          boost::filesystem::path::preferred_separator +
+                                                                          file_name_out_ + ".xml"));
 
         // TIE POINT GRID FILES
         size_t count_tie_point_grid_files = 0;
         for (boost::filesystem::directory_entry& file :
              boost::filesystem::directory_iterator(output_tie_point_grids_directory_)) {
-            ASSERT_THAT(Md5FromFile(file.path().generic_string()),
-                        ::testing::AnyOfArray(expected_output_tie_point_grid_md5sums_));
+            ASSERT_THAT(alus::utils::test::SHA256FromFile(file.path().generic_string()),
+                        ::testing::AnyOfArray(expected_output_tie_point_grid_sha256sums_));
             if (is_regular_file(file)) {
                 count_tie_point_grid_files++;
             }
         }
         // number of files
-        ASSERT_THAT(count_tie_point_grid_files, expected_output_tie_point_grid_md5sums_.size());
+        ASSERT_THAT(count_tie_point_grid_files, expected_output_tie_point_grid_sha256sums_.size());
 
         // VECTOR FILES
         size_t count_vector_data_files = 0;
         for (boost::filesystem::directory_entry& file :
              boost::filesystem::directory_iterator(output_vector_data_directory_)) {
-            ASSERT_THAT(Md5FromFile(file.path().generic_string()),
-                        ::testing::AnyOfArray(expected_output_vector_data_md5sums_));
+            ASSERT_THAT(alus::utils::test::SHA256FromFile(file.path().generic_string()),
+                        ::testing::AnyOfArray(expected_output_vector_data_sha256sums_));
             if (is_regular_file(file)) {
                 count_vector_data_files++;
             }
         }
-        ASSERT_THAT(count_vector_data_files, expected_output_vector_data_md5sums_.size());
+        ASSERT_THAT(count_vector_data_files, expected_output_vector_data_sha256sums_.size());
     }
 }
 

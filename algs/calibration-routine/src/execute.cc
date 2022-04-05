@@ -33,6 +33,7 @@
 #include "sentinel1_calibrate.h"
 #include "terrain_correction.h"
 #include "terrain_correction_metadata.h"
+#include "thermal_noise_remover.h"
 #include "topsar_deburst_op.h"
 #include "topsar_split.h"
 
@@ -97,27 +98,42 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
         << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - split_start).count()
         << "ms";
 
-    while (!cuda_init.IsFinished());
+    while (!cuda_init.IsFinished())
+        ;
     cuda_init.CheckErrors();
     const auto cuda_device = cuda_init.GetDevices().front();
     cuda_device.Set();
 
-    LOGI << "Using '" << cuda_device.GetName() << "' device nr " << cuda_device.GetDeviceNr()
-         << " for calculations";
+    LOGI << "Using '" << cuda_device.GetName() << "' device nr " << cuda_device.GetDeviceNr() << " for calculations";
+
+    // thermal noise removal
+    const auto tnr_start = std::chrono::steady_clock::now();
+    std::shared_ptr<snapengine::Product> tnr_product;
+    std::shared_ptr<GDALDataset> tnr_ds;
+
+    tnr::ThermalNoiseRemover thermal_noise_remover{split_product,        pixel_reader, params_.subswath,
+                                                            params_.polarisation, output_dir,   TILE_SIZE_DIMENSION,
+                                                            TILE_SIZE_DIMENSION};
+    thermal_noise_remover.Execute();
+    tnr_product = thermal_noise_remover.GetTargetProduct();
+    tnr_ds = thermal_noise_remover.GetOutputDataset().first;
+    LOGI << "Thermal noise removal done - "
+         << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - tnr_start).count()
+         << "ms";
+
+    if (params_.wif) {
+        const auto tnr_tmp_file = thermal_noise_remover.GetOutputDataset().second;
+        LOGI << "Thermal Noise Removal output @ " << tnr_tmp_file << ".tif";
+        GeoTiffWriteFile(tnr_ds.get(), tnr_tmp_file);
+    }
 
     // calibration
     const auto cal_start = std::chrono::steady_clock::now();
     std::shared_ptr<snapengine::Product> calibrated_product;
     std::shared_ptr<GDALDataset> calibrated_ds;
-    sentinel1calibrate::Sentinel1Calibrator calibrator{split_product,
-                                                       pixel_reader,
-                                                       {subswath_case_up},
-                                                       {params_.polarisation},
-                                                       calibration_types_selected_,
-                                                       output_dir,
-                                                       false,
-                                                       TILE_SIZE_DIMENSION,
-                                                       TILE_SIZE_DIMENSION};
+    sentinel1calibrate::Sentinel1Calibrator calibrator{
+        tnr_product, tnr_ds.get(), {subswath_case_up},  {params_.polarisation}, calibration_types_selected_,
+        output_dir,  false,        TILE_SIZE_DIMENSION, TILE_SIZE_DIMENSION};
     calibrator.Execute();
     calibrated_product = calibrator.GetTargetProduct();
     const auto calibration_tmp_file = calibrator.GetTargetPath(subswath_case_up);

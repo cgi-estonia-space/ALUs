@@ -329,6 +329,29 @@ target_link_libraries(integration-test-topsar-merge
 
 add_dependencies(integration-test-topsar-merge integration-test-prepare-data)
 
+#----------------TNR integration test--------------------------------------
+list(APPEND TEST_SOURCES_TNR
+        src/thermal_noise_removal_test.cc
+        )
+
+add_executable(integration-test-tnr ${TEST_SOURCES_TNR})
+
+target_include_directories(integration-test-tnr PUBLIC ${TEST_INCLUDE})
+
+target_link_libraries(integration-test-tnr
+        PRIVATE
+        crypto
+        common-util-static
+        thermal-noise-static
+        alus-gmock-main
+        Boost::filesystem
+        sentinel1-util-static
+        terrain-correction-static
+        topsar-split-static
+        )
+
+add_dependencies(integration-test-tnr integration-test-prepare-data)
+
 #----------------Build all integration-tests----------------------------------------
 add_custom_target(integration-test-all)
 add_dependencies(integration-test-all

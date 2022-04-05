@@ -252,6 +252,21 @@ public:
     static constexpr std::string_view CALIBRATION_VECTOR = "calibrationVector";
     static constexpr std::string_view CALIBRATION_VECTOR_LIST = "calibrationVectorList";
 
+    // Thermal Noise Removal metadata
+    static constexpr std::string_view NOISE{"noise"};
+    static constexpr std::string_view NOISE_AZIMUTH_VECTOR{"noiseAzimuthVector"};
+    static constexpr std::string_view NOISE_AZIMUTH_VECTOR_LIST{"noiseAzimuthVectorList"};
+    static constexpr std::string_view NOISE_AZIMUTH_LUT{"noiseAzimuthLut"};
+    static constexpr std::string_view FIRST_AZIMUTH_LINE{"firstAzimuthLine"};
+    static constexpr std::string_view LAST_AZIMUTH_LINE{"lastAzimuthLine"};
+    static constexpr std::string_view FIRST_RANGE_SAMPLE{"firstRangeSample"};
+    static constexpr std::string_view LAST_RANGE_SAMPLE{"lastRangeSample"};
+    static constexpr std::string_view NOISE_RANGE_VECTOR_LIST{"noiseRangeVectorList"};
+    static constexpr std::string_view NOISE_RANGE_VECTOR{"noiseRangeVector"};
+    static constexpr std::string_view NOISE_RANGE_LUT{"noiseRangeLut"};
+    static constexpr std::string_view PROCESSING_INFORMATION{"processingInformation"};
+    static constexpr std::string_view THERMAL_NOISE_CORRECTION_PERFORMED{"thermalNoiseCorrectionPerformed"};
+
     static constexpr std::string_view COMPACT_MODE = "compact_mode";
 
     // From Sentinel1 Utils

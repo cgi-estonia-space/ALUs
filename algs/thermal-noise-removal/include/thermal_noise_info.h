@@ -1,8 +1,4 @@
 /**
- * This file is a duplicate of a SNAP's Constant.java
- * ported for native code.
- * Copied from (https://github.com/senbox-org/snap-engine). It was originally stated:
- *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
  * Software Foundation; either version 3 of the License, or (at your option)
@@ -17,15 +13,19 @@
  */
 #pragma once
 
-#include <cstddef>
+#include <vector>
 #include <string>
 
-namespace alus {  // NOLINT TODO: concatenate namespace and remove nolint after migrating to cuda 11+
-namespace utils {
-namespace constants {
-constexpr int INVALID_INDEX{-1};
+#include "s1tbx-commons/noise_azimuth_vector.h"
+#include "s1tbx-commons/noise_vector.h"
+#include "time_maps.h"
 
-constexpr float THERMAL_NOISE_TRG_FLOOR_VALUE{1e-5};
-}  // namespace constants
-}  // namespace utils
-}  // namespace alus
+namespace alus::tnr {
+struct ThermalNoiseInfo {
+    int lines_per_burst{0};
+    std::vector<s1tbx::NoiseAzimuthVector> noise_azimuth_vectors;
+    std::vector<s1tbx::NoiseVector> noise_range_vectors;
+    std::vector<s1tbx::NoiseVector> burst_to_range_vector_map;
+    TimeMaps time_maps;
+};
+}  // namespace alus::tnr

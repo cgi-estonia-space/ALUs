@@ -46,7 +46,7 @@ struct SelectedCalibrationBands {
 
 class Sentinel1Calibrator {
 public:
-    Sentinel1Calibrator(std::shared_ptr<snapengine::Product> source_product, Dataset<Iq16>* pixel_reader,
+    Sentinel1Calibrator(std::shared_ptr<snapengine::Product> source_product, GDALDataset* pixel_reader,
                         std::vector<std::string> selected_sub_swaths,
                         std::set<std::string, std::less<>> selected_polarisations,
                         SelectedCalibrationBands selected_calibration_bands, std::string_view output_path,
@@ -59,10 +59,10 @@ public:
 
     ~Sentinel1Calibrator();
 
-    std::shared_ptr<snapengine::Product> GetTargetProduct() const { return target_product_; }
+    [[nodiscard]] std::shared_ptr<snapengine::Product> GetTargetProduct() const { return target_product_; }
     std::string GetTargetPath(const std::string& swath) { return target_paths_.at(swath); }
     void Execute();
-    std::map<std::string, std::shared_ptr<GDALDataset>, std::less<>> GetOutputDatasets() const;
+    [[nodiscard]] std::map<std::string, std::shared_ptr<GDALDataset>, std::less<>> GetOutputDatasets() const;
 
 private:
     std::shared_ptr<snapengine::Product> source_product_;
@@ -87,7 +87,7 @@ private:
     std::map<std::string, std::string, std::less<>> target_paths_;
     std::string output_path_;
     std::vector<void*> cuda_arrays_to_clean_;
-    Dataset<Iq16>* pixel_reader_;
+    GDALDataset* pixel_reader_;
 
     // Device variables
     std::map<std::string, CalibrationInfoComputation, std::less<>> target_band_to_d_calibration_info_;
@@ -105,17 +105,16 @@ private:
     void OutputInComplex(std::vector<std::string>& source_band_names);
     void OutputInIntensity(const std::vector<std::string>& source_band_names);
     [[nodiscard]] std::vector<std::string> CreateTargetBandNames(std::string_view source_band_name) const;
-    [[nodiscard]] std::vector<Rectangle> CalculateTiles(std::shared_ptr<snapengine::Band> target_band) const;
+    [[nodiscard]] std::vector<Rectangle> CalculateTiles(snapengine::Band& target_band) const;
     void CopyAllCalibrationInfoToDevice();
 
     static CAL_TYPE GetCalibrationType(std::string_view band_name);
 
     static constexpr std::string_view PRODUCT_SUFFIX{"_Cal"};
 
-    void CreateDatasetsFromProduct(std::shared_ptr<snapengine::Product> product,
-                                   std::string_view output_path);  // TODO: should it be moved to some other space?
+    void CreateDatasetsFromProduct(std::shared_ptr<snapengine::Product> product, std::string_view output_path);
 
-    int GetCalibrationCount() const;
+    [[nodiscard]] int GetCalibrationCount() const;
 };
 
 /**

@@ -1,8 +1,4 @@
 /**
- * This file is a duplicate of a SNAP's Constant.java
- * ported for native code.
- * Copied from (https://github.com/senbox-org/snap-engine). It was originally stated:
- *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
  * Software Foundation; either version 3 of the License, or (at your option)
@@ -17,15 +13,14 @@
  */
 #pragma once
 
-#include <cstddef>
+#include <map>
 #include <string>
+#include <vector>
 
-namespace alus {  // NOLINT TODO: concatenate namespace and remove nolint after migrating to cuda 11+
-namespace utils {
-namespace constants {
-constexpr int INVALID_INDEX{-1};
-
-constexpr float THERMAL_NOISE_TRG_FLOOR_VALUE{1e-5};
-}  // namespace constants
-}  // namespace utils
-}  // namespace alus
+namespace alus::tnr {
+struct TimeMaps {
+    std::map<std::string, double> t_0_map;
+    std::map<std::string, double> delta_t_map;
+    std::map<std::string, std::vector<double>> swath_start_end_times_map;
+};
+}

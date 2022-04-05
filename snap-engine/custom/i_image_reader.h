@@ -15,6 +15,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string_view>
 #include <vector>
 
 #include "custom/rectangle.h"

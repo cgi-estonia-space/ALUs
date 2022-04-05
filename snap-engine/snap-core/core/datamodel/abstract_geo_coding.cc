@@ -17,6 +17,7 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 #include "snap-core/core/datamodel/abstract_geo_coding.h"
+#include <stdexcept>
 
 namespace alus::snapengine {
 
