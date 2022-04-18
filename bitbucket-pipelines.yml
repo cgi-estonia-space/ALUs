@@ -66,6 +66,16 @@ pipelines:
                 - sonar-scanner -Dsonar.cfamily.build-wrapper-output=$BW_OUTPUT -Dsonar.sources=algs,app,util -Dsonar.tests=test,test-integration -Dsonar.exclusions=external/**,build/**,.git/** -Dsonar.test.exclusions=external/**,build/**,.git/** -X
               artifacts:
                 - sonar-cfamily-reproducer.zip
+          - step: # Jupyter notebook test
+              image: python:3.8.10
+              name: Jupyter Notebook unit tests
+              script:
+                - cd $BITBUCKET_CLONE_DIR/jupyter-notebook
+                - python3 -m venv env
+                - source env/bin/activate
+                - pip install --upgrade pip setuptools wheel
+                - pip install -r requirements.txt
+                - python -m pytest test -v --junitxml=$BITBUCKET_CLONE_DIR/test-teports/pytest-report.xml
 
   custom:
     nightly-release: #name of this pipeline
@@ -103,12 +113,13 @@ pipelines:
               script:
                 - git submodule update --init --recursive
                 - build_dir="build-nightly"
-                - CUDAARCHS="50;60;70;75;80" cmake . -B${build_dir} -DENABLE_TESTS=false 
+                - CUDAARCHS="50;60;70;75;80" cmake . -B${build_dir} -DENABLE_TESTS=false
                 - cmake --build $build_dir --target all -- -j 8
                 - cd $build_dir
                 - date_stamp=$(date +"%Y_%m_%d_%H%M")
                 - build_package_name="alus-nightly-${BITBUCKET_BUILD_NUMBER}-${date_stamp}"
                 - mv alus_package $build_package_name
+                - mv ../jupyter-notebook $build_package_name/.
                 - cp ../README.md $build_package_name/.
                 - cp ../VERSION $build_package_name/.
                 - echo $BITBUCKET_COMMIT >> $build_package_name/VERSION
@@ -164,6 +175,7 @@ pipelines:
             - date_stamp=$(date +"%Y_%m_%d_%H%M")
             - build_package_name="alus-nightly-${BITBUCKET_BUILD_NUMBER}-${date_stamp}"
             - mv alus_package $build_package_name
+            - mv ../jupyter-notebook $build_package_name/.
             - cp ../README.md $build_package_name/.
             - cp ../VERSION $build_package_name/.
             - echo $BITBUCKET_COMMIT >> $build_package_name/VERSION
