@@ -19,6 +19,7 @@ Compatible docker image is available on [dockerhub](https://hub.docker.com/repos
 ## Ubuntu 20.04
 
 Note that for installing drivers a X(Desktop environment) system must be turned off. 
+
 * ``apt update``
 * ``apt install -y gcc g++``
 * ``wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin``
@@ -32,14 +33,17 @@ Note that for installing drivers a X(Desktop environment) system must be turned 
 * ``echo "export PATH=/usr/local/cuda/bin/:$PATH" >> ~/.bashrc``
 
 For running only
-* ``apt update && sudo apt install -y --no-install-recommends unzip gdal-bin libgdal-dev libboost-program-options-dev libboost-date-time-dev libboost-iostreams-dev libboost-log-dev libeigen3-dev zlib1g-dev``
+
+* ``apt update && sudo apt install -y --no-install-recommends gdal-bin libgdal-dev libboost-program-options-dev libboost-date-time-dev libboost-iostreams-dev libboost-log-dev zlib1g-dev``
 
 For running python supplementary tools
+
 * ``apt install -y python3-venv pip python3-gdal``
 
 For development
+
 * ``apt update && sudo curl https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | sudo apt-key add - && sudo apt-add-repository -y 'deb https://apt.kitware.com/ubuntu/ focal main' && sudo apt update && sudo apt install -y cmake --no-install-recommends``
-* ``apt install clang clang-format-10 clang-tidy-10``
+* ``apt install clang clang-format-10 clang-tidy-10 libeigen3-dev unzip``
 
 ## Pop_OS! 20.04
 
@@ -54,4 +58,5 @@ Development tools
 * ``sudo apt-get update && sudo apt-get install -y --no-install-recommends clang unzip gdal-bin libgdal-dev libboost-program-options-dev libboost-date-time-dev libboost-iostreams-dev libboost-log-dev libeigen3-dev zlib1g-dev clang-format clang-tidy wget && sudo apt-get -y autoremove && sudo apt-get clean``
 
 For running python supplementary tools
+
 * ``apt install -y python3-venv pip``

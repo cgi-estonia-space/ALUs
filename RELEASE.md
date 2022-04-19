@@ -1,3 +1,29 @@
+# Release 1.0.0
+
+This is the first release with refactored architecture where each processor is a different executable.
+
+## Breaking changes
+* Old commands do not work since the `alus` single executable is broken down into multiple separate executables
+
+## Known Caveats
+* Coherence estimation results can have missing pixels(or coherence 0 values) on north and east direction on coastlines when compared to SNAP.
+  Currently it is unresolved what is the correct way. See examples [A](docs/coh_missing_pixels.png) and [B](docs/beirut_iw1_b6_coastal.png).
+  See posts about the issues/bugs - [tile size affecting results](https://forum.step.esa.int/t/tile-size-is-affecting-coregistration-results/32193/4) and [no-data value interpretation](https://forum.step.esa.int/t/coregistration-no-data-value/35304/2).
+* Due to the nature of floating point arithmetic there are some discrepancies when compared to SNAP, see [slideshow](docs/GPU-GSTP-MPR-0008.pdf)
+
+## Major Features and Improvements
+* There is a Jupyter notebook, which enables to more easily assign processing parameters, inputs and it automatically downloads needed auxiliary files background. 
+  This should not be used for speed comparisons, because data transfers and unpacking ZIP archives would consume most of the total processing time.
+* GPU device initialization and property component implemented - based on this functionality resources and parameters could be assigned better
+
+## Bug Fixes and Other Changes
+* Officially upgraded to Ubuntu 20.04 LTS
+* Clang 10 compiler support added - refactored minor issues and CI pipeline checks added
+* Boost library versions downgraded to 1.71 to match the distro default ones
+
+## Thanks to our Contributors
+
+
 # Release 0.9.0
 
 This will be the last release with the current architecture (algorithms as shared libraries) and Ubuntu 18.04 as the officially supported platform.
