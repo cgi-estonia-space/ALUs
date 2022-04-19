@@ -39,6 +39,7 @@ if [ "$orbit_files_dir" == "" ]; then
   exit 1
 fi
 
+python -m pip install wheel
 python -m pip install -r "$jupyter_folder"/requirements.txt
 original_folder=$(pwd)
 cd "$jupyter_folder" || exit 1
@@ -57,12 +58,12 @@ fi
 calibration_output_file="$output_dir/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_Cal_IW2_deb_tc.tif"
 echo "Validating $calibration_output_file"
 ls -lah ..
-"$original_folder"/alus_result_check.py -I "$calibration_output_file" -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_Calib_b26_tc.tif
+"$original_folder"/alus_result_check.py -I "$calibration_output_file" -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_Cal_IW2_deb_tc_jupyter.tif
 res2=$?
 
 coherence_output_file="$output_dir/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_coh_deb_tc.tif"
 echo "Validating $coherence_output_file"
-"$original_folder"/alus_result_check.py -I "$coherence_output_file" -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_IW1_b47_coh_deb_tc.tif
+"$original_folder"/alus_result_check.py -I "$coherence_output_file" -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_coh_deb_TC_jupyter.tif
 res3=$?
 
 exit $((res1 | res2 | res3))
