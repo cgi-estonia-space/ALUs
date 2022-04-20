@@ -55,6 +55,7 @@ alus::coherenceestimationroutine::Execute::Parameters AssembleParameters(
     params.orbit_reference = args.GetOrbitFileReference();
     params.orbit_secondary = args.GetOrbitFileSecondary();
     params.orbit_dir = args.GetOrbitDirectory();
+    params.subtract_flat_earth = args.DoSubtractFlatEarthPhase();
     params.srp_number_points = args.GetSrpNumberPoints();
     params.srp_polynomial_degree = args.GetSrpPolynomialDegree();
     params.orbit_degree = args.GetOrbitDegree();

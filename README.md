@@ -12,12 +12,14 @@ through [ESA's GSTP programme](https://www.esa.int/Enabling_Support/Space_Engine
 
 Developed by [CGI Estonia](https://www.cgi.com/ee/et).
 
+## For appetizer -> [performance test](PERFORMANCE.md) and [further ESA SNAP comparison](docs/SNAP_COMPARISON.md)
+
 # Out of the box usage
 
-Latest build can be downloaded from - https://alus-builds.s3.eu-central-1.amazonaws.com/alus-nightly-latest.tar.gz  
+Latest development build can be downloaded from - https://alus-builds.s3.eu-central-1.amazonaws.com/alus-nightly-latest.tar.gz  
 Verified releases can be downloaded from - https://bitbucket.org/cgi-ee-space/alus/downloads/  
-One can download prepared image with all of the needed dependencies
-from [dockerhub](https://hub.docker.com/repository/docker/cgialus/alus-devel)
+One can download docker image with all of the needed dependencies
+from [dockerhub](https://hub.docker.com/repository/docker/cgialus/alus-devel) or simply `docker pull cgialus/alus-devel`
 
 ## Executing
 
@@ -27,7 +29,7 @@ Each algorithm is a separate executable. Currently available ones are:
 * Sentinel 1 calibration routine - ``alus-cal``
 * Gabor feature extraction - ``alus-gfe``
 
-They are located at ``<build_dir>/alus_package``
+When building separately, these are located at ``<build_dir>/alus_package``
 
 Update **PATH** environment variable in order to execute everywhere:  
 ``export PATH=$PATH:/path/to/<alus_package>``
@@ -37,16 +39,18 @@ of [processing arguments](docs/PROCESSING_ARGUMENTS.md).
 
 ## Docker example
 
+NVIDIA driver and NVIDIA Container Toolkit must be installed together with docker.
+
 ```
 docker pull cgialus/alus-devel:latest
 docker run -t -d --gpus all --name alus_container cgialus/alus-devel
 docker exec -t alus_container mkdir /root/alus
 docker cp <latest build tar archive> alus_container:/root/alus/
 docker exec -t alus_container bash -c "tar -xzf /root/alus/*.tar.gz -C /root/alus/"
-# Use docker cp to transfer all the input datasets, auxiliary data.
-# docker exec -t alus_container bash -c "cd /root/alus; ./alus-<alg> ...."
-# or
-# docker exec -it alus_container /bin/bash to enter shell
+# Use docker cp to transfer all the input datasets, auxiliary data, then either
+docker exec -t alus_container bash -c "cd /root/alus; ./alus-<alg> ...."
+# Or connect to shell
+docker exec -it alus_container /bin/bash
 # Running coherence estimation routine example
 ./alus-coh -r S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA.SAFE \
 -s S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.SAFE \
@@ -71,32 +75,15 @@ make -j8
 
 # Jupyter Notebook
 
-There is a Jupyter Notebook with a user-friendly interface included into the repository.
-It can be used in conjunction with binaries to easily execute code.
+There is a Jupyter Notebook located at `jupyter-notebook` folder with a user-friendly interface and automated auxiliary file downloads.
+It can be used in conjunction with binaries to easily execute code. Read the [instructions](jupyter-notebook/README.md).
 
-## Requirements
+# Minimum/Recommended requirements
 
-- [Core requirements](DEPENDENCIES.md)
-- Python 3.8+ for executing this notebook
-- python3-tk package
-
-## Running instructions
-
-It is best to run the notebook from its own python virtual environment. Environment can be created with
-command  `python3 -m venv env` and it can be activated by the following command `source env/bin/activate`. In order to
-deactivate the virtual environment use `deactivate`.
-
-- Install all the necessary requirements:
-
-`pip install -r requirements.txt`
-
-- Launch Jupyter Notebook or Jupyter Lab:
-
-`jupyter notebook` or `jupyter lab`
-
-- Execute all the cells in order providing all the necessary input.
-
-# [Performance](PERFORMANCE.md)
+* NVIDIA GPU device compute capability 6.0 (Pascal) or higher
+* 2(minimum)/4(recommended) GB of available device memory (some ALUs can manage with less)
+* High speed (NVMe) SSD to benefit from the computation speedups
+* 4 GB of avalable RAM to enable better caching/input-output
 
 # Contributing
 
