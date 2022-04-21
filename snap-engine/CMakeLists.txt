@@ -137,6 +137,12 @@ set_target_properties(snap-engine-static
         OUTPUT_NAME snap-engine
         )
 
+# Only because of hardcoded EGM 96 string values
+target_compile_options(snap-engine-static
+        PRIVATE
+        $<$<COMPILE_LANGUAGE:CXX>:-Wno-overlength-strings>
+        )
+
 target_link_libraries(snap-engine-static
         PUBLIC
         Boost::filesystem

@@ -24,7 +24,7 @@ pipelines:
                 - git submodule update --init --recursive
                 - mkdir -p $BITBUCKET_CLONE_DIR/build/test-reports
                 - git ls-files --cached --recurse-submodules | tar Tczf - archive.tar.gz
-                - $BITBUCKET_CLONE_DIR/build-automation/run_ci_on_ec2_instance.sh "archive.tar.gz" $G3_4xLARGE_INSTANCE_ID "sid_man"
+                - $BITBUCKET_CLONE_DIR/build-automation/run_ci_on_ec2_instance.sh "archive.tar.gz" $ALUS1x_CI_INSTANCE_ID "sid_man"
               after-script:
                 - date_stamp=$(date +"%Y_%m_%d_%H%M")
                 - cd $BITBUCKET_CLONE_DIR/build/ci-artifacts/
@@ -33,7 +33,7 @@ pipelines:
                       [ -f "$file" ] && $BITBUCKET_CLONE_DIR/build-automation/put_to_alus_ci_artifacts.sh "${BITBUCKET_BUILD_NUMBER}_${BITBUCKET_BRANCH}_${date_stamp}" $file sid_man
                   done
           - step: # Code Style checks
-              image: cgialus/alus-infra:latest
+              image: cgialus/alus-devel:latest
               name: Code style checks
               script:
                 - cd $BITBUCKET_CLONE_DIR
@@ -42,7 +42,7 @@ pipelines:
                 - cmake . -Bbuild -DENABLE_TESTS=ON
                 - build-automation/check_code_style.sh $BITBUCKET_CLONE_DIR $BITBUCKET_PR_DESTINATION_BRANCH
           - step: #SonarCloud
-              image: cgialus/alus-infra:latest
+              image: cgialus/alus-deploy:latest
               name: SonarCloud scan
               script:
                 - cd $BITBUCKET_CLONE_DIR
@@ -66,6 +66,16 @@ pipelines:
                 - sonar-scanner -Dsonar.cfamily.build-wrapper-output=$BW_OUTPUT -Dsonar.sources=algs,app,util -Dsonar.tests=test,test-integration -Dsonar.exclusions=external/**,build/**,.git/** -Dsonar.test.exclusions=external/**,build/**,.git/** -X
               artifacts:
                 - sonar-cfamily-reproducer.zip
+          - step: # Jupyter notebook test
+              image: python:3.8.10
+              name: Jupyter Notebook unit tests
+              script:
+                - cd $BITBUCKET_CLONE_DIR/jupyter-notebook
+                - python3 -m venv env
+                - source env/bin/activate
+                - pip install --upgrade pip setuptools wheel
+                - pip install -r requirements.txt
+                - python -m pytest test -v --junitxml=$BITBUCKET_CLONE_DIR/test-teports/pytest-report.xml
 
   custom:
     nightly-release: #name of this pipeline
@@ -86,7 +96,7 @@ pipelines:
                 - git submodule update --init --recursive
                 - mkdir -p $BITBUCKET_CLONE_DIR/build/test-reports
                 - git ls-files --cached --recurse-submodules | tar Tczf - archive.tar.gz
-                - $BITBUCKET_CLONE_DIR/build-automation/run_ci_on_ec2_instance.sh "archive.tar.gz" $G3_4xLARGE_INSTANCE_ID "sid_man"
+                - $BITBUCKET_CLONE_DIR/build-automation/run_ci_on_ec2_instance.sh "archive.tar.gz" $ALUS1x_CI_INSTANCE_ID "sid_man"
               after-script:
                 - date_stamp=$(date +"%Y_%m_%d_%H%M")
                 - cd $BITBUCKET_CLONE_DIR/build/ci-artifacts/
@@ -96,19 +106,20 @@ pipelines:
                   done
           - step:
               name: 'Build Alus release package'
-              image: cgialus/alus-infra:latest
+              image: cgialus/alus-deploy:latest
               clone:
                 depth: 1
                 enabled: true
               script:
                 - git submodule update --init --recursive
                 - build_dir="build-nightly"
-                - cmake . -B${build_dir} -DENABLE_TESTS=false -DCUDA_ARCH="50;60;70;75"
+                - CUDAARCHS="50;60;70;75;80" cmake . -B${build_dir} -DENABLE_TESTS=false
                 - cmake --build $build_dir --target all -- -j 8
                 - cd $build_dir
                 - date_stamp=$(date +"%Y_%m_%d_%H%M")
                 - build_package_name="alus-nightly-${BITBUCKET_BUILD_NUMBER}-${date_stamp}"
                 - mv alus_package $build_package_name
+                - mv ../jupyter-notebook $build_package_name/.
                 - cp ../README.md $build_package_name/.
                 - cp ../VERSION $build_package_name/.
                 - echo $BITBUCKET_COMMIT >> $build_package_name/VERSION
@@ -133,9 +144,9 @@ pipelines:
             - echo "aws_secret_access_key = $SID_MAN_SECRET_ACCESS_KEY" >> config
             - echo "region = eu-central-1" >> config
             - echo "output = json" >> config
-            - aws ec2 start-instances --instance-ids $NIGHTLY_INSTANCE_ID --profile sid_man
+            - aws ec2 start-instances --instance-ids $ALUS1x_NIGHTLY_INSTANCE_ID --profile sid_man
             - sleep 60
-            - ip_address=$(aws ec2 describe-instances --instance-ids $NIGHTLY_INSTANCE_ID --profile sid_man | grep PublicDnsName | head -1 | awk -F'[:]' '{print $2}' | xargs)
+            - ip_address=$(aws ec2 describe-instances --instance-ids $ALUS1x_NIGHTLY_INSTANCE_ID --profile sid_man | grep PublicDnsName | head -1 | awk -F'[:]' '{print $2}' | xargs)
             - ip_address=${ip_address%?}
             - echo $ip_address
             - cd $BITBUCKET_CLONE_DIR
@@ -147,23 +158,24 @@ pipelines:
             - scp -r -oStrictHostKeyChecking=no *.tar.gz ubuntu@$ip_address:/tmp/nightly_builds
             - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "export NIGHTLY_GOLDEN_DIR=$NIGHTLY_GOLDEN_DIR; cd /tmp/nightly_builds; ./execute_nightly.sh ${build_id} nightly_resources.txt tarmo"
           after-script:
-            - aws ec2 stop-instances --instance-ids $NIGHTLY_INSTANCE_ID --profile sid_man
+            - aws ec2 stop-instances --instance-ids $ALUS1x_NIGHTLY_INSTANCE_ID --profile sid_man
     nightly-binary-check: # Duplicate of nightly-build except no CI check
       - step:
           name: 'Build Alus release package'
-          image: cgialus/alus-infra:latest
+          image: cgialus/alus-deploy:latest
           clone:
             depth: 1
             enabled: true
           script:
             - git submodule update --init --recursive
             - build_dir="build-nightly"
-            - cmake . -B${build_dir} -DENABLE_TESTS=false -DCUDA_ARCH="50;60;70;75"
+            - CUDAARCHS="50;60;70;75;80" cmake . -B${build_dir} -DENABLE_TESTS=false
             - cmake --build $build_dir --target all -- -j 8
             - cd $build_dir
             - date_stamp=$(date +"%Y_%m_%d_%H%M")
             - build_package_name="alus-nightly-${BITBUCKET_BUILD_NUMBER}-${date_stamp}"
             - mv alus_package $build_package_name
+            - mv ../jupyter-notebook $build_package_name/.
             - cp ../README.md $build_package_name/.
             - cp ../VERSION $build_package_name/.
             - echo $BITBUCKET_COMMIT >> $build_package_name/VERSION
@@ -188,9 +200,9 @@ pipelines:
             - echo "aws_secret_access_key = $SID_MAN_SECRET_ACCESS_KEY" >> config
             - echo "region = eu-central-1" >> config
             - echo "output = json" >> config
-            - aws ec2 start-instances --instance-ids $NIGHTLY_INSTANCE_ID --profile sid_man
+            - aws ec2 start-instances --instance-ids $ALUS1x_NIGHTLY_INSTANCE_ID --profile sid_man
             - sleep 60
-            - ip_address=$(aws ec2 describe-instances --instance-ids $NIGHTLY_INSTANCE_ID --profile sid_man | grep PublicDnsName | head -1 | awk -F'[:]' '{print $2}' | xargs)
+            - ip_address=$(aws ec2 describe-instances --instance-ids $ALUS1x_NIGHTLY_INSTANCE_ID --profile sid_man | grep PublicDnsName | head -1 | awk -F'[:]' '{print $2}' | xargs)
             - ip_address=${ip_address%?}
             - echo $ip_address
             - cd $BITBUCKET_CLONE_DIR
@@ -202,5 +214,5 @@ pipelines:
             - scp -r -oStrictHostKeyChecking=no *.tar.gz ubuntu@$ip_address:/tmp/nightly_builds
             - ssh -oStrictHostKeyChecking=no ubuntu@$ip_address "export NIGHTLY_GOLDEN_DIR=$NIGHTLY_GOLDEN_DIR; cd /tmp/nightly_builds; ./execute_nightly.sh ${build_id} nightly_resources.txt tarmo"
           after-script:
-            - aws ec2 stop-instances --instance-ids $NIGHTLY_INSTANCE_ID --profile sid_man
+            - aws ec2 stop-instances --instance-ids $ALUS1x_NIGHTLY_INSTANCE_ID --profile sid_man
 

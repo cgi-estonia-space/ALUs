@@ -65,8 +65,6 @@ protected:
 
     static std::vector<double> EnsureMinLengthArray(std::vector<double> array, int length);
 
-    AbstractBand() = default;
-
 public:
     AbstractBand(std::string_view name, int data_type, int raster_width, int raster_height);
     /**

@@ -42,7 +42,7 @@ double AbstractMetadata::GetAttributeDouble(const std::shared_ptr<MetadataElemen
 
 std::shared_ptr<Utc> AbstractMetadata::ParseUtc(std::string_view time_str) {
     try {
-        if (time_str == "") return NO_METADATA_UTC;
+        if (time_str.empty()) return NO_METADATA_UTC;
         return snapengine::Utc::Parse(time_str);
     } catch (alus::ParseException& e) {
         try {

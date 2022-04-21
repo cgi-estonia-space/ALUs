@@ -58,7 +58,7 @@ public:
  * Tests construction failures
  */
 TEST(MetadataAttribute, testRsAttribute) {
-    EXPECT_THROW(MetadataAttribute("", ProductData::CreateInstance(ProductData::TYPE_FLOAT32), false),
+    EXPECT_THROW(MetadataAttribute({}, ProductData::CreateInstance(ProductData::TYPE_FLOAT32), false),
                  std::invalid_argument);
     EXPECT_THROW(MetadataAttribute("a2", nullptr, false), std::invalid_argument);
 }

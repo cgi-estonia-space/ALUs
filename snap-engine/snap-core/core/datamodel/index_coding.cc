@@ -31,7 +31,7 @@ std::shared_ptr<MetadataAttribute> IndexCoding::AddIndex(std::string_view name, 
     return AddSample(name, value, description);
 }
 int IndexCoding::GetIndexValue(std::string_view name) {
-    Guardian::AssertNotNull("name", name);
+    Guardian::AssertNotNullOrEmpty("name", name);
     std::shared_ptr<MetadataAttribute> attribute = GetAttribute(name);
     if (attribute == nullptr) {
         throw std::invalid_argument("index '" + std::string(name) + "' not found");

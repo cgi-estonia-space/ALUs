@@ -13,6 +13,8 @@
  */
 #pragma once
 
+#include <cstddef>
+
 namespace alus::transform {
 
 // These are the TOP LEFT / UPPER LEFT coordinates of the image.
@@ -22,4 +24,5 @@ static constexpr int TRANSFORM_ROTATION_1{2};
 static constexpr int TRANSFORM_LAT_ORIGIN_INDEX{3};  // Or Y origin
 static constexpr int TRANSFORM_ROTATION_2{4};
 static constexpr int TRANSFORM_PIXEL_Y_SIZE_INDEX{5};  // Or pixel height
+static constexpr size_t GEOTRANSFORM_ARRAY_LENGTH{6};
 }  // namespace alus::transform

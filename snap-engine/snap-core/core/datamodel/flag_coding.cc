@@ -41,7 +41,7 @@ std::shared_ptr<MetadataAttribute> FlagCoding::AddFlag(std::string_view name, in
 }
 
 int FlagCoding::GetFlagMask(std::string_view name) {
-    Guardian::AssertNotNull("name", name);
+    Guardian::AssertNotNullOrEmpty("name", name);
     std::shared_ptr<MetadataAttribute> attribute = GetAttribute(name);
     if (attribute == nullptr) {
         throw std::invalid_argument("flag '" + std::string(name) + "' not found");

@@ -200,7 +200,7 @@ std::shared_ptr<Utc> ReaderUtils::GetTime(const std::shared_ptr<snapengine::Meta
 }
 
 std::string ReaderUtils::CreateValidUTCString(std::string_view name, std::vector<char> valid_chars, char replace_char) {
-    Guardian::AssertNotNull("name", name);
+    Guardian::AssertNotNullOrEmpty("name", name);
     std::vector<char> sorted_valid_chars;
     if (valid_chars.empty()) {
         sorted_valid_chars.resize(5);  // NOLINT

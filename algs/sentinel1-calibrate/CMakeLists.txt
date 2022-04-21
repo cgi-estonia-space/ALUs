@@ -1,7 +1,6 @@
 list(APPEND SENTINEL_1_CALIBRATE_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/sentinel1_calibrate.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/sentinel1_calibrate_kernel.cu
-        ${CMAKE_CURRENT_LIST_DIR}/src/sentinel1_calibrate_executor.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/sentinel1_calibrate_kernel_utils.cu
         )
 
@@ -15,7 +14,6 @@ list(APPEND SENTINEL_1_CALIBRATE_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/../../util/exotic-operations/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/common/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/cuda/include
-        ${CMAKE_CURRENT_LIST_DIR}/../algorithm-bond/include
         ${CMAKE_CURRENT_LIST_DIR}/../../app/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/gdal/include
         ${CMAKE_CURRENT_LIST_DIR}/../../external/pugixml/include

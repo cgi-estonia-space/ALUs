@@ -12,13 +12,12 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 
-#include "../include/patched_image.h"
-
-#include <cmath>
+#include "patched_image.h"
 
 #include "algorithm_exception.h"
+#include "constants.h"
 #include "dataset.h"
-#include "../include/patch_assembly.h"
+#include "patch_assembly.h"
 
 namespace alus::featurextractiongabor {
 
@@ -54,8 +53,7 @@ void PatchedImage::CreatePatchedImagesFor(const std::vector<size_t>& filter_edge
             float* output_buffer = patched_images_.at(band_i).back().buffer.data();
             for (size_t patch_x = 0; patch_x < patch_count_x; patch_x++) {
                 for (size_t patch_y = 0; patch_y < patch_count_y; patch_y++) {
-                    const size_t in_offset = patch_y * (patch_count_x * padding_params.origin_patch_edge_size *
-                                                        padding_params.origin_patch_edge_size) +
+                    const size_t in_offset = patch_y * padding_params.origin_patch_edge_size * in_x_size +
                                              (patch_x * padding_params.origin_patch_edge_size);
                     const size_t out_offset = (patch_y * (patch_count_x * padding_params.padded_patch_edge_size *
                                                           padding_params.padded_patch_edge_size)) +
@@ -77,7 +75,7 @@ const PatchedImage::Item& PatchedImage::GetPatchedImageFor(size_t band, size_t f
         }
     }
 
-    THROW_ALGORITHM_EXCEPTION("Gabor feature extraction", "No patch found for band " + std::to_string(band) +
-                                                              " with filter edge " + std::to_string(filter_edge_size));
+    THROW_ALGORITHM_EXCEPTION(ALG_NAME, "No patch found for band " + std::to_string(band) + " with filter edge " +
+                                            std::to_string(filter_edge_size));
 }
 }  // namespace alus::featurextractiongabor

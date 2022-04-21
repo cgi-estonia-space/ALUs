@@ -26,6 +26,7 @@ public:
     virtual void HostToDevice() = 0;
     virtual void DeviceToHost() = 0;
     virtual void DeviceFree() = 0;
+    virtual ~CudaFriendlyObject() = default;
 };
 
 }  // namespace cuda

@@ -5,9 +5,11 @@ destination_branch=$2
 build_dir=$3
 
 exclude_regex="$repository_path.*\/(((external|build|cmake-build-.*|\.git|\.idea|resources|docs|goods)\/.*)|(.*\.(txt|sh|py|md|cu|cuh)))"
-include_regex='.*\/(app|sentinel1|snap-engine|test|test-integration|util)/.*\.(cc|h)' # TODO(anton): check that cuda files are analysed as well
+include_regex='.*\/(app|sentinel1|snap-engine|test|test-integration|util|algs)/.*\.(cc|h)' # TODO(anton): check that cuda files are analysed as well
 
 file_count=0
+
+set -o pipefail
 
 if [ "$repository_path" = "" ]; then
   echo "No repository is provided. Please enter a repository path as a first argument."
@@ -36,15 +38,16 @@ while IFS= read -r -d '' file; do
   correct_filepaths+=("$file")
   ((file_count++))
 done < <(find "${modified_filepaths[@]}" -regextype posix-extended -type f -regex "$exclude_regex" -prune -o -regex "$include_regex" -type f -print0)
-parallel -m clang-tidy --format-style=file -extra-arg=-std=c++17 -p "$build_dir" {} ::: "${correct_filepaths[@]}" | tee "$build_dir"/clang-tidy-result.txt
+parallel -m -k clang-tidy --format-style=file -extra-arg=-std=c++17 -p "$build_dir" {} ::: "${correct_filepaths[@]}" | tee "$build_dir"/clang-tidy-result.txt
+run_result=$?
 
 printf "Scanned %s files." "$file_count"
 
-if [[ ! -d "$build_dir"/test-results ]]
-then
+if [[ ! -d "$build_dir"/test-results ]]; then
   mkdir "$build_dir"/test-results
 fi
 
-printf "Check results can be found in junit-clang-tidy-result.xml file."
 cat "$build_dir/clang-tidy-result.txt" | ./build-automation/clang-tidy-to-junit.py "$repository_path" >"$build_dir"/test-results/junit-clang-tidy-result.xml
-exit 0
+
+printf "Check results can be found in junit-clang-tidy-result.xml file."
+exit $run_result

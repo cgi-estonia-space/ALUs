@@ -74,7 +74,7 @@ void Coregistration::Initialize(const Coregistration::Parameters& params) {
     } else {
         size_t main_burst_start = params.main_scene_first_burst_index;
         size_t main_burst_end = params.main_scene_last_burst_index;
-        if (main_burst_start == main_burst_end && main_burst_start > FULL_SUBSWATH_BURST_INDEX_END) {
+        if (main_burst_start == main_burst_end && main_burst_start < FULL_SUBSWATH_BURST_INDEX_START) {
             main_burst_start = FULL_SUBSWATH_BURST_INDEX_START;
             main_burst_end = FULL_SUBSWATH_BURST_INDEX_END;
         }
@@ -83,7 +83,7 @@ void Coregistration::Initialize(const Coregistration::Parameters& params) {
 
         size_t sec_burst_start = params.secondary_scene_first_burst_index;
         size_t sec_burst_end = params.secondary_scene_last_burst_index;
-        if (sec_burst_start == sec_burst_end && sec_burst_start > FULL_SUBSWATH_BURST_INDEX_END) {
+        if (sec_burst_start == sec_burst_end && sec_burst_start < FULL_SUBSWATH_BURST_INDEX_START) {
             sec_burst_start = FULL_SUBSWATH_BURST_INDEX_START;
             sec_burst_end = FULL_SUBSWATH_BURST_INDEX_END;
         }

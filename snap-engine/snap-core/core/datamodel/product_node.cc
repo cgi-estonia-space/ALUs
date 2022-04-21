@@ -104,7 +104,8 @@ std::optional<std::string> ProductNode::GetProductRefString() {
     return std::nullopt;
 }
 void ProductNode::SetName(std::string_view name) {
-    Guardian::AssertNotNull("name", name);  // NOLINT
+    constexpr std::string_view NAME_STUB{"name"};
+    Guardian::AssertNotNullOrEmpty(NAME_STUB, name);
     std::string name_str(name);
     boost::algorithm::trim(name_str);
     SetNodeName(name_str, false);

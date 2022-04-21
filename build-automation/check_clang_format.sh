@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 repository_path=$1
 destination_branch=$2
 

@@ -3,14 +3,14 @@
 set -e
 
 function print_help {
-    echo "Usage:"
-    echo "$0 <build ID - leave empty \"\" arg for local checks> <resources file> [aws profile - optional]"
+  echo "Usage:"
+  echo "$0 <build ID - leave empty \"\" arg for local checks> <resources file> [aws profile - optional]"
 }
 
 if [ $# -lt 2 ]; then
-    echo "Wrong count of input arguments"
-    print_help
-    exit 1
+  echo "Wrong count of input arguments"
+  print_help
+  exit 1
 fi
 
 build_id=$1
@@ -30,6 +30,7 @@ fi
 products_output=~/nightly_results
 echo $products_output
 mkdir -p $products_output
+rm -rf $products_output/*
 
 set +e
 
@@ -50,6 +51,13 @@ echo "
 *****Maharashtra flood calibration scene*****"
 ./run_maharashtra_calibration_test.sh $test_datasets_dir $dem_files_dir $products_output
 maharashtra_calibration_test_exit=$?
+echo "
+*****Jupyter notebook tests*****"
+python3 -m venv .env
+source .env/bin/activate
+./run_jupyter_tests.sh "$(pwd)/$build_id/jupyter-notebook" "$test_datasets_dir" "$(pwd)/$build_id" "$orbit_files_dir"
+jupyter_test_exit=$?
+deactivate
 
 aws_profile=$3
 if [[ -z "${aws_profile}" ]]; then
@@ -65,15 +73,15 @@ echo "Uploaded binary package available at https://alus-builds.s3.eu-central-1.a
 
 cd $products_output
 for file in *.tif; do
-        aws s3api put-object --bucket alus-builds --key "${build_id}/${file}" --body $file --acl public-read --storage-class STANDARD_IA --profile $aws_profile
-        echo "Uploaded resource available at https://alus-builds.s3.eu-central-1.amazonaws.com/${build_id}/${file}"
+  aws s3api put-object --bucket alus-builds --key "${build_id}/${file}" --body $file --acl public-read --storage-class STANDARD_IA --profile $aws_profile
+  echo "Uploaded resource available at https://alus-builds.s3.eu-central-1.amazonaws.com/${build_id}/${file}"
 done
 
 for file in *tc.tif; do
-        png_file=${file%.*}.png
-        gdal_translate -of PNG -ot Byte -scale $file $png_file
-        aws s3api put-object --bucket alus-builds --key "${build_id}/${png_file}" --body $png_file --acl public-read --storage-class STANDARD_IA --profile $aws_profile
-        echo "Uploaded resource available at https://alus-builds.s3.eu-central-1.amazonaws.com/${build_id}/${png_file}"
+  png_file=${file%.*}.png
+  gdal_translate -of PNG -ot Byte -scale $file $png_file
+  aws s3api put-object --bucket alus-builds --key "${build_id}/${png_file}" --body $png_file --acl public-read --storage-class STANDARD_IA --profile $aws_profile
+  echo "Uploaded resource available at https://alus-builds.s3.eu-central-1.amazonaws.com/${build_id}/${png_file}"
 done
 
-exit $(($disaster_test_exit | $virumaa_calibration_test_exit | $flood_test_exit | $maharashtra_calibration_test_exit))
+exit $(($disaster_test_exit | $virumaa_calibration_test_exit | $flood_test_exit | $maharashtra_calibration_test_exit | jupyter_test_exit))

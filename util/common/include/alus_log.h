@@ -18,7 +18,7 @@
 
 namespace alus::common::log {
 
-enum class Level { VERBOSE, DEBUG, INFO, WARNING, ERROR, SILENT };
+enum class Level { VERBOSE, DEBUG, INFO, WARNING, ERROR };
 
 void Initialize();
 void SetLevel(Level level);

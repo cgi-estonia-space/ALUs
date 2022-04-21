@@ -19,6 +19,9 @@
 
 #include <boost/program_options.hpp>
 
+#include "alus_log.h"
+#include "app_utils.h"
+
 namespace alus::featurextractiongabor {
 
 class Arguments final {
@@ -27,6 +30,7 @@ public:
     explicit Arguments(const std::vector<char*>& args);
 
     void ParseArgs(const std::vector<char*>& args);
+    void Check();
 
     bool IsHelpRequested() const;
     std::string GetHelp() const;
@@ -37,6 +41,8 @@ public:
     size_t GetPatchSize() const { return patch_edge_size_; }
     bool IsConvolutionInputsRequested() const;
     std::string_view GetConvolutionInputsStorePath() const { return convolution_inputs_path_; }
+    size_t GetGpuMemoryPercentage() const { return alus_args_.GetGpuMemoryPercentage(); }
+    common::log::Level GetLogLevel() const { return alus_args_.GetLogLevel(); }
 
     ~Arguments() = default;
 
@@ -45,7 +51,7 @@ private:
 
     boost::program_options::variables_map vm_;
     boost::program_options::options_description app_args_{""};
-    boost::program_options::options_description alus_args_{""};
+    app::Arguments alus_args_;
     boost::program_options::options_description combined_args_{"Arguments"};
 
     std::string input_dataset_path_{};

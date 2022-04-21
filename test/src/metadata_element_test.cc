@@ -90,7 +90,7 @@ TEST(MetadataElement, testGetAttribute) {
     auto annot = std::make_shared<MetadataElement>("yepp");
 
     // a new object should not return anything on this request
-    EXPECT_THROW((void)annot->GetAttributeAt(0), std::runtime_error);  // NOLINT
+    EXPECT_THROW(auto a = annot->GetAttributeAt(0), std::runtime_error);
 
     auto att = std::make_shared<MetadataAttribute>("GuiTest_DialogAndModalDialog",
                                                    ProductData::CreateInstance(ProductData::TYPE_INT32), false);

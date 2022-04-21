@@ -1,25 +1,23 @@
 list(APPEND COHERENCE_ESTIMATION_ROUTINE_SOURCES
-        ${CMAKE_CURRENT_LIST_DIR}/src/coherence_estimation_routine_execute.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/safe_execute.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/cli_args.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/execute.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/main.cc
         )
 
 list(APPEND COHERENCE_ESTIMATION_ROUTINE_INCLUDES
         ${CMAKE_CURRENT_LIST_DIR}/include
         )
 
-add_library(coherence-estimation-routine-shared
-        SHARED
-        ${COHERENCE_ESTIMATION_ROUTINE_SOURCES}
-        )
+add_executable(alus-coh ${COHERENCE_ESTIMATION_ROUTINE_SOURCES})
 
-target_include_directories(coherence-estimation-routine-shared
+target_include_directories(alus-coh
         PUBLIC
         ${COHERENCE_ESTIMATION_ROUTINE_INCLUDES}
         )
 
-target_link_libraries(coherence-estimation-routine-shared
+target_link_libraries(alus-coh
         PUBLIC
-        alg-bond-static
+        app-util-static
         apply-orbit-file-op-static
         coregistration-static
         backgeocoding-static
@@ -31,8 +29,7 @@ target_link_libraries(coherence-estimation-routine-shared
         common-util-static
         )
 
-set_target_properties(coherence-estimation-routine-shared
+set_target_properties(alus-coh
         PROPERTIES
-        OUTPUT_NAME coherence-estimation-routine
-        LIBRARY_OUTPUT_DIRECTORY ${ALUS_BINARY_OUTPUT_DIR}
+        RUNTIME_OUTPUT_DIRECTORY ${ALUS_BINARY_OUTPUT_DIR}
         )

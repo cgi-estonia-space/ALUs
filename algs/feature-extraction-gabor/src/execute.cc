@@ -12,15 +12,20 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 
-#include "../include/execute.h"
+#include "execute.h"
 
 #include <gdal_priv.h>
 
 #include "alus_log.h"
-#include "../include/filter_bank.h"
+#include "conv_kernel.h"
+#include "cuda_copies.h"
+#include "cuda_ptr.h"
+#include "cuda_util.h"
+#include "filter_bank.h"
 #include "gdal_management.h"
 #include "gdal_util.h"
-#include "../include/patch_assembly.h"
+#include "patch_assembly.h"
+#include "patch_reduction.h"
 
 namespace alus::featurextractiongabor {
 
@@ -39,21 +44,72 @@ void Execute::GenerateInputs() {
 }
 
 void Execute::CalculateGabor() {
-    //    const auto band_count = patched_image_.GetBandCount();
-    //    for (size_t band_i{}; band_i < band_count; band_i++) {
-    //        for (const auto& filter : filter_banks_) {
-    //            const auto& patch_item = patched_image_.GetPatchedImageFor(band_i, filter.edge_size);
-    //            const auto patch_edge = patch_item.padding.padded_patch_edge_size;
-    //            const auto patches_x = patch_item.width / patch_edge;
-    //            const auto patches_y = patch_item.height / patch_edge;
-    //            // for (size_t ) iterate over patches with x and y offset
-    //        }
-    //    }
+    const auto band_count = patched_image_.GetBandCount();
+    for (size_t band_i{}; band_i < band_count; band_i++) {
+        for (const auto& filter : filter_banks_) {
+            const auto& patch_item = patched_image_.GetPatchedImageFor(band_i, filter.edge_size);
+            const auto patch_edge = static_cast<int>(patch_item.padding.padded_patch_edge_size);
+            const auto patch_size = static_cast<int>(patch_item.padding.origin_patch_edge_size);
+            const auto patches_x = static_cast<int>(patch_item.width / patch_edge);
+            const auto patches_y = static_cast<int>(patch_item.height / patch_edge);
+            const auto n_patches = patches_x * patches_y;
+
+            // setup filter on device
+            std::vector<float> h_filt = filter.filter_buffer;
+            std::reverse(h_filt.begin(), h_filt.end());
+            cuda::DeviceBuffer<float> d_filt(h_filt.size());
+            cuda::CopyArrayH2D(d_filt.Get(), h_filt.data(), h_filt.size());
+
+            // move input to GPU
+            cuda::DeviceBuffer<float> d_src(patch_item.buffer.size());
+            cuda::CopyArrayH2D(d_src.Get(), patch_item.buffer.data(), d_src.size()); // optimization: do this once per frequency
+
+            // convolution
+            cuda::DeviceBuffer<float> d_conv(d_src.size());
+            LaunchConvKernel(d_src.Get(), static_cast<int>(patch_item.width), static_cast<int>(patch_item.height), patch_size, d_conv.Get(), d_filt.Get(),
+                             static_cast<int>(filter.edge_size));
+
+            // mean & std deviation calculation
+            cuda::DeviceBuffer<float> d_means(n_patches);
+            cuda::DeviceBuffer<float> d_std_devs(n_patches);
+            LaunchPatchMeanReduction(d_conv.Get(), d_means.Get(), patch_size, static_cast<int>(filter.edge_size), patches_x, patches_y);
+            LaunchPatchStdDevReduction(d_conv.Get(), d_means.Get(), d_std_devs.Get(), patch_size, static_cast<int>(filter.edge_size),
+                                       patches_x, patches_y);
+
+            CHECK_CUDA_ERR(cudaDeviceSynchronize());
+            CHECK_CUDA_ERR(cudaGetLastError());
+
+            std::vector<float> h_means(n_patches);
+            std::vector<float> h_std_devs(n_patches);
+            cuda::CopyArrayD2H(h_means.data(), d_means.Get(), h_means.size());
+            cuda::CopyArrayD2H(h_std_devs.data(), d_std_devs.Get(), h_std_devs.size());
+
+            // keep the patch results
+            std::vector<PatchResult>& results_vec =
+                result_.GetResultRef(band_i, filter.orientation_index, filter.frequency_index);
+            for (int y = 0; y < patches_y; y++) {
+                for (int x = 0; x < patches_x; x++) {
+                    PatchResult r = {};
+                    r.x = x;
+                    r.y = y;
+                    size_t idx = x + y * patches_x;
+                    r.mean = h_means.at(idx);
+                    r.std_dev = h_std_devs.at(idx);
+                    results_vec.push_back(r);
+                }
+            }
+        }
+    }
 }
 
 void Execute::SaveGaborInputsTo(std::string_view path) const {
     SaveFilterBanks(path);
     SavePatchedImages(path);
+}
+
+void Execute::SaveResultsTo(std::string_view) const {
+    result_.LogConsoleResult();
+    // result as file/image in future task
 }
 
 void Execute::SaveFilterBanks(std::string_view path) const {
@@ -90,7 +146,6 @@ void Execute::SaveFilterBanks(std::string_view path) const {
 
             GDALClose(output_dataset);
             CHECK_GDAL_ERROR(err);
-
 
             if (i == filter_banks_.size() - 1) {
                 break;
