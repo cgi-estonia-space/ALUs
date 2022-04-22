@@ -49,23 +49,23 @@ constexpr std::string_view ALG_NAME{"TOPSAR-SPLIT"};
 namespace alus::topsarsplit {
 
 TopsarSplit::TopsarSplit(std::string_view filename, std::string_view selected_subswath,
-                         std::string_view selected_polarisation, size_t first_burst, size_t last_burst)
-    : TopsarSplit(filename, selected_subswath, selected_polarisation) {
+                         std::string_view selected_polarisation, size_t first_burst, size_t last_burst, bool open_img)
+    : TopsarSplit(filename, selected_subswath, selected_polarisation, open_img) {
     first_burst_index_ = static_cast<int>(first_burst);
     last_burst_index_ = static_cast<int>(last_burst);
 }
 
 TopsarSplit::TopsarSplit(std::string_view filename, std::string_view selected_subswath,
-                         std::string_view selected_polarisation)
-    : subswath_(selected_subswath), selected_polarisations_({std::string(selected_polarisation)}) {
+                         std::string_view selected_polarisation, bool open_img)
+    : subswath_(selected_subswath), selected_polarisations_({std::string(selected_polarisation)}), open_img_(open_img) {
     LoadInputDataset(filename);
 }
 
 TopsarSplit::TopsarSplit(std::string_view filename, std::string_view selected_subswath,
-                         std::string_view selected_polarisation, std::string_view aoi_polygon_wkt)
+                         std::string_view selected_polarisation, std::string_view aoi_polygon_wkt, bool open_img)
     : subswath_{selected_subswath},
       selected_polarisations_{std::string(selected_polarisation)},
-      burst_aoi_wkt_{aoi_polygon_wkt} {
+      burst_aoi_wkt_{aoi_polygon_wkt}, open_img_(open_img) {
     LoadInputDataset(filename);
 }
 
@@ -79,6 +79,10 @@ void TopsarSplit::LoadInputDataset(std::string_view filename) {
     auto reader_plug_in = std::make_shared<alus::s1tbx::Sentinel1ProductReaderPlugIn>();
     reader_ = reader_plug_in->CreateReaderInstance();
     source_product_ = reader_->ReadProductNodes(boost::filesystem::canonical(path), nullptr);
+
+    if(!open_img_){
+        return;
+    }
 
     bool found_it = false;
     std::string input_file{};
@@ -272,7 +276,9 @@ void TopsarSplit::initialize() {
 
     subset_def->SetSubSampling(1, 1);
     subset_def->SetIgnoreMetadata(false);
-    pixel_reader_->SetReadingArea({x, y, w, h});
+    if (pixel_reader_) {
+        pixel_reader_->SetReadingArea({x, y, w, h});
+    }
 
     std::vector<std::string> selected_band_names(selected_bands.size());
     for (size_t i = 0; i < selected_bands.size(); i++) {

@@ -94,10 +94,10 @@ public:
     static std::shared_ptr<snapengine::Utc> GetTime(const std::shared_ptr<snapengine::MetadataElement>& elem,
                                                     std::string_view tag, std::string_view sentinel_date_format);
     static void GetListInEvenlySpacedGrid(int scene_raster_width, int scene_raster_height, int source_grid_width,
-                                          int source_grid_height, std::vector<int> x, std::vector<int> y,
-                                          std::vector<double> source_point_list, int target_grid_width,
+                                          int source_grid_height, const std::vector<int>& x, const std::vector<int>& y,
+                                          const std::vector<double>& source_point_list, int target_grid_width,
                                           int target_grid_height, double sub_sampling_x, double sub_sampling_y,
-                                          std::vector<float> target_point_list);
+                                          std::vector<float>& target_point_list);
 
     explicit Sentinel1Level1Directory(const boost::filesystem::path& input_file);
 

@@ -22,10 +22,6 @@
 namespace alus::snapengine::custom {
 
 void GdalImageReader::ReadSubSampledData(const custom::Rectangle& rectangle, int band_indx) {
-    // todo:    later add support for subsampled data, this will change parameters for this function  // NOLINT
-    if (data_.size() != static_cast<std::size_t>(rectangle.width) * static_cast<size_t>(rectangle.height)) {
-        data_.resize(rectangle.width * rectangle.height);
-    }
 
     // Sometimes SNAP might request to read data which is out of image bounds. This should resolve this issue.
     const auto width = rectangle.x + rectangle.width > dataset_->GetRasterXSize()
@@ -34,8 +30,12 @@ void GdalImageReader::ReadSubSampledData(const custom::Rectangle& rectangle, int
     const auto height = rectangle.y + rectangle.height > dataset_->GetRasterYSize()
                             ? dataset_->GetRasterYSize() - rectangle.y
                             : rectangle.height;
+
+    if (data_.size() != static_cast<std::size_t>(width) * static_cast<size_t>(height)) {
+        data_.resize(static_cast<size_t>(width * height));
+    }
     CHECK_GDAL_ERROR(dataset_->GetRasterBand(band_indx)->RasterIO(GF_Read, rectangle.x, rectangle.y, width, height,
-                                                                  data_.data(), rectangle.width, rectangle.height,
+                                                                  data_.data(), width, height,
                                                                   GDALDataType::GDT_Float32, 0, 0));
 }
 

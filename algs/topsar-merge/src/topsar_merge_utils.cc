@@ -67,11 +67,12 @@ void FindFirstAndLastSubSwathIndices(int& first_index, int& last_index, const Re
         const auto& sub_swath_merge_info = sub_swath_merge_info_map.at(i);
         if (is_valid_for_first_sub_swath(sub_swath_merge_info)) {
             first_index = static_cast<int>(i);
-            if (first_index == static_cast<int>(operator_parameters.number_of_subswaths - 1)) {
-                last_index = first_index;
-                break;
-            }
+            break;
         }
+    }
+
+    for (size_t i = 0; i < operator_parameters.number_of_subswaths; i++) {
+        const auto& sub_swath_merge_info = sub_swath_merge_info_map.at(i);
         if (is_valid_for_last_sub_swath(sub_swath_merge_info)) {
             last_index = static_cast<int>(i);
         }

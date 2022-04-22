@@ -46,7 +46,7 @@ void Arguments::Construct() {
          "Secondary scene's input SAFE dataset (zipped or unpacked)")
         ("output,o", po::value<std::string>(&output_)->required(), "Output folder or filename")
         ("polarisation,p", po::value<std::string>(&polarisation_)->required(), polarisation_help.c_str())
-        ("sw", po::value<std::string>(&subswath_)->required(), "Reference scene's subswath")
+        ("sw", po::value<std::string>(&subswath_), "Reference scene's subswath")
         ("b_ref1", po::value<size_t>(&burst_start_index_reference_),
          "Reference scene's first burst index - starting at '1', leave unspecified for whole subswath")
         ("b_ref2", po::value<size_t>(&burst_last_index_reference_),
@@ -66,7 +66,7 @@ void Arguments::Construct() {
         "For example: /home/<user>/.snap/auxData/Orbits/Sentinel-1/POEORB/")
         ("srp_number_points", po::value<size_t>(&srp_number_points_)->default_value(501), "")
         ("srp_polynomial_degree", po::value<size_t>(&srp_polynomial_degree_)->default_value(5), "")
-        ("subtract_flat_earth_phase", po::bool_switch(&subtract_flat_earth_phase_)->default_value(true),
+        ("subtract_flat_earth_phase", po::value<bool>(&subtract_flat_earth_phase_)->default_value(true),
         "Compute flat earth phase subtraction during coherence operation. By default on.")
         ("rg_win", po::value<size_t>(&range_window_)->default_value(15u),
         "range window size in pixels.")

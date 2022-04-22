@@ -29,6 +29,7 @@ public:
 protected:
     std::shared_ptr<Product> ReadProductNodesImpl() override;
     void AddBandsToProduct(const std::shared_ptr<Product>& product);
+    void AddTiePointGridsToProduct(const std::shared_ptr<Product>& product);
     /*void ReadBandRasterDataImpl(int sourceOffsetX, int sourceOffsetY, int sourceWidth, int sourceHeight,
                                 int sourceStepX, int sourceStepY, std::shared_ptr<Band> destBand, int destOffsetX,
                                 int destOffsetY, int destWidth, int destHeight,
