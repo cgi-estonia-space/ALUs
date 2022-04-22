@@ -13,10 +13,11 @@
  */
 #pragma once
 
+#include <driver_types.h>
+
 #include "pointer_holders.h"
 
-namespace alus {
-namespace backgeocoding {
+namespace alus::backgeocoding {
 
 struct ElevationMaskData {
     size_t size;  // all 4 of the following arrays have the same size, which is in here.
@@ -25,11 +26,10 @@ struct ElevationMaskData {
     double* device_y_points;
     double* device_lat_array;
     double* device_lon_array;
-
+    bool mask_out_area_without_elevation;
     PointerArray tiles;
 };
 
 cudaError_t LaunchElevationMask(ElevationMaskData data);
 
-}  // namespace backgeocoding
-}  // namespace alus
+}  // namespace alus::backgeocoding

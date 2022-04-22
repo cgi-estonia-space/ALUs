@@ -46,6 +46,7 @@ public:
         size_t orbit_degree;
         bool wif;
         std::string output;
+        bool mask_out_area_without_elevation;
     };
 
     Execute() = delete;

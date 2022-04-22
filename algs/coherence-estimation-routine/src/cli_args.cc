@@ -59,6 +59,8 @@ void Arguments::Construct() {
          "Area Of Interest WKT polygon, overrules first and last burst indexes")
         ("dem", po::value<std::vector<std::string>>(&dem_files_)->required(),
          "DEM file(s). Only SRTM3 is currently supported.")
+        (        "no_mask_cor", po::bool_switch(&disable_coregistration_elevation_mask_),
+         "Do not mask out areas without elevation in coregistration")
         ("orbit_ref", po::value<std::string>(&orbit_file_reference_),"Reference scene's POEORB file")
         ("orbit_sec", po::value<std::string>(&orbit_file_secondary_), "Secondary scenes's POEORB file")
         ("orbit_dir", po::value<std::string>(&orbit_file_dir_),
@@ -68,11 +70,11 @@ void Arguments::Construct() {
         ("srp_polynomial_degree", po::value<size_t>(&srp_polynomial_degree_)->default_value(5), "")
         ("subtract_flat_earth_phase", po::value<bool>(&subtract_flat_earth_phase_)->default_value(true),
         "Compute flat earth phase subtraction during coherence operation. By default on.")
-        ("rg_win", po::value<size_t>(&range_window_)->default_value(15u),
+        ("rg_win", po::value<size_t>(&range_window_)->default_value(15U),
         "range window size in pixels.")
-        ("az_win", po::value<size_t>(&az_window_)->default_value(0u),
+        ("az_win", po::value<size_t>(&az_window_)->default_value(0U),
         "azimuth window size in pixels, if zero derived from range window.")
-        ("orbit_degree", po::value<size_t>(&orbit_degree_)->default_value(3u), "")
+        ("orbit_degree", po::value<size_t>(&orbit_degree_)->default_value(3U), "")
         ("wif,w", po::bool_switch(&wif_)->default_value(false),
          "Write intermediate results (will be saved in the same folder as final outcome)."
         " NOTE - this may decrease performance. By default off.");
@@ -101,7 +103,7 @@ void Arguments::Check() {
             "Use -a [ --aoi ] to skip defining burst indexes.");
     }
 
-    if ((!vm_.count("orbit_ref") || !vm_.count("orbit_sec")) && !vm_.count("orbit_dir")) {
+    if ((vm_.count("orbit_ref") == 0U || vm_.count("orbit_sec") == 0U) && vm_.count("orbit_dir") == 0U) {
         throw std::invalid_argument(
             "Orbit files must be supplied for both scenes. "
             "Use --orbit_dir for determining the right one during processing.");
@@ -111,7 +113,7 @@ void Arguments::Check() {
 }
 
 std::optional<std::string> Arguments::GetAoi() const {
-    if (!vm_.count("aoi")) {
+    if (vm_.count("aoi") == 0U) {
         return std::nullopt;
     }
 
@@ -119,7 +121,7 @@ std::optional<std::string> Arguments::GetAoi() const {
 }
 
 std::optional<std::tuple<size_t, size_t>> Arguments::GetBurstIndexesReference() const {
-    if (!vm_.count("b_ref1") || !vm_.count("b_ref2")) {
+    if (vm_.count("b_ref1") == 0U || vm_.count("b_ref2") == 0U) {
         return std::nullopt;
     }
 
@@ -127,7 +129,7 @@ std::optional<std::tuple<size_t, size_t>> Arguments::GetBurstIndexesReference() 
 }
 
 std::optional<std::tuple<size_t, size_t>> Arguments::GetBurstIndexesSecondary() const {
-    if (!vm_.count("b_sec1") || !vm_.count("b_sec2")) {
+    if (vm_.count("b_sec1") == 0U || vm_.count("b_sec2") == 0U) {
         return std::nullopt;
     }
 

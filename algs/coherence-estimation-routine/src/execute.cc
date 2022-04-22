@@ -113,7 +113,7 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) const {
                 break;
             }
             if (topsarsplit::IsCovered(swath_poly, aoi_poly)) {
-                swath_selection.push_back(std::string(swath));
+                swath_selection.emplace_back(swath);
             }
         }
     }
@@ -161,7 +161,8 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) const {
             const auto coreg_gpu_start = std::chrono::steady_clock::now();
             coreg.DoWork(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
                          {dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo(),
-                          dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()});
+                          dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()},
+                         params_.mask_out_area_without_elevation);
             main_product = coreg.GetMasterProduct();
             secondary_product = coreg.GetSlaveProduct();
             auto coreg_target_dataset = coreg.GetTargetDataset();
@@ -319,7 +320,9 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) const {
 
         auto data_writer = std::make_shared<snapengine::custom::GdalImageWriter>();
 
-        topsarmerge::TopsarMergeOperator merge(deb_products, merge_polarisations, 1024, 1024, output_file);
+        const size_t merge_tile_size = 1024;  // NB! merge not tile size independent
+        topsarmerge::TopsarMergeOperator merge(deb_products, merge_polarisations, merge_tile_size, merge_tile_size,
+                                               output_file);
 
         auto target = merge.GetTargetProduct();
 

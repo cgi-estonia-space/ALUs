@@ -54,11 +54,12 @@ public:
                             std::shared_ptr<snapengine::Product> master_product,
                             std::shared_ptr<snapengine::Product> slave_product);
 
-    ~BackgeocodingController();
+    ~BackgeocodingController() = default;
     BackgeocodingController(const BackgeocodingController&) = delete;  // class does not support copying(and moving)
     BackgeocodingController& operator=(const BackgeocodingController&) = delete;
 
-    void PrepareToCompute(const float* egm96_device_Array, PointerArray srtm3_tiles);
+    void PrepareToCompute(const float* egm96_device_Array, PointerArray srtm3_tiles,
+                          bool mask_out_area_without_elevation);
     void RegisterException(std::exception_ptr e);
     void ReadMaster(Rectangle master_area, int16_t* i_tile, int16_t* q_tile) const;
     PositionComputeResults PositionCompute(int m_burst_index, int s_burst_index, Rectangle target_area,
@@ -76,7 +77,7 @@ private:
     int num_of_bursts_;
     int lines_per_burst_;
     int samples_per_burst_;
-    int recommended_tile_area_ = 4000000;
+    const int recommended_tile_area_ = 4000000;
     bool beam_dimap_mode_ = false;
 
     std::shared_ptr<AlusFileReader<int16_t>> master_input_dataset_;

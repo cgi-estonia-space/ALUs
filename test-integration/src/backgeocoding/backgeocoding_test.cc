@@ -173,7 +173,7 @@ TEST(backgeocoding, correctness) {
     dem_assistant->GetSrtm3Manager()->HostToDevice();
     backgeocoding.SetElevationData(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
                                    {dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo(),
-                                    dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()});
+                                    dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()}, true);
     backgeocoding.PrepareToCompute("./goods/master_metadata.dim", "./goods/slave_metadata.dim");
 
     int burst_offset = backgeocoding.GetBurstOffset();
