@@ -22,8 +22,7 @@
 #include "s1tbx-commons/sentinel1_utils_computation.h"
 #include "s1tbx-commons/subswath_info_computation.h"
 
-namespace alus {
-namespace backgeocoding {
+namespace alus::backgeocoding {
 
 struct SlavePixPosData {
     int num_lines;
@@ -40,12 +39,12 @@ struct SlavePixPosData {
     PointerArray tiles;
 
     // earth gravitational model
-    float* egm;
+    const float* egm;
 
     int max_lats;
     int max_lons;
     double dem_no_data_value;
-    int mask_out_area_without_elevation;
+    bool mask_out_area_without_elevation;
 
     size_t* device_valid_index_counter;
     double *device_master_az, *device_master_rg;
@@ -69,5 +68,4 @@ cudaError_t LaunchSlavePixPos(SlavePixPosData calc_data);
 cudaError_t LaunchFillXAndY(double* device_x_points, double* device_y_points, size_t points_size,
                             double placeholder_value);
 
-}  // namespace backgeocoding
-}  // namespace alus
+}  // namespace alus::backgeocoding

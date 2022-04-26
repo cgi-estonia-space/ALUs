@@ -32,29 +32,30 @@ public:
 
     void Check();
 
-    bool IsHelpRequested() const;
-    std::string GetHelp() const;
-    std::string GetInputReference() const { return input_reference_; }
-    std::string GetInputSecondary() const { return input_secondary_; }
-    std::string GetSubswath() const { return subswath_; }
-    std::string GetPolarisation() const { return polarisation_; }
-    std::optional<std::string> GetAoi() const;
-    std::optional<std::tuple<size_t, size_t>> GetBurstIndexesReference() const;
-    std::optional<std::tuple<size_t, size_t>> GetBurstIndexesSecondary() const;
-    const std::vector<std::string>& GetDemFiles() const { return dem_files_; }
-    std::string GetOutput() const { return output_; }
-    bool DoSaveIntermediateResults() const { return wif_; };
-    std::string GetOrbitFileReference() const { return orbit_file_reference_; }
-    std::string GetOrbitFileSecondary() const { return orbit_file_secondary_; }
-    std::string GetOrbitDirectory() const { return orbit_file_dir_; }
-    size_t GetSrpNumberPoints() const { return srp_number_points_; }
-    size_t GetSrpPolynomialDegree() const { return srp_polynomial_degree_; }
-    size_t GetOrbitDegree() const { return orbit_degree_; }
-    bool DoSubtractFlatEarthPhase() const { return subtract_flat_earth_phase_; };
-    size_t GetRangeWindow() const { return range_window_; }
-    size_t GetAzimuthWindow() const { return az_window_; }
-    size_t GetGpuMemoryPercentage() const { return alus_args_.GetGpuMemoryPercentage(); }
-    common::log::Level GetLogLevel() const { return alus_args_.GetLogLevel(); }
+    [[nodiscard]] bool IsHelpRequested() const;
+    [[nodiscard]] std::string GetHelp() const;
+    [[nodiscard]] std::string GetInputReference() const { return input_reference_; }
+    [[nodiscard]] std::string GetInputSecondary() const { return input_secondary_; }
+    [[nodiscard]] std::string GetSubswath() const { return subswath_; }
+    [[nodiscard]] std::string GetPolarisation() const { return polarisation_; }
+    [[nodiscard]] std::optional<std::string> GetAoi() const;
+    [[nodiscard]] std::optional<std::tuple<size_t, size_t>> GetBurstIndexesReference() const;
+    [[nodiscard]] std::optional<std::tuple<size_t, size_t>> GetBurstIndexesSecondary() const;
+    [[nodiscard]] const std::vector<std::string>& GetDemFiles() const { return dem_files_; }
+    [[nodiscard]] std::string GetOutput() const { return output_; }
+    [[nodiscard]] bool DoSaveIntermediateResults() const { return wif_; };
+    [[nodiscard]] std::string GetOrbitFileReference() const { return orbit_file_reference_; }
+    [[nodiscard]] std::string GetOrbitFileSecondary() const { return orbit_file_secondary_; }
+    [[nodiscard]] std::string GetOrbitDirectory() const { return orbit_file_dir_; }
+    [[nodiscard]] size_t GetSrpNumberPoints() const { return srp_number_points_; }
+    [[nodiscard]] size_t GetSrpPolynomialDegree() const { return srp_polynomial_degree_; }
+    [[nodiscard]] size_t GetOrbitDegree() const { return orbit_degree_; }
+    [[nodiscard]] bool DoSubtractFlatEarthPhase() const { return subtract_flat_earth_phase_; };
+    [[nodiscard]] size_t GetRangeWindow() const { return range_window_; }
+    [[nodiscard]] size_t GetAzimuthWindow() const { return az_window_; }
+    [[nodiscard]] bool DoMaskOutAreaWithoutElevation() const { return !disable_coregistration_elevation_mask_; }
+    [[nodiscard]] size_t GetGpuMemoryPercentage() const { return alus_args_.GetGpuMemoryPercentage(); }
+    [[nodiscard]] common::log::Level GetLogLevel() const { return alus_args_.GetLogLevel(); }
 
     ~Arguments() = default;
 
@@ -81,6 +82,7 @@ private:
     size_t srp_number_points_;
     size_t srp_polynomial_degree_;
     bool subtract_flat_earth_phase_{true};
+    bool disable_coregistration_elevation_mask_{false};
     size_t range_window_;
     size_t az_window_;
     size_t orbit_degree_;

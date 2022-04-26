@@ -92,7 +92,8 @@ TEST(coregistration, full3) {
         dem_assistant->GetSrtm3Manager()->HostToDevice();
         cor->DoWork(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
                     {dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo(),
-                     dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()});
+                     dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()},
+                    true);
 
         auto target_datasets = cor->GetTargetDataset()->GetDataset();
 
@@ -145,7 +146,8 @@ TEST(coregistration, splitCut) {
 
         cor->DoWork(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
                     {dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo(),
-                     dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()});
+                     dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()},
+                    true);
 
         auto target_datasets = cor->GetTargetDataset()->GetDataset();
         const std::string_view output_slave_i{"./goods/beirut_images/coregistration_test_slave_I_cut.tif"};

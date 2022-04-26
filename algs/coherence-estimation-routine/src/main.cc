@@ -51,6 +51,8 @@ alus::coherenceestimationroutine::Execute::Parameters AssembleParameters(
         params.burst_index_start_secondary = std::get<0>(burst_sec.value());
         params.burst_index_last_secondary = std::get<1>(burst_sec.value());
     }
+
+    params.mask_out_area_without_elevation = args.DoMaskOutAreaWithoutElevation();
     params.aoi = args.GetAoi().value_or("");
     params.orbit_reference = args.GetOrbitFileReference();
     params.orbit_secondary = args.GetOrbitFileSecondary();

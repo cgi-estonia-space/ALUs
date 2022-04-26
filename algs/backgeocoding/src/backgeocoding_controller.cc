@@ -35,9 +35,9 @@ BackgeocodingController::BackgeocodingController(std::shared_ptr<AlusFileReader<
                                                  std::string_view master_metadata_file,
                                                  std::string_view slave_metadata_file)
     : beam_dimap_mode_(true),
-      master_input_dataset_(master_input_dataset),
-      slave_input_dataset_(slave_input_dataset),
-      output_dataset_(output_dataset),
+      master_input_dataset_(std::move(master_input_dataset)),
+      slave_input_dataset_(std::move(slave_input_dataset)),
+      output_dataset_(std::move(output_dataset)),
       master_metadata_file_(master_metadata_file),
       slave_metadata_file_(slave_metadata_file) {}
 
@@ -46,17 +46,15 @@ BackgeocodingController::BackgeocodingController(std::shared_ptr<AlusFileReader<
                                                  std::shared_ptr<AlusFileWriter<float>> output_dataset,
                                                  std::shared_ptr<snapengine::Product> master_product,
                                                  std::shared_ptr<snapengine::Product> slave_product)
-    : master_input_dataset_(master_input_dataset),
-      slave_input_dataset_(slave_input_dataset),
-      output_dataset_(output_dataset),
-      master_product_(master_product),
-      slave_product_(slave_product) {}
+    : master_input_dataset_(std::move(master_input_dataset)),
+      slave_input_dataset_(std::move(slave_input_dataset)),
+      output_dataset_(std::move(output_dataset)),
+      master_product_(std::move(master_product)),
+      slave_product_(std::move(slave_product)) {}
 
-BackgeocodingController::~BackgeocodingController() {}
-
-void BackgeocodingController::PrepareToCompute(const float* egm96_device_array, PointerArray srtm3_tiles) {
+void BackgeocodingController::PrepareToCompute(const float* egm96_device_array, PointerArray srtm3_tiles, bool mask_out_area_without_elevation) {
     backgeocoding_ = std::make_unique<Backgeocoding>();
-    backgeocoding_->SetElevationData(egm96_device_array, srtm3_tiles);
+    backgeocoding_->SetElevationData(egm96_device_array, srtm3_tiles, mask_out_area_without_elevation);
     if (beam_dimap_mode_) {
         backgeocoding_->PrepareToCompute(master_metadata_file_, slave_metadata_file_);
     } else {
@@ -71,13 +69,12 @@ void BackgeocodingController::PrepareToCompute(const float* egm96_device_array, 
 void BackgeocodingController::RegisterException(std::exception_ptr e) {
     std::unique_lock lock(exception_mutex_);
 
-    exceptions_.push_back(e);
+    exceptions_.push_back(std::move(e));
     exceptions_thrown_++;
 }
 
 void BackgeocodingController::ReadMaster(Rectangle master_area, int16_t* i_tile, int16_t* q_tile) const {
-    // TODO: Could we read slave and master at the same time if we branch into 2 other threads during this thread.
-    // TODO: find out if the band ordering is random or not. Then replace those numbers.
+    // find out if the band ordering is random or not. Then replace those numbers?
     std::map<int, int16_t*> bands;
     bands.insert({1, i_tile});
     bands.insert({2, q_tile});
@@ -96,7 +93,7 @@ PositionComputeResults BackgeocodingController::PositionCompute(int m_burst_inde
 }
 
 void BackgeocodingController::ReadSlave(Rectangle slave_area, int16_t* i_tile, int16_t* q_tile) const {
-    // TODO: find out if the band ordering is random or not. Then replace those numbers.
+    // find out if the band ordering is random or not. Then replace those numbers?
     std::map<int, int16_t*> bands;
     bands.insert({1, i_tile});
     bands.insert({2, q_tile});
@@ -147,6 +144,8 @@ void BackgeocodingController::DoWork() {
     // Backgeocoding does a lot of things on cpu, 2 x input datasets, 4 x output datasets, partial CPU triangulation
     // this number should be double checked if further optimizations are made
     const int n_worker_threads = 9;
+    threads_vec.reserve(n_worker_threads);
+
     for (int i = 0; i < n_worker_threads; i++) {
         threads_vec.emplace_back([&queue]() {
             BackgeocodingWorker worker;
@@ -172,10 +171,10 @@ void BackgeocodingController::Initialize() {
         return;
     }
 
-    // TODO: do I need this?
+    // do I need this?
     // checkSourceProductValidity();
 
-    // TODO: implemented in a different way.
+    // for now, implemented in a different way.
     /*mSU = new Sentinel1Utils(masterProduct);
     mSubSwath = mSU.getSubSwath();
     mSU.computeDopplerRate();
@@ -196,10 +195,10 @@ void BackgeocodingController::Initialize() {
 
     s1tbx::Sentinel1Utils* master_utils = backgeocoding_->GetMasterUtils();
 
-    std::vector<std::string> mSubSwathNames = master_utils->GetSubSwathNames();
-    std::vector<std::string> mPolarizations = master_utils->GetPolarizations();
+    std::vector<std::string> m_sub_swath_names = master_utils->GetSubSwathNames();
+    //std::vector<std::string> m_polarizations = master_utils->GetPolarizations();
 
-    // TODO: not checking any of that. Is it needed?
+    // TODO(unknown): not checking any of that. Is it needed?
     /*for(SlaveData slaveData : slaveDataList) {
         final String[] sSubSwathNames = slaveData.sSU.getSubSwathNames();
         if (mSubSwathNames.length != 1 || sSubSwathNames.length != 1) {
@@ -217,10 +216,10 @@ void BackgeocodingController::Initialize() {
     }*/
 
     // subSwathIndex = 1; // subSwathIndex is always 1 because of split product
-    swath_index_str_ = mSubSwathNames.at(0).substr(0, 3);
+    swath_index_str_ = m_sub_swath_names.at(0).substr(0, 3);
 
-    // TODO: Currently only supported dem is srtm3
-    // TODO: Currently only supports bilinear resampling
+    // Currently only supported dem is srtm3
+    // Currently only supports bilinear resampling
     /*if (externalDEMFile == null) {
         DEMFactory.checkIfDEMInstalled(demName);
     }
@@ -232,7 +231,7 @@ void BackgeocodingController::Initialize() {
         throw new OperatorException("Resampling method "+ resamplingType + " is invalid");
     }*/
 
-    // TODO: implement this to create an output product.
+    // TODO(unknown): implement this to create an output product.
     /*createTargetProduct();
 
     std::vector<std::string> masterProductBands;
@@ -279,7 +278,7 @@ void BackgeocodingController::UpdateTargetProductMetadata() {
         snapengine::AbstractMetadata::GetAbstractedMetadata(target_product_);
     snapengine::AbstractMetadata::SetAttribute(abs_tgt, snapengine::AbstractMetadata::COREGISTERED_STACK, 1);
 
-    // TODO: not entirely sure if needed
+    // TODO(unknown): not entirely sure if needed
     /*std::shared_ptr<snapengine::MetadataElement> inputElem = ProductInformation::GetInputProducts(target_product_);
     for(SlaveData slaveData : slaveDataList) {
         std::shared_ptr<snapengine::MetadataElement> slvInputElem =
@@ -291,7 +290,7 @@ void BackgeocodingController::UpdateTargetProductMetadata() {
         }
     }*/
 
-    // TODO: not sure if anything gets hurt by this.
+    // TODO(unknown): not sure if anything gets hurt by this.
     // CreateStackOp.getBaselines(sourceProduct, target_product_);
 }
 }  // namespace alus::backgeocoding

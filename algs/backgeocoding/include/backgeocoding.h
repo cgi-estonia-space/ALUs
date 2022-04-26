@@ -74,9 +74,11 @@ public:
     [[nodiscard]] s1tbx::Sentinel1Utils* GetMasterUtils() const { return master_utils_.get(); }
     [[nodiscard]] s1tbx::Sentinel1Utils* GetSlaveUtils() const { return slave_utils_.get(); }
 
-    void SetElevationData(const float* egm96_device_array, PointerArray srtm3_tiles) {
+    void SetElevationData(const float* egm96_device_array, PointerArray srtm3_tiles,
+                          bool mask_out_area_without_elevation) {
         egm96_device_array_ = egm96_device_array;
         srtm3_tiles_ = srtm3_tiles;
+        mask_out_area_without_elevation_ = mask_out_area_without_elevation;
     }
 
 private:
@@ -90,7 +92,7 @@ private:
         int y_min, y_max;
     };
 
-    bool disable_reramp_ = 0;  // TODO: currently not implemented
+    bool disable_reramp_ = false;  // currently not implemented
     int slave_burst_offset_;
 
     std::unique_ptr<s1tbx::Sentinel1Utils> master_utils_;
@@ -102,6 +104,7 @@ private:
 
     const float* egm96_device_array_;
     PointerArray srtm3_tiles_;
+    bool mask_out_area_without_elevation_ = true;
 
     std::vector<double> ComputeImageGeoBoundary(s1tbx::SubSwathInfo* sub_swath, int burst_index, int x_min, int x_max,
                                                 int y_min, int y_max);

@@ -32,7 +32,7 @@ constexpr size_t FULL_SUBSWATH_BURST_INDEX_END{9999};
 
 namespace alus::coregistration {
 
-Coregistration::Coregistration(std::string aux_data_path) {
+Coregistration::Coregistration(const std::string& aux_data_path) {
     alus::snapengine::SystemUtils::SetAuxDataPath(aux_data_path + "/");
 }
 
@@ -124,8 +124,9 @@ void Coregistration::Initialize(const Coregistration::Parameters& params) {
         split_slave_->GetTargetProduct());
 }
 
-void Coregistration::DoWork(const float* egm96_device_array, PointerArray srtm3_tiles) {
-    backgeocoding_->PrepareToCompute(egm96_device_array, srtm3_tiles);
+void Coregistration::DoWork(const float* egm96_device_array, PointerArray srtm3_tiles,
+                            bool mask_out_area_without_elevation) const {
+    backgeocoding_->PrepareToCompute(egm96_device_array, srtm3_tiles, mask_out_area_without_elevation);
     backgeocoding_->DoWork();
 }
 
