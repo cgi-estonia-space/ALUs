@@ -20,6 +20,8 @@
 
 #include <algorithm>
 #include <fstream>
+#include <map>
+#include <mutex>
 
 #include <boost/algorithm/string/replace.hpp>
 
@@ -226,7 +228,7 @@ boost::filesystem::path SentinelPODOrbitFile::GetDestFolder(std::string_view mis
             rename(old_folder, dest_folder);
         }
     }
-    boost::filesystem::create_directories(dest_folder);
+
     return dest_folder;
 }
 
@@ -244,11 +246,17 @@ std::optional<boost::filesystem::path> SentinelPODOrbitFile::FindOrbitFile(std::
     } else {
         boost::filesystem::path orbit_file_folder = GetDestFolder(mission_prefix, orbit_type, year, month);
 
-        if (!(boost::filesystem::exists(orbit_file_folder) && boost::filesystem::is_directory(orbit_file_folder))) {
-            return std::nullopt;
+        if (boost::filesystem::exists(orbit_file_folder) && boost::filesystem::is_directory(orbit_file_folder)) {
+            for (boost::filesystem::directory_entry& file : boost::filesystem::directory_iterator(orbit_file_folder)) {
+                if (IsWithinRange(file.path().filename().string(), state_vector_time)) {
+                    return file;
+                }
+            }
         }
-        //    std::vector<boost::filesystem::path> files = orbit_file_folder.listFiles(new S1OrbitFileFilter(prefix));
-        for (boost::filesystem::directory_entry& file : boost::filesystem::directory_iterator(orbit_file_folder)) {
+
+        // no orbit file in snap compatible folder, just iterate the path!
+        for (boost::filesystem::directory_entry& file :
+             boost::filesystem::directory_iterator(snapengine::SystemUtils::GetAuxDataPath())) {
             if (IsWithinRange(file.path().filename().string(), state_vector_time)) {
                 return file;
             }
@@ -298,13 +306,16 @@ std::string SentinelPODOrbitFile::ExtractTimeFromFilename(std::string_view filen
 }
 
 void SentinelPODOrbitFile::ReadOrbitFile() {
-    //    todo: find a similar solution for caching
-    //    std::vector<snapengine::OrbitVector> cached_o_s_v_list = GetCache()->Get(orbit_file_);
-
-    //    if (!cached_o_s_v_list.empty()) {
-    //        osv_list_ = cached_o_s_v_list;
-    //        return;
-    //    }
+    // simple orbit file cache
+    static std::map<boost::filesystem::path, std::vector<std::shared_ptr<alus::snapengine::OrbitVector>>> osv_cache;
+    static std::mutex osv_mutex;
+    {
+        std::unique_lock l(osv_mutex);
+        if (auto it = osv_cache.find(*orbit_file_); it != osv_cache.end()) {
+            osv_list_ = it->second;
+            return;
+        }
+    }
 
     //    todo: add zip file support!
     /*
@@ -380,7 +391,11 @@ void SentinelPODOrbitFile::ReadOrbitFile() {
         osv_list_ = ReadOSVList(list_of_o_s_v_s_node);
     }
     CheckOrbitFileValidity();
-    //    getCache().put(orbitFile, osvList);
+
+    {
+        std::unique_lock l(osv_mutex);
+        osv_cache.insert({*orbit_file_, osv_list_});
+    }
 }
 
 void SentinelPODOrbitFile::CheckOrbitFileValidity() {

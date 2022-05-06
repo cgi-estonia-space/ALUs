@@ -202,7 +202,6 @@ TEST_F(TopsarMergeTest, OverlappingSubSwathsMergeWithTC) {
                           target->GetSceneRasterHeight(), geo_transform_out, projection_out, true);
         target->SetImageWriter(data_writer);
         merge_operator.Compute();
-        data_writer->Close();
 
         // TC
         Metadata tc_metadata(target);

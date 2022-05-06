@@ -42,7 +42,6 @@ void GdalImageWriter::Open(std::string_view path_to_band_file, int raster_size_x
                            bool in_memory_file) {
     auto* const po_driver = in_memory_file ? GetGdalMemDriver() : GetGdalGeoTiffDriver();
 
-    do_close_dataset_ = !in_memory_file;
     CHECK_GDAL_PTR(po_driver);
     // po_driver reference gets checked by guard
     dataset_ = po_driver->Create(std::string(path_to_band_file).c_str(), raster_size_x, raster_size_y, 1, GDT_Float32,
@@ -55,17 +54,13 @@ void GdalImageWriter::Open(std::string_view path_to_band_file, int raster_size_x
 }
 
 void GdalImageWriter::Close() {
-    if (dataset_ && do_close_dataset_) {
-        GDALClose(dataset_);
-        dataset_ = nullptr;
-    }
+    GDALClose(dataset_);
+    dataset_ = nullptr;
 }
 
 GdalImageWriter::~GdalImageWriter() {
-    if (dataset_ && do_close_dataset_) {
-        GDALClose(dataset_);
-        dataset_ = nullptr;
-    }
+    GDALClose(dataset_);
+    dataset_ = nullptr;
 }
 
 }  // namespace alus::snapengine::custom

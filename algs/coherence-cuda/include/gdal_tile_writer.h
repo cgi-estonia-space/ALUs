@@ -29,7 +29,6 @@ namespace coherence_cuda {
 class GdalTileWriter : public IDataTileWriter {
 private:
     GDALDataset* output_dataset_{};
-    bool do_close_dataset_;
 
     void InitializeOutputDataset(GDALDriver* output_driver, std::vector<double>& affine_geo_transform_out,
                                  std::string_view data_projection_out);
@@ -45,6 +44,7 @@ public:
     //    void WriteTile(const Tile& tile, void* tile_data, std::size_t tile_data_size) override;
     void WriteTile(const Tile& tile, float* tile_data, std::size_t tile_data_size) override;
     [[nodiscard]] GDALDataset* GetGdalDataset() const { return output_dataset_; }
+    void ReleaseGdalDataset() { output_dataset_ = nullptr; }
     void CloseDataSet();
 };
 }  // namespace coherence-cuda

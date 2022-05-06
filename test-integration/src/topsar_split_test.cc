@@ -49,7 +49,7 @@ TEST(TopsarSplit, S1utilsSlave) {
         "goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.SAFE";
 
     alus::topsarsplit::TopsarSplit split_slave(slave_file, subswath_name, polarisation);
-    split_slave.initialize();
+    split_slave.Initialize();
     std::shared_ptr<alus::C16Dataset<int16_t>> master_reader = split_slave.GetPixelReader();
     alus::s1tbx::ApplyOrbitFileOp orbit_file_slave(split_slave.GetTargetProduct(), true);
     orbit_file_slave.Initialize();
@@ -208,7 +208,7 @@ TEST(TopsarSplit, S1utilsSlaveCut) {
         "goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.SAFE";
 
     alus::topsarsplit::TopsarSplit split_slave(slave_file, subswath_name, polarisation, 4, 6);  // NOLINT
-    split_slave.initialize();
+    split_slave.Initialize();
     std::shared_ptr<alus::C16Dataset<int16_t>> master_reader = split_slave.GetPixelReader();
     alus::s1tbx::ApplyOrbitFileOp orbit_file_slave(split_slave.GetTargetProduct(), true);
     orbit_file_slave.Initialize();
@@ -321,7 +321,7 @@ TEST(TopsarSplit, S1utilsMaster) {
     std::string_view master_file =
         "./goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD.SAFE";
     alus::topsarsplit::TopsarSplit split_master(master_file, subswath_name, polarisation);
-    split_master.initialize();
+    split_master.Initialize();
     std::shared_ptr<alus::C16Dataset<int16_t>> master_reader = split_master.GetPixelReader();
     alus::s1tbx::ApplyOrbitFileOp orbit_file_master(split_master.GetTargetProduct(), true);
     orbit_file_master.Initialize();
@@ -375,7 +375,7 @@ TEST(TopsarSplit, ExtractsSingleBurstFromAoiWkt) {
         "POLYGON((35.98629227594312 33.78599319266792,35.58951654737135 33.889421777083186,35.55574840025886 "
         "33.83334045091287,35.98629227594312 33.78599319266792))";
     alus::topsarsplit::TopsarSplit split_master(master_file, subswath_name, polarisation, aoi_wkt);
-    split_master.initialize();
+    split_master.Initialize();
 
     alus::s1tbx::Sentinel1Utils master_utils(split_master.GetTargetProduct());
     const auto& subswath = master_utils.subswath_.at(0);
@@ -412,7 +412,7 @@ TEST(TopsarSplit, ExtractsMultipleBurstsFromAoiWkt) {
         "POLYGON((34.42016601562499 33.5047590692261,35.35675048828125 33.72433966174759,35.28259277343749 "
         "32.85651801010955,34.42016601562499 33.5047590692261))";
     alus::topsarsplit::TopsarSplit split_master(master_file, subswath_name, polarisation, aoi_wkt);
-    split_master.initialize();
+    split_master.Initialize();
 
     alus::s1tbx::Sentinel1Utils master_utils(split_master.GetTargetProduct());
     const auto& subswath = master_utils.subswath_.at(0);
@@ -444,8 +444,8 @@ TEST(TopsarSplit, CheckSwathBoundaryAoi) {
 
     std::vector<alus::topsarsplit::SwathPolygon> swaths;
     for (std::string_view swath : {"IW1", "IW2", "IW3"}) {
-        alus::topsarsplit::TopsarSplit split(master_file, swath, polarisation, false);
-        split.initialize();
+        alus::topsarsplit::TopsarSplit split(master_file, swath, polarisation);
+        split.Initialize();
 
         swaths.push_back(alus::topsarsplit::ExtractSwathPolygon(split.GetTargetProduct()));
     }

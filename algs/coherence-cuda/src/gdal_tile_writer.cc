@@ -25,7 +25,7 @@ namespace coherence_cuda {
 GdalTileWriter::GdalTileWriter(std::string_view file_name, const BandParams& band_params,
                                const std::vector<double>& affine_geo_transform_out,
                                std::string_view data_projection_out)
-    : IDataTileWriter(file_name, band_params, affine_geo_transform_out, data_projection_out), do_close_dataset_{true} {
+    : IDataTileWriter(file_name, band_params, affine_geo_transform_out, data_projection_out) {
     auto* const po_driver = GetGDALDriverManager()->GetDriverByName("GTiff");
     CHECK_GDAL_PTR(po_driver);
     InitializeOutputDataset(po_driver, GetGeoTransform(), GetDataProjection());
@@ -34,7 +34,7 @@ GdalTileWriter::GdalTileWriter(std::string_view file_name, const BandParams& ban
 GdalTileWriter::GdalTileWriter(GDALDriver* output_driver, const BandParams& band_params,
                                const std::vector<double>& affine_geo_transform_out,
                                std::string_view data_projection_out)
-    : IDataTileWriter("", band_params, affine_geo_transform_out, data_projection_out), do_close_dataset_{false} {
+    : IDataTileWriter("", band_params, affine_geo_transform_out, data_projection_out) {
     CHECK_GDAL_PTR(output_driver);
     InitializeOutputDataset(output_driver, GetGeoTransform(), GetDataProjection());
 }
@@ -52,10 +52,8 @@ void GdalTileWriter::WriteTile(const Tile& tile, float* tile_data, std::size_t t
 }
 
 void GdalTileWriter::CloseDataSet() {
-    if (output_dataset_ && do_close_dataset_) {
-        GDALClose(output_dataset_);
-        output_dataset_ = nullptr;
-    }
+    GDALClose(output_dataset_);
+    output_dataset_ = nullptr;
 }
 
 void GdalTileWriter::InitializeOutputDataset(GDALDriver* output_driver, std::vector<double>& affine_geo_transform_out,
@@ -70,5 +68,5 @@ void GdalTileWriter::InitializeOutputDataset(GDALDriver* output_driver, std::vec
 }
 
 GdalTileWriter::~GdalTileWriter() { CloseDataSet(); }
-}  // namespace coherence-cuda
+}  // namespace coherence_cuda
 }  // namespace alus

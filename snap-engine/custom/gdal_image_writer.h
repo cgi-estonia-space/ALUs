@@ -28,7 +28,6 @@ namespace alus::snapengine::custom {
 class GdalImageWriter : public IImageWriter {
 private:
     GDALDataset* dataset_{};
-    bool do_close_dataset_ = false;
 
 public:
     /**
@@ -49,6 +48,7 @@ public:
 
     // TODO internal dataset exposed to work together with different GDAL wrappers in the project  // NOLINT
     GDALDataset* GetDataset() { return dataset_; }
+    void ReleaseDataset() { dataset_ = nullptr; }
 
     // todo: add support for subsampling
     void WriteSubSampledData(const custom::Rectangle& rectangle, std::vector<float>& data, int band_index) override;

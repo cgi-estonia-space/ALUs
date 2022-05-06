@@ -74,5 +74,6 @@ public:
     [[nodiscard]] const std::vector<float>& GetData() const override { return data_; }
     void Close() override;
     void ReleaseDataset();
+    GDALDataset* GetDataset() { return dataset_; }
 };
 }  // namespace alus::snapengine::custom
