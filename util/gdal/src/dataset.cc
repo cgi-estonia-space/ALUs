@@ -200,11 +200,6 @@ void Dataset<BufferType>::ReadRectangle(Rectangle rectangle, int band_nr, Buffer
 
 template <typename BufferType>
 void Dataset<BufferType>::LoadDataset(std::string_view filename, GDALAccess access) {
-    if (dataset_ == nullptr) {
-        // TODO: move this to a place where it is unifiedly called once when system  // NOLINT
-        // starts.
-        this->dataset_ = static_cast<GDALDataset*>(GDALOpen(filename.data(), GA_ReadOnly));
-    }
 
     this->dataset_ = static_cast<GDALDataset*>(GDALOpen(filename.data(), access));
     if (this->dataset_ == nullptr) {
@@ -237,16 +232,16 @@ void Dataset<BufferType>::CacheImage() {
     int actual_y;
 
     try {
-        int raster_y = dataset_->GetRasterYSize();
-        int band_count = this->dataset_->GetRasterCount();
-        std::vector<BufferType> temp_pile(dataset_->GetRasterYSize());
+        const int band_count = this->dataset_->GetRasterCount();
+        std::vector<BufferType> temp_pile(default_y);
+        const int last_y = reading_area_.y + reading_area_.height;
 
         int cached_blocks = 0;
 
         for (int i = 1; i <= band_count; i++) {
-            for (offset_y = 0; offset_y < raster_y; offset_y += default_y) {
-                if ((offset_y + default_y) >= raster_y) {
-                    actual_y = raster_y - offset_y;
+            for (offset_y = reading_area_.y; offset_y < last_y; offset_y += default_y) {
+                if ((offset_y + default_y) >= last_y) {
+                    actual_y = last_y - offset_y;
                 } else {
                     actual_y = default_y;
                 }
@@ -258,7 +253,7 @@ void Dataset<BufferType>::CacheImage() {
             }
         }
 
-        const int total_blocks = (raster_y + default_y - 1) / default_y;
+        const int total_blocks = (reading_area_.height + default_y - 1) / default_y;
         const double percent = (100.0 * cached_blocks) / (band_count * total_blocks);
         LOGD << "Dataset pre-cached " << percent << "% of file " << file_path_;
     } catch (const std::exception&) {
@@ -277,6 +272,7 @@ void Dataset<BufferType>::TryToCacheImage() {
 template class Dataset<double>;
 template class Dataset<float>;
 template class Dataset<int16_t>;
+template class Dataset<uint16_t>;
 template class Dataset<int>;
 template class Dataset<Iq16>;
 }  // namespace alus

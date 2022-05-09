@@ -35,7 +35,7 @@ inline __device__ double InterpolationCubicB(double y0, double y1, double y2, do
            (-0.5 * y0 + 0.5 * y2) * mu + y1;
 }
 
-inline __device__ float GetEGM96(double lat, double lon, int max_lats, int max_lons, float* egm) {
+inline __device__ float GetEGM96(double lat, double lon, int max_lats, int max_lons, const float* egm) {
     const double r = (90 - lat) / 0.25;
     const double c = ((lon < 0) * (lon + 360) + (lon >= 0) * lon) / 0.25;
     int ri, i;

@@ -17,6 +17,8 @@
 #include <array>
 #include <stdexcept>
 
+#include <ogr_spatialref.h>
+
 #include "algorithm_exception.h"
 #include "alus_log.h"
 #include "gdal_util.h"
@@ -24,11 +26,11 @@
 
 namespace {
 void TryAssignSrs(OGRSpatialReference* srs, std::string_view projection) {
-    const auto srs_res = srs->SetWellKnownGeogCS(projection.data());
+    const auto srs_res = srs->SetFromUserInput(projection.data());
     if (srs_res != OGRERR_NONE) {
         throw std::invalid_argument(
             std::string(projection) +
-            " is not supported, see SetWellKnownGeoCS() documentation from GDAL library. OGR error - " +
+            " is not supported, see SetFromUserInput() documentation from GDAL library. OGR error - " +
             std::to_string(srs_res));
     }
 }
@@ -49,18 +51,23 @@ void TryTransformingCoordinates(OGRCoordinateTransformation* transformer, GDALDa
     std::array<double, alus::transform::GEOTRANSFORM_ARRAY_LENGTH> gt;
     CHECK_GDAL_ERROR(from->GetGeoTransform(gt.data()));
 
-    double* x = transformer->GetSourceCS()->GetAxisMappingStrategy() == OAMS_TRADITIONAL_GIS_ORDER
-                    ? &gt.at(alus::transform::TRANSFORM_LON_ORIGIN_INDEX)
-                    : &gt.at(alus::transform::TRANSFORM_LAT_ORIGIN_INDEX);
-    double* y = transformer->GetSourceCS()->GetAxisMappingStrategy() == OAMS_TRADITIONAL_GIS_ORDER
-                    ? &gt.at(alus::transform::TRANSFORM_LAT_ORIGIN_INDEX)
-                    : &gt.at(alus::transform::TRANSFORM_LON_ORIGIN_INDEX);
+    double* x = &gt[alus::transform::TRANSFORM_LON_ORIGIN_INDEX];
+    double* y = &gt[alus::transform::TRANSFORM_LAT_ORIGIN_INDEX];
     if (transformer->Transform(1, x, y) != 1) {
         THROW_ALGORITHM_EXCEPTION(
             APP_NAME, "Transforming coordinates failed - no more details provided by underlying(GDAL) library.");
     }
 
     CHECK_GDAL_ERROR(to->SetGeoTransform(gt.data()));
+}
+
+void TryTransformingCoordinates(OGRCoordinateTransformation* transformer, double* convert_gt) {
+    double* x = &convert_gt[alus::transform::TRANSFORM_LON_ORIGIN_INDEX];
+    double* y = &convert_gt[alus::transform::TRANSFORM_LAT_ORIGIN_INDEX];
+    if (transformer->Transform(1, x, y) != 1) {
+        THROW_ALGORITHM_EXCEPTION(
+            APP_NAME, "Transforming coordinates failed - no more details provided by underlying(GDAL) library.");
+    }
 }
 
 void TryCalculatingPixelSize(GDALDataset* from, GDALDataset* to, double longitude_factor, double latitude_factor) {
@@ -92,6 +99,13 @@ void Reprojection(GDALDataset* from, GDALDataset* reprojected, std::string_view 
     auto* transformer = TryCreateCoordinateTransform(in_srs, &out_srs);
     TryTransformingCoordinates(transformer, from, reprojected);
     TryCalculatingPixelSize(from, reprojected, longitude_factor, latitude_factor);
+}
+
+void Reprojection(const OGRSpatialReference* source, OGRSpatialReference* dest_srs, double* dest_gt,
+                  std::string_view projection) {
+    TryAssignSrs(dest_srs, projection);
+    auto* transformer = TryCreateCoordinateTransform(source, dest_srs);
+    TryTransformingCoordinates(transformer, dest_gt);
 }
 
 }  // namespace alus::resample

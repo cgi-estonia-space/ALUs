@@ -31,7 +31,8 @@ TEST(ExtendedAmountTest, ComputeExtendedAmount) {
     dem_assistant->GetSrtm3Manager()->HostToDevice();
     backgeocoding.SetElevationData(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
                                    {dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo(),
-                                    dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()});
+                                    dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()},
+                                   true);
     backgeocoding.PrepareToCompute("./goods/master_metadata.dim", "./goods/slave_metadata.dim");
 
     alus::Rectangle const input{4000, 17000, 100, 100};

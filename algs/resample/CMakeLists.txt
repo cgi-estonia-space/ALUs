@@ -1,8 +1,14 @@
 
 list(APPEND RESAMPLE_SOURCES
         src/cli_args.cc
+        src/dataset_register.cc
         src/execute.cc
-        src/projection.cc)
+        src/nppi_resample.cu
+        src/output_factory.cc
+        src/projection.cc
+        src/sentinel2_dataset.cc
+        src/sentinel2_tools.cc
+        src/tyler_the_creator.cc)
 
 list(APPEND RESAMPLE_INCLUDES
         ${CMAKE_CURRENT_LIST_DIR}/include)
@@ -18,6 +24,7 @@ target_include_directories(resample-static
 target_link_libraries(resample-static
         PUBLIC
         Boost::program_options
+        nppig
         app-util-static
         common-util-static)
 

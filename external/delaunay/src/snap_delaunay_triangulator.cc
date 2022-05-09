@@ -30,11 +30,20 @@ SnapDelaunayTriangulator::~SnapDelaunayTriangulator(){
     size_t size = this->triangles.size();
     SnapTriangle *triangle;
 
-    for(size_t i =0; i<size; i++){
+    for(size_t i =0; i < size; i++) {
         triangle = this->triangles.at(i);
+        auto it = free_set_.find(triangle);
+        if(it != free_set_.end())
+        {
+            free_set_.erase(it);
+        }
         delete triangle;
     }
     this->triangles.clear();
+
+    for(auto* e : free_set_) {
+        delete e;
+    }
 }
 
 /**
@@ -58,6 +67,9 @@ void SnapDelaunayTriangulator::Triangulate(alus::PointDouble *p, int size) {
 void SnapDelaunayTriangulator::InitTriangulation(alus::PointDouble c0, alus::PointDouble c1){
     SnapTriangle *t0 = new SnapTriangle(c0, c1, HORIZON); //TODO: should those be class members? You know, for deletion.
     SnapTriangle *t1 = new SnapTriangle(c1, c0, HORIZON);
+
+    free_set_.insert(t0);
+    free_set_.insert(t1);
 
     t0->SetNeighbours(t1, t1, t1);
     t1->SetNeighbours(t0, t0, t0);
@@ -120,6 +132,10 @@ std::vector<SnapTriangle*> SnapDelaunayTriangulator::BuildTrianglesBetweenNewVer
     }
     this->current_external_triangle_ = new SnapTriangle(point, beforeFirstVisibleT->A, HORIZON);
     nextExternalTriangle = new SnapTriangle(afterLastVisibleT->B, point, HORIZON);
+
+    free_set_.insert(current_external_triangle_);
+    free_set_.insert(nextExternalTriangle);
+
     LinkExteriorTriangles(beforeFirstVisibleT, this->current_external_triangle_);
     if (firstVisibleT != nullptr || lastVisibleT != nullptr) {
         Link(this->current_external_triangle_, 0, firstVisibleT, 1);

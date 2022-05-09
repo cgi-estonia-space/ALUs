@@ -30,9 +30,6 @@ list(APPEND TEST_SOURCES_BACKGEOCODING
         src/extended_amount_test.cc
         )
 
-list(APPEND TEST_SOURCES_BACKGEOCODING_FULL
-        src/backgeocoding/backgeocoding_threads_test.cc
-        )
 list(APPEND TEST_SOURCES_TOPSAR_SPLIT
         src/topsar_split_test.cc
         )
@@ -107,23 +104,6 @@ add_custom_target(integration-test-prepare-data ALL
 
         VERBATIM
         )
-
-add_executable(backgeocoding-full ${TEST_SOURCES_BACKGEOCODING_FULL})
-target_include_directories(backgeocoding-full
-        PUBLIC
-        ${TEST_INCLUDE}
-        )
-
-target_link_libraries(backgeocoding-full
-        PRIVATE
-        alus-gmock-main
-        cuda-util-static
-        backgeocoding-static
-        exotic-operations-static
-        app-util-static
-        )
-
-add_dependencies(backgeocoding-full integration-test-prepare-data)
 
 add_executable(integration-test-topsar-split ${TEST_SOURCES_TOPSAR_SPLIT})
 target_link_libraries(integration-test-topsar-split
@@ -352,7 +332,6 @@ add_dependencies(integration-test-topsar-merge integration-test-prepare-data)
 #----------------Build all integration-tests----------------------------------------
 add_custom_target(integration-test-all)
 add_dependencies(integration-test-all
-        backgeocoding-full
         integration-test-topsar-split
         integration-test-coregistration
         integration-test-snap-engine

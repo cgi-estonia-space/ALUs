@@ -18,7 +18,12 @@
 
 #include <boost/geometry.hpp>
 
+#include "product.h"
+#include "snap-core/core/datamodel/tie_point_grid.h"
+#include "operator_utils.h"
 #include "topsar_split.h"
+
+#include "alus_log.h"
 
 namespace alus::topsarsplit {
 BurstBox GetBurstBoxFrom(const std::vector<alus::Coordinates>& upper_burst_edge,
@@ -61,6 +66,52 @@ std::vector<int> DetermineBurstIndexesCoveredBy(const Aoi& aoi,
     }
 
     return selected_bursts;
+}
+
+SwathPolygon ExtractSwathPolygon(std::shared_ptr<snapengine::Product> product) {
+
+    auto tpg_lat = product->GetTiePointGrid(snapengine::OperatorUtils::TPG_LATITUDE);
+    auto tpg_lon = product->GetTiePointGrid(snapengine::OperatorUtils::TPG_LONGITUDE);
+    alus::s1tbx::Sentinel1Utils slave_utils(product);
+    alus::s1tbx::SubSwathInfo* subswath = slave_utils.subswath_.at(0).get();
+
+    std::vector<Point> left;
+    std::vector<Point> right;
+
+    for (int i = 0; i < subswath->num_of_bursts_; i++) {
+        const int first_line = subswath->first_valid_line_.at(i);
+        const int last_line = subswath->last_valid_line_.at(i);
+        const int y_burst_start = i * subswath->lines_per_burst_;
+        const int y_burst_end = y_burst_start + subswath->lines_per_burst_;
+        const int x_valid_start = subswath->first_valid_sample_.at(i).at(first_line);
+        const int x_valid_end = subswath->last_valid_sample_.at(i).at(last_line);
+
+        left.push_back({tpg_lon->GetPixelDouble(x_valid_start, y_burst_start),
+                        tpg_lat->GetPixelDouble(x_valid_start, y_burst_start)});
+        left.push_back(
+            {tpg_lon->GetPixelDouble(x_valid_start, y_burst_end), tpg_lat->GetPixelDouble(x_valid_start, y_burst_end)});
+
+        right.push_back(
+            {tpg_lon->GetPixelDouble(x_valid_end, y_burst_start), tpg_lat->GetPixelDouble(x_valid_end, y_burst_start)});
+        right.push_back(
+            {tpg_lon->GetPixelDouble(x_valid_end, y_burst_end), tpg_lat->GetPixelDouble(x_valid_end, y_burst_end)});
+    }
+
+    BurstBox polygon;
+    for (const auto& point : left) {
+        polygon.outer().push_back(point);
+    }
+    std::reverse(right.begin(), right.end());
+    for (const auto& point : right) {
+        polygon.outer().push_back(point);
+    }
+
+    LOGD << "Swath = " << subswath->subswath_name_ << " boundary = " << boost::geometry::wkt(polygon);
+    return polygon;
+}
+
+bool IsWithinSwath(const Aoi& aoi, const SwathPolygon& swath_polygon) {
+    return boost::geometry::within(aoi, swath_polygon);
 }
 
 }  // namespace alus::topsarsplit

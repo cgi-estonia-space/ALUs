@@ -384,11 +384,11 @@ void Sentinel1Level1Directory::AddTiePointGrids(const std::shared_ptr<snapengine
 }
 void Sentinel1Level1Directory::GetListInEvenlySpacedGrid(const int scene_raster_width, const int scene_raster_height,
                                                          const int source_grid_width, const int source_grid_height,
-                                                         std::vector<int> x, std::vector<int> y,
-                                                         std::vector<double> source_point_list,
+                                                         const std::vector<int>& x, const std::vector<int>& y,
+                                                         const std::vector<double>& source_point_list,
                                                          const int target_grid_width, const int target_grid_height,
                                                          const double sub_sampling_x, const double sub_sampling_y,
-                                                         std::vector<float> target_point_list) {
+                                                         std::vector<float>& target_point_list) {
     if (source_point_list.size() != static_cast<size_t>(source_grid_width) * source_grid_height) {
         throw std::invalid_argument(
             "Original tie point array size does not match 'sourceGridWidth' x 'sourceGridHeight'");

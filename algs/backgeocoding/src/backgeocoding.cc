@@ -11,6 +11,7 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
+
 #include "backgeocoding.h"
 
 #include <cuda_runtime.h>
@@ -53,8 +54,8 @@ Backgeocoding::~Backgeocoding() {
 
 void Backgeocoding::PrepareToCompute(std::shared_ptr<snapengine::Product> master_product,
                                      std::shared_ptr<snapengine::Product> slave_product) {
-    slave_utils_ = std::make_unique<s1tbx::Sentinel1Utils>(slave_product);
-    master_utils_ = std::make_unique<s1tbx::Sentinel1Utils>(master_product);
+    slave_utils_ = std::make_unique<s1tbx::Sentinel1Utils>(std::move(slave_product));
+    master_utils_ = std::make_unique<s1tbx::Sentinel1Utils>(std::move(master_product));
     PrepareToComputeBody();
 }
 
@@ -65,7 +66,7 @@ void Backgeocoding::PrepareToCompute(std::string_view master_metadata_file, std:
 }
 
 void Backgeocoding::PrepareToComputeBody() {
-    // TODO: Exclusively supporting srtm3 atm
+    // Exclusively supporting srtm3 atm
     dem_sampling_lat_ = static_cast<double>(snapengine::Srtm3ElevationModel::GetTileWidthInDegrees()) /
                         static_cast<double>(snapengine::Srtm3ElevationModel::GetTileWidth());
     dem_sampling_lon_ = dem_sampling_lat_;
@@ -120,15 +121,15 @@ Rectangle Backgeocoding::PositionCompute(int m_burst_index, int s_burst_index, R
     const int margin = snapengine::BILINEAR_INTERPOLATION_KERNEL_SIZE;
     Rectangle source_rectangle;
 
-    const int firstLineIndex = s_burst_index * slave_utils_->subswath_.at(0)->lines_per_burst_;
-    const int lastLineIndex = firstLineIndex + slave_utils_->subswath_.at(0)->lines_per_burst_ - 1;
-    const int firstPixelIndex = 0;
-    const int lastPixelIndex = slave_utils_->subswath_.at(0)->samples_per_burst_ - 1;
+    const int first_line_index = s_burst_index * slave_utils_->subswath_.at(0)->lines_per_burst_;
+    const int last_line_index = first_line_index + slave_utils_->subswath_.at(0)->lines_per_burst_ - 1;
+    const int first_pixel_index = 0;
+    const int last_pixel_index = slave_utils_->subswath_.at(0)->samples_per_burst_ - 1;
 
-    coord_min_max.x_min = std::max(coord_min_max.x_min - margin, firstPixelIndex);
-    coord_min_max.x_max = std::min(coord_min_max.x_max + margin, lastPixelIndex);
-    coord_min_max.y_min = std::max(coord_min_max.y_min - margin, firstLineIndex);
-    coord_min_max.y_max = std::min(coord_min_max.y_max + margin, lastLineIndex);
+    coord_min_max.x_min = std::max(coord_min_max.x_min - margin, first_pixel_index);
+    coord_min_max.x_max = std::min(coord_min_max.x_max + margin, last_pixel_index);
+    coord_min_max.y_min = std::max(coord_min_max.y_min - margin, first_line_index);
+    coord_min_max.y_max = std::min(coord_min_max.y_max + margin, last_line_index);
 
     source_rectangle.x = coord_min_max.x_min;
     source_rectangle.y = coord_min_max.y_min;
@@ -156,7 +157,7 @@ void Backgeocoding::CoreCompute(const CoreComputeParams& params) const {
     bilinear_params.disable_reramp = disable_reramp_;
     bilinear_params.subswath_start = slave_utils_->subswath_.at(0)->lines_per_burst_ * params.s_burst_index;
     bilinear_params.subswath_end = slave_utils_->subswath_.at(0)->lines_per_burst_ * (params.s_burst_index + 1);
-    bilinear_params.no_data_value = 0.0;  // TODO: placeholder.
+    bilinear_params.no_data_value = 0.0;  // placeholder
 
     CHECK_CUDA_ERR(LaunchBilinearInterpolation(params.device_x_points, params.device_y_points,
                                                params.device_demod_phase, params.device_demod_i, params.device_demod_q,
@@ -169,7 +170,8 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index, int s_burst_index, Rec
     bool result = true;
     alus::delaunay::DelaunayTriangle2D* device_triangles{nullptr};
 
-    double *device_lat_array{nullptr}, *device_lon_array{nullptr};
+    double* device_lat_array{nullptr};
+    double* device_lon_array{nullptr};
     std::vector<double> test_out;
 
     CHECK_CUDA_ERR(
@@ -212,12 +214,12 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index, int s_burst_index, Rec
     calc_data.num_lines = calc_data.lat_min_idx - calc_data.lat_max_idx;
     calc_data.num_pixels = calc_data.lon_max_idx - calc_data.lon_min_idx;
     calc_data.tiles = srtm3_tiles_;
-    calc_data.egm = const_cast<float*>(egm96_device_array_);
+    calc_data.egm = egm96_device_array_;
     calc_data.max_lats = alus::snapengine::earthgravitationalmodel96computation::MAX_LATS;
     calc_data.max_lons = alus::snapengine::earthgravitationalmodel96computation::MAX_LONS;
-    // TODO: we may have to rewire this in the future, but no idea to where atm.
+    // we may have to rewire this in the future, but no idea to where atm.
     calc_data.dem_no_data_value = alus::snapengine::srtm3elevationmodel::NO_DATA_VALUE;
-    calc_data.mask_out_area_without_elevation = 1;  // TODO: placeholder should be coming in with user arguments
+    calc_data.mask_out_area_without_elevation = mask_out_area_without_elevation_;
 
     size_t valid_index_count = 0;
     const size_t az_rg_size = calc_data.num_lines * calc_data.num_pixels;
@@ -238,14 +240,14 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index, int s_burst_index, Rec
     calc_data.master_dt = master_orbit->GetDt();
     calc_data.slave_dt = slave_orbit->GetDt();
 
-    CHECK_CUDA_ERR(cudaMalloc((void**)&calc_data.device_master_az, az_rg_size * sizeof(double)));
-    CHECK_CUDA_ERR(cudaMalloc((void**)&calc_data.device_master_rg, az_rg_size * sizeof(double)));
-    CHECK_CUDA_ERR(cudaMalloc((void**)&calc_data.device_slave_az, az_rg_size * sizeof(double)));
-    CHECK_CUDA_ERR(cudaMalloc((void**)&calc_data.device_slave_rg, az_rg_size * sizeof(double)));
-    CHECK_CUDA_ERR(cudaMalloc((void**)&calc_data.device_lats, az_rg_size * sizeof(double)));
-    CHECK_CUDA_ERR(cudaMalloc((void**)&calc_data.device_lons, az_rg_size * sizeof(double)));
+    CHECK_CUDA_ERR(cudaMalloc(&calc_data.device_master_az, az_rg_size * sizeof(double)));
+    CHECK_CUDA_ERR(cudaMalloc(&calc_data.device_master_rg, az_rg_size * sizeof(double)));
+    CHECK_CUDA_ERR(cudaMalloc(&calc_data.device_slave_az, az_rg_size * sizeof(double)));
+    CHECK_CUDA_ERR(cudaMalloc(&calc_data.device_slave_rg, az_rg_size * sizeof(double)));
+    CHECK_CUDA_ERR(cudaMalloc(&calc_data.device_lats, az_rg_size * sizeof(double)));
+    CHECK_CUDA_ERR(cudaMalloc(&calc_data.device_lons, az_rg_size * sizeof(double)));
 
-    CHECK_CUDA_ERR(cudaMalloc((void**)&calc_data.device_valid_index_counter, sizeof(size_t)));
+    CHECK_CUDA_ERR(cudaMalloc(&calc_data.device_valid_index_counter, sizeof(size_t)));
     CHECK_CUDA_ERR(
         cudaMemcpy(calc_data.device_valid_index_counter, &valid_index_count, sizeof(size_t), cudaMemcpyHostToDevice));
 
@@ -261,8 +263,8 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index, int s_burst_index, Rec
         window.linehi = master_area.y + master_area.height - 1;
         window.pixlo = master_area.x;
         window.pixhi = master_area.x + master_area.width - 1;
-        window.lines = window.linehi - window.linelo + 1;
-        window.pixels = window.pixhi - window.pixlo + 1;
+        window.lines = static_cast<int>(window.linehi - window.linelo + 1);
+        window.pixels = static_cast<int>(window.pixhi - window.pixlo + 1);
 
         snapengine::triangularinterpolation::TriangleInterpolationParams params;
         alus::snapengine::triangularinterpolation::Zdata zdata[Z_DATA_SIZE];
@@ -280,16 +282,16 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index, int s_burst_index, Rec
         alus::delaunay::DelaunayTriangulator triangulator;
         triangulator.TriangulateCPU2(master_az.data(), 1.0, master_rg.data(), rg_az_ratio, az_rg_size, INVALID_INDEX);
 
-        CHECK_CUDA_ERR(cudaMalloc((void**)&device_triangles,
-                                  triangulator.triangle_count_ * sizeof(alus::delaunay::DelaunayTriangle2D)));
+        CHECK_CUDA_ERR(
+            cudaMalloc(&device_triangles, triangulator.triangle_count_ * sizeof(alus::delaunay::DelaunayTriangle2D)));
         CHECK_CUDA_ERR(cudaMemcpy(device_triangles, triangulator.host_triangles_.data(),
                                   triangulator.triangle_count_ * sizeof(alus::delaunay::DelaunayTriangle2D),
                                   cudaMemcpyHostToDevice));
 
         int array_size = window.lines * window.pixels;
 
-        CHECK_CUDA_ERR(cudaMalloc((void**)&device_lat_array, array_size * sizeof(double)));
-        CHECK_CUDA_ERR(cudaMalloc((void**)&device_lon_array, array_size * sizeof(double)));
+        CHECK_CUDA_ERR(cudaMalloc(&device_lat_array, array_size * sizeof(double)));
+        CHECK_CUDA_ERR(cudaMalloc(&device_lon_array, array_size * sizeof(double)));
 
         zdata[0].input_arr = calc_data.device_slave_az;
         zdata[0].input_width = window.lines;
@@ -337,7 +339,7 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index, int s_burst_index, Rec
         params.window = window;
 
         CHECK_CUDA_ERR(
-            cudaMalloc((void**)&device_zdata, Z_DATA_SIZE * sizeof(alus::snapengine::triangularinterpolation::Zdata)));
+            cudaMalloc(&device_zdata, Z_DATA_SIZE * sizeof(alus::snapengine::triangularinterpolation::Zdata)));
         CHECK_CUDA_ERR(cudaMemcpy(device_zdata, zdata,
                                   Z_DATA_SIZE * sizeof(alus::snapengine::triangularinterpolation::Zdata),
                                   cudaMemcpyHostToDevice));
@@ -359,14 +361,15 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index, int s_burst_index, Rec
         mask_data.device_y_points = device_y_points;
         mask_data.device_lat_array = device_lat_array;
         mask_data.device_lon_array = device_lon_array;
-
+        mask_data.mask_out_area_without_elevation = mask_out_area_without_elevation_;
         mask_data.size = array_size;
         mask_data.tiles = srtm3_tiles_;
 
         int not_invalid_counter = 0;
 
-        cudaMalloc((void**)&mask_data.not_null_counter, sizeof(int));
-        cudaMemcpy(mask_data.not_null_counter, &not_invalid_counter, sizeof(int), cudaMemcpyHostToDevice);
+        CHECK_CUDA_ERR(cudaMalloc(&mask_data.not_null_counter, sizeof(int)));
+        CHECK_CUDA_ERR(
+            cudaMemcpy(mask_data.not_null_counter, &not_invalid_counter, sizeof(int), cudaMemcpyHostToDevice));
 
         CHECK_CUDA_ERR(LaunchElevationMask(mask_data));
 
@@ -415,22 +418,22 @@ std::vector<double> Backgeocoding::ComputeImageGeoBoundary(s1tbx::SubSwathInfo* 
     double rg_time_max = sub_swath->slr_time_to_first_pixel_ +
                          x_max * master_utils_->range_spacing_ / snapengine::eo::constants::LIGHT_SPEED;
 
-    double latUL = master_utils_->GetLatitude(az_time_min, rg_time_min, sub_swath);
-    double lonUL = master_utils_->GetLongitude(az_time_min, rg_time_min, sub_swath);
-    double latUR = master_utils_->GetLatitude(az_time_min, rg_time_max, sub_swath);
-    double lonUR = master_utils_->GetLongitude(az_time_min, rg_time_max, sub_swath);
-    double latLL = master_utils_->GetLatitude(az_time_max, rg_time_min, sub_swath);
-    double lonLL = master_utils_->GetLongitude(az_time_max, rg_time_min, sub_swath);
-    double latLR = master_utils_->GetLatitude(az_time_max, rg_time_max, sub_swath);
-    double lonLR = master_utils_->GetLongitude(az_time_max, rg_time_max, sub_swath);
+    double lat_ul = s1tbx::Sentinel1Utils::GetLatitude(az_time_min, rg_time_min, sub_swath);
+    double lon_ul = s1tbx::Sentinel1Utils::GetLongitude(az_time_min, rg_time_min, sub_swath);
+    double lat_ur = s1tbx::Sentinel1Utils::GetLatitude(az_time_min, rg_time_max, sub_swath);
+    double lon_ur = s1tbx::Sentinel1Utils::GetLongitude(az_time_min, rg_time_max, sub_swath);
+    double lat_ll = s1tbx::Sentinel1Utils::GetLatitude(az_time_max, rg_time_min, sub_swath);
+    double lon_ll = s1tbx::Sentinel1Utils::GetLongitude(az_time_max, rg_time_min, sub_swath);
+    double lat_lr = s1tbx::Sentinel1Utils::GetLatitude(az_time_max, rg_time_max, sub_swath);
+    double lon_lr = s1tbx::Sentinel1Utils::GetLongitude(az_time_max, rg_time_max, sub_swath);
 
     double lat_min = 90.0;
     double lat_max = -90.0;
     double lon_min = 180.0;
     double lon_max = -180.0;
 
-    std::vector<double> lats{lat_min, latUL, latUR, latLL, latLR, lat_max};
-    std::vector<double> lons{lon_min, lonUL, lonUR, lonLL, lonLR, lon_max};
+    std::vector<double> lats{lat_min, lat_ul, lat_ur, lat_ll, lat_lr, lat_max};
+    std::vector<double> lons{lon_min, lon_ul, lon_ur, lon_ll, lon_lr, lon_max};
 
     lat_min = *std::min_element(lats.begin(), lats.end() - 1);
     lat_max = *std::max_element(lats.begin() + 1, lats.end());

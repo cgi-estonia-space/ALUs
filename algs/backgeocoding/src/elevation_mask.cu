@@ -36,7 +36,7 @@ __global__ void ElevationMask(ElevationMaskData data) {
         const double alt = snapengine::srtm3elevationmodel::GetElevation(lat, lon, &data.tiles);
 
         // TODO: this may need to change if we decide not to use mask.
-        if (alt == snapengine::srtm3elevationmodel::NO_DATA_VALUE) {
+        if (data.mask_out_area_without_elevation && alt == snapengine::srtm3elevationmodel::NO_DATA_VALUE) {
             data.device_x_points[idx] = INVALID_INDEX;
             data.device_y_points[idx] = INVALID_INDEX;
         } else {

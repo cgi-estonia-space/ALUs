@@ -12,13 +12,17 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 
+#include "cli_args.h"
+
+#include <cstddef>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
 #include <boost/algorithm/string.hpp>
 
-#include "cli_args.h"
+#include "resample_method.h"
 
 namespace alus::resample {
 
@@ -43,15 +47,15 @@ void Arguments::ConstructCliArgs() {
         ("input,i", po::value<std::vector<std::string>>(&input_datasets_)->required(), "Input dataset(s)")
         ("destination,d", po::value<std::string>(&results_output_path_)->required(), "Results output path")
         ("dim_band", po::value<size_t>(&resample_dim_of_band_), "Dimension of the resampled image(s) "
-         "taken from the specified band's dimensions of the (first) input. Alternative would be to manually specify "
-         "using '--dim' or '--width' and '-height' arguments.")
+         "taken from the specified band's dimensions of the (first) input. Starting from 1. "
+         "Alternative would be to manually specify using '--dim' or '--width' and '-height' arguments.")
         ("dim", po::value<std::string>(&resample_image_dim_arg_), "Dimension of the resampled image(s) '{width}x{height}' "
          "in pixels. For example - '1000x1500'. "
          "Alternatively can use '--width' and '--height' arguments or '--dim_band'.")
-        ("--width", po::value<int>(&resample_image_dim_.columnsX), "Width of the resampled image(s). "
+        ("width", po::value<int>(&resample_image_dim_.columnsX), "Width of the resampled image(s). "
          "Must be specified together with '--height' argument. "
          "Alternatively can use '--dim' or '--dim_band' arguments.")
-        ("--height", po::value<int>(&resample_image_dim_.rowsY), "Width of the resampled image(s). "
+        ("height", po::value<int>(&resample_image_dim_.rowsY), "Width of the resampled image(s). "
          "Must be specified together with '--width' argument. "
          "Alternatively can use '--dim' or '--dim_band' arguments.")
         ("tile_dim", po::value<std::string>(&tile_dim_arg_),
@@ -61,11 +65,11 @@ void Arguments::ConstructCliArgs() {
         ("tile_height", po::value<int>(&tile_dim_.rowsY), "Output tiles' height. Alternatively can use '--tile_dim'.")
         ("overlap", po::value<size_t>(&pixel_overlap_)->default_value(0), "Tiles overlap in pixels")
         ("method,m", po::value<std::string>(&resample_method_arg_)->required(), methods_list_help.c_str())
-        ("format,f", po::value<std::string>(&output_format_), "One of the following - GeoTIFF, NetCDF, Zarr. "
-         "Or leave empty to use input format(must match one from listed ones)")
+        ("format,f", po::value<std::string>(&output_format_), "One of the following - GTiff, netCDF. "
+         "Or any other supported GDAL driver. Leave empty to use input format.")
         ("crs,p", po::value<std::string>(&output_crs_), "Coordinate reference system/projection "
          "for output tiles. Leave empty to use input CRS. Consult GDAL/PROJ for supported ones. In general this "
-         "value is supplied to SetWellKnownGeoCS() GDAL API. Some valid examples - 'WGS84', 'EPSG:4326'.")
+         "value is supplied to SetFromUserInput() GDAL API. Some valid examples - 'WGS84', 'EPSG:4326'.")
         ("exclude", po::value<std::vector<size_t>>(&exclude_list_), "Bands to be excluded from resampling. "
          "When multiple inputs are specified which differ in band count a warning is given if band number specified "
          "is not present. Starting from 1. Argument can be specified multiple times.");
@@ -86,6 +90,10 @@ void Arguments::Check() {
         throw std::invalid_argument(
             "Incorrectly supplied resampling dimensions. Either use '--dim_band' or '--dim' or "
             "define both '--width' and '--height'");
+    }
+
+    if (vm_.count("dim_band") != 0U && resample_dim_of_band_ == 0) {
+        throw std::invalid_argument("--dim_band values start from 1");
     }
 
     if (vm_.count("dim") != 0U) {
@@ -143,16 +151,18 @@ std::optional<std::string> Arguments::GetOutputCrs() const {
 }
 
 void Arguments::ConstructResampleMethodList() {
-    resample_arg_to_method_map_.try_emplace("nearest-neighbour", Method::NEAREST_NEIGHBOUR);
-    resample_arg_to_method_map_.try_emplace("linear", Method::LINEAR);
-    resample_arg_to_method_map_.try_emplace("cubic", Method::CUBIC);
-    resample_arg_to_method_map_.try_emplace("cubic2p-bspline", Method::CUBIC2P_BSPLINE);
-    resample_arg_to_method_map_.try_emplace("cubic2p-catmullrom", Method::CUBIC2P_CATMULLROM);
-    resample_arg_to_method_map_.try_emplace("cubic2p-c05c03", Method::CUBIC2P_C05C03);
-    resample_arg_to_method_map_.try_emplace("super", Method::SUPER);
-    resample_arg_to_method_map_.try_emplace("lanczos", Method::LANCZOS);
-    resample_arg_to_method_map_.try_emplace("lanczos3", Method::LANCZOS3);
-    resample_arg_to_method_map_.try_emplace("smooth-edge", Method::SMOOTH_EDGE);
+    // NOLINTBEGIN
+    resample_arg_to_method_map_.try_emplace(std::string(METHOD_STRINGS.at(0)), Method::NEAREST_NEIGHBOUR);
+    resample_arg_to_method_map_.try_emplace(std::string(METHOD_STRINGS.at(1)), Method::LINEAR);
+    resample_arg_to_method_map_.try_emplace(std::string(METHOD_STRINGS.at(2)), Method::CUBIC);
+    resample_arg_to_method_map_.try_emplace(std::string(METHOD_STRINGS.at(3)), Method::CUBIC2P_BSPLINE);
+    resample_arg_to_method_map_.try_emplace(std::string(METHOD_STRINGS.at(4)), Method::CUBIC2P_CATMULLROM);
+    resample_arg_to_method_map_.try_emplace(std::string(METHOD_STRINGS.at(5)), Method::CUBIC2P_C05C03);
+    resample_arg_to_method_map_.try_emplace(std::string(METHOD_STRINGS.at(6)), Method::SUPER);
+    resample_arg_to_method_map_.try_emplace(std::string(METHOD_STRINGS.at(7)), Method::LANCZOS);
+    resample_arg_to_method_map_.try_emplace(std::string(METHOD_STRINGS.at(8)), Method::LANCZOS3);
+    resample_arg_to_method_map_.try_emplace(std::string(METHOD_STRINGS.at(9)), Method::SMOOTH_EDGE);
+    // NOLINTEND
 }
 
 RasterDimension Arguments::ParseDimensionsFromString(std::string_view arg) {
@@ -162,8 +172,7 @@ RasterDimension Arguments::ParseDimensionsFromString(std::string_view arg) {
         throw std::invalid_argument("Supplied dimension argument(" + std::string(arg) + ") is in a wrong format.");
     }
 
-    return {static_cast<int>(std::stoul(sizes.front())),
-            static_cast<int>(std::stoul(sizes.back()))};
+    return {static_cast<int>(std::stoul(sizes.front())), static_cast<int>(std::stoul(sizes.back()))};
 }
 
 }  // namespace alus::resample

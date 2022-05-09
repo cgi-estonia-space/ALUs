@@ -29,6 +29,7 @@ CudaDevice::CudaDevice(int device_nr, void* device_prop) : device_nr_{device_nr}
     max_threads_per_sm_ = dev->maxThreadsPerMultiProcessor;
     warp_size_ = dev->warpSize;
     total_global_memory_ = dev->totalGlobalMem;
+
 }
 
 void CudaDevice::Set() const {

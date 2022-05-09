@@ -14,51 +14,49 @@
 #pragma once
 
 #include <cmath>
+#include <unordered_set>
 #include <vector>
 
+#include "delaunay_triangle2D.h"
 #include "shapes.h"
 #include "snap_triangle.h"
-#include "delaunay_triangle2D.h"
 
 namespace external {
 namespace delaunay {
-
 
 /**
  * This is meant to be a copy of org.jlinda.core.delaunay.FastDelaunayTriangulator.
  */
 class SnapDelaunayTriangulator {
-   private:
+private:
     /**
      * Fictive Coordinate representing the Horizon, or an infinite point.
      * It closes triangles around the convex hull of the triangulation
      */
     alus::PointDouble HORIZON;
-    SnapTriangle *current_external_triangle_;
+    SnapTriangle* current_external_triangle_;
     std::vector<SnapTriangle*> triangles;
-
+    std::unordered_set<SnapTriangle*> free_set_;
 
     void InitTriangulation(alus::PointDouble c0, alus::PointDouble c1);
     void AddExternalVertex(alus::PointDouble point);
     std::vector<SnapTriangle*> BuildTrianglesBetweenNewVertexAndConvexHull(alus::PointDouble point);
-    void Link(SnapTriangle *t1, int side1, SnapTriangle *t2, int side2);
-    void Link(SnapTriangle *t1, int side1, SnapTriangle *t2);
-    void LinkExteriorTriangles(SnapTriangle *t1, SnapTriangle *t2);
-    void Delaunay(SnapTriangle *t, int side);
-    void Flip(SnapTriangle *t0, int side0, SnapTriangle *t1, int side1);
+    void Link(SnapTriangle* t1, int side1, SnapTriangle* t2, int side2);
+    void Link(SnapTriangle* t1, int side1, SnapTriangle* t2);
+    void LinkExteriorTriangles(SnapTriangle* t1, SnapTriangle* t2);
+    void Delaunay(SnapTriangle* t, int side);
+    void Flip(SnapTriangle* t0, int side0, SnapTriangle* t1, int side1);
 
-   public:
+    SnapDelaunayTriangulator(const SnapDelaunayTriangulator&) = delete;
+    SnapDelaunayTriangulator& operator=(const SnapDelaunayTriangulator&) = delete;
+
+public:
     SnapDelaunayTriangulator();
     ~SnapDelaunayTriangulator();
-    void Triangulate(alus::PointDouble *p, int size);
-    size_t TrianglesSize(){
-        return triangles.size();
-    }
+    void Triangulate(alus::PointDouble* p, int size);
+    size_t TrianglesSize() { return triangles.size(); }
     std::vector<alus::delaunay::DelaunayTriangle2D> Get2dTriangles();
-
-
 };
 
-}//namespace
-}//namespace
-
+}  // namespace delaunay
+}  // namespace external

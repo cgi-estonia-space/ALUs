@@ -391,7 +391,7 @@ std::shared_ptr<TiePointGrid> TiePointGrid::CreateSubset(const std::shared_ptr<T
     for (int y = 0; y < new_t_p_g_height; y++) {
         const int src_pos = src_t_p_g_width * (data_offset_y + y) + data_offset_x;
         //        todo:check if this works like expected
-        std::copy(old_tie_points.begin() + src_pos, old_tie_points.begin() + new_t_p_g_width,
+        std::copy(old_tie_points.begin() + src_pos, old_tie_points.begin() + src_pos + new_t_p_g_width,
                   tie_points.begin() + y * new_t_p_g_width);
     }
 

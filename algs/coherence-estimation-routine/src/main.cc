@@ -30,6 +30,9 @@
 #include "execute.h"
 
 namespace {
+
+constexpr bool RUN_TIMELINE = COHERENCE_TIMELINE;
+
 alus::coherenceestimationroutine::Execute::Parameters AssembleParameters(
     const alus::coherenceestimationroutine::Arguments& args) {
     alus::coherenceestimationroutine::Execute::Parameters params;
@@ -51,6 +54,8 @@ alus::coherenceestimationroutine::Execute::Parameters AssembleParameters(
         params.burst_index_start_secondary = std::get<0>(burst_sec.value());
         params.burst_index_last_secondary = std::get<1>(burst_sec.value());
     }
+
+    params.mask_out_area_without_elevation = args.DoMaskOutAreaWithoutElevation();
     params.aoi = args.GetAoi().value_or("");
     params.orbit_reference = args.GetOrbitFileReference();
     params.orbit_secondary = args.GetOrbitFileSecondary();
@@ -62,6 +67,11 @@ alus::coherenceestimationroutine::Execute::Parameters AssembleParameters(
     params.rg_window = args.GetRangeWindow();
     params.az_window = args.GetAzimuthWindow();
     params.wif = args.DoSaveIntermediateResults();
+
+    params.timeline_start = args.GetTimelineStart();
+    params.timeline_end = args.GetTimelineEnd();
+    params.timeline_input = args.GetTimelineInput();
+    params.timeline_mission = args.GetTimelineMission();
 
     return params;
 }
@@ -80,7 +90,7 @@ int main(int argc, char* argv[]) {
         alus::common::log::Initialize();
         auto cuda_init = alus::cuda::CudaInit();
 
-        alus::coherenceestimationroutine::Arguments args;
+        alus::coherenceestimationroutine::Arguments args(RUN_TIMELINE);
         args_help = args.GetHelp();
         args.Parse(std::vector<char*>(argv, argv + argc));
 
@@ -91,9 +101,12 @@ int main(int argc, char* argv[]) {
 
         args.Check();
         alus::common::log::SetLevel(args.GetLogLevel());
-
         alus::coherenceestimationroutine::Execute exe(AssembleParameters(args), args.GetDemFiles());
-        exe.Run(cuda_init, args.GetGpuMemoryPercentage());
+        if (RUN_TIMELINE) {
+            exe.RunTimeline(cuda_init, args.GetGpuMemoryPercentage());
+        } else {
+            exe.RunSinglePair(cuda_init, args.GetGpuMemoryPercentage());
+        }
 
     } catch (const boost::program_options::error& e) {
         std::cout << alus::app::GenerateHelpMessage(alus::coherenceestimationroutine::ALG_NAME, args_help);

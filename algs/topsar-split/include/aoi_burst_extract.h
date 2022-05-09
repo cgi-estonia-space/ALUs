@@ -17,7 +17,9 @@
 
 #include <boost/geometry.hpp>
 
+#include "product.h"
 #include "raster_properties.h"
+
 
 namespace alus::topsarsplit {
 
@@ -25,6 +27,7 @@ namespace alus::topsarsplit {
 using Point = boost::geometry::model::d2::point_xy<Coordinate>;
 // Burst box geometry is defined by a polygon of points
 using BurstBox = boost::geometry::model::polygon<Point>;
+using SwathPolygon = boost::geometry::model::polygon<Point>;
 // Area of interest is defined by a polygon of points
 using Aoi = boost::geometry::model::polygon<Point>;
 BurstBox GetBurstBoxFrom(const std::vector<alus::Coordinates>& upper_burst_edge,
@@ -32,5 +35,8 @@ BurstBox GetBurstBoxFrom(const std::vector<alus::Coordinates>& upper_burst_edge,
 bool IsCovered(const BurstBox& burst, const Aoi& aoi);
 std::vector<int> DetermineBurstIndexesCoveredBy(const Aoi& aoi,
                                                 const std::vector<std::vector<Coordinates>>& burst_edge_line_points);
+bool IsWithinSwath(const Aoi& aoi, std::shared_ptr<snapengine::Product> product);
+bool IsWithinSwath(const Aoi& aoi, const SwathPolygon& swath_polygon);
+SwathPolygon ExtractSwathPolygon(std::shared_ptr<snapengine::Product> product);
 
 }  // namespace alus::topsarsplit

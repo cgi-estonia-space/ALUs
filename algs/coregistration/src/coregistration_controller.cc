@@ -15,8 +15,6 @@
 
 #include <memory>
 
-#include "gdal_priv.h"
-
 #include "apply_orbit_file_op.h"
 #include "backgeocoding_controller.h"
 #include "general_constants.h"
@@ -32,16 +30,16 @@ constexpr size_t FULL_SUBSWATH_BURST_INDEX_END{9999};
 
 namespace alus::coregistration {
 
-Coregistration::Coregistration(std::string aux_data_path) {
+Coregistration::Coregistration(const std::string& aux_data_path) {
     alus::snapengine::SystemUtils::SetAuxDataPath(aux_data_path + "/");
 }
 
-void Coregistration::Initialize(std::string_view master_file, std::string_view slave_file, std::string_view output_file,
-                                std::string_view subswath_name, std::string_view polarisation, size_t first_burst_index,
-                                size_t last_burst_index) {
+void Coregistration::Initialize(std::string_view reference_file, std::string_view secondary_file,
+                                std::string_view output_file, std::string_view subswath_name,
+                                std::string_view polarisation, size_t first_burst_index, size_t last_burst_index) {
     Parameters params;
-    params.main_scene_file = master_file;
-    params.secondary_scene_file = slave_file;
+    params.main_scene_file = reference_file;
+    params.secondary_scene_file = secondary_file;
     params.subswath = subswath_name;
     params.output_file = output_file;
     params.polarisation = polarisation;
@@ -51,11 +49,12 @@ void Coregistration::Initialize(std::string_view master_file, std::string_view s
     Initialize(params);
 }
 
-void Coregistration::Initialize(std::string_view master_file, std::string_view slave_file, std::string_view output_file,
-                                std::string_view subswath_name, std::string_view polarisation) {
+void Coregistration::Initialize(std::string_view reference_file, std::string_view secondary_file,
+                                std::string_view output_file, std::string_view subswath_name,
+                                std::string_view polarisation) {
     Parameters params;
-    params.main_scene_file = master_file;
-    params.secondary_scene_file = slave_file;
+    params.main_scene_file = reference_file;
+    params.secondary_scene_file = secondary_file;
     params.subswath = subswath_name;
     params.output_file = output_file;
     params.polarisation = polarisation;
@@ -67,10 +66,10 @@ void Coregistration::Initialize(std::string_view master_file, std::string_view s
 
 void Coregistration::Initialize(const Coregistration::Parameters& params) {
     if (!params.aoi.empty()) {
-        split_master_ = std::make_unique<topsarsplit::TopsarSplit>(params.main_scene_file, params.subswath,
-                                                                   params.polarisation, params.aoi);
-        split_slave_ = std::make_unique<topsarsplit::TopsarSplit>(params.secondary_scene_file, params.subswath,
-                                                                  params.polarisation, params.aoi);
+        split_reference_ = std::make_unique<topsarsplit::TopsarSplit>(params.main_scene_file, params.subswath,
+                                                                      params.polarisation, params.aoi);
+        split_secondary_ = std::make_unique<topsarsplit::TopsarSplit>(params.secondary_scene_file, params.subswath,
+                                                                      params.polarisation, params.aoi);
     } else {
         size_t main_burst_start = params.main_scene_first_burst_index;
         size_t main_burst_end = params.main_scene_last_burst_index;
@@ -78,7 +77,7 @@ void Coregistration::Initialize(const Coregistration::Parameters& params) {
             main_burst_start = FULL_SUBSWATH_BURST_INDEX_START;
             main_burst_end = FULL_SUBSWATH_BURST_INDEX_END;
         }
-        split_master_ = std::make_unique<topsarsplit::TopsarSplit>(
+        split_reference_ = std::make_unique<topsarsplit::TopsarSplit>(
             params.main_scene_file, params.subswath, params.polarisation, main_burst_start, main_burst_end);
 
         size_t sec_burst_start = params.secondary_scene_first_burst_index;
@@ -87,45 +86,71 @@ void Coregistration::Initialize(const Coregistration::Parameters& params) {
             sec_burst_start = FULL_SUBSWATH_BURST_INDEX_START;
             sec_burst_end = FULL_SUBSWATH_BURST_INDEX_END;
         }
-        split_slave_ = std::make_unique<topsarsplit::TopsarSplit>(params.secondary_scene_file, params.subswath,
-                                                                  params.polarisation, sec_burst_start, sec_burst_end);
+        split_secondary_ = std::make_unique<topsarsplit::TopsarSplit>(
+            params.secondary_scene_file, params.subswath, params.polarisation, sec_burst_start, sec_burst_end);
     }
 
-    split_master_->initialize();
-    std::shared_ptr<C16Dataset<int16_t>> master_reader = split_master_->GetPixelReader();
+    split_reference_->Initialize();
+    split_reference_->OpenPixelReader(params.main_scene_file);
+    std::shared_ptr<C16Dataset<int16_t>> reference_reader = split_reference_->GetPixelReader();
     if (!params.main_orbit_file.empty()) {
         snapengine::AlusUtils::SetOrbitFilePath(params.main_orbit_file);
     }
-    orbit_file_master_ = std::make_unique<s1tbx::ApplyOrbitFileOp>(split_master_->GetTargetProduct(), true);
-    orbit_file_master_->Initialize();
+    auto orbit_file_master = std::make_unique<s1tbx::ApplyOrbitFileOp>(split_reference_->GetTargetProduct(), true);
+    orbit_file_master->Initialize();
 
-    split_slave_->initialize();
+    split_secondary_->Initialize();
+    split_secondary_->OpenPixelReader(params.secondary_scene_file);
     if (!params.secondary_orbit_file.empty()) {
         snapengine::AlusUtils::SetOrbitFilePath(params.secondary_orbit_file);
     }
-    orbit_file_slave_ = std::make_unique<s1tbx::ApplyOrbitFileOp>(split_slave_->GetTargetProduct(), true);
-    orbit_file_slave_->Initialize();
+    auto orbit_file_slave = std::make_unique<s1tbx::ApplyOrbitFileOp>(split_secondary_->GetTargetProduct(), true);
+    orbit_file_slave->Initialize();
 
-    auto* master_temp = master_reader->GetDataset();
+    auto* reference_temp = reference_reader->GetDataset();
 
-    alus::TargetDatasetParams out_ds_params;
+    alus::TargetDatasetParams out_ds_params = {};
     out_ds_params.filename = params.output_file;
     out_ds_params.band_count = 4;
     out_ds_params.dataset_per_band = true;
     out_ds_params.driver = GetGdalMemDriver();
-    out_ds_params.dimension = master_temp->GetRasterDimensions();
-    out_ds_params.transform = master_temp->GetTransform();
-    out_ds_params.projectionRef = master_temp->GetGdalDataset()->GetProjectionRef();
+    out_ds_params.dimension = reference_temp->GetRasterDimensions();
+    out_ds_params.transform = reference_temp->GetTransform();
+    out_ds_params.projectionRef = reference_temp->GetGdalDataset()->GetProjectionRef();
 
     target_dataset_ = std::make_shared<alus::TargetDataset<float>>(out_ds_params);
 
     backgeocoding_ = std::make_unique<backgeocoding::BackgeocodingController>(
-        master_reader, split_slave_->GetPixelReader(), target_dataset_, split_master_->GetTargetProduct(),
-        split_slave_->GetTargetProduct());
+        reference_reader, split_secondary_->GetPixelReader(), target_dataset_, split_reference_->GetTargetProduct(),
+        split_secondary_->GetTargetProduct());
 }
 
-void Coregistration::DoWork(const float* egm96_device_array, PointerArray srtm3_tiles) {
-    backgeocoding_->PrepareToCompute(egm96_device_array, srtm3_tiles);
+void Coregistration::Initialize(std::shared_ptr<topsarsplit::TopsarSplit> split_reference,
+                                std::shared_ptr<topsarsplit::TopsarSplit> split_secondary) {
+    split_reference_ = std::move(split_reference);
+    split_secondary_ = std::move(split_secondary);
+    std::shared_ptr<C16Dataset<int16_t>> reference_reader = split_reference_->GetPixelReader();
+    auto* reference_temp = reference_reader->GetDataset();
+
+    alus::TargetDatasetParams out_ds_params = {};
+    out_ds_params.filename = "";
+    out_ds_params.band_count = 4;
+    out_ds_params.dataset_per_band = true;
+    out_ds_params.driver = GetGdalMemDriver();
+    out_ds_params.dimension = reference_temp->GetRasterDimensions();
+    out_ds_params.transform = reference_temp->GetTransform();
+    out_ds_params.projectionRef = reference_temp->GetGdalDataset()->GetProjectionRef();
+
+    target_dataset_ = std::make_shared<alus::TargetDataset<float>>(out_ds_params);
+
+    backgeocoding_ = std::make_unique<backgeocoding::BackgeocodingController>(
+        reference_reader, split_secondary_->GetPixelReader(), target_dataset_, split_reference_->GetTargetProduct(),
+        split_secondary_->GetTargetProduct());
+}
+
+void Coregistration::DoWork(const float* egm96_device_array, PointerArray srtm3_tiles,
+                            bool mask_out_area_without_elevation) const {
+    backgeocoding_->PrepareToCompute(egm96_device_array, srtm3_tiles, mask_out_area_without_elevation);
     backgeocoding_->DoWork();
 }
 

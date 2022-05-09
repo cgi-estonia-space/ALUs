@@ -23,10 +23,11 @@ from [dockerhub](https://hub.docker.com/repository/docker/cgialus/alus-devel) or
 
 ## Executing
 
-Each algorithm is a separate executable. Currently available ones are:
+Each algorithm is a separate executable. Currently available ones are (more info and usage in parenthesis):
 
 * Sentinel 1 coherence estimation routine - ``alus-coh``
 * Sentinel 1 calibration routine - ``alus-cal``
+* Sentinel 2 and other raster resample and tiling - ``alus-resa`` ([README](algs/resample/README.md))
 * Gabor feature extraction - ``alus-gfe``
 
 When building separately, these are located at ``<build_dir>/alus_package``
@@ -35,7 +36,7 @@ Update **PATH** environment variable in order to execute everywhere:
 ``export PATH=$PATH:/path/to/<alus_package>``
 
 See ``--help`` for specific arguments/parameters how to invoke processing. For more information see detailed explanation
-of [processing arguments](docs/PROCESSING_ARGUMENTS.md).
+of Sentinel 1 processors' [processing arguments](docs/PROCESSING_ARGUMENTS.md).
 
 ## Docker example
 

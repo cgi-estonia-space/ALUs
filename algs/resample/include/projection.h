@@ -15,13 +15,22 @@
 #pragma once
 
 #include <cmath>
+#include <cstddef>
 #include <string_view>
 
 #include <gdal_priv.h>
+#include <ogr_spatialref.h>
 
 namespace alus::resample {
+
+inline double CalculatePixelSize(size_t input_dimension, size_t resampled_dimension, double input_pixel_size) {
+    return (input_dimension / static_cast<double>(resampled_dimension)) * input_pixel_size;
+}
 
 void Reprojection(GDALDataset* from, GDALDataset* reprojected, std::string_view projection,
                   double longitude_factor = NAN, double latitude_factor = NAN);
 
-}
+void Reprojection(const OGRSpatialReference* source, OGRSpatialReference* dest_srs, double* dest_gt,
+                  std::string_view projection);
+
+}  // namespace alus::resample

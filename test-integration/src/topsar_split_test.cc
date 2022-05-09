@@ -14,8 +14,9 @@
 
 #include <memory>
 
-#include <gmock/gmock.h>
+#include <boost/geometry.hpp>
 
+#include "gmock/gmock.h"
 #include "product.h"
 #include "pugixml_meta_data_reader.h"
 #include "snap-engine-utilities/engine-utilities/datamodel/metadata/abstract_metadata.h"
@@ -24,6 +25,7 @@
 #include "topsar_split.h"
 
 #include "../../test/include/sentinel1_utils_tester.h"
+#include "aoi_burst_extract.h"
 #include "apply_orbit_file_op.h"
 #include "c16_dataset.h"
 #include "snap-core/core/util/system_utils.h"
@@ -47,7 +49,7 @@ TEST(TopsarSplit, S1utilsSlave) {
         "goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.SAFE";
 
     alus::topsarsplit::TopsarSplit split_slave(slave_file, subswath_name, polarisation);
-    split_slave.initialize();
+    split_slave.Initialize();
     std::shared_ptr<alus::C16Dataset<int16_t>> master_reader = split_slave.GetPixelReader();
     alus::s1tbx::ApplyOrbitFileOp orbit_file_slave(split_slave.GetTargetProduct(), true);
     orbit_file_slave.Initialize();
@@ -206,7 +208,7 @@ TEST(TopsarSplit, S1utilsSlaveCut) {
         "goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.SAFE";
 
     alus::topsarsplit::TopsarSplit split_slave(slave_file, subswath_name, polarisation, 4, 6);  // NOLINT
-    split_slave.initialize();
+    split_slave.Initialize();
     std::shared_ptr<alus::C16Dataset<int16_t>> master_reader = split_slave.GetPixelReader();
     alus::s1tbx::ApplyOrbitFileOp orbit_file_slave(split_slave.GetTargetProduct(), true);
     orbit_file_slave.Initialize();
@@ -319,7 +321,7 @@ TEST(TopsarSplit, S1utilsMaster) {
     std::string_view master_file =
         "./goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD.SAFE";
     alus::topsarsplit::TopsarSplit split_master(master_file, subswath_name, polarisation);
-    split_master.initialize();
+    split_master.Initialize();
     std::shared_ptr<alus::C16Dataset<int16_t>> master_reader = split_master.GetPixelReader();
     alus::s1tbx::ApplyOrbitFileOp orbit_file_master(split_master.GetTargetProduct(), true);
     orbit_file_master.Initialize();
@@ -373,7 +375,7 @@ TEST(TopsarSplit, ExtractsSingleBurstFromAoiWkt) {
         "POLYGON((35.98629227594312 33.78599319266792,35.58951654737135 33.889421777083186,35.55574840025886 "
         "33.83334045091287,35.98629227594312 33.78599319266792))";
     alus::topsarsplit::TopsarSplit split_master(master_file, subswath_name, polarisation, aoi_wkt);
-    split_master.initialize();
+    split_master.Initialize();
 
     alus::s1tbx::Sentinel1Utils master_utils(split_master.GetTargetProduct());
     const auto& subswath = master_utils.subswath_.at(0);
@@ -410,7 +412,7 @@ TEST(TopsarSplit, ExtractsMultipleBurstsFromAoiWkt) {
         "POLYGON((34.42016601562499 33.5047590692261,35.35675048828125 33.72433966174759,35.28259277343749 "
         "32.85651801010955,34.42016601562499 33.5047590692261))";
     alus::topsarsplit::TopsarSplit split_master(master_file, subswath_name, polarisation, aoi_wkt);
-    split_master.initialize();
+    split_master.Initialize();
 
     alus::s1tbx::Sentinel1Utils master_utils(split_master.GetTargetProduct());
     const auto& subswath = master_utils.subswath_.at(0);
@@ -433,6 +435,95 @@ TEST(TopsarSplit, ExtractsMultipleBurstsFromAoiWkt) {
     EXPECT_THAT(alus::snapengine::AbstractMetadata::GetAttributeDouble(
                     abs_tgt, alus::snapengine::AbstractMetadata::LAST_FAR_LONG),
                 DoubleEq(34.67947070642776));
+}
+
+TEST(TopsarSplit, CheckSwathBoundaryAoi) {
+    std::string polarisation = "VV";
+    std::string master_file =
+        "./goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD.SAFE";
+
+    std::vector<alus::topsarsplit::SwathPolygon> swaths;
+    for (std::string_view swath : {"IW1", "IW2", "IW3"}) {
+        alus::topsarsplit::TopsarSplit split(master_file, swath, polarisation);
+        split.Initialize();
+
+        swaths.push_back(alus::topsarsplit::ExtractSwathPolygon(split.GetTargetProduct()));
+    }
+
+    const auto& sw1 = swaths.at(0);
+    const auto& sw2 = swaths.at(1);
+    const auto& sw3 = swaths.at(2);
+
+    const std::string wkt_sw1 =
+        "POLYGON((35.38970947265624 33.945638452963024,35.62591552734374 33.970697997361626,35.61218261718749 "
+        "33.76088200086919,35.3594970703125 33.79284377363183,35.38970947265624 33.945638452963024))";
+    const std::string wkt_sw2 =
+        "POLYGON((34.69482421875 34.04810808490984,34.859619140625 33.993472995119674,34.7991943359375 "
+        "33.71063227149209,34.72778320312499 33.408516828002675,34.54650878906249 33.50933936780059,34.58496093749999 "
+        "33.77001515278013,34.69482421875 34.04810808490984))";
+    const std::string wkt_sw3 =
+        "POLYGON((33.35449218749999 34.88593094075314,33.63464355468749 34.818313145609395,33.541259765625 "
+        "34.57442951865275,33.23913574218749 34.619647359797185,33.35449218749999 34.88593094075314))";
+    const std::string wkt_sw1_sw2_sw3 =
+        "POLYGON((33.7884521484375 34.470335121217474,35.4583740234375 34.30714385628805,35.277099609375 "
+        "33.96158628979907,33.4588623046875 34.189085831172406,33.7884521484375 34.470335121217474))";
+    const std::string wkt_sw1_sw2 =
+        "POLYGON((34.62341308593749 33.29839499061643,35.43640136718749 33.18813395605041,35.52978515624999 "
+        "33.495597744865705,34.64538574218749 33.51849923765609,34.62341308593749 33.29839499061643))";
+
+    alus::topsarsplit::Aoi aoi_sw1;
+    alus::topsarsplit::Aoi aoi_sw2;
+    alus::topsarsplit::Aoi aoi_sw3;
+    alus::topsarsplit::Aoi aoi_sw1_sw2_sw3;
+    alus::topsarsplit::Aoi aoi_sw1_sw2;
+
+    boost::geometry::read_wkt(wkt_sw1, aoi_sw1);
+    boost::geometry::read_wkt(wkt_sw2, aoi_sw2);
+    boost::geometry::read_wkt(wkt_sw3, aoi_sw3);
+    boost::geometry::read_wkt(wkt_sw1_sw2_sw3, aoi_sw1_sw2_sw3);
+    boost::geometry::read_wkt(wkt_sw1_sw2, aoi_sw1_sw2);
+
+    ASSERT_TRUE(alus::topsarsplit::IsWithinSwath(aoi_sw1, sw1));
+    ASSERT_FALSE(alus::topsarsplit::IsWithinSwath(aoi_sw1, sw2));
+    ASSERT_FALSE(alus::topsarsplit::IsWithinSwath(aoi_sw1, sw3));
+    ASSERT_TRUE(alus::topsarsplit::IsCovered(aoi_sw1, sw1));
+    ASSERT_FALSE(alus::topsarsplit::IsCovered(aoi_sw1, sw3));
+    ASSERT_FALSE(alus::topsarsplit::IsCovered(aoi_sw1, sw3));
+
+    ASSERT_FALSE(alus::topsarsplit::IsWithinSwath(aoi_sw2, sw1));
+    ASSERT_TRUE(alus::topsarsplit::IsWithinSwath(aoi_sw2, sw2));
+    ASSERT_FALSE(alus::topsarsplit::IsWithinSwath(aoi_sw2, sw3));
+    ASSERT_FALSE(alus::topsarsplit::IsCovered(aoi_sw2, sw1));
+    ASSERT_TRUE(alus::topsarsplit::IsCovered(aoi_sw2, sw2));
+    ASSERT_FALSE(alus::topsarsplit::IsCovered(aoi_sw2, sw3));
+
+    ASSERT_FALSE(alus::topsarsplit::IsWithinSwath(aoi_sw3, sw1));
+    ASSERT_FALSE(alus::topsarsplit::IsWithinSwath(aoi_sw3, sw2));
+    ASSERT_TRUE(alus::topsarsplit::IsWithinSwath(aoi_sw3, sw3));
+    ASSERT_FALSE(alus::topsarsplit::IsCovered(aoi_sw3, sw1));
+    ASSERT_FALSE(alus::topsarsplit::IsCovered(aoi_sw3, sw2));
+    ASSERT_TRUE(alus::topsarsplit::IsCovered(aoi_sw3, sw3));
+
+    ASSERT_FALSE(alus::topsarsplit::IsWithinSwath(aoi_sw3, sw1));
+    ASSERT_FALSE(alus::topsarsplit::IsWithinSwath(aoi_sw3, sw2));
+    ASSERT_TRUE(alus::topsarsplit::IsWithinSwath(aoi_sw3, sw3));
+    ASSERT_FALSE(alus::topsarsplit::IsCovered(aoi_sw3, sw1));
+    ASSERT_FALSE(alus::topsarsplit::IsCovered(aoi_sw3, sw2));
+    ASSERT_TRUE(alus::topsarsplit::IsCovered(aoi_sw3, sw3));
+
+    ASSERT_FALSE(alus::topsarsplit::IsWithinSwath(aoi_sw1_sw2_sw3, sw1));
+    ASSERT_FALSE(alus::topsarsplit::IsWithinSwath(aoi_sw1_sw2_sw3, sw2));
+    ASSERT_FALSE(alus::topsarsplit::IsWithinSwath(aoi_sw1_sw2_sw3, sw3));
+    ASSERT_TRUE(alus::topsarsplit::IsCovered(aoi_sw1_sw2_sw3, sw1));
+    ASSERT_TRUE(alus::topsarsplit::IsCovered(aoi_sw1_sw2_sw3, sw2));
+    ASSERT_TRUE(alus::topsarsplit::IsCovered(aoi_sw1_sw2_sw3, sw3));
+
+    ASSERT_FALSE(alus::topsarsplit::IsWithinSwath(aoi_sw1_sw2, sw1));
+    ASSERT_FALSE(alus::topsarsplit::IsWithinSwath(aoi_sw1_sw2, sw2));
+    ASSERT_FALSE(alus::topsarsplit::IsWithinSwath(aoi_sw1_sw2, sw3));
+    ASSERT_TRUE(alus::topsarsplit::IsCovered(aoi_sw1_sw2, sw1));
+    ASSERT_TRUE(alus::topsarsplit::IsCovered(aoi_sw1_sw2, sw2));
+    ASSERT_FALSE(alus::topsarsplit::IsCovered(aoi_sw1_sw2, sw3));
 }
 
 }  // namespace
