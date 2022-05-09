@@ -11,26 +11,19 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
-
 #pragma once
 
-#include <cmath>
-#include <cstddef>
+#include <array>
 #include <string_view>
 
-#include <gdal_priv.h>
-#include <ogr_spatialref.h>
+namespace alus::resample::sentinel2 {
 
-namespace alus::resample {
-
-inline double CalculatePixelSize(size_t input_dimension, size_t resampled_dimension, double input_pixel_size) {
-    return (input_dimension / static_cast<double>(resampled_dimension)) * input_pixel_size;
-}
-
-void Reprojection(GDALDataset* from, GDALDataset* reprojected, std::string_view projection,
-                  double longitude_factor = NAN, double latitude_factor = NAN);
-
-void Reprojection(const OGRSpatialReference* source, OGRSpatialReference* dest_srs, double* dest_gt,
-                  std::string_view projection);
-
-}  // namespace alus::resample
+constexpr std::array<std::string_view, 13> BANDS{"B1", "B2",  "B3", "B4",  "B5",  "B6", "B7",
+                                                 "B8", "B8A", "B9", "B10", "B11", "B12"};
+constexpr size_t SUBDATASET_COUNT{4};
+constexpr std::string_view PRODUCT_URI_KEY{"PRODUCT_URI"};
+constexpr std::string_view SUBDATASET_NAME_IDENTIFIER{"_NAME=SENTINEL2_"};
+constexpr std::string_view BANDNAME_METADATA_KEY{"BANDNAME"};
+constexpr std::string_view TRUE_COLOR_IMAGE_IDENTIFIER{".xml:TCI:"};
+constexpr size_t PIXEL_BYTE_SIZE{2};
+}  // namespace alus::resample::sentinel2

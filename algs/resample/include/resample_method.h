@@ -14,6 +14,9 @@
 
 #pragma once
 
+#include <array>
+#include <string_view>
+
 namespace alus::resample {
 // They are duplicate of NPP library's typedefs. It is redundant, but for the future there can be other methods rather
 // than NPP library's methods only.
@@ -29,4 +32,10 @@ enum class Method {
     LANCZOS3,
     SMOOTH_EDGE
 };
+
+constexpr std::array<std::string_view, 10> METHOD_STRINGS{
+    "nearest-neighbour", "linear", "cubic",   "cubic2p-bspline", "cubic2p-catmullrom",
+    "cubic2p-c05c03",    "super",  "lanczos", "lanczos3",        "smooth-edge",
+};
+
 }  // namespace alus::resample

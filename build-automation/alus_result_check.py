@@ -42,7 +42,7 @@ def main():
     gdal.UseExceptions()
     input_ds = gdal.Open(args.input_dataset)
     if args.golden:
-        print("Comparing against golden dataset")
+        print("Comparing (", args.input_dataset, ") against golden dataset - ", args.golden)
         golden_ds = gdal.Open(args.golden)
         mismatch_count = compare_golden(input_ds, golden_ds)
     else:

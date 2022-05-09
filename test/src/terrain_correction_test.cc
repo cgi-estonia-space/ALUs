@@ -484,7 +484,7 @@ TEST_F(TerrainCorrectionTest, MetadataConstructionThrowsWhenConstructedWithInval
         EXPECT_THROW(Metadata(main_metadata_file, "invalid lat", lon_tie_points_file), std::runtime_error);
         EXPECT_THROW(Metadata(main_metadata_file, lat_tie_points_file, "invalid_lon"), std::runtime_error);
     }
-    EXPECT_EQ(gdal_error_count, 4);
+    EXPECT_EQ(gdal_error_count, 2);
 }
 
 }  // namespace

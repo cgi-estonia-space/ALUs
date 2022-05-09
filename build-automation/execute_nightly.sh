@@ -52,6 +52,10 @@ echo "
 ./run_maharashtra_calibration_test.sh $test_datasets_dir $dem_files_dir $products_output
 maharashtra_calibration_test_exit=$?
 echo "
+*****Resampling tests******"
+./run_resample_test.sh $test_datasets_dir $products_output
+resample_test_exit=$?
+echo "
 *****Jupyter notebook tests*****"
 python3 -m venv .env
 source .env/bin/activate
@@ -84,4 +88,4 @@ for file in *tc.tif; do
   echo "Uploaded resource available at https://alus-builds.s3.eu-central-1.amazonaws.com/${build_id}/${png_file}"
 done
 
-exit $(($disaster_test_exit | $virumaa_calibration_test_exit | $flood_test_exit | $maharashtra_calibration_test_exit | jupyter_test_exit))
+exit $((disaster_test_exit | virumaa_calibration_test_exit | flood_test_exit | maharashtra_calibration_test_exit | resample_test_exit | jupyter_test_exit))
