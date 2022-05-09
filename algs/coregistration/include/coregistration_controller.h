@@ -40,18 +40,26 @@ public:
     };
 
     explicit Coregistration(const std::string& aux_data_path);
+
     Coregistration() = default;
 
     void Initialize(const Parameters&);
+
     void Initialize(std::string_view master_file, std::string_view slave_file, std::string_view output_file,
                     std::string_view subswath_name, std::string_view polarisation, size_t first_burst_index,
                     size_t last_burst_index);
+
     void Initialize(std::string_view master_file, std::string_view slave_file, std::string_view output_file,
                     std::string_view subswath_name, std::string_view polarisation);
+
+    void Initialize(std::shared_ptr<topsarsplit::TopsarSplit> split_reference,
+                    std::shared_ptr<topsarsplit::TopsarSplit> split_secondary);
+
     void DoWork(const float* egm96_device_array, PointerArray srtm3_tiles, bool mask_out_area_without_elevation) const;
 
-    std::shared_ptr<snapengine::Product> GetMasterProduct() { return split_master_->GetTargetProduct(); }
-    std::shared_ptr<snapengine::Product> GetSlaveProduct() { return split_slave_->GetTargetProduct(); }
+    std::shared_ptr<snapengine::Product> GetReferenceProduct() { return split_reference_->GetTargetProduct(); }
+
+    std::shared_ptr<snapengine::Product> GetSecondaryProduct() { return split_secondary_->GetTargetProduct(); }
 
     std::shared_ptr<alus::TargetDataset<float>> GetTargetDataset() { return target_dataset_; }
 
@@ -59,10 +67,8 @@ public:
 
 private:
     std::unique_ptr<backgeocoding::BackgeocodingController> backgeocoding_;
-    std::unique_ptr<topsarsplit::TopsarSplit> split_master_;
-    std::unique_ptr<topsarsplit::TopsarSplit> split_slave_;
-    std::unique_ptr<s1tbx::ApplyOrbitFileOp> orbit_file_master_;
-    std::unique_ptr<s1tbx::ApplyOrbitFileOp> orbit_file_slave_;
+    std::shared_ptr<topsarsplit::TopsarSplit> split_reference_;
+    std::shared_ptr<topsarsplit::TopsarSplit> split_secondary_;
     std::shared_ptr<alus::TargetDataset<float>> target_dataset_;
 };
 

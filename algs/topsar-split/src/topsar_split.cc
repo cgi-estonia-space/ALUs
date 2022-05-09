@@ -49,42 +49,62 @@ constexpr std::string_view ALG_NAME{"TOPSAR-SPLIT"};
 namespace alus::topsarsplit {
 
 TopsarSplit::TopsarSplit(std::string_view filename, std::string_view selected_subswath,
-                         std::string_view selected_polarisation, size_t first_burst, size_t last_burst, bool open_img)
-    : TopsarSplit(filename, selected_subswath, selected_polarisation, open_img) {
+                         std::string_view selected_polarisation, size_t first_burst, size_t last_burst)
+    : TopsarSplit(filename, selected_subswath, selected_polarisation) {
     first_burst_index_ = static_cast<int>(first_burst);
     last_burst_index_ = static_cast<int>(last_burst);
 }
 
 TopsarSplit::TopsarSplit(std::string_view filename, std::string_view selected_subswath,
-                         std::string_view selected_polarisation, bool open_img)
-    : subswath_(selected_subswath), selected_polarisations_({std::string(selected_polarisation)}), open_img_(open_img) {
+                         std::string_view selected_polarisation)
+    : subswath_(selected_subswath), selected_polarisations_({std::string(selected_polarisation)}) {
     LoadInputDataset(filename);
 }
 
 TopsarSplit::TopsarSplit(std::string_view filename, std::string_view selected_subswath,
-                         std::string_view selected_polarisation, std::string_view aoi_polygon_wkt, bool open_img)
+                         std::string_view selected_polarisation, std::string_view aoi_polygon_wkt)
     : subswath_{selected_subswath},
       selected_polarisations_{std::string(selected_polarisation)},
-      burst_aoi_wkt_{aoi_polygon_wkt}, open_img_(open_img) {
+      burst_aoi_wkt_{aoi_polygon_wkt} {
     LoadInputDataset(filename);
 }
 
+TopsarSplit::TopsarSplit(std::shared_ptr<snapengine::Product> source_product, std::string_view selected_subswath,
+                         std::string_view selected_polarisation)
+    : source_product_(std::move(source_product)),
+      subswath_{selected_subswath},
+      selected_polarisations_{std::string(selected_polarisation)} {}
+
+TopsarSplit::TopsarSplit(std::shared_ptr<snapengine::Product> source_product, std::string_view selected_subswath,
+                         std::string_view selected_polarisation, std::string_view aoi_polygon_wkt)
+
+    : source_product_(std::move(source_product)),
+      subswath_{selected_subswath},
+      selected_polarisations_{std::string(selected_polarisation)},
+      burst_aoi_wkt_{aoi_polygon_wkt} {}
+
+TopsarSplit::TopsarSplit(std::shared_ptr<snapengine::Product> source_product, std::string_view selected_subswath,
+                         std::string_view selected_polarisation, size_t first_burst, size_t last_burst)
+    : TopsarSplit(std::move(source_product), selected_subswath, selected_polarisation) {
+    first_burst_index_ = static_cast<int>(first_burst);
+    last_burst_index_ = static_cast<int>(last_burst);
+}
+
 void TopsarSplit::LoadInputDataset(std::string_view filename) {
+    boost::filesystem::path path = std::string(filename);
+
+    auto reader_plug_in = std::make_shared<alus::s1tbx::Sentinel1ProductReaderPlugIn>();
+    auto reader = reader_plug_in->CreateReaderInstance();
+    source_product_ = reader->ReadProductNodes(boost::filesystem::canonical(path), nullptr);
+}
+
+void TopsarSplit::OpenPixelReader(std::string_view filename) {
+    bool found_it = false;
     boost::filesystem::path path = std::string(filename);
     boost::filesystem::path measurement = path.string() + "/measurement";
     boost::filesystem::directory_iterator end_itr;
     std::string low_subswath = boost::to_lower_copy(std::string(subswath_));
     std::string low_polarisation = boost::to_lower_copy(std::string(selected_polarisations_.front()));
-
-    auto reader_plug_in = std::make_shared<alus::s1tbx::Sentinel1ProductReaderPlugIn>();
-    reader_ = reader_plug_in->CreateReaderInstance();
-    source_product_ = reader_->ReadProductNodes(boost::filesystem::canonical(path), nullptr);
-
-    if(!open_img_){
-        return;
-    }
-
-    bool found_it = false;
     std::string input_file{};
 
     if (common::zip::IsFileAnArchive(filename)) {
@@ -111,6 +131,7 @@ void TopsarSplit::LoadInputDataset(std::string_view filename) {
         input_file = leaf.string() + "/measurement/" + *image_file;
         pixel_reader_ = std::make_shared<C16Dataset<int16_t>>(gdal::constants::GDAL_ZIP_PREFIX.data() + path.string() +
                                                               "/" + input_file);
+        pixel_reader_->SetReadingArea(split_reading_area_);
         pixel_reader_->TryToCacheImage();
         found_it = true;
     } else {
@@ -122,6 +143,7 @@ void TopsarSplit::LoadInputDataset(std::string_view filename) {
                     current_file.find(low_polarisation) != std::string::npos) {
                     LOGV << "Selecting tif for reading: " << current_file;
                     pixel_reader_ = std::make_shared<C16Dataset<int16_t>>(current_file);
+                    pixel_reader_->SetReadingArea(split_reading_area_);
                     pixel_reader_->TryToCacheImage();
                     found_it = true;
                     break;
@@ -149,7 +171,7 @@ void TopsarSplit::LoadInputDataset(std::string_view filename) {
  * @throws OperatorException If an error occurs during operator initialisation.
  * @see #getTargetProduct()
  */
-void TopsarSplit::initialize() {
+void TopsarSplit::Initialize() {
     snapengine::InputProductValidator validator(source_product_);
     validator.CheckIfSARProduct();
     validator.CheckIfSentinel1Product();
@@ -162,7 +184,7 @@ void TopsarSplit::initialize() {
         subswath_ = abs_root->GetAttributeString(snapengine::AbstractMetadata::ACQUISITION_MODE) + "1";
     }
 
-    // TODO: forget the index, find the pointer.
+    // TODO(unknown): forget the index, find the pointer.
     s1_utils_ = std::make_unique<s1tbx::Sentinel1Utils>(source_product_);
     const std::vector<std::shared_ptr<s1tbx::SubSwathInfo>>& subswath_info = s1_utils_->GetSubSwath();
     for (size_t i = 0; i < subswath_info.size(); i++) {
@@ -181,7 +203,7 @@ void TopsarSplit::initialize() {
 
     std::vector<std::shared_ptr<snapengine::Band>> selected_bands;
     std::vector<std::shared_ptr<snapengine::Band>> le_bands = source_product_->GetBands();
-    for (std::shared_ptr<snapengine::Band> src_band : le_bands) {
+    for (const auto& src_band : le_bands) {
         if (src_band->GetName().find(subswath_) != std::string::npos) {
             for (std::string pol : selected_polarisations_) {
                 if (src_band->GetName().find(pol) != std::string::npos) {
@@ -190,14 +212,14 @@ void TopsarSplit::initialize() {
             }
         }
     }
-    // TODO: Why is this here? Does the first one trigger some init as it goes through?
-    if (selected_bands.size() < 1) {
+    // TODO(unknown): Why is this here? Does the first one trigger some init as it goes through?
+    if (selected_bands.empty()) {
         // try again
         selected_polarisations_ = s1_utils_->GetPolarizations();
 
-        for (std::shared_ptr<snapengine::Band> src_band : source_product_->GetBands()) {
+        for (const auto& src_band : source_product_->GetBands()) {
             if (src_band->GetName().find(subswath_) != std::string::npos) {
-                for (std::string pol : selected_polarisations_) {
+                for (const auto& pol : selected_polarisations_) {
                     if (src_band->GetName().find(pol) != std::string::npos) {
                         selected_bands.push_back(src_band);
                     }
@@ -249,7 +271,7 @@ void TopsarSplit::initialize() {
                                                     ") and last burst(" + std::to_string(last_burst_index_) +
                                                     ") indexes do not align");
         }
-        LOGI << "Burst indexes " << first_burst_index_ << " " << last_burst_index_;
+        LOGI << subswath_ << " AOI - Burst indexes " << first_burst_index_ << " " << last_burst_index_;
     }
 
     if (first_burst_index_ < BURST_INDEX_OFFSET) {
@@ -262,7 +284,7 @@ void TopsarSplit::initialize() {
     auto subset_def = std::make_shared<snapengine::ProductSubsetDef>();
 
     std::vector<std::string> selected_tpg_list;
-    for (std::shared_ptr<snapengine::TiePointGrid> src_tpg : source_product_->GetTiePointGrids()) {
+    for (const auto& src_tpg : source_product_->GetTiePointGrids()) {
         if (src_tpg->GetName().find(subswath_) != std::string::npos) {
             selected_tpg_list.push_back(src_tpg->GetName());
         }
@@ -276,9 +298,7 @@ void TopsarSplit::initialize() {
 
     subset_def->SetSubSampling(1, 1);
     subset_def->SetIgnoreMetadata(false);
-    if (pixel_reader_) {
-        pixel_reader_->SetReadingArea({x, y, w, h});
-    }
+    split_reading_area_ = {x, y, w, h};
 
     std::vector<std::string> selected_band_names(selected_bands.size());
     for (size_t i = 0; i < selected_bands.size(); i++) {
@@ -406,11 +426,11 @@ void TopsarSplit::UpdateAbstractedMetadata() {
     }
 
     auto band_metadata_list = snapengine::AbstractMetadata::GetBandAbsMetadataList(abs_tgt);
-    for (std::shared_ptr<snapengine::MetadataElement> band_meta : band_metadata_list) {
+    for (const auto& band_meta : band_metadata_list) {
         bool include = false;
 
         if (band_meta->GetName().find(subswath_) != std::string::npos) {
-            for (std::string pol : selected_polarisations_) {
+            for (const auto& pol : selected_polarisations_) {
                 if (band_meta->GetName().find(pol) != std::string::npos) {
                     include = true;
                     break;
@@ -454,12 +474,12 @@ void TopsarSplit::RemoveElements(std::shared_ptr<snapengine::MetadataElement>& o
     std::shared_ptr<snapengine::MetadataElement> parent_elem = orig_meta->GetElement(parent);
     if (parent_elem != nullptr) {
         auto elem_list = parent_elem->GetElements();
-        for (std::shared_ptr<snapengine::MetadataElement> elem : elem_list) {
+        for (const auto& elem : elem_list) {
             if (boost::to_upper_copy<std::string>(elem->GetName()).find(subswath_) == std::string::npos) {
                 parent_elem->RemoveElement(elem);
             } else {
                 bool is_selected = false;
-                for (std::string pol : selected_polarisations_) {
+                for (const auto& pol : selected_polarisations_) {
                     if (boost::to_upper_copy<std::string>(elem->GetName()).find(pol) != std::string::npos) {
                         is_selected = true;
                         break;
@@ -480,7 +500,7 @@ void TopsarSplit::RemoveBursts(std::shared_ptr<snapengine::MetadataElement>& ori
     }
 
     auto elems = annotation->GetElements();
-    for (std::shared_ptr<snapengine::MetadataElement> elem : elems) {
+    for (const auto& elem : elems) {
         std::shared_ptr<snapengine::MetadataElement> product = elem->GetElement("product");
         std::shared_ptr<snapengine::MetadataElement> swath_timing = product->GetElement("swathTiming");
         std::shared_ptr<snapengine::MetadataElement> burst_list = swath_timing->GetElement("burstList");
@@ -503,7 +523,7 @@ void TopsarSplit::UpdateImageInformation(std::shared_ptr<snapengine::MetadataEle
     }
 
     auto elems = annotation->GetElements();
-    for (std::shared_ptr<snapengine::MetadataElement> elem : elems) {
+    for (const auto& elem : elems) {
         std::shared_ptr<snapengine::MetadataElement> product = elem->GetElement("product");
         std::shared_ptr<snapengine::MetadataElement> image_annotation = product->GetElement("imageAnnotation");
         std::shared_ptr<snapengine::MetadataElement> image_information =

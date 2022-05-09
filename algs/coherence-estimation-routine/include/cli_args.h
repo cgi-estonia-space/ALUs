@@ -25,8 +25,7 @@
 namespace alus::coherenceestimationroutine {
 class Arguments final {
 public:
-    Arguments();
-    explicit Arguments(const std::vector<char*>& args);
+    explicit Arguments(bool timeline_args);
 
     void Parse(const std::vector<char*>& args);
 
@@ -34,13 +33,17 @@ public:
 
     [[nodiscard]] bool IsHelpRequested() const;
     [[nodiscard]] std::string GetHelp() const;
+    [[nodiscard]] std::string GetTimelineStart() const { return timeline_start_; }
+    [[nodiscard]] std::string GetTimelineEnd() const { return timeline_end_; }
+    [[nodiscard]] std::string GetTimelineInput() const { return timeline_input_; }
+    [[nodiscard]] std::string GetTimelineMission() const { return timeline_mission_; }
     [[nodiscard]] std::string GetInputReference() const { return input_reference_; }
     [[nodiscard]] std::string GetInputSecondary() const { return input_secondary_; }
+    [[nodiscard]] std::optional<std::tuple<size_t, size_t>> GetBurstIndexesReference() const;
+    [[nodiscard]] std::optional<std::tuple<size_t, size_t>> GetBurstIndexesSecondary() const;
     [[nodiscard]] std::string GetSubswath() const { return subswath_; }
     [[nodiscard]] std::string GetPolarisation() const { return polarisation_; }
     [[nodiscard]] std::optional<std::string> GetAoi() const;
-    [[nodiscard]] std::optional<std::tuple<size_t, size_t>> GetBurstIndexesReference() const;
-    [[nodiscard]] std::optional<std::tuple<size_t, size_t>> GetBurstIndexesSecondary() const;
     [[nodiscard]] const std::vector<std::string>& GetDemFiles() const { return dem_files_; }
     [[nodiscard]] std::string GetOutput() const { return output_; }
     [[nodiscard]] bool DoSaveIntermediateResults() const { return wif_; };
@@ -67,15 +70,22 @@ private:
     app::Arguments alus_args_;
     boost::program_options::options_description combined_args_{"Arguments"};
 
+    bool timeline_args_;
     std::string input_reference_;
     std::string input_secondary_;
-    std::string subswath_;
-    std::string polarisation_;
-    std::string aoi_;
     size_t burst_start_index_reference_;
     size_t burst_last_index_reference_;
     size_t burst_start_index_secondary_;
     size_t burst_last_index_secondary_;
+
+    std::string timeline_start_;
+    std::string timeline_end_;
+    std::string timeline_input_;
+    std::string timeline_mission_;
+
+    std::string subswath_;
+    std::string polarisation_;
+    std::string aoi_;
     std::vector<std::string> dem_files_;
     std::string output_;
     bool wif_{false};

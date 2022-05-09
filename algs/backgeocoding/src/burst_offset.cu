@@ -92,7 +92,7 @@ cudaError LaunchBurstOffsetKernel(BurstOffsetKernelArgs& args, int* burst_offset
     cudaDeviceSynchronize();
 
     cudaError cuda_error = cudaGetLastError();
-
+    CHECK_CUDA_ERR(cuda_error);
     CHECK_CUDA_ERR(cudaMemcpy(burst_offset, args.burst_offset, sizeof(int), cudaMemcpyDeviceToHost));
     return cuda_error;
 }

@@ -51,7 +51,8 @@ TEST_F(Sentinel1CalibrateTest, Virumaa) {
         ASSERT_THAT(boost::filesystem::exists(input_file_), ::testing::IsTrue());
 
         alus::topsarsplit::TopsarSplit split_op(input_file_.string(), "IW1", "VV");
-        split_op.initialize();
+        split_op.Initialize();
+        split_op.OpenPixelReader(input_file_.string());
         auto split_product = split_op.GetTargetProduct();
         Dataset<Iq16>* pixel_reader = split_op.GetPixelReader()->GetDataset();
 

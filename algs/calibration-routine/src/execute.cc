@@ -88,7 +88,8 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
         split_op = std::make_unique<topsarsplit::TopsarSplit>(params_.input, subswath_case_up, params_.polarisation);
     }
 
-    split_op->initialize();
+    split_op->Initialize();
+    split_op->OpenPixelReader(params_.input);
     auto split_product = split_op->GetTargetProduct();
     auto* pixel_reader = split_op->GetPixelReader()->GetDataset();
     LOGI
