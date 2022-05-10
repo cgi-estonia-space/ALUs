@@ -80,8 +80,8 @@ void Arguments::Construct() {
         ("no_mask_cor", po::bool_switch(&disable_coregistration_elevation_mask_),
          "Do not mask out areas without elevation in coregistration")
         ("orbit_dir", po::value<std::string>(&orbit_file_dir_),
-        "ESA SNAP compatible root folder of orbit files. Can be used to find correct one during processing. "
-        "For example: /home/<user>/.snap/auxData/Orbits/Sentinel-1/POEORB/")
+        "Directory of orbit files. Can be used to find correct one during processing. "
+        "Also supports ESA SNAP compatible folder for example: /home/<user>/.snap/auxData/Orbits/Sentinel-1/POEORB/")
         ("srp_number_points", po::value<size_t>(&srp_number_points_)->default_value(501), "")
         ("srp_polynomial_degree", po::value<size_t>(&srp_polynomial_degree_)->default_value(5), "")
         ("subtract_flat_earth_phase", po::value<bool>(&subtract_flat_earth_phase_)->default_value(true),

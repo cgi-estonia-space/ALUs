@@ -1,3 +1,26 @@
+# Release 1.2.0
+
+## Breaking changes
+
+## Known Caveats
+* Coherence estimation results can have missing pixels(or coherence 0 values) on north and east direction on coastlines when compared to SNAP.
+  Currently it is unresolved what is the correct way. See examples [A](docs/coh_missing_pixels.png) and [B](docs/beirut_iw1_b6_coastal.png).
+  See posts about the issues/bugs - [tile size affecting results](https://forum.step.esa.int/t/tile-size-is-affecting-coregistration-results/32193/4) 
+  and [no-data value interpretation](https://forum.step.esa.int/t/coregistration-no-data-value/35304/2).
+* Due to the nature of floating point arithmetic there are some discrepancies when compared to SNAP, see [slideshow](docs/GPU-GSTP-MPR-0008.pdf)
+* There are two code paths to calculate terrain corrected outputs' dimensions and geocoordinates
+  ([see description](https://forum.step.esa.int/t/range-doppler-terrain-correction-raster-size-and-coordinates-inconsistency/35977)). Since ALUs
+  implements the SNAP UI way the end results probably differ when compared to SNAP GPT outputs.
+
+## Major Features and Improvements
+* Thermal Noise Removal step added to calibration routine
+
+## Bug Fixes and Other Changes
+
+## Thanks to our Contributors
+
+
+
 # Release 1.1.0
 
 2 additional processors:
