@@ -13,6 +13,7 @@
  */
 #pragma once
 
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 
@@ -25,8 +26,7 @@
 
 #include "math_utils.cuh"
 
-namespace alus {
-namespace sentinel1calibrate {
+namespace alus::sentinel1calibrate {
 
 inline __host__ __device__ size_t GetCalibrationVectorIndexImpl(int y, int count, const int* line_values) {
     const auto index = mathutils::FindFirstGreaterElement(y, count, line_values);
@@ -72,9 +72,10 @@ inline __device__ __host__ double CalculateLutValImpl(const CalibrationLineParam
 }
 
 inline __device__ __host__ void AdjustDnImpl(double dn, double& calibration_value, double calibration_factor) {
-    // TODO: think about the way to avoid this if-clause
+    // TODO(Anton): think about the way to avoid this if-clause
+    constexpr double CALIBRATION_VALUE_THRESHOLD{0.00001};
     if (dn == utils::constants::THERMAL_NOISE_TRG_FLOOR_VALUE) {
-        while (calibration_value < 0.00001) {
+        while (calibration_value < CALIBRATION_VALUE_THRESHOLD) {
             dn *= 2;
             calibration_value = dn * calibration_factor;
         }
@@ -86,7 +87,7 @@ inline __device__ __host__ double CalculateMuX(const CalibrationLineParameters& 
     auto mu_x = (x - line_parameters.calibration_vector_0->pixels[pixel_index]) /
                 static_cast<double>(line_parameters.calibration_vector_0->pixels[pixel_index + 1] -
                                     line_parameters.calibration_vector_0->pixels[pixel_index]);
-    if (isinf(mu_x)) {
+    if (std::isinf(mu_x)) {
         mu_x = (x - line_parameters.calibration_vector_0->pixels[pixel_index]) /
                static_cast<double>(line_parameters.calibration_vector_0->pixels[pixel_index + 1] -
                                    line_parameters.calibration_vector_0->pixels[pixel_index]);
@@ -106,20 +107,32 @@ inline __device__ __host__ double CalculateCalibrationFactor(int x, const Calibr
     return 1.0 / (lut_val * lut_val);
 }
 
-inline __device__ __host__ void CalculateComplexIntensityImpl(int x, int y, CalibrationKernelArgs args,
-                                                              cuda::KernelArray<ComplexIntensityData> pixel_data) {
+inline __device__ __host__ void CalculateComplexToFloatCalImpl(int x, int y, CalibrationKernelArgs args,
+                                                               cuda::KernelArray<ComplexIntensityData> pixel_data) {
     const auto source_index = CalculateSrcIndex(x, y, args.target_rectangle);
 
-    const double i = pixel_data.array[source_index].input.i;
-    const double q = pixel_data.array[source_index].input.q;
+    const double i = pixel_data.array[source_index].iq16.i;
+    const double q = pixel_data.array[source_index].iq16.q;
     const double dn = i * i + q * q;
 
     const auto calibration_factor =
         CalculateCalibrationFactor(x, args.line_parameters_array.array[y - args.target_rectangle.y]);
     double calibration_value = dn * calibration_factor;
     AdjustDnImpl(dn, calibration_value, calibration_factor);
-    pixel_data.array[source_index].output = calibration_value;
+    pixel_data.array[source_index].float32 = static_cast<float>(calibration_value);
 }
 
-}  // namespace sentinel1calibrate
-}  // namespace alus
+inline __device__ __host__ void CalculateFloatToFloatCalImpl(int x, int y, CalibrationKernelArgs args,
+                                                             cuda::KernelArray<ComplexIntensityData> pixel_data) {
+    const auto source_index = CalculateSrcIndex(x, y, args.target_rectangle);
+
+    const double dn = pixel_data.array[source_index].float32;
+
+    const auto calibration_factor =
+        CalculateCalibrationFactor(x, args.line_parameters_array.array[y - args.target_rectangle.y]);
+    double calibration_value = dn * calibration_factor;
+    AdjustDnImpl(dn, calibration_value, calibration_factor);
+    pixel_data.array[source_index].float32 = static_cast<float>(calibration_value);
+}
+
+}  // namespace alus::sentinel1calibrate

@@ -25,7 +25,7 @@ namespace utils {
 namespace constants {
 constexpr int INVALID_INDEX{-1};
 
-constexpr float THERMAL_NOISE_TRG_FLOOR_VALUE{0.01234567890000F};
+constexpr float THERMAL_NOISE_TRG_FLOOR_VALUE{1e-5};
 }  // namespace constants
 }  // namespace utils
 }  // namespace alus

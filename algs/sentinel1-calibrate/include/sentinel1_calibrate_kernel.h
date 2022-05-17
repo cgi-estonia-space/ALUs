@@ -22,8 +22,7 @@
 #include "s1tbx-commons/calibration_vector_computation.h"
 #include "shapes.h"
 
-namespace alus {
-namespace sentinel1calibrate {
+namespace alus::sentinel1calibrate {
 
 struct CalibrationLineParameters {
     const s1tbx::CalibrationVectorComputation* calibration_vector_0;
@@ -33,7 +32,7 @@ struct CalibrationLineParameters {
     float* vector_0_lut;
     float* vector_1_lut;
     float* retro_vector_0_lut;
-    float* retor_vector_1_lut;
+    float* retro_vector_1_lut;
 };
 
 /**
@@ -55,8 +54,8 @@ struct alignas(4) CInt16 {
 
 // 2x int16_t -> 1 float calibration can reuse the same buffer for both input and output
 union ComplexIntensityData {
-    CInt16 input;
-    float output;
+    CInt16 iq16;
+    float float32;
 };
 
 static_assert(sizeof(ComplexIntensityData) == 4, "Do not change the layout!");
@@ -74,10 +73,12 @@ struct ComplexIntensityKernelArgs {
  */
 void LaunchSetupTileLinesKernel(CalibrationKernelArgs args, cudaStream_t stream);
 
-void LaunchComplexIntensityKernel(CalibrationKernelArgs args, cuda::KernelArray<ComplexIntensityData> pixels,
-                                  cudaStream_t stream);
+void LaunchComplexToFloatCalKernel(CalibrationKernelArgs args, cuda::KernelArray<ComplexIntensityData> pixels,
+                                   cudaStream_t stream);
+
+void LaunchFloatToFloatCalKernel(CalibrationKernelArgs args, cuda::KernelArray<ComplexIntensityData> pixels,
+                                 cudaStream_t stream);
 
 void PopulateLUTs(cuda::KernelArray<CalibrationLineParameters> d_line_parameters, CAL_TYPE calibration_type,
                   CAL_TYPE data_type, cudaStream_t stream);
-}  // namespace sentinel1calibrate
-}  // namespace alus
+}  // namespace alus::sentinel1calibrate

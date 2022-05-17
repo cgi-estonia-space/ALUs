@@ -18,16 +18,54 @@
 
 #include <cuda_runtime.h>
 
+#include "cuda_util.h"
+
 namespace alus {
 namespace cuda {
 
 inline int DivUp(int a, int b) { return (a + b - 1) / b; }
+
+struct LaunchConfig1D {
+    int virtual_thread_count{-1};  // Logical number of thread that works on the elements. If each logical thread works
+                                   // on exactly a single element, this is the same as the working element count.
+    int thread_per_block{-1};      // Number of threads per block
+    int block_count{-1};           // Number of blocks for GPU kernel launch.
+};
 
 struct LaunchConfig2D {
     dim3 grid_size;   // Block count in grid, 1st argument between kernel conf '<<<>>>'
     dim3 block_size;  // Threads per block, 2nd argument between kernel conf '<<<>>>'
     dim3 virtual_thread_count;
 };
+
+/**
+ * Computes optimal launch parameters for one-dimensional kernel.
+ *
+ * Implementation copied from TensorFlow project https://github.com/tensorflow/tensorflow version 2.8. Original
+ * implementation can be found in core/util/gpu_launch_config.h as GetGpu3DLaunchConfig().
+ * @tparam DeviceFunc
+ * @param work_element_count Number of elements to be processed by the kernel.
+ * @param device_func Kernel, which will be executed.
+ * @param dynamic_shared_memory_size Per-block dynamic shared memory usage intended, in bytes. 0(default) means no
+ * shared memory used.
+ * @param block_size_limit The maximum block size func is designed to work with. 0 means no limit.
+ * @return Optimal grid and block sizes.
+ */
+template <typename DeviceFunc>
+LaunchConfig1D GetLaunchConfig1D(int work_element_count, DeviceFunc device_func, size_t dynamic_shared_memory_size = 0,
+                                 int block_size_limit = 0) {
+    if (work_element_count <= 0) {
+        return {};
+    }
+
+    int block_count = 0;
+    int thread_per_block = 0;
+    cudaError_t err = cudaOccupancyMaxPotentialBlockSize(&block_count, &thread_per_block, device_func,
+                                                         dynamic_shared_memory_size, block_size_limit);
+    CHECK_CUDA_ERR(err);
+    block_count = std::min(block_count, DivUp(work_element_count, thread_per_block));
+    return {work_element_count, thread_per_block, block_count};
+}
 
 /**
  * Calculates Kernel launch parameters based on CUDA API cudaOccupancyMaxPotentialBlockSize()
@@ -137,8 +175,7 @@ class GpuGridRange {
     };
 
 public:
-    __device__ GpuGridRange(T begin, T delta, T end)
-        : begin_(begin), delta_(delta), end_(end) {}
+    __device__ GpuGridRange(T begin, T delta, T end) : begin_(begin), delta_(delta), end_(end) {}
 
     __device__ Iterator begin() const { return Iterator{begin_, delta_}; }
     __device__ Iterator end() const { return Iterator{end_, 0}; }
@@ -155,24 +192,21 @@ private:
 // Usage: for(int i : GpuGridRangeX(count)) { visit(i); }
 template <typename T>
 __device__ GpuGridRange<T> GpuGridRangeX(T count) {
-    return GpuGridRange<T>(blockIdx.x * blockDim.x + threadIdx.x,
-                                   gridDim.x * blockDim.x, count);
+    return GpuGridRange<T>(blockIdx.x * blockDim.x + threadIdx.x, gridDim.x * blockDim.x, count);
 }
 
 // Helper to visit indices in the range 0 <= i < count using the y-coordinate.
 // Usage: for(int i : GpuGridRangeY(count)) { visit(i); }
 template <typename T>
 __device__ GpuGridRange<T> GpuGridRangeY(T count) {
-    return GpuGridRange<T>(blockIdx.y * blockDim.y + threadIdx.y,
-                                   gridDim.y * blockDim.y, count);
+    return GpuGridRange<T>(blockIdx.y * blockDim.y + threadIdx.y, gridDim.y * blockDim.y, count);
 }
 
 // Helper to visit indices in the range 0 <= i < count using the z-coordinate.
 // Usage: for(int i : GpuGridRangeZ(count)) { visit(i); }
 template <typename T>
 __device__ GpuGridRange<T> GpuGridRangeZ(T count) {
-    return GpuGridRange<T>(blockIdx.z * blockDim.z + threadIdx.z,
-                                   gridDim.z * blockDim.z, count);
+    return GpuGridRange<T>(blockIdx.z * blockDim.z + threadIdx.z, gridDim.z * blockDim.z, count);
 }
 
 }  // namespace cuda

@@ -13,6 +13,7 @@
  */
 #pragma once
 
+#include <cstddef>
 #include <vector>
 
 #include "delaunay_triangle2D.h"

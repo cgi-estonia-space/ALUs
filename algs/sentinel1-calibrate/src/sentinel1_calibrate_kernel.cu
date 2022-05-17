@@ -27,7 +27,7 @@
 namespace alus {
 namespace sentinel1calibrate {
 
-__global__ void CalculateComplexIntensityKernel(CalibrationKernelArgs args,
+__global__ void CalculateComplexToFloatCalKernel(CalibrationKernelArgs args,
                                                 cuda::KernelArray<ComplexIntensityData> pixel_data,
                                                 cuda::LaunchConfig2D config) {
     for (auto x : cuda::GpuGridRangeX(config.virtual_thread_count.x)) {
@@ -35,7 +35,20 @@ __global__ void CalculateComplexIntensityKernel(CalibrationKernelArgs args,
             const auto y_global = args.target_rectangle.y + y;
             const auto x_global = args.target_rectangle.x + x;
 
-            CalculateComplexIntensityImpl(x_global, y_global, args, pixel_data);
+            CalculateComplexToFloatCalImpl(x_global, y_global, args, pixel_data);
+        }
+    }
+}
+
+__global__ void CalculateFloatToFloatCalKernel(CalibrationKernelArgs args,
+                                                cuda::KernelArray<ComplexIntensityData> pixel_data,
+                                                cuda::LaunchConfig2D config) {
+    for (auto x : cuda::GpuGridRangeX(config.virtual_thread_count.x)) {
+        for (auto y : cuda::GpuGridRangeY(config.virtual_thread_count.y)) {
+            const auto y_global = args.target_rectangle.y + y;
+            const auto x_global = args.target_rectangle.x + x;
+
+            CalculateFloatToFloatCalImpl(x_global, y_global, args, pixel_data);
         }
     }
 }
@@ -48,15 +61,20 @@ __global__ void SetupTileLinesKernel(CalibrationKernelArgs args, cuda::LaunchCon
     }
 }
 
-void LaunchComplexIntensityKernel(CalibrationKernelArgs args, cuda::KernelArray<ComplexIntensityData> pixel_data,
+void LaunchComplexToFloatCalKernel(CalibrationKernelArgs args, cuda::KernelArray<ComplexIntensityData> pixel_data,
                                   cudaStream_t stream) {
     const auto launch_config = cuda::GetLaunchConfig2D(args.target_rectangle.width, args.target_rectangle.height,
-                                                       CalculateComplexIntensityKernel);
-    CalculateComplexIntensityKernel<<<launch_config.grid_size, launch_config.block_size, 0, stream>>>(args, pixel_data,
+                                                       CalculateComplexToFloatCalKernel);
+    CalculateComplexToFloatCalKernel<<<launch_config.grid_size, launch_config.block_size, 0, stream>>>(args, pixel_data,
                                                                                                       launch_config);
+}
 
-    // CHECK_CUDA_ERR(cudaStreamSynchronize(stream));
-    // CHECK_CUDA_ERR(cudaGetLastError());
+void LaunchFloatToFloatCalKernel(CalibrationKernelArgs args, cuda::KernelArray<ComplexIntensityData> pixel_data,
+                                  cudaStream_t stream) {
+    const auto launch_config = cuda::GetLaunchConfig2D(args.target_rectangle.width, args.target_rectangle.height,
+                                                       CalculateFloatToFloatCalKernel);
+    CalculateFloatToFloatCalKernel<<<launch_config.grid_size, launch_config.block_size, 0, stream>>>(args, pixel_data,
+                                                                                                     launch_config);
 }
 
 void LaunchSetupTileLinesKernel(CalibrationKernelArgs args, cudaStream_t stream) {
@@ -64,9 +82,6 @@ void LaunchSetupTileLinesKernel(CalibrationKernelArgs args, cudaStream_t stream)
 
     const auto launch_config = cuda::GetLaunchConfig2D(1, lines_count, SetupTileLinesKernel);
     SetupTileLinesKernel<<<launch_config.grid_size, launch_config.block_size, 0, stream>>>(args, launch_config);
-
-    // CHECK_CUDA_ERR(cudaStreamSynchronize(stream));
-    // CHECK_CUDA_ERR(cudaGetLastError());
 }
 
 void PopulateLUTs(cuda::KernelArray<CalibrationLineParameters> d_line_parameters, CAL_TYPE calibration_type,
@@ -117,7 +132,7 @@ void PopulateLUTs(cuda::KernelArray<CalibrationLineParameters> d_line_parameters
                 thrust::cuda::par.on(stream), d_beg, d_end, d_beg,
                 [=] __device__(CalibrationLineParameters line_parameters) {
                     line_parameters.retro_vector_0_lut = line_parameters.calibration_vector_0->sigma_nought;
-                    line_parameters.retor_vector_1_lut = line_parameters.calibration_vector_1->sigma_nought;
+                    line_parameters.retro_vector_1_lut = line_parameters.calibration_vector_1->sigma_nought;
                     return line_parameters;
                 });
             break;
@@ -126,7 +141,7 @@ void PopulateLUTs(cuda::KernelArray<CalibrationLineParameters> d_line_parameters
                 thrust::cuda::par.on(stream), d_beg, d_end, d_beg,
                 [=] __device__(CalibrationLineParameters line_parameters) {
                     line_parameters.retro_vector_0_lut = line_parameters.calibration_vector_0->beta_nought;
-                    line_parameters.retor_vector_1_lut = line_parameters.calibration_vector_1->beta_nought;
+                    line_parameters.retro_vector_1_lut = line_parameters.calibration_vector_1->beta_nought;
                     return line_parameters;
                 });
             break;
@@ -134,7 +149,7 @@ void PopulateLUTs(cuda::KernelArray<CalibrationLineParameters> d_line_parameters
             thrust::transform(thrust::cuda::par.on(stream), d_beg, d_end, d_beg,
                               [=] __device__(CalibrationLineParameters line_parameters) {
                                   line_parameters.retro_vector_0_lut = line_parameters.calibration_vector_0->gamma;
-                                  line_parameters.retor_vector_1_lut = line_parameters.calibration_vector_1->gamma;
+                                  line_parameters.retro_vector_1_lut = line_parameters.calibration_vector_1->gamma;
                                   return line_parameters;
                               });
             break;
@@ -142,7 +157,7 @@ void PopulateLUTs(cuda::KernelArray<CalibrationLineParameters> d_line_parameters
             thrust::transform(thrust::cuda::par.on(stream), d_beg, d_end, d_beg,
                               [=] __device__(CalibrationLineParameters line_parameters) {
                                   line_parameters.retro_vector_0_lut = line_parameters.calibration_vector_0->dn;
-                                  line_parameters.retor_vector_1_lut = line_parameters.calibration_vector_1->dn;
+                                  line_parameters.retro_vector_1_lut = line_parameters.calibration_vector_1->dn;
                                   return line_parameters;
                               });
             break;
