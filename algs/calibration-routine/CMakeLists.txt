@@ -25,6 +25,7 @@ target_link_libraries(alus-cal
         topsar-deburst-op-static
         topsar-split-static
         common-util-static
+        thermal-noise-static
         )
 
 set_target_properties(alus-cal

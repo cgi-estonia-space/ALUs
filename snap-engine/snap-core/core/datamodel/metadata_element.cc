@@ -20,6 +20,8 @@
 
 #include <stdexcept>
 
+#include <boost/algorithm/string.hpp>
+
 #include "../util/guardian.h"
 #include "alus_log.h"
 #include "product_node_group.h"
@@ -228,6 +230,14 @@ std::string MetadataElement::GetAttributeString(std::string_view name) const {
         throw std::invalid_argument(GetAttributeNotFoundMessage(name));
     }
     return attribute->GetData()->GetElemString();
+}
+
+bool MetadataElement::GetAttributeBool(std::string_view name) const {
+    const auto attribute = GetAttribute(name);
+    if (!attribute) {
+        throw std::invalid_argument(GetAttributeNotFoundMessage(name));
+    }
+    return boost::iequals(attribute->GetData()->GetElemString(), "true");
 }
 
 void MetadataElement::SetAttributeInt(std::string_view name, int value) {

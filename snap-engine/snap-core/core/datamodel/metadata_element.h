@@ -270,6 +270,14 @@ public:
     [[nodiscard]] std::string GetAttributeString(std::string_view name) const;
 
     /**
+     * Returns the boolean value of the attribute with the given name.
+     *
+     * @param name Name of the attribute.
+     * @return Bool value.
+     */
+    [[nodiscard]] bool GetAttributeBool(std::string_view name) const;
+
+    /**
      * Sets the attribute with the given name to the given integer value. <p>A new attribute with
      * <code>ProductData.TYPE_INT32</code> is added to this node if an attribute with the given name could not be found
      * in this node.

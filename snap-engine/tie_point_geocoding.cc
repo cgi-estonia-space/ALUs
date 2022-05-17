@@ -12,6 +12,7 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 #include "tie_point_geocoding.h"
+#include <stdexcept>
 
 namespace alus::snapengine::geocoding {
 Coordinates TiePointGeocoding::GetPixelCoordinates(alus::PixelPosition pixel_position) const {

@@ -25,6 +25,7 @@
 
 #include <gdal_priv.h>
 #include <openssl/md5.h>
+#include <openssl/sha.h>
 #include <boost/functional/hash.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
 
@@ -50,13 +51,15 @@ inline std::string HashFromBand(std::string_view file_path) {
     return s_out.str();
 }
 
-inline std::string Md5FromFile(const std::string& path) {
-    unsigned char result[MD5_DIGEST_LENGTH];
+inline std::string SHA256FromFile(const std::string& path) {
+    unsigned char result[SHA256_DIGEST_LENGTH];
     boost::iostreams::mapped_file_source src(path);
-    MD5(reinterpret_cast<const unsigned char*>(src.data()), src.size(), result);
+    SHA256(reinterpret_cast<const unsigned char*>(src.data()), src.size(), result);
     std::ostringstream sout;
     sout << std::hex << std::setfill('0');
-    for (auto c : result) sout << std::setw(2) << static_cast<int>(c);
+    for (auto c : result) {
+        sout << std::setw(2) << static_cast<int>(c);
+    }
     return sout.str();
 }
 

@@ -25,14 +25,15 @@ set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr")
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --Werror all-warnings")
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --extended-lambda")
 # mapping executable GPU code to source code, only enable for testing/profiling
+#set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -g -G")
 #set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -lineinfo")
 #set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --resource-usage")
 
 INCLUDE_DIRECTORIES(${CUDAToolkit_INCLUDE_DIRS})
 
 if (NOT DEFINED ENV{CUDAARCHS})
-	message(STATUS "CUDAARCHS not set, defaulting")
-	set(CMAKE_CUDA_ARCHITECTURES 60 CACHE STRING "CUDA architectures" FORCE)
+    message(STATUS "CUDAARCHS not set, defaulting")
+    set(CMAKE_CUDA_ARCHITECTURES 60 CACHE STRING "CUDA architectures" FORCE)
 endif()
 message(STATUS "CUDA binary code will be generated for the following architecture(s) - ${CMAKE_CUDA_ARCHITECTURES}")
 
@@ -61,22 +62,22 @@ add_subdirectory(external/zipper)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_CXX_FLAGS "-Wall -Werror -Wextra -pedantic -DBOOST_LOG_DYN_LINK")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -Wextra -pedantic -DBOOST_LOG_DYN_LINK")
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-	message(STATUS "Setting GNU compiler specific flags")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=attributes")
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-else()
-	message(WARNING "Building the project may fail with not supported compiler - " ${CMAKE_CXX_COMPILER_ID})
-endif()
+    message(STATUS "Setting GNU compiler specific flags")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=attributes")
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+else ()
+    message(WARNING "Building the project may fail with not supported compiler - " ${CMAKE_CXX_COMPILER_ID})
+endif ()
 
 if (SONARCLOUD_BUILD)
     # fix build errors with SonarCloud code scanner
     # workaround for parser crash with boost::asio - SonarCFamily CPP-2696
     message(STATUS "SonarCloud configuration")
     add_compile_definitions(BOOST_ASIO_DISABLE_NOEXCEPT)
-endif()
+endif ()
 
 # External libraries
 add_subdirectory(external/pugixml)
@@ -103,6 +104,7 @@ add_subdirectory(algs/topsar-split)
 add_subdirectory(algs/calibration-routine)
 add_subdirectory(algs/resample)
 add_subdirectory(algs/topsar-merge)
+add_subdirectory(algs/thermal-noise-removal)
 
 # Test helpers
 add_subdirectory(test/range-doppler-geocoding)

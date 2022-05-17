@@ -29,13 +29,13 @@ fi
 
 mkdir -p $output_dir
 
-test_1_prod_path=$output_dir/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_Calib_b26_tc.tif
+test_1_prod_path=$output_dir/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_tnr_Calib_IW2_b26_tc.tif
 time alus-cal -i $test_dataset_dir/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58.SAFE \
      -o $test_1_prod_path \
      --sw IW2 --polarisation VV -t gamma --bi1 2 --bi2 6 \
      --dem $dem_files_dir/srtm_51_09.tif --dem $dem_files_dir/srtm_52_09.tif --ll info
 
-test_2_prod_path=$output_dir/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_Calib_b26_tc_zipped.tif
+test_2_prod_path=$output_dir/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_tnr_Cal_IW2_deb_tc_zipped.tif
 time alus-cal -i $test_dataset_dir/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58.zip \
      -o $test_2_prod_path \
      --sw IW2 --polarisation VV -t gamma --bi1 2 --bi2 6 \
@@ -47,8 +47,8 @@ if [[ -z "${NIGHTLY_GOLDEN_DIR}" ]]; then
 fi
 
 echo "Validating $test_1_prod_path"
-./alus_result_check.py -I $test_1_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_Calib_b26_tc.tif
+./alus_result_check.py -I $test_1_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_tnr_Calib_b26_tc.tif
 echo "Validating $test_2_prod_path"
-./alus_result_check.py -I $test_2_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_Calib_b26_tc.tif
+./alus_result_check.py -I $test_2_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_tnr_Calib_b26_tc.tif
 
 exit $?

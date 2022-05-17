@@ -405,8 +405,8 @@ snapengine::old::Product TerrainCorrection::CreateTargetProduct(
     output_.second->SetGeoTransform(output_geo_transform);
     char* projection_wkt = nullptr;
     auto cpl_free = [](char* csl_data) { CPLFree(csl_data); };
-    std::unique_ptr<char, decltype(cpl_free)> projection_guard(projection_wkt, cpl_free);
     target_crs.exportToWkt(&projection_wkt);
+    std::unique_ptr<char, decltype(cpl_free)> projection_guard(projection_wkt, cpl_free);
     output_.second->SetProjection(projection_wkt);
     auto band_info = metadata_.band_info.at(0);
     output_.second->GetRasterBand(selected_band_id_)
