@@ -53,7 +53,10 @@ def compare_metadata(golden_md, new_md, ident, options=None):
         found_diff += 1
 
     for key in list(golden_md.keys()):
-        if key not in new_md:
+        if 'SKIP_' + key in options:
+            print('metadata item \'' + key + '\' skipped')
+            continue
+        elif key not in new_md:
             print('New %s metadata lacks key \"%s\"' % (ident, key))
             found_diff += 1
         elif new_md[key] != golden_md[key]:

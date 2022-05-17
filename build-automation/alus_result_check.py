@@ -8,8 +8,8 @@ from osgeo import gdal
 from gdalcompare import compare_db
 
 
-def compare_golden(input, verification):
-    return compare_db(verification, input)
+def compare_golden(input, verification, options=None):
+    return compare_db(verification, input, options)
 
 
 def compare_geotransform(input, verification):
@@ -36,6 +36,10 @@ def main():
                              "'-T <longitude>,<pixelwidth>,<rotation>,<latitude>,<rotation>,<pixel height>'.",
                         required=False)
     parser.add_argument('-G', dest='golden', type=str, help='Golden dataset to verify against to', required=False)
+    parser.add_argument('-O', dest='options', nargs='+',
+                        help='Specify options for verification (e.g. skip metadata checking - SKIP_METADATA or '
+                             'SKIP_ALUs_VERSION for specific metadata key check)',
+                        required=False)
     args = parser.parse_args()
 
     mismatch_count = 0
@@ -44,7 +48,7 @@ def main():
     if args.golden:
         print("Comparing (", args.input_dataset, ") against golden dataset - ", args.golden)
         golden_ds = gdal.Open(args.golden)
-        mismatch_count = compare_golden(input_ds, golden_ds)
+        mismatch_count = compare_golden(input_ds, golden_ds, args.options)
     else:
         if input_ds.RasterCount != 1:
             print("This verification is using only the first band, although multiple bands were detected.")

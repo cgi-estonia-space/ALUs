@@ -25,8 +25,9 @@ from [dockerhub](https://hub.docker.com/repository/docker/cgialus/alus-devel) or
 
 Each algorithm is a separate executable. Currently available ones are (more info and usage in parenthesis):
 
-* Sentinel 1 coherence estimation routine - ``alus-coh``
-* Sentinel 1 calibration routine - ``alus-cal``
+* Sentinel 1 coherence estimation routine - ``alus-coh`` ([README](algs/coherence-estimation-routine/README.md))
+* Sentinel 1 coherence estimation timeline generation - ``alus-coht`` ([README](algs/coherence-estimation-routine/README.md))
+* Sentinel 1 calibration routine - ``alus-cal`` ([README](algs/calibration-routine/README.md))
 * Sentinel 2 and other raster resample and tiling - ``alus-resa`` ([README](algs/resample/README.md))
 * Gabor feature extraction - ``alus-gfe``
 

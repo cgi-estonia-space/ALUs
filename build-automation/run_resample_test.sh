@@ -53,7 +53,7 @@ if [ $results_s2_length -ne 9 ];
     results_s2_ok=0
     for result in "${results_s2[@]}"
     do
-      ./alus_result_check.py -I $result -G $NIGHTLY_GOLDEN_DIR/${result##*/}
+      ./alus_result_check.py -I $result -G $NIGHTLY_GOLDEN_DIR/${result##*/} -O SKIP_ALUs_VERSION
       if [ $? -ne 0 ];
         then
           results_s2_ok=1
@@ -74,7 +74,7 @@ if [ $results_generic_length -ne 4 ];
     results_generic_ok=0
     for result in "${results_generic[@]}"
     do
-      ./alus_result_check.py -I $result -G $NIGHTLY_GOLDEN_DIR/${result##*/}
+      ./alus_result_check.py -I $result -G $NIGHTLY_GOLDEN_DIR/${result##*/} -O SKIP_ALUs_VERSION
       if [ $? -ne 0 ];
         then
           results_generic_ok=1
