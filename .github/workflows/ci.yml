@@ -25,13 +25,17 @@ jobs:
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
-        aws-access-key-id: ${{ secrets.ESATEST_INTERNALTESTACCOUNT_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.ESATEST_INTERNALTESTACCOUNT_ACCESS_KEY }}
-        aws-session-token: ${{ secrets.ESATEST_INTERNALTESTACCOUNT_SESSION_TOKEN }}
-        aws-region: eu-central-1
-    - name: Invoke AWS CLI
+        aws-access-key-id: ${{ secrets.SID_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.SID_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.ALUS_SID_INSTANCE_REGION }}
+    - uses: actions/checkout@v3
+    - name: Trigger the instance
+      id: trigger_instance
       run: |
-        aws s3api list-buckets
+        set -o pipefail
+        output=$($GITHUB_WORKSPACE/build-automation/trigger_ec2_instance.sh | tee)
+        ip_address=$(echo $output | tail -n 1)
+        echo "{instance_ip}={$ip_address}" >> $GITHUB_OUTPUT
 
   run-ci-process:
     name: Build and run unit and integration tests
@@ -46,7 +50,7 @@ jobs:
       # Runs a single command using the runners shell
       - name: Run a one-line script
         run: |
-          echo "Hello, world!"
+          echo "Instance IP to use is ${{ steps.trigger_instance.outputs.instance_ip}}"
           pwd
           ls -la
 

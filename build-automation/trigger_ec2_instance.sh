@@ -1,7 +1,6 @@
 #!/bin/bash
 
 set -e
-set -x
 
 if [ "$#" -lt 1 ]; then
     echo "$0 requires atleast EC2 instance ID."
@@ -27,63 +26,86 @@ function shutdown_instance {
     aws ec2 stop-instances --instance-ids $instance_id $profile $region $aws_cli_format_options
 }
 
-# First check if should be started, or already started, then skip to wait for IP address. Or wait until completely stopped
-# and then trigger start
-status=$(aws ec2 describe-instances --instance-ids $instance_id $profile $region $aws_cli_format_options \
-             --query "Reservations[*].Instances[*].{PublicIP:PublicIpAddress,Name:Tags[?Key=='Name']|[0].Value,Status:State.Name}" \
-             | cut -f3 -d$'\t')
+function get_instance_status {
+  echo $(aws ec2 describe-instances --instance-ids $instance_id $profile $region $aws_cli_format_options \
+       --query "Reservations[*].Instances[*].{PublicIP:PublicIpAddress,Name:Tags[?Key=='Name']|[0].Value,Status:State.Name}" \
+       | cut -f3 -d$'\t')
+}
+
+function start_instance {
+  aws ec2 start-instances --instance-ids $instance_id $profile $region $aws_cli_format_options
+}
+
+function print_instance_ip {
+  echo $(aws ec2 describe-instances --instance-ids $instance_id $profile $region $aws_cli_format_options \
+        --query "Reservations[*].Instances[*].{PublicIP:PublicIpAddress,Name:Tags[?Key=='Name']|[0].Value,Status:State.Name}" \
+        | cut -f2 -d$'\t')
+}
+
+sleep_increment_sec=5
+
+# If is stopped, request start and continue to wait. If shutting-down or stopping, wait, then request start and continue
+# to wait. If already running, return IP and exit the script. If no status, there is some more delicate problem.
+status=$(get_instance_status)
 if [[ $status == "stopped" ]]; then
   echo "Requesting to start instance."
-  aws ec2 start-instances --instance-ids $instance_id $profile $region $aws_cli_format_options
+  start_instance
+  echo "Instance is booting..."
 elif [[ $status == "shutting-down" || $status == "stopping" ]]; then
   echo "Instance is stopping/shutting-down, waiting until it can be started"
   started=0
-  for i in {0..100}
+  timeout_sec=$((5 * 60))
+  i_max=$((timeout_sec / sleep_increment_sec))
+  for (( i=0; i < i_max; i++ ))
   do
-    status=$(aws ec2 describe-instances --instance-ids $instance_id $profile $region $aws_cli_format_options \
-      --query "Reservations[*].Instances[*].{PublicIP:PublicIpAddress,Name:Tags[?Key=='Name']|[0].Value,Status:State.Name}" \
-      | cut -f3 -d$'\t')
+    status=$(get_instance_status)
     if [[ $status == "stopped" ]]; then
       echo ""
       echo "Instance is finally stopped, requesting start."
-      aws ec2 start-instances --instance-ids $instance_id $profile $region $aws_cli_format_options
+      start_instance
+      echo "Instance is booting..."
       started=1
       break
     fi
     echo -n "."
-    sleep 5
+    sleep $sleep_increment_sec
   done
   if [[ $started -eq 0 ]]; then
     echo "Timeout occurred for waiting instance to be stopped, try another time."
     exit 1
   fi
+elif [[ $status == "running" ]]; then
+  echo "Instance is already running."
+  print_instance_ip
+  exit 0
 elif [[ $status == "" ]]; then
-    echo "There is problem with credentials or AWS CLI, please investigate."
-    exit 2
+  echo "There is problem with credentials or AWS CLI, please investigate."
+  exit 2
 fi
 
-
 started=0
-for i in {0..20}
+echo -n "Waiting for instance to be ready (in state 'running')"
+timeout_sec=$((2 * 60))
+i_max=$((timeout_sec / sleep_increment_sec))
+for (( i=0; i < i_max; i++ ))
 do
-  status=$(aws ec2 describe-instances --instance-ids $instance_id $profile $region $aws_cli_format_options \
-    --query "Reservations[*].Instances[*].{PublicIP:PublicIpAddress,Name:Tags[?Key=='Name']|[0].Value,Status:State.Name}" \
-    | cut -f3 -d$'\t')
+  status=$(get_instance_status)
   if [[ $status == "running" ]]; then
+    echo ""
     echo "Instance is running."
     started=1
     break
   fi
-  sleep 5
+  echo -n "."
+  sleep $sleep_increment_sec
 done
 
+
 if [[ $started -eq 0 ]]; then
+  echo ""
   echo "Timeout reached for starting up EC2 instance"
   shutdown_instance
-  exit 1
+  exit 3
 fi
 
-final_status=$(aws ec2 describe-instances --instance-ids $instance_id $profile $region $aws_cli_format_options \
-              --query "Reservations[*].Instances[*].{PublicIP:PublicIpAddress,Name:Tags[?Key=='Name']|[0].Value,Status:State.Name}" \
-              | cut -f3 -d$'\t')
-echo "$final_status"
+print_instance_ip
