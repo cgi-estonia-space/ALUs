@@ -48,7 +48,7 @@ sleep_increment_sec=5
 # to wait. If already running, return IP and exit the script. If no status, there is some more delicate problem.
 status=$(get_instance_status)
 if [[ $status == "stopped" ]]; then
-  echo "Requesting to start instance."
+  echo "Requesting to start the instance."
   start_instance
   echo "Instance is booting..."
 elif [[ $status == "shutting-down" || $status == "stopping" ]]; then
@@ -71,7 +71,7 @@ elif [[ $status == "shutting-down" || $status == "stopping" ]]; then
     sleep $sleep_increment_sec
   done
   if [[ $started -eq 0 ]]; then
-    echo "Timeout occurred for waiting instance to be stopped, try another time."
+    echo "Timeout occurred for waiting the instance to be stopped, try another time."
     exit 1
   fi
 elif [[ $status == "running" ]]; then
@@ -84,7 +84,7 @@ elif [[ $status == "" ]]; then
 fi
 
 started=0
-echo -n "Waiting for instance to be ready (in state 'running')"
+echo -n "Waiting for the instance to be ready (in state 'running')"
 timeout_sec=$((2 * 60))
 i_max=$((timeout_sec / sleep_increment_sec))
 for (( i=0; i < i_max; i++ ))
@@ -103,7 +103,7 @@ done
 
 if [[ $started -eq 0 ]]; then
   echo ""
-  echo "Timeout reached for starting up EC2 instance"
+  echo "Timeout reached for starting up the EC2 instance"
   shutdown_instance
   exit 3
 fi

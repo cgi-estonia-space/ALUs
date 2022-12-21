@@ -1,28 +1,46 @@
-# This is a basic workflow to help you get started with Actions
-
 name: CI on AWS GPU instance
 
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
     branches: [ "actions" ]
     max-concurrency: 1
   pull_request:
     branches: [ "development" ]
     max-concurrency: 1
-  # Allows you to run this workflow manually from the Actions tab
+  # Allows to run this workflow manually from the Actions tab
   workflow_dispatch:
     max-concurrency: 1
 
+env:
+  CI_PACKAGE_NAME: alus_github_action_ci_package_${{github.run_number}}
+
 # For 'trigger_instance' - tty=$(readlink /proc/$$/fd/2) - possibly needed in the future, add $tty to tee command.
 jobs:
+  package-repo:
+    name: Package the repo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Prepare and archive
+        env:
+          CI_PACKAGE_FILENAME: ${{ env.CI_PACKAGE_NAME }}.tar.gz
+          CI_PACKAGE_FILENAME_PATH: /tmp/${{ env.CI_PACKAGE_NAME }}.tar.gz
+        run: |
+          cd $GITHUB_WORKSPACE
+          tar --exclude="*.md" --exclude=docs -czvf $CI_PACKAGE_FILENAME_PATH .
+          echo "package_path=$CI_PACKAGE_FILENAME_PATH" >> $GITHUB_ENV
+          echo "package_filename=$CI_PACKAGE_FILENAME" >> $GITHUB_ENV
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.CI_PACKAGE_NAME }}
+          path: ${{ env.package_path }}
+          retention-days: 3
+
   start-gpu-instance:
     name: Start GPU instance
     runs-on: ubuntu-latest
     outputs:
       instance_ip: ${{ steps.trigger_instance.outputs.instance_ip }}
-      tere: ${{ steps.trigger_instance.outputs.test }}
     steps:
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
@@ -38,37 +56,43 @@ jobs:
         $GITHUB_WORKSPACE/build-automation/trigger_ec2_instance.sh ${{ secrets.ALUS_SID_INSTANCE_ID }} | tee trigger_out.txt
         ip_address=$(cat trigger_out.txt | tail -n 1)
         echo "instance_ip=$ip_address" >> $GITHUB_OUTPUT
-        echo "test=tere" >> $GITHUB_OUTPUT
-        echo "IP address is $ip_address"
-    - name: Print vars
-      run: |
-        echo "Instance IP to use is ${{ steps.trigger_instance.outputs.instance_ip }}"
-        echo "Test is ${{ steps.trigger_instance.outputs.test }}"
+
+# Transfer the package job?
 
   run-ci-process:
-    name: Build and run unit and integration tests
+    name: Build and run tests
     runs-on: ubuntu-latest
-    needs: start-gpu-instance
+    needs: [start-gpu-instance, package-repo]
     steps:
     - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v2
+      with:
+        name: ${{ env.CI_PACKAGE_NAME }}
     - name: CI process
       id: run-ci-process
       run: |
-        echo "Instance IP to use is ${{ needs.start-gpu-instance.outputs.instance_ip }}"
-        echo "Test is ${{ needs.start-gpu-instance.outputs.test }}"
-        echo "Instance IP to use is ${{ steps.trigger_instance.outputs.instance_ip }}"
-        echo "Test is ${{ steps.trigger_instance.outputs.test }}"
-        pwd
-        ls -la
+        instance_ip=${{ needs.start-gpu-instance.outputs.instance_ip }}
+        package_filename=${{ needs.package-repo.env.package_filename }}
+        echo "Instance IP: $instance_ip"
+        echo "Package filename: $package_filename"
+        ls -la $CI_PACKAGE_NAME*
+
+  stop-gpu-instance:
+    name: Stop GPU instance
+    runs-on: ubuntu-latest
+    needs: [start-gpu-instance, run-ci-process]
+    if: |
+      always() &&
+      needs.start-gpu-instance.result == 'success'
+    steps:
     - name: Configure AWS Credentials
-      if: always()
       uses: aws-actions/configure-aws-credentials@v1
       with:
         aws-access-key-id: ${{ secrets.SID_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.SID_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.ALUS_SID_INSTANCE_REGION }}
+    - uses: actions/checkout@v3
     - name: Stop GPU instance
-      if: always()
       run: |
         $GITHUB_WORKSPACE/build-automation/stop_ec2_instance.sh ${{ secrets.ALUS_SID_INSTANCE_ID }} 
 
