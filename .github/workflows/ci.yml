@@ -35,6 +35,7 @@ jobs:
         output=$($GITHUB_WORKSPACE/build-automation/trigger_ec2_instance.sh ${{ secrets.ALUS_SID_INSTANCE_ID }} | tee)
         ip_address=$(echo $output | tail -n 1)
         echo "{instance_ip}={$ip_address}" >> $GITHUB_OUTPUT
+        echo $ip_address
 
   run-ci-process:
     name: Build and run unit and integration tests
@@ -45,7 +46,7 @@ jobs:
     - name: CI process
       id: run-ci-process
       run: |
-        echo "Instance IP to use is ${{ steps.trigger_instance.outputs.instance_ip}}"
+        echo "Instance IP to use is ${{ steps.trigger_instance.outputs.instance_ip }}"
         pwd
         ls -la
     - name: Configure AWS Credentials
