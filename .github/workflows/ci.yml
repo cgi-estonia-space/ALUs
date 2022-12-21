@@ -32,10 +32,17 @@ jobs:
       id: trigger_instance
       run: |
         set -o pipefail
-        output=$($GITHUB_WORKSPACE/build-automation/trigger_ec2_instance.sh ${{ secrets.ALUS_SID_INSTANCE_ID }} | tee)
-        ip_address=$(echo $output | tail -n 1)
-        echo "{instance_ip}={$ip_address}" >> $GITHUB_OUTPUT
-        echo $ip_address
+        $GITHUB_WORKSPACE/build-automation/trigger_ec2_instance.sh ${{ secrets.ALUS_SID_INSTANCE_ID }} | tee trigger_out.txt
+        ip_address=$(cat trigger_out.txt | tail -n 1)
+        echo "instance_ip=$ip_address" >> $GITHUB_OUTPUT
+        echo "test=tere" >> $GITHUB_OUTPUT
+        echo "IP address is $ip_address"
+    - name: Print vars
+      run: |
+        echo "Instance IP to use is ${{ steps.trigger_instance.outputs.instance_ip }}"
+        echo "Test is ${{ steps.trigger_instance.outputs.test }}"
+    outputs:
+      instance_ip: ${{ steps.trigger_instance.output }}
 
   run-ci-process:
     name: Build and run unit and integration tests
@@ -46,7 +53,10 @@ jobs:
     - name: CI process
       id: run-ci-process
       run: |
+        echo "Instance IP to use is ${{ steps.start-gpu-instance.outputs.instance_ip }}"
+        echo "Test is ${{ steps.trigger_instance.outputs.test }}"
         echo "Instance IP to use is ${{ steps.trigger_instance.outputs.instance_ip }}"
+        echo "Test is ${{ steps.trigger_instance.outputs.test }}"
         pwd
         ls -la
     - name: Configure AWS Credentials
