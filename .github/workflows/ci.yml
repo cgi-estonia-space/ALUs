@@ -20,6 +20,9 @@ jobs:
   start-gpu-instance:
     name: Start GPU instance
     runs-on: ubuntu-latest
+    outputs:
+      instance_ip: ${{ steps.trigger_instance.outputs.instance_ip }}
+      tere: ${{ steps.trigger_instance.outputs.test }}
     steps:
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
@@ -41,8 +44,6 @@ jobs:
       run: |
         echo "Instance IP to use is ${{ steps.trigger_instance.outputs.instance_ip }}"
         echo "Test is ${{ steps.trigger_instance.outputs.test }}"
-    outputs:
-      instance_ip: ${{ steps.trigger_instance.output }}
 
   run-ci-process:
     name: Build and run unit and integration tests
@@ -53,8 +54,8 @@ jobs:
     - name: CI process
       id: run-ci-process
       run: |
-        echo "Instance IP to use is ${{ steps.start-gpu-instance.outputs.instance_ip }}"
-        echo "Test is ${{ steps.trigger_instance.outputs.test }}"
+        echo "Instance IP to use is ${{ needs.start-gpu-instance.outputs.instance_ip }}"
+        echo "Test is ${{ needs.start-gpu-instance.outputs.test }}"
         echo "Instance IP to use is ${{ steps.trigger_instance.outputs.instance_ip }}"
         echo "Test is ${{ steps.trigger_instance.outputs.test }}"
         pwd
