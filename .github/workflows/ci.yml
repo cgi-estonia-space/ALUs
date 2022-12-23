@@ -19,9 +19,12 @@ jobs:
   package-repo:
     name: Package the repo
     runs-on: ubuntu-latest
+    outputs:
+      package_filename: ${{ steps.prepare-and-archive.outputs.package_filename }}
     steps:
       - uses: actions/checkout@v3
       - name: Prepare and archive
+        id: prepare-and-archive
         env:
           CI_PACKAGE_FILENAME: ${{ env.CI_PACKAGE_NAME }}.tar.gz
           CI_PACKAGE_FILENAME_PATH: /tmp/${{ env.CI_PACKAGE_NAME }}.tar.gz
@@ -29,7 +32,7 @@ jobs:
           cd $GITHUB_WORKSPACE
           tar --exclude="*.md" --exclude=docs -czvf $CI_PACKAGE_FILENAME_PATH .
           echo "package_path=$CI_PACKAGE_FILENAME_PATH" >> $GITHUB_ENV
-          echo "package_filename=$CI_PACKAGE_FILENAME" >> $GITHUB_ENV
+          echo "package_filename=$CI_PACKAGE_FILENAME" >> $GITHUB_OUTPUT
       - uses: actions/upload-artifact@v2
         with:
           name: ${{ env.CI_PACKAGE_NAME }}
@@ -57,25 +60,43 @@ jobs:
         ip_address=$(cat trigger_out.txt | tail -n 1)
         echo "instance_ip=$ip_address" >> $GITHUB_OUTPUT
 
-# Transfer the package job?
-
   run-ci-process:
     name: Build and run tests
     runs-on: ubuntu-latest
     needs: [start-gpu-instance, package-repo]
     steps:
-    - uses: actions/checkout@v3
+    - name: Create SSH key
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.ALUS_CI_ACTIONS_SSH_KEY }}
+      run: |
+        key_location=~/.ssh/
+        mkdir -p $key_location
+        key_path=$key_location/id_rsa
+        echo "$SSH_PRIVATE_KEY" > $key_path
+        sudo chmod 600 $key_path
+        ssh-keygen -f $key_path -y > $key_path.pub
     - uses: actions/download-artifact@v2
       with:
         name: ${{ env.CI_PACKAGE_NAME }}
-    - name: CI process
-      id: run-ci-process
+    - name: Transfer package
+      id: transfer_package
+      env:
+        INSTANCE_USERNAME: ${{ secrets.ALUS_CI_ACTIONS_USERNAME }}
       run: |
         instance_ip=${{ needs.start-gpu-instance.outputs.instance_ip }}
-        package_filename=${{ needs.package-repo.env.package_filename }}
+        package_filename=${{ needs.package-repo.outputs.package_filename }}
+        instance_package_path=/tmp/$package_filename
+        scp -o "StrictHostKeyChecking no" $package_filename $INSTANCE_USERNAME@$instance_ip:$instance_package_path
+        echo "instance_package_path=$instance_package_path" >> $GITHUB_OUTPUT
+    - uses: actions/checkout@v3
+    - name: CI process
+      env:
+        INSTANCE_USERNAME: ${{ secrets.ALUS_CI_ACTIONS_USERNAME }}
+      run: |
+        instance_ip=${{ needs.start-gpu-instance.outputs.instance_ip }}
         echo "Instance IP: $instance_ip"
-        echo "Package filename: $package_filename"
-        ls -la $CI_PACKAGE_NAME*
+        package_path=${{ steps.transfer_package.outputs.instance_package_path }}
+        ssh -o "StrictHostKeyChecking no" $INSTANCE_USERNAME@$instance_ip "ls -la $package_path" 
 
   stop-gpu-instance:
     name: Stop GPU instance
