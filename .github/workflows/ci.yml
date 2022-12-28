@@ -23,14 +23,15 @@ jobs:
       package_filename: ${{ steps.prepare-and-archive.outputs.package_filename }}
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
       - name: Prepare and archive
         id: prepare-and-archive
         env:
           CI_PACKAGE_FILENAME: ${{ env.CI_PACKAGE_NAME }}.tar.gz
           CI_PACKAGE_FILENAME_PATH: /tmp/${{ env.CI_PACKAGE_NAME }}.tar.gz
         run: |
-          cd $GITHUB_WORKSPACE
-          tar --exclude="*.md" --exclude=docs -czvf $CI_PACKAGE_FILENAME_PATH .
+          $GITHUB_WORKSPACE/build-automation/create_ci_package.sh $GITHUB_WORKSPACE $CI_PACKAGE_FILENAME_PATH
           echo "package_path=$CI_PACKAGE_FILENAME_PATH" >> $GITHUB_ENV
           echo "package_filename=$CI_PACKAGE_FILENAME" >> $GITHUB_OUTPUT
       - uses: actions/upload-artifact@v2
@@ -96,7 +97,10 @@ jobs:
         instance_ip=${{ needs.start-gpu-instance.outputs.instance_ip }}
         echo "Instance IP: $instance_ip"
         package_path=${{ steps.transfer_package.outputs.instance_package_path }}
-        ssh -o "StrictHostKeyChecking no" $INSTANCE_USERNAME@$instance_ip "ls -la $package_path" 
+        artifacts_test_results_location="/tmp/${{github.run_number}}"
+        ssh -o "StrictHostKeyChecking no" $INSTANCE_USERNAME@$instance_ip "mkdir $artifacts_test_results_location"  
+        scp -o "StrictHostKeyChecking no" build-automation/build_and_run_in_container.sh $INSTANCE_USERNAME@$instance_ip:$artifacts_test_results_location/
+        ssh -o "StrictHostKeyChecking no" $INSTANCE_USERNAME@$instance_ip "cd $artifacts_test_results_location; ./build_and_run_in_container.sh $package_path $artifacts_test_results_location /home/$INSTANCE_USERNAME/alus/resources"
 
   stop-gpu-instance:
     name: Stop GPU instance

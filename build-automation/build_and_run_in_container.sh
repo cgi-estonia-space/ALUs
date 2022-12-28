@@ -1,65 +1,70 @@
 #!/bin/bash
 
-# This script runs on EC2 GPU instance.
+set -e
 
-set -x
+if [ "$#" -lt 2 ]; then
+    echo "$0 "
+    echo "Usage:"
+    echo "$0 [ALUs source or package] [artifacts and test results output location] <resources folder - optional>"
+fi
 
 function is_error_then_quit {
 	ret_val=$?
 	if [ $ret_val -ne 0 ]; then
 		echo "Exiting because of error no $ret_val"
-		sudo shutdown -h +1 &
 		exit $ret_val
 	fi
 }
 
-docker stop "$(docker ps -a -q)"
-docker rm "$(docker ps -a -q)"
+alus_package=$1
+ci_output_loc=$2
+container_work_dir="/root/alus"
+alus_package_filename_w_ext=${alus_package##*/}
+alus_package_filename=${alus_package_filename_w_ext%%.*}
+build_id=$(echo $alus_package_filename | rev | cut -d"_" -f1 | rev)
 
 docker pull cgialus/alus-devel:latest
-is_error_then_quit
-docker run -t -d --gpus all --name alus_container cgialus/alus-devel
-is_error_then_quit
-docker exec -t alus_container mkdir /root/alus
-is_error_then_quit
-docker cp ~/*.tar.gz alus_container:/root/alus/
-is_error_then_quit
-docker cp ~/resources alus_container:root/alus/
-docker exec -t alus_container bash -c "tar -xzf /root/alus/*.tar.gz -C /root/alus/"
-is_error_then_quit
 
-rm -rf ~/unit-test-results
-is_error_then_quit
-rm -rf ~/integration-test-results
-is_error_then_quit
-rm -rf ~/ci-artifacts
-is_error_then_quit
-mkdir ~/ci-artifacts
-is_error_then_quit
+container_name="alus_$build_id"
+set +e
+docker stop $container_name
+docker rm $container_name
+set -e
 
+docker run -t -d --gpus all --name $container_name cgialus/alus-devel
+docker exec -t $container_name mkdir $container_work_dir
+docker cp $alus_package $container_name:$container_work_dir/
+local_resource_folder=$3
+if [[ $local_resource_folder ]]; then
+  mkdir -p $local_resource_folder
+  docker cp $local_resource_folder $container_name:$container_work_dir/
+fi
+docker exec -t $container_name bash -c "tar -xzf $container_work_dir/$alus_package_filename_w_ext -C $container_work_dir/"
 
-docker exec -t alus_container bash -c "cd /root/alus; CUDAARCHS=50 build-automation/build_and_run_ci.sh"
+results_dir=$ci_output_loc/$alus_package_filename
+mkdir -p $results_dir
+
+set +e
+docker exec -t $container_name bash -c "cd $container_work_dir; CUDAARCHS=50 build-automation/build_and_run_ci.sh"
 tests_return_value1=$?
-docker cp alus_container:/root/alus/build/unit-test/test-results ~/unit-test-results
-is_error_then_quit
-docker cp alus_container:/root/alus/build/test-integration/test-results ~/integration-test-results
-is_error_then_quit
+set -e
+docker cp $container_name:$container_work_dir/build/unit-test/test-results/. $results_dir
+docker cp $container_name:$container_work_dir/build/test-integration/test-results $results_dir
 
-docker exec -t alus_container bash -c "cd /root/alus; CC=clang CXX=clang++ CUDAARCHS=50 build-automation/build_and_run_ci.sh"
+set +e
+docker exec -t $container_name bash -c "cd $container_work_dir; CC=clang CXX=clang++ CUDAARCHS=50 build-automation/build_and_run_ci.sh"
 tests_return_value2=$?
-docker cp alus_container:/root/alus/build/unit-test/test-results ~/unit-test-results/clang
-is_error_then_quit
-docker cp alus_container:/root/alus/build/test-integration/test-results ~/integration-test-results/clang
-is_error_then_quit
+set -e
+mkdir -p $results_dir/clang
+docker cp $container_name:$container_work_dir/build/unit-test/test-results/. $results_dir/clang
+docker cp $container_name:$container_work_dir/build/test-integration/test-results $results_dir/clang
 
 # Stash resources to local machine so no need to redownload (some of) those next time
-docker cp alus_container:/root/alus/resources ~/
+if [[ $local_resource_folder ]]; then
+  docker cp $container_name:$container_work_dir/resources $local_resource_folder
+fi
 
-docker exec -t alus_container bash -c "gdal_translate -of PNG -ot Byte -scale /tmp/4_bands_cuda_coh.tif /tmp/4_bands_cuda_coh.png"
-docker cp alus_container:/tmp/4_bands_cuda_coh.png ~/ci-artifacts/.
-docker exec -t alus_container bash -c "gdal_translate -of PNG -ot Byte -scale 0 1.0 0 255 /tmp/tc_beirut_test.tif /tmp/tc_beirut_test.png"
-docker cp alus_container:/tmp/tc_beirut_test.png ~/ci-artifacts/.
-docker stop alus_container
-docker rm alus_container
+docker stop $container_name
+docker rm $container_name
 exit $(($tests_return_value1 | $tests_return_value2))
 
