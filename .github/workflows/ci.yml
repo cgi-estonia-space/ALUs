@@ -95,6 +95,7 @@ jobs:
       env:
         INSTANCE_USERNAME: ${{ secrets.ALUS_CI_ACTIONS_USERNAME }}
       run: |
+        set +x
         instance_ip=${{ needs.start-gpu-instance.outputs.instance_ip }}
         echo "Instance IP: $instance_ip"
         package_path=${{ steps.transfer_package.outputs.instance_package_path }}
@@ -107,15 +108,13 @@ jobs:
         set -e
         results_location_on_runner=$artifacts_test_results_location
         mkdir -p $results_location_on_runner
-        scp -o "StrictHostKeyChecking no" -r '$INSTANCE_USERNAME@$instance_ip:$artifacts_test_results_location/\*/\*' $results_location_on_runner/
+        scp -o "StrictHostKeyChecking no" -r $INSTANCE_USERNAME@$instance_ip:$artifacts_test_results_location/alus\*/\* $results_location_on_runner/
         ls -la $results_location_on_runner
         echo "results_location=$results_location_on_runner" >> $GITHUB_OUTPUT
         exit $run_result
     - name: Test Report
       uses: dorny/test-reporter@v1
-      if: |
-        steps.ci_process.result == 'success' ||
-        steps.ci_process.result == 'failure'
+      if: success() || failure()
       with:
         path: ${{ steps.ci_process.outputs.results_location }}/*.xml
         reporter: jest-junit
