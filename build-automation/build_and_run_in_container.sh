@@ -34,12 +34,11 @@ set -e
 docker run -t -d --gpus all --name $container_name cgialus/alus-devel
 docker exec -t $container_name mkdir $container_work_dir
 docker cp $alus_package $container_name:$container_work_dir/
+docker exec -t $container_name bash -c "tar -xzf $container_work_dir/$alus_package_filename_w_ext -C $container_work_dir/"
 local_resource_folder=$3
 if [[ $local_resource_folder ]]; then
-  mkdir -p $local_resource_folder
   docker cp $local_resource_folder $container_name:$container_work_dir/
 fi
-docker exec -t $container_name bash -c "tar -xzf $container_work_dir/$alus_package_filename_w_ext -C $container_work_dir/"
 
 results_dir=$ci_output_loc/$alus_package_filename
 mkdir -p $results_dir
@@ -49,7 +48,7 @@ docker exec -t $container_name bash -c "cd $container_work_dir; CUDAARCHS=50 bui
 tests_return_value1=$?
 set -e
 docker cp $container_name:$container_work_dir/build/unit-test/test-results/. $results_dir
-docker cp $container_name:$container_work_dir/build/test-integration/test-results $results_dir
+docker cp $container_name:$container_work_dir/build/test-integration/test-results/. $results_dir
 
 set +e
 docker exec -t $container_name bash -c "cd $container_work_dir; CC=clang CXX=clang++ CUDAARCHS=50 build-automation/build_and_run_ci.sh"
@@ -57,14 +56,13 @@ tests_return_value2=$?
 set -e
 mkdir -p $results_dir/clang
 docker cp $container_name:$container_work_dir/build/unit-test/test-results/. $results_dir/clang
-docker cp $container_name:$container_work_dir/build/test-integration/test-results $results_dir/clang
+docker cp $container_name:$container_work_dir/build/test-integration/test-results/. $results_dir/clang
 
 # Stash resources to local machine so no need to redownload (some of) those next time
 if [[ $local_resource_folder ]]; then
-  docker cp $container_name:$container_work_dir/resources $local_resource_folder
+  docker cp $container_name:$container_work_dir/resources/. $local_resource_folder/
 fi
 
 docker stop $container_name
 docker rm $container_name
 exit $(($tests_return_value1 | $tests_return_value2))
-

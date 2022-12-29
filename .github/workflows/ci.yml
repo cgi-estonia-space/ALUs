@@ -91,6 +91,7 @@ jobs:
         echo "instance_package_path=$instance_package_path" >> $GITHUB_OUTPUT
     - uses: actions/checkout@v3
     - name: CI process
+      id: ci_process
       env:
         INSTANCE_USERNAME: ${{ secrets.ALUS_CI_ACTIONS_USERNAME }}
       run: |
@@ -100,7 +101,24 @@ jobs:
         artifacts_test_results_location="/tmp/${{github.run_number}}"
         ssh -o "StrictHostKeyChecking no" $INSTANCE_USERNAME@$instance_ip "mkdir $artifacts_test_results_location"  
         scp -o "StrictHostKeyChecking no" build-automation/build_and_run_in_container.sh $INSTANCE_USERNAME@$instance_ip:$artifacts_test_results_location/
+        set +e
         ssh -o "StrictHostKeyChecking no" $INSTANCE_USERNAME@$instance_ip "cd $artifacts_test_results_location; ./build_and_run_in_container.sh $package_path $artifacts_test_results_location /home/$INSTANCE_USERNAME/alus/resources"
+        run_result=$?
+        set -e
+        results_location_on_runner=$artifacts_test_results_location
+        mkdir -p $results_location_on_runner
+        scp -o "StrictHostKeyChecking no" -r '$INSTANCE_USERNAME@$instance_ip:$artifacts_test_results_location/\*/\*' $results_location_on_runner/
+        ls -la $results_location_on_runner
+        echo "results_location=$results_location_on_runner" >> $GITHUB_OUTPUT
+        exit $run_result
+    - name: Test Report
+      uses: dorny/test-reporter@v1
+      if: |
+        steps.ci_process.result == 'success' ||
+        steps.ci_process.result == 'failure'
+      with:
+        path: ${{ steps.ci_process.outputs.results_location }}/*.xml
+        reporter: jest-junit
 
   stop-gpu-instance:
     name: Stop GPU instance

@@ -10,4 +10,4 @@ if [ "$#" -ne 2 ]; then
 fi
 
 cd $1
-tar --exclude=docs --exclude-vcs-ignores -czvf $2 .
+tar --exclude=docs --exclude-vcs --exclude-vcs-ignores -czvf $2 .
