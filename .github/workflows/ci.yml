@@ -95,7 +95,6 @@ jobs:
       env:
         INSTANCE_USERNAME: ${{ secrets.ALUS_CI_ACTIONS_USERNAME }}
       run: |
-        set +x
         instance_ip=${{ needs.start-gpu-instance.outputs.instance_ip }}
         echo "Instance IP: $instance_ip"
         package_path=${{ steps.transfer_package.outputs.instance_package_path }}
@@ -106,18 +105,19 @@ jobs:
         ssh -o "StrictHostKeyChecking no" $INSTANCE_USERNAME@$instance_ip "cd $artifacts_test_results_location; ./build_and_run_in_container.sh $package_path $artifacts_test_results_location /home/$INSTANCE_USERNAME/alus/resources"
         run_result=$?
         set -e
+        set -x
         results_location_on_runner=$artifacts_test_results_location
         mkdir -p $results_location_on_runner
         scp -o "StrictHostKeyChecking no" -r $INSTANCE_USERNAME@$instance_ip:$artifacts_test_results_location/alus\*/\* $results_location_on_runner/
-        ls -la $results_location_on_runner
         echo "results_location=$results_location_on_runner" >> $GITHUB_OUTPUT
         exit $run_result
     - name: Test Report
       uses: dorny/test-reporter@v1
       if: success() || failure()
       with:
+        name: Test report for GCC built binaries
         path: ${{ steps.ci_process.outputs.results_location }}/*.xml
-        reporter: jest-junit
+        reporter: java-junit
 
   stop-gpu-instance:
     name: Stop GPU instance

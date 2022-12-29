@@ -37,6 +37,7 @@ docker cp $alus_package $container_name:$container_work_dir/
 docker exec -t $container_name bash -c "tar -xzf $container_work_dir/$alus_package_filename_w_ext -C $container_work_dir/"
 local_resource_folder=$3
 if [[ $local_resource_folder ]]; then
+  echo "Transferring local copy of resources folder"
   docker cp $local_resource_folder $container_name:$container_work_dir/
 fi
 
@@ -60,9 +61,11 @@ docker cp $container_name:$container_work_dir/build/test-integration/test-result
 
 # Stash resources to local machine so no need to redownload (some of) those next time
 if [[ $local_resource_folder ]]; then
-  docker cp $container_name:$container_work_dir/resources/. $local_resource_folder/
+  echo "Caching resources folder"
+  docker cp --update $container_name:$container_work_dir/resources/. $local_resource_folder/
 fi
 
+echo "Stopping and removing $container_name container"
 docker stop $container_name
 docker rm $container_name
 exit $(($tests_return_value1 | $tests_return_value2))
