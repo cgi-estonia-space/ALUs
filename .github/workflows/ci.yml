@@ -9,7 +9,7 @@ on:
     max-concurrency: 1
   # Allows to run this workflow manually from the Actions tab
   workflow_dispatch:
-    max-concurrency: 1
+    max-concurrency: 2
 
 env:
   CI_PACKAGE_NAME: alus_github_action_ci_package_${{github.run_number}}
@@ -125,7 +125,8 @@ jobs:
     needs: [start-gpu-instance, run-ci-process]
     if: |
       always() &&
-      needs.start-gpu-instance.result == 'success'
+      needs.start-gpu-instance.result == 'success' &&
+      !(github.workflow_run.id == github.run_id)
     steps:
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1

@@ -62,7 +62,7 @@ docker cp $container_name:$container_work_dir/build/test-integration/test-result
 # Stash resources to local machine so no need to redownload (some of) those next time
 if [[ $local_resource_folder ]]; then
   echo "Caching resources folder"
-  docker cp --update $container_name:$container_work_dir/resources/. $local_resource_folder/
+  docker cp $container_name:$container_work_dir/resources/. $local_resource_folder/
 fi
 
 echo "Stopping and removing $container_name container"
