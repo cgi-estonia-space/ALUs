@@ -30,6 +30,13 @@ jobs:
           wget https://raw.githubusercontent.com/cgi-estonia-space/ALUs-platform/main/ubuntu/20_04/focal/setup_dev.sh
           chmod +x install_nvidia_base.sh setup_runtime.sh setup_dev.sh
           DEBIAN_FRONTEND=noninteractive sudo ./install_nvidia_base.sh
+          set -x
+          source ~/.bashrc
+          echo $PATH
+          echo $GITHUB_PATH
+          echo $LD_LIBRARY_PATH
+          echo "/usr/local/cuda-11.2/bin/" >> $GITHUB_PATH
+          ln -s /usr/local/cuda-11.2/bin/* /usr/bin/.
           nvcc --version
           sudo ./setup_runtime.sh
           sudo ./setup_dev.sh
