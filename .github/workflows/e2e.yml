@@ -23,16 +23,16 @@ jobs:
     steps:
       - name: Prepare current runner
         run: |
-          apt update
-          apt install wget
+          sudo apt update
+          sudo apt install wget
           wget https://raw.githubusercontent.com/cgi-estonia-space/ALUs-platform/main/ubuntu/20_04/focal/install_nvidia_base.sh
           wget https://raw.githubusercontent.com/cgi-estonia-space/ALUs-platform/main/ubuntu/20_04/focal/setup_runtime.sh
           wget https://raw.githubusercontent.com/cgi-estonia-space/ALUs-platform/main/ubuntu/20_04/focal/setup_dev.sh
           chmod +x install_nvidia_base.sh setup_runtime.sh setup_dev.sh
-          DEBIAN_FRONTEND=noninteractive ./install_nvidia_base.sh
+          DEBIAN_FRONTEND=noninteractive sudo ./install_nvidia_base.sh
           nvcc --version
-          ./setup_runtime.sh
-          ./setup_dev.sh
+          sudo ./setup_runtime.sh
+          sudo ./setup_dev.sh
       - uses: actions/checkout@v3
         with:
           submodules: 'recursive'
