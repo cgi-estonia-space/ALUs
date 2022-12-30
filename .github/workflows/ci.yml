@@ -3,13 +3,13 @@ name: CI on AWS GPU instance
 on:
   push:
     branches: [ "actions" ]
-    max-concurrency: 2
+    max-concurrency: 1
   pull_request:
     branches: [ "development" ]
-    max-concurrency: 2
+    max-concurrency: 1
   # Allows to run this workflow manually from the Actions tab
   workflow_dispatch:
-    max-concurrency: 2
+    max-concurrency: 1
 
 env:
   CI_PACKAGE_NAME: alus_github_action_ci_package_${{github.run_number}}
@@ -63,6 +63,7 @@ jobs:
 
   run-ci-process:
     name: Build and run tests
+    permissions: write-all
     runs-on: ubuntu-latest
     needs: [start-gpu-instance, package-repo]
     steps:
@@ -111,12 +112,12 @@ jobs:
         scp -o "StrictHostKeyChecking no" -r $INSTANCE_USERNAME@$instance_ip:$artifacts_test_results_location/alus\*/\* $results_location_on_runner/
         echo "results_location=$results_location_on_runner" >> $GITHUB_OUTPUT
         exit $run_result
-    - name: Test Report
+    - name: Test report generation
       uses: dorny/test-reporter@v1
       if: success() || failure()
       with:
-        name: Test report for GCC built binaries
-        path: ${{ steps.ci_process.outputs.results_location }}/*.xml
+        name: Test report
+        path: '${{ steps.ci_process.outputs.results_location }}/*.xml,${{ steps.ci_process.outputs.results_location }}/clang/*.xml'
         reporter: java-junit
 
   stop-gpu-instance:
@@ -125,8 +126,7 @@ jobs:
     needs: [start-gpu-instance, run-ci-process]
     if: |
       always() &&
-      needs.start-gpu-instance.result == 'success' &&
-      !(github.workflow_run.id == github.run_id)
+      needs.start-gpu-instance.result == 'success'
     steps:
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1
