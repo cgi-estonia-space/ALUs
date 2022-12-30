@@ -30,14 +30,7 @@ jobs:
           wget https://raw.githubusercontent.com/cgi-estonia-space/ALUs-platform/main/ubuntu/20_04/focal/setup_dev.sh
           chmod +x install_nvidia_base.sh setup_runtime.sh setup_dev.sh
           DEBIAN_FRONTEND=noninteractive sudo ./install_nvidia_base.sh
-          set -x
-          source ~/.bashrc
-          echo $PATH
-          echo $GITHUB_PATH
-          echo $LD_LIBRARY_PATH
           echo "/usr/local/cuda-11.2/bin/" >> $GITHUB_PATH
-          ln -s /usr/local/cuda-11.2/bin/* /usr/bin/.
-          nvcc --version
           sudo ./setup_runtime.sh
           sudo ./setup_dev.sh
       - uses: actions/checkout@v3
@@ -48,7 +41,6 @@ jobs:
           RELEASE_PACKAGE_FILENAME: ${{ env.RELEASE_PACKAGE_NAME }}.tar.gz
           RELEASE_PACKAGE_FILENAME_PATH: /tmp/${{ env.RELEASE_PACKAGE_NAME }}.tar.gz
         run: |
-          echo $GITHUB_REF >> $GITHUB_WORKSPACE/VERSION
           $GITHUB_WORKSPACE/build-automation/create_release_package.sh $GITHUB_WORKSPACE $RELEASE_PACKAGE_FILENAME_PATH
           echo "package_path=$RELEASE_PACKAGE_FILENAME_PATH" >> $GITHUB_ENV
           echo "package_filename=$RELEASE_PACKAGE_FILENAME" >> $GITHUB_OUTPUT
