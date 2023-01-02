@@ -23,11 +23,11 @@ jobs:
         run: |
           sudo apt update
           sudo apt install wget
-          wget https://raw.githubusercontent.com/cgi-estonia-space/ALUs-platform/main/ubuntu/20_04/focal/install_nvidia_base.sh
+          wget https://raw.githubusercontent.com/cgi-estonia-space/ALUs-platform/main/ubuntu/20_04/focal/install_cuda_base.sh
           wget https://raw.githubusercontent.com/cgi-estonia-space/ALUs-platform/main/ubuntu/20_04/focal/setup_runtime.sh
           wget https://raw.githubusercontent.com/cgi-estonia-space/ALUs-platform/main/ubuntu/20_04/focal/setup_dev.sh
-          chmod +x install_nvidia_base.sh setup_runtime.sh setup_dev.sh
-          DEBIAN_FRONTEND=noninteractive sudo ./install_nvidia_base.sh
+          chmod +x install_cuda_base.sh setup_runtime.sh setup_dev.sh
+          DEBIAN_FRONTEND=noninteractive sudo ./install_cuda_base.sh
           echo "/usr/local/cuda-11.2/bin/" >> $GITHUB_PATH
           sudo ./setup_runtime.sh
           sudo ./setup_dev.sh
@@ -66,13 +66,13 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.SID_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.SID_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.ALUS_SID_INSTANCE_REGION }}
+          aws-region: ${{ secrets.ALUS_ALEX_INSTANCE_REGION }}
       - uses: actions/checkout@v3
       - name: Trigger the instance
         id: trigger_instance
         run: |
           set -o pipefail
-          $GITHUB_WORKSPACE/build-automation/trigger_ec2_instance.sh ${{ secrets.ALUS_SID_INSTANCE_ID }} | tee trigger_out.txt
+          $GITHUB_WORKSPACE/build-automation/trigger_ec2_instance.sh ${{ secrets.ALUS_ALEX_INSTANCE_ID }} | tee trigger_out.txt
           ip_address=$(cat trigger_out.txt | tail -n 1)
           echo "instance_ip=$ip_address" >> $GITHUB_OUTPUT
 
@@ -83,7 +83,7 @@ jobs:
     steps:
       - name: Create SSH key
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.ALUS_CI_ACTIONS_SSH_KEY }}
+          SSH_PRIVATE_KEY: ${{ secrets.ALUS_ALEX_SSH_KEY }}
         run: |
           key_location=~/.ssh/
           mkdir -p $key_location
@@ -97,7 +97,7 @@ jobs:
       - name: Transfer package
         id: transfer_package
         env:
-          INSTANCE_USERNAME: ${{ secrets.ALUS_CI_ACTIONS_USERNAME }}
+          INSTANCE_USERNAME: ${{ secrets.ALUS_ALEX_USERNAME }}
         run: |
           instance_ip=${{ needs.start-gpu-instance.outputs.instance_ip }}
           package_filename=${{ needs.release-package.outputs.package_filename }}
@@ -108,7 +108,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: End-to-end tests
         env:
-          INSTANCE_USERNAME: ${{ secrets.ALUS_CI_ACTIONS_USERNAME }}
+          INSTANCE_USERNAME: ${{ secrets.ALUS_ALEX_USERNAME }}
         run: |
           instance_ip=${{ needs.start-gpu-instance.outputs.instance_ip }}
           package_dir=${{ steps.transfer_package.outputs.instance_package_dir }}
