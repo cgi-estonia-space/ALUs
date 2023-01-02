@@ -11,15 +11,13 @@ on:
   workflow_dispatch:
     max-concurrency: 1
 
-env:
-  RELEASE_PACKAGE_NAME: alus_release_${{github.run_number}}
-
 jobs:
   release-package:
     name: Build package
     runs-on: ubuntu-20.04
     outputs:
-      package_filename: ${{ steps.prepare-and-archive.outputs.package_filename }}
+      package_filename: ${{ steps.build_and_pack.outputs.package_filename }}
+      package_name: ${{ steps.build_and_pack.outputs.package_name }}
     steps:
       - name: Prepare current runner
         run: |
@@ -37,16 +35,110 @@ jobs:
         with:
           submodules: 'recursive'
       - name: Build and pack
-        env:
-          RELEASE_PACKAGE_FILENAME: ${{ env.RELEASE_PACKAGE_NAME }}.tar.gz
-          RELEASE_PACKAGE_FILENAME_PATH: /tmp/${{ env.RELEASE_PACKAGE_NAME }}.tar.gz
+        id: build_and_pack
         run: |
-          $GITHUB_WORKSPACE/build-automation/create_release_package.sh $GITHUB_WORKSPACE $RELEASE_PACKAGE_FILENAME_PATH
-          echo "package_path=$RELEASE_PACKAGE_FILENAME_PATH" >> $GITHUB_ENV
-          echo "package_filename=$RELEASE_PACKAGE_FILENAME" >> $GITHUB_OUTPUT
+          ver_major=$(grep VERSION_MAJOR VERSION | cut -d' ' -f3)
+          ver_minor=$(grep VERSION_MINOR VERSION | cut -d' ' -f3)
+          ver_patch=$(grep VERSION_PATCH VERSION | cut -d' ' -f3)
+          release_package_name="alus-$ver_major-$ver_minor-$ver_patch"
+          release_package_filename="$release_package_name.tar.gz"
+          release_package_filename_path="/tmp/$release_package_filename"
+          $GITHUB_WORKSPACE/build-automation/create_release_package.sh $GITHUB_WORKSPACE $release_package_filename_path
+          echo "package_path=$release_package_filename_path" >> $GITHUB_ENV
+          echo "package_name=$release_package_name" >> $GITHUB_ENV
+          echo "package_filename=$release_package_filename" >> $GITHUB_OUTPUT
+          echo "package_name=$release_package_name" >> $GITHUB_OUTPUT
       - uses: actions/upload-artifact@v2
         with:
-          name: ${{ env.RELEASE_PACKAGE_NAME }}
+          name: ${{ env.package_name }}
           path: ${{ env.package_path }}
           retention-days: 3
 
+  start-gpu-instance:
+    name: Start GPU instance
+    runs-on: ubuntu-latest
+    needs: release-package
+    outputs:
+      instance_ip: ${{ steps.trigger_instance.outputs.instance_ip }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.SID_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.SID_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.ALUS_SID_INSTANCE_REGION }}
+      - uses: actions/checkout@v3
+      - name: Trigger the instance
+        id: trigger_instance
+        run: |
+          set -o pipefail
+          $GITHUB_WORKSPACE/build-automation/trigger_ec2_instance.sh ${{ secrets.ALUS_SID_INSTANCE_ID }} | tee trigger_out.txt
+          ip_address=$(cat trigger_out.txt | tail -n 1)
+          echo "instance_ip=$ip_address" >> $GITHUB_OUTPUT
+
+  end-to-end-testing:
+    name: End-to-end testing
+    runs-on: ubuntu-latest
+    needs: [start-gpu-instance, release-package]
+    steps:
+      - name: Create SSH key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.ALUS_CI_ACTIONS_SSH_KEY }}
+        run: |
+          key_location=~/.ssh/
+          mkdir -p $key_location
+          key_path=$key_location/id_rsa
+          echo "$SSH_PRIVATE_KEY" > $key_path
+          sudo chmod 600 $key_path
+          ssh-keygen -f $key_path -y > $key_path.pub
+      - uses: actions/download-artifact@v2
+        with:
+          name: ${{ needs.release-package.outputs.package_name }}
+      - name: Transfer package
+        id: transfer_package
+        env:
+          INSTANCE_USERNAME: ${{ secrets.ALUS_CI_ACTIONS_USERNAME }}
+        run: |
+          instance_ip=${{ needs.start-gpu-instance.outputs.instance_ip }}
+          package_filename=${{ needs.release-package.outputs.package_filename }}
+          instance_package_dir=/tmp/${{ needs.release-package.outputs.package_name }}
+          ssh -o "StrictHostKeyChecking no" $INSTANCE_USERNAME@$instance_ip "mkdir $instance_package_dir"
+          scp -o "StrictHostKeyChecking no" $package_filename $INSTANCE_USERNAME@$instance_ip:$instance_package_dir/
+          echo "instance_package_dir=$instance_package_dir" >> $GITHUB_OUTPUT
+      - uses: actions/checkout@v3
+      - name: End-to-end tests
+        env:
+          INSTANCE_USERNAME: ${{ secrets.ALUS_CI_ACTIONS_USERNAME }}
+        run: |
+          instance_ip=${{ needs.start-gpu-instance.outputs.instance_ip }}
+          package_dir=${{ steps.transfer_package.outputs.instance_package_dir }}
+          scp -o "StrictHostKeyChecking no" build-automation/*.py build-automation/*.sh build-automation/*.txt $INSTANCE_USERNAME@$instance_ip:$package_dir/
+#          set +e
+#          ssh -o "StrictHostKeyChecking no" $INSTANCE_USERNAME@$instance_ip "cd $artifacts_test_results_location; ./build_and_run_in_container.sh $package_path $artifacts_test_results_location /home/$INSTANCE_USERNAME/alus/resources"
+#          run_result=$?
+#          set -e
+#          set -x
+#          results_location_on_runner=$artifacts_test_results_location
+#          mkdir -p $results_location_on_runner
+#          scp -o "StrictHostKeyChecking no" -r $INSTANCE_USERNAME@$instance_ip:$artifacts_test_results_location/alus\*/\* $results_location_on_runner/
+#          echo "results_location=$results_location_on_runner" >> $GITHUB_OUTPUT
+#          exit $run_result
+
+#  stop-gpu-instance:
+#    name: Stop GPU instance
+#    runs-on: ubuntu-latest
+#    needs: [start-gpu-instance, end-to-end-testing]
+#    if: |
+#      always() &&
+#      needs.start-gpu-instance.result == 'success'
+#    steps:
+#      - name: Configure AWS Credentials
+#        uses: aws-actions/configure-aws-credentials@v1
+#        with:
+#          aws-access-key-id: ${{ secrets.SID_ACCESS_KEY_ID }}
+#          aws-secret-access-key: ${{ secrets.SID_SECRET_ACCESS_KEY }}
+#          aws-region: ${{ secrets.ALUS_SID_INSTANCE_REGION }}
+#      - uses: actions/checkout@v3
+#      - name: Stop GPU instance
+#        run: |
+#          $GITHUB_WORKSPACE/build-automation/stop_ec2_instance.sh ${{ secrets.ALUS_SID_INSTANCE_ID }}
