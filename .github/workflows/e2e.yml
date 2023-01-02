@@ -112,7 +112,9 @@ jobs:
         run: |
           instance_ip=${{ needs.start-gpu-instance.outputs.instance_ip }}
           package_dir=${{ steps.transfer_package.outputs.instance_package_dir }}
+          build_id=${{ needs.release-package.outputs.package_name }}
           scp -o "StrictHostKeyChecking no" build-automation/*.py build-automation/*.sh build-automation/*.txt $INSTANCE_USERNAME@$instance_ip:$package_dir/
+          ssh -oStrictHostKeyChecking=no $INSTANCE_USERNAME@$instance_ip "export NIGHTLY_GOLDEN_DIR=/home/$INSTANCE_USERNAME/e2e/golden; cd $package_dir; ./execute_e2e.sh $build_id e2e_resources.txt"
 #          set +e
 #          ssh -o "StrictHostKeyChecking no" $INSTANCE_USERNAME@$instance_ip "cd $artifacts_test_results_location; ./build_and_run_in_container.sh $package_path $artifacts_test_results_location /home/$INSTANCE_USERNAME/alus/resources"
 #          run_result=$?
