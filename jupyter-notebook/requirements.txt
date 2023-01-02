@@ -8,4 +8,4 @@ sentineleof>=0.6.4
 git+https://github.com/pbrotoisworo/s1-tops-split-analyzer.git
 wheel>=0.37.0
 pytest>=7.0.0
-tkinter>=8.6.0
+tk

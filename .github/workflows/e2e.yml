@@ -114,23 +114,23 @@ jobs:
           package_dir=${{ steps.transfer_package.outputs.instance_package_dir }}
           build_id=${{ needs.release-package.outputs.package_name }}
           scp -o "StrictHostKeyChecking no" build-automation/*.py build-automation/*.sh build-automation/*.txt $INSTANCE_USERNAME@$instance_ip:$package_dir/
-          ssh -oStrictHostKeyChecking=no $INSTANCE_USERNAME@$instance_ip "export NIGHTLY_GOLDEN_DIR=/home/$INSTANCE_USERNAME/e2e/golden; cd $package_dir; ./execute_e2e.sh $build_id e2e_resources.txt"
+          ssh -oStrictHostKeyChecking=no $INSTANCE_USERNAME@$instance_ip "export NIGHTLY_GOLDEN_DIR=/home/$INSTANCE_USERNAME/e2e/golden; export LD_LIBRARY_PATH=/usr/local/cuda-11.2/lib64/:\$LD_LIBRARY_PATH; cd $package_dir; ./execute_e2e.sh $build_id e2e_resources.txt"
 
-  stop-gpu-instance:
-    name: Stop GPU instance
-    runs-on: ubuntu-latest
-    needs: [start-gpu-instance, end-to-end-testing]
-    if: |
-      always() &&
-      needs.start-gpu-instance.result == 'success'
-    steps:
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.SID_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.SID_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.ALUS_ALEX_INSTANCE_REGION }}
-      - uses: actions/checkout@v3
-      - name: Stop GPU instance
-        run: |
-          $GITHUB_WORKSPACE/build-automation/stop_ec2_instance.sh ${{ secrets.ALUS_ALEX_INSTANCE_ID }}
+#  stop-gpu-instance:
+#    name: Stop GPU instance
+#    runs-on: ubuntu-latest
+#    needs: [start-gpu-instance, end-to-end-testing]
+#    if: |
+#      always() &&
+#      needs.start-gpu-instance.result == 'success'
+#    steps:
+#      - name: Configure AWS Credentials
+#        uses: aws-actions/configure-aws-credentials@v1
+#        with:
+#          aws-access-key-id: ${{ secrets.SID_ACCESS_KEY_ID }}
+#          aws-secret-access-key: ${{ secrets.SID_SECRET_ACCESS_KEY }}
+#          aws-region: ${{ secrets.ALUS_ALEX_INSTANCE_REGION }}
+#      - uses: actions/checkout@v3
+#      - name: Stop GPU instance
+#        run: |
+#          $GITHUB_WORKSPACE/build-automation/stop_ec2_instance.sh ${{ secrets.ALUS_ALEX_INSTANCE_ID }}
