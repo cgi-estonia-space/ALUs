@@ -1,7 +1,9 @@
 jupyterlab>=3.3
 ipywidgets>=7.6.5
 colorama>=0.4.4
-elevation>=1.1.3
+# srtm.csi.cgiar.org certificate has expired, use cgi-estonia-space fork, that uses curl without certificate check
+#elevation>=1.1.3
+git+https://github.com/cgi-estonia-space/elevation.git
 sentineleof>=0.6.4
 # Currently there is a pull request https://github.com/pbrotoisworo/s1-tops-split-analyzer/pull/23 addressing unarchived .SAFE archive support
 # Therefore a fork of the repository is being used until the request is merged
