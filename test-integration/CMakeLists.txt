@@ -45,7 +45,7 @@ list(APPEND TEST_INCLUDE
 set(INTEGRATION_TEST_DATA_FOLDER ${CMAKE_BINARY_DIR}/test-integration/goods)
 #----------------Prepare all data for integration tests-----------------------------
 add_custom_target(integration-test-prepare-data ALL
-        COMMAND echo "Creating test data"
+        COMMAND echo "Creating integration test data"
 
         COMMAND ${ALUS_LFS_INVOKE}
 

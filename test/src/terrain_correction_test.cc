@@ -104,11 +104,11 @@ private:
     const std::string main_metadata_file_{
         "goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb.dim"};
     const std::string lat_tie_points_file_{
-        "goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb"
-        ".data/tie_point_grids/latitude.img"};
+        "goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_data"
+        "/latitude.img"};
     const std::string lon_tie_points_file_{
-        "goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb"
-        ".data/tie_point_grids/longitude.img"};
+        "goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_data"
+        "/longitude.img"};
 };
 
 TEST_F(TerrainCorrectionTest, getPositionTrueScenario) {
@@ -456,10 +456,10 @@ TEST_F(TerrainCorrectionTest, MetadataConstructionSucceedsOnValidFiles) {
         "goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb.dim"};
     const std::string lat_tie_points_file{
         "goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb"
-        ".data/tie_point_grids/latitude.img"};
+        "_data/latitude.img"};
     const std::string lon_tie_points_file{
         "goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb"
-        ".data/tie_point_grids/longitude.img"};
+        "_data/longitude.img"};
 
     ASSERT_NO_THROW(Metadata(main_metadata_file, lat_tie_points_file, lon_tie_points_file));
 }
@@ -469,10 +469,10 @@ TEST_F(TerrainCorrectionTest, MetadataConstructionThrowsWhenConstructedWithInval
         "goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb.dim"};
     const std::string lat_tie_points_file{
         "goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb"
-        ".data/tie_point_grids/latitude.img"};
+        "_data/latitude.img"};
     const std::string lon_tie_points_file{
         "goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb"
-        ".data/tie_point_grids/longitude.img"};
+        "_data/longitude.img"};
 
     auto gdal_error_count{0};
     alus::gdalmanagement::ErrorCallback gdal_error_count_callback = [&gdal_error_count](std::string_view) {
