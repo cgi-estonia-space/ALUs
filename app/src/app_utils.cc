@@ -32,7 +32,7 @@ std::string GenerateHelpMessage(std::string_view alg_name, std::string_view args
     msg << std::endl;
     msg << args_help << std::endl;
     msg << std::endl;
-    msg << "https://bitbucket.org/cgi-ee-space/alus" << std::endl;
+    msg << "https://github.com/cgi-estonia-space/ALUs" << std::endl;
 
     return msg.str();
 }
