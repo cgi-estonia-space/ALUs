@@ -5,7 +5,7 @@
 ## Arguments
 ```
 ALUs - Gabor feature extraction
-Version 1.3.0
+Version 1.4.0
 
 Arguments:
 
@@ -24,7 +24,7 @@ Arguments:
                             processing
 
 
-https://bitbucket.org/cgi-ee-space/alus
+https://github.com/cgi-estonia-space/ALUs/releases/
 ```
 
 ## Processing overview

@@ -16,8 +16,7 @@ Developed by [CGI Estonia](https://www.cgi.com/ee/et).
 
 # Out of the box usage
 
-Latest development build can be downloaded from - https://alus-builds.s3.eu-central-1.amazonaws.com/alus-nightly-latest.tar.gz  
-Verified releases can be downloaded from - https://bitbucket.org/cgi-ee-space/alus/downloads/  
+Verified releases can be downloaded from - https://github.com/cgi-estonia-space/ALUs/releases/
 One can download docker image with all of the needed dependencies
 from [dockerhub](https://hub.docker.com/repository/docker/cgialus/alus-devel) or simply `docker pull cgialus/alus-devel`
 
@@ -98,4 +97,4 @@ It can be used in conjunction with binaries to easily execute code. Read the [in
 
 # [Release notes](RELEASE.md)
 
-[Binary downloads](https://bitbucket.org/cgi-ee-space/alus/downloads/?tab=downloads)  
+[Binary downloads](https://github.com/cgi-estonia-space/ALUs/releases/) 
