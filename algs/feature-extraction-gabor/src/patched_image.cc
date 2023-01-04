@@ -18,6 +18,7 @@
 #include "constants.h"
 #include "dataset.h"
 #include "patch_assembly.h"
+#include "raster_properties.h"
 
 namespace alus::featurextractiongabor {
 
@@ -25,9 +26,15 @@ PatchedImage::PatchedImage(std::string_view input_path) : input_path_{input_path
 
 void PatchedImage::CreatePatchedImagesFor(const std::vector<size_t>& filter_edge_sizes, size_t patch_edge_size) {
     Dataset<float> in_ds(input_path_);
+    patches_gt_ = GeoTransformConstruct::BuildFromGdal(in_ds.GetTransform());
+    patches_gt_.pixelSizeLat *= patch_edge_size;
+    patches_gt_.pixelSizeLon *= patch_edge_size;
+    patches_srs_ = *in_ds.GetGdalDataset()->GetSpatialRef();
     band_count_ = in_ds.GetGdalDataset()->GetBands().size();
     const auto in_x_size = in_ds.GetRasterSizeX();
     const auto in_y_size = in_ds.GetRasterSizeY();
+    patches_aggregate_dimension_.columnsX = in_x_size / static_cast<int>(patch_edge_size);
+    patches_aggregate_dimension_.rowsY = in_y_size / static_cast<int>(patch_edge_size);
 
     filter_edge_sizes_ = filter_edge_sizes;
     for (size_t band_i{0}; band_i < band_count_; band_i++) {

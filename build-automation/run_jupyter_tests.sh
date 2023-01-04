@@ -43,7 +43,7 @@ python -m pip install wheel
 python -m pip install -r "$jupyter_folder"/requirements.txt
 original_folder=$(pwd)
 cd "$jupyter_folder" || exit 1
-python -m pytest -v -s --junitxml="BITBUCKET_CLONE_DIR"/build/test-reports/pytest-report.xml regression-tests --exec_dir "$exec_dir" \
+python -m pytest -v -s --junitxml=$jupyter_folder/build/test-reports/pytest-report.xml regression-tests --exec_dir "$exec_dir" \
   --cal_output_file "$output_dir" --calib_input "$test_dataset_dir/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58.zip" \
   --orbit_dir "$orbit_files_dir" --coh_reference "$test_dataset_dir/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA.zip" \
   --coh_secondary "$test_dataset_dir/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.zip" \

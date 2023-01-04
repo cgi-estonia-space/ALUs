@@ -41,6 +41,10 @@ public:
         return results_[band][orientation][frequency];
     }
 
+    [[nodiscard]] auto GetBandCount() const { return results_.size(); }
+    [[nodiscard]] auto GetOrientationCount() const { return results_.cbegin()->second.size(); }
+    [[nodiscard]] auto GetFrequencyCount() const { return results_.cbegin()->second.begin()->second.size(); }
+
     void LogConsoleResult() const {
         LOGI << "Results:";
 

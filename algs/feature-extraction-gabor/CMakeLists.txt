@@ -6,10 +6,11 @@ list(APPEND FEATURE_EXTRACTION_GABOR_SOURCES
         src/patched_image.cc
         src/conv_kernel.cu
         src/patch_reduction.cu
+        src/result_export.cc
         )
 
 list(APPEND FEATURE_EXTRACTION_GABOR_INCLUDES
-        ../feature-extraction-gabor/include)
+        ${CMAKE_CURRENT_LIST_DIR}/include)
 
 add_library(feature-extraction-gabor-static
         STATIC
@@ -23,7 +24,7 @@ target_link_libraries(feature-extraction-gabor-static
         PUBLIC
         gdal
         app-util-static
-        common-util-static
+        cuda-util-static
         gdal-util-static
         )
 
@@ -47,5 +48,5 @@ set_target_properties(alus-gfe
 
 
 if(ENABLE_TESTS)
-    add_subdirectory(../feature-extraction-gabor/unit-test)
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/unit-test)
 endif()

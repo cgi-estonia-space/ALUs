@@ -83,11 +83,17 @@ set_target_properties(unit-test
         PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}
         )
+add_dependencies(unit-test integration-test-prepare-data)
 add_custom_command(TARGET unit-test
         POST_BUILD
+        COMMAND echo "Moving and preparing unit test resources..."
         COMMAND cp -r ${CMAKE_CURRENT_LIST_DIR}/goods ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}/.
+        COMMAND cp ${ALUS_LFS_GOODS}/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_data.zip ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}/goods/.
+        COMMAND cp ${ALUS_LFS_GOODS}/srtm_41_01.zip ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}/goods/.
+        COMMAND cp ${ALUS_LFS_GOODS}/srtm_42_01.zip ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}/goods/.
         COMMAND cd ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}/goods && unzip -oq ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}/goods/\\*.zip
-        COMMAND echo "${CMAKE_UNIT_TEST_BINARY_OUTPUT_DIR}"
+        COMMAND mv ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}/goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_data/*deb.tif ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}/goods/.
+        COMMAND mv ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}/goods/S1A_IW_SLC__1SDV_20190715T160437_20190715T160504_028130_032D5B_58D6_Orb_Stack_coh_deb_data/*deb.dim ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR}/goods/.
         )
 
 list(APPEND ALUS_GMOCK_MAIN_SOURCES

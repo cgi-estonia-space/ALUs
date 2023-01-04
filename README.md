@@ -29,7 +29,8 @@ Each algorithm is a separate executable. Currently available ones are (more info
 * Sentinel 1 coherence estimation timeline generation - ``alus-coht`` ([README](algs/coherence-estimation-routine/README.md))
 * Sentinel 1 calibration routine - ``alus-cal`` ([README](algs/calibration-routine/README.md))
 * Sentinel 2 and other raster resample and tiling - ``alus-resa`` ([README](algs/resample/README.md))
-* Gabor feature extraction - ``alus-gfe``
+* Gabor feature extraction - ``alus-gfe`` ([README](algs/feature-extraction-gabor/README.md))
+* PALSAR level 0 focuser - ``alus-palsar-focus`` ([README](algs/palsar-focus/README.md))
 
 When building separately, these are located at ``<build_dir>/alus_package``
 

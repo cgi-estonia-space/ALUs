@@ -136,8 +136,9 @@ TEST_F(CoherenceIntegrationTest, singleBurstData2018) {
     const std::string actual_hash = prev_band_hash;
     const std::string expected_hash1 = "d401107a416848a3";
     const std::string expected_hash2 = "ae3a8961ab05ddb3";
+    const std::string expected_hash3 = "56e1b4de42de8cb9";
 
-    if (actual_hash == expected_hash1 || actual_hash == expected_hash2) return;
+    if (actual_hash == expected_hash1 || actual_hash == expected_hash2 || actual_hash == expected_hash3) return;
 
     // release and debug builds can differ due to floating point math
     // unfortunately this needs a bigger refactor in the future

@@ -1,3 +1,0 @@
-test_data=/home/ubuntu/validation/all
-dem_files=/home/ubuntu/validation/SRTM3
-orbit_files=/home/ubuntu/validation/POEORB

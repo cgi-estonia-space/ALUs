@@ -1,0 +1,4 @@
+test_data=/home/ubuntu/e2e/datasets
+dem_files=/home/ubuntu/e2e/srtm3
+orbit_files=/home/ubuntu/e2e/poeorb
+results=/home/ubuntu/e2e/results

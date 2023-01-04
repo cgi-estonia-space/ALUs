@@ -25,11 +25,17 @@
 
 #include "type_parameter.h"
 
+
+#define CHECK_GDAL_ERROR(err) alus::CheckGdalError(err, __FILE__, __LINE__)
+#define CHECK_GDAL_PTR(ptr) CHECK_GDAL_ERROR((ptr) == nullptr ? CE_Failure : CE_None)
+#define CHECK_OGR_ERROR(err) alus::CheckOgrError(err, __FILE__, __LINE__)
+
 namespace alus {
 namespace gdal::constants {
 // GDAL driver constants
 constexpr char GDAL_MEM_DRIVER[]{"MEM"};
 constexpr char GDAL_GTIFF_DRIVER[]{"GTiff"};
+constexpr char SQLITE_DRIVER[]{"SQLite"};
 constexpr char GDAL_GTIFF_FILE_EXTENSION[]{".tif"};
 constexpr int GDAL_DEFAULT_RASTER_BAND{1};
 constexpr int GDAL_GEOTRANSFORM_PARAMETER_COUNT{6};
@@ -46,14 +52,6 @@ constexpr std::string_view TGZ_EXTENSION{
 
 constexpr std::string_view SUBDATASET_KEY{"SUBDATASETS"};
 }  // namespace gdal::constants
-
-inline GDALDriver* GetGdalMemDriver() {
-    return GetGDALDriverManager()->GetDriverByName(gdal::constants::GDAL_MEM_DRIVER);
-}
-
-inline GDALDriver* GetGdalGeoTiffDriver() {
-    return GetGDALDriverManager()->GetDriverByName(gdal::constants::GDAL_GTIFF_DRIVER);
-}
 
 class GdalErrorException final : public std::runtime_error {
 public:
@@ -94,6 +92,30 @@ private:
     std::string file_;
     int const line_;
 };
+
+inline void CheckGdalError(CPLErr const err, char const* file, int const line) {
+    if (err != CE_None) {
+        throw alus::GdalErrorException(err, CPLGetLastErrorNo(), CPLGetLastErrorMsg(), file, line);
+    }
+}
+
+inline void CheckOgrError(OGRErr err, char const* file, int const line) {
+    if (err != OGRERR_NONE) {
+        throw alus::OgrErrorException(err, file, line);
+    }
+}
+
+inline GDALDriver* GetGdalSqliteDriver() {
+    return GetGDALDriverManager()->GetDriverByName(alus::gdal::constants::SQLITE_DRIVER);
+}
+
+inline GDALDriver* GetGdalMemDriver() {
+    return GetGDALDriverManager()->GetDriverByName(alus::gdal::constants::GDAL_MEM_DRIVER);
+}
+
+inline GDALDriver* GetGdalGeoTiffDriver() {
+    return GetGDALDriverManager()->GetDriverByName(alus::gdal::constants::GDAL_GTIFF_DRIVER);
+}
 
 struct Iq16 {
     int16_t i;
@@ -159,19 +181,3 @@ std::string FindOptimalTileSize(int raster_dimension);
  */
 std::string AdjustFilePath(std::string_view file_path);
 }  // namespace alus
-
-inline void CheckGdalError(CPLErr const err, char const* file, int const line) {
-    if (err != CE_None) {
-        throw alus::GdalErrorException(err, CPLGetLastErrorNo(), CPLGetLastErrorMsg(), file, line);
-    }
-}
-
-inline void CheckOgrError(OGRErr err, char const* file, int const line) {
-    if (err != OGRERR_NONE) {
-        throw alus::OgrErrorException(err, file, line);
-    }
-}
-
-#define CHECK_GDAL_ERROR(err) CheckGdalError(err, __FILE__, __LINE__)
-#define CHECK_GDAL_PTR(ptr) CHECK_GDAL_ERROR((ptr) == nullptr ? CE_Failure : CE_None)
-#define CHECK_OGR_ERROR(err) CheckOgrError(err, __FILE__, __LINE__)

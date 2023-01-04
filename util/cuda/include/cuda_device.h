@@ -39,6 +39,7 @@ public:
     [[nodiscard]] size_t GetWarpSize() const { return warp_size_; }
     [[nodiscard]] size_t GetTotalGlobalMemory() const { return total_global_memory_; };
     [[nodiscard]] size_t GetFreeGlobalMemory() const;
+    [[nodiscard]] size_t GetMemoryAlignment() const { return alignment_; }
 
 private:
     int device_nr_;
@@ -49,5 +50,6 @@ private:
     size_t max_threads_per_sm_;
     size_t warp_size_;
     size_t total_global_memory_;
+    size_t alignment_;
 };
 }  // namespace alus::cuda

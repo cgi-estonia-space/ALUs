@@ -25,16 +25,19 @@
 
 #include "algorithm_exception.h"
 #include "alus_log.h"
+#include "aoi_burst_extract.h"
 #include "constants.h"
 #include "dem_assistant.h"
 #include "gdal_image_reader.h"
 #include "gdal_image_writer.h"
 #include "gdal_management.h"
 #include "sentinel1_calibrate.h"
+#include "sentinel1_product_reader_plug_in.h"
 #include "terrain_correction.h"
 #include "terrain_correction_metadata.h"
 #include "thermal_noise_remover.h"
 #include "topsar_deburst_op.h"
+#include "topsar_merge.h"
 #include "topsar_split.h"
 
 namespace {
@@ -45,6 +48,8 @@ bool EqualsAnyOf(std::string_view comparand, T begin, T end) {
 
 constexpr size_t TILE_SIZE_DIMENSION{2048};
 constexpr size_t GDAL_CACHE_SIZE{static_cast<size_t>(4e9)};
+constexpr size_t FULL_SUBSWATH_BURST_INDEX_START{alus::topsarsplit::TopsarSplit::BURST_INDEX_OFFSET};
+constexpr size_t FULL_SUBSWATH_BURST_INDEX_END{9999};
 }  // namespace
 
 namespace alus::calibrationroutine {
@@ -76,23 +81,11 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
     alus::gdalmanagement::SetCacheMax(GDAL_CACHE_SIZE);
 
     // split
-    const auto subswath_case_up = boost::to_upper_copy(params_.subswath);
+    std::vector<std::shared_ptr<alus::topsarsplit::TopsarSplit>> splits;
+    std::vector<std::string> swath_selection;
     const auto split_start = std::chrono::steady_clock::now();
-    std::unique_ptr<topsarsplit::TopsarSplit> split_op{};
-    if (!params_.aoi.empty()) {
-        split_op = std::make_unique<topsarsplit::TopsarSplit>(params_.input, subswath_case_up, params_.polarisation,
-                                                              params_.aoi);
-    } else if (params_.burst_first_index != INVALID_BURST_INDEX && params_.burst_last_index != INVALID_BURST_INDEX) {
-        split_op = std::make_unique<topsarsplit::TopsarSplit>(params_.input, subswath_case_up, params_.polarisation,
-                                                              params_.burst_first_index, params_.burst_last_index);
-    } else {
-        split_op = std::make_unique<topsarsplit::TopsarSplit>(params_.input, subswath_case_up, params_.polarisation);
-    }
+    Split(params_.input, params_.burst_first_index, params_.burst_last_index, splits, swath_selection);
 
-    split_op->Initialize();
-    split_op->OpenPixelReader(params_.input);
-    auto split_product = split_op->GetTargetProduct();
-    auto* pixel_reader = split_op->GetPixelReader()->GetDataset();
     LOGI
         << "Sentinel 1 split done - "
         << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - split_start).count()
@@ -108,40 +101,22 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
 
     // thermal noise removal
     const auto tnr_start = std::chrono::steady_clock::now();
-    std::shared_ptr<snapengine::Product> tnr_product;
-    std::shared_ptr<GDALDataset> tnr_ds;
 
-    tnr::ThermalNoiseRemover thermal_noise_remover{split_product,        pixel_reader, params_.subswath,
-                                                            params_.polarisation, output_dir,   TILE_SIZE_DIMENSION,
-                                                            TILE_SIZE_DIMENSION};
-    thermal_noise_remover.Execute();
-    tnr_product = thermal_noise_remover.GetTargetProduct();
-    tnr_ds = thermal_noise_remover.GetOutputDataset().first;
+    std::vector<std::shared_ptr<snapengine::Product>> tnr_products(splits.size());
+    std::vector<std::shared_ptr<GDALDataset>> tnr_datasets(splits.size());
+    ThermalNoiseRemoval(splits, swath_selection, output_dir, tnr_products, tnr_datasets);
     LOGI << "Thermal noise removal done - "
          << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - tnr_start).count()
          << "ms";
 
-    if (params_.wif) {
-        const auto tnr_tmp_file = thermal_noise_remover.GetOutputDataset().second;
-        LOGI << "Thermal Noise Removal output @ " << tnr_tmp_file << ".tif";
-        GeoTiffWriteFile(tnr_ds.get(), tnr_tmp_file);
-    }
-
     // calibration
-    const auto cal_start = std::chrono::steady_clock::now();
-    std::shared_ptr<snapengine::Product> calibrated_product;
-    std::shared_ptr<GDALDataset> calibrated_ds;
-    sentinel1calibrate::Sentinel1Calibrator calibrator{
-        tnr_product, tnr_ds.get(), {subswath_case_up},  {params_.polarisation}, calibration_types_selected_,
-        output_dir,  false,        TILE_SIZE_DIMENSION, TILE_SIZE_DIMENSION};
-    calibrator.Execute();
-    calibrated_product = calibrator.GetTargetProduct();
-    const auto calibration_tmp_file = calibrator.GetTargetPath(subswath_case_up);
-    calibrated_ds = calibrator.GetOutputDatasets().begin()->second;
+    std::vector<std::shared_ptr<snapengine::Product>> calib_products(tnr_products.size());
+    std::vector<std::shared_ptr<GDALDataset>> calib_datasets(tnr_datasets.size());
+    std::vector<std::string> output_names(tnr_products.size());
 
-    LOGI << "Sentinel1 calibration done - "
-         << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - cal_start).count()
-         << "ms";
+    Calibration(tnr_products, tnr_datasets, swath_selection, output_dir, output_names, calib_products, calib_datasets);
+    tnr_products.clear();
+    tnr_datasets.clear();
 
     auto dem_assistant = app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(dem_files_);
     // start thread for srtm calculations parallel with CPU deburst
@@ -149,67 +124,31 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
     dem_assistant->GetSrtm3Manager()->HostToDevice();
 
     if (params_.wif) {
-        LOGI << "Calibration output @ " << calibration_tmp_file << ".tif";
-        GeoTiffWriteFile(calibrated_ds.get(), calibration_tmp_file);
+        for (size_t i = 0; i < output_names.size(); i++) {
+            LOGI << "Calibration output @ " << output_names.at(i) << ".tif";
+            GeoTiffWriteFile(calib_datasets.at(i).get(), output_names.at(i));
+        }
     }
 
     // deburst
-    const auto deb_start = std::chrono::steady_clock::now();
-    auto data_reader = std::make_shared<alus::snapengine::custom::GdalImageReader>();
-    data_reader->TakeExternalDataset(calibrated_ds.get());
-    calibrated_ds.reset();
+    std::vector<std::shared_ptr<snapengine::Product>> deburst_products(tnr_products.size());
 
-    calibrated_product->SetImageReader(data_reader);
-    auto data_writer = std::make_shared<alus::snapengine::custom::GdalImageWriter>();
-    auto deburst_op = alus::s1tbx::TOPSARDeburstOp::CreateTOPSARDeburstOp(calibrated_product);
-    auto debursted_product = deburst_op->GetTargetProduct();
-
-    const auto deburst_tmp_path = boost::filesystem::change_extension(calibration_tmp_file, "").string() + "_deb.tif";
-    data_writer->Open(deburst_tmp_path, deburst_op->GetTargetProduct()->GetSceneRasterWidth(),
-                      deburst_op->GetTargetProduct()->GetSceneRasterHeight(), data_reader->GetGeoTransform(),
-                      data_reader->GetDataProjection(), true);
-    debursted_product->SetImageWriter(data_writer);
-    deburst_op->Compute();
-
-    LOGI << "TOPSAR Deburst done - "
-         << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - deb_start).count()
-         << "ms";
-    data_reader->ReleaseDataset();
-
-    if (params_.wif) {
-        LOGI << "Deburst output @ " << deburst_tmp_path;
-        GeoTiffWriteFile(data_writer->GetDataset(), deburst_tmp_path);
+    Deburst(calib_products, calib_datasets, output_names, deburst_products);
+    for (auto& ds : calib_datasets) {
+        ds.reset();
     }
+    calib_datasets.clear();
+
+    // Merge
+    std::shared_ptr<snapengine::Product> merge_output;
+    Merge(deburst_products, output_names, merge_output);
 
     // TC
-    const auto tc_start = std::chrono::steady_clock::now();
-    terraincorrection::Metadata metadata(debursted_product);
+    const auto output_file =
+        TerrainCorrection(merge_output, deburst_products.size(), output_names.front(), dem_assistant, final_path);
 
-    const auto* d_srtm_3_tiles = dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo();
-    const size_t srtm_3_tiles_length = dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount();
-    const int selected_band{1};
-    auto* tc_in_dataset = data_writer->GetDataset();
-    terraincorrection::TerrainCorrection tc(tc_in_dataset, metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
-                                            metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length,
-                                            selected_band);
-
-    std::string tc_output_file = final_path.empty()
-                                     ? boost::filesystem::change_extension(deburst_tmp_path, "").string() + "_tc.tif"
-                                     : final_path;
-    const auto total_dimension_edge = 4096;
-    const auto x_tile_size =
-        static_cast<int>((tc_in_dataset->GetRasterXSize() /
-                          static_cast<double>(tc_in_dataset->GetRasterXSize() + tc_in_dataset->GetRasterYSize())) *
-                         total_dimension_edge);
-    const auto y_tile_size = total_dimension_edge - x_tile_size;
-
-    tc.ExecuteTerrainCorrection(tc_output_file, x_tile_size, y_tile_size);
-
-    LOGI << "Terrain correction done - "
-         << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - tc_start).count()
-         << "ms";
-
-    LOGI << "Algorithm completed, output file @ " << tc_output_file;
+    LOGI << "Algorithm completed, output file @ " << output_file;
+    LOGI << "Another test";
 }
 
 void Execute::PrintProcessingParameters() const {
@@ -238,10 +177,7 @@ void Execute::ParseCalibrationType(std::string_view type) {
     }
 }
 
-void Execute::ValidateParameters() const {
-    ValidateSubSwath();
-    ValidatePolarisation();
-}
+void Execute::ValidateParameters() const { ValidatePolarisation(); }
 
 void Execute::ValidateSubSwath() const {
     if (!EqualsAnyOf(params_.subswath, SUBSWATHS.cbegin(), SUBSWATHS.cend())) {
@@ -256,5 +192,260 @@ void Execute::ValidatePolarisation() const {
 }
 
 Execute::~Execute() { alus::gdalmanagement::Deinitialize(); }
+
+void Execute::Split(const std::string& path, size_t burst_index_start, size_t burst_index_end,
+                    std::vector<std::shared_ptr<topsarsplit::TopsarSplit>>& splits,
+                    std::vector<std::string>& swath_selection) const {
+    auto reader_plug_in = std::make_shared<s1tbx::Sentinel1ProductReaderPlugIn>();
+    auto reader = reader_plug_in->CreateReaderInstance();
+    auto product = reader->ReadProductNodes(boost::filesystem::canonical(path), nullptr);
+
+    if (!params_.subswath.empty()) {
+        swath_selection = {params_.subswath};
+        std::unique_ptr<topsarsplit::TopsarSplit> split_op{};
+        if (!params_.aoi.empty()) {
+            split_op = std::make_unique<topsarsplit::TopsarSplit>(product, params_.subswath, params_.polarisation,
+                                                                  params_.aoi);
+        } else {
+            if (burst_index_start == burst_index_end && burst_index_start < FULL_SUBSWATH_BURST_INDEX_START) {
+                burst_index_start = FULL_SUBSWATH_BURST_INDEX_START;
+                burst_index_end = FULL_SUBSWATH_BURST_INDEX_END;
+            }
+            split_op = std::make_unique<topsarsplit::TopsarSplit>(product, params_.subswath, params_.polarisation,
+                                                                  burst_index_start, burst_index_end);
+        }
+        split_op->Initialize();
+        splits.push_back(std::move(split_op));
+    } else if (params_.aoi.empty()) {
+        swath_selection = {"IW1", "IW2", "IW3"};
+        for (const auto& swath : swath_selection) {
+            splits.push_back(std::make_unique<topsarsplit::TopsarSplit>(product, swath, params_.polarisation));
+            splits.back()->Initialize();
+        }
+    } else {
+        // search for valid swaths with AOI
+        topsarsplit::Aoi aoi_poly;
+        boost::geometry::read_wkt(params_.aoi, aoi_poly);
+        for (const auto& swath : {"IW1", "IW2", "IW3"}) {
+            auto swath_split = std::make_unique<topsarsplit::TopsarSplit>(product, swath, params_.polarisation);
+            swath_split->Initialize();
+
+            auto swath_poly = topsarsplit::ExtractSwathPolygon(swath_split->GetTargetProduct());
+
+            if (topsarsplit::IsWithinSwath(aoi_poly, swath_poly)) {
+                splits.clear();
+                splits.push_back(
+                    std::make_unique<topsarsplit::TopsarSplit>(product, swath, params_.polarisation, params_.aoi));
+                splits.back()->Initialize();
+                swath_selection = {std::string(swath)};
+                break;
+            }
+            if (topsarsplit::IsCovered(swath_poly, aoi_poly)) {
+                splits.push_back(
+                    std::make_unique<topsarsplit::TopsarSplit>(product, swath, params_.polarisation, params_.aoi));
+                splits.back()->Initialize();
+                swath_selection.emplace_back(swath);
+            }
+        }
+
+        LOGI << product->GetName() << " swaths to be processed = " << boost::algorithm::join(swath_selection, " ");
+    }
+
+    for (const auto& split : splits) {
+        split->OpenPixelReader(path);
+    }
+}
+void Execute::ThermalNoiseRemoval(const std::vector<std::shared_ptr<topsarsplit::TopsarSplit>>& splits,
+                                  const std::vector<std::string>& subswaths, std::string_view output_dir,
+                                  std::vector<std::shared_ptr<snapengine::Product>>& tnr_products,
+                                  std::vector<std::shared_ptr<GDALDataset>>& tnr_datasets) const {
+    if (tnr_products.empty()) {
+        tnr_products.resize(splits.size());
+    }
+    if (tnr_datasets.empty()) {
+        tnr_datasets.resize(splits.size());
+    }
+    if (tnr_datasets.size() != splits.size() || tnr_products.size() != splits.size()) {
+        THROW_ALGORITHM_EXCEPTION(ALG_NAME, "Split and TNR product count mismatch!.");
+    }
+    for (size_t i = 0; i < splits.size(); i++) {
+        const auto split = splits.at(i);
+        const auto swath = subswaths.at(i);
+        tnr::ThermalNoiseRemover thermal_noise_remover{split->GetTargetProduct(),
+                                                       split->GetPixelReader()->GetDataset(),
+                                                       swath,
+                                                       params_.polarisation,
+                                                       output_dir,
+                                                       TILE_SIZE_DIMENSION,
+                                                       TILE_SIZE_DIMENSION};
+        thermal_noise_remover.Execute();
+        tnr_products.at(i) = thermal_noise_remover.GetTargetProduct();
+        tnr_datasets.at(i) = thermal_noise_remover.GetOutputDataset().first;
+
+        if (params_.wif) {
+            const auto tnr_tmp_file = thermal_noise_remover.GetOutputDataset().second;
+            LOGI << "Thermal Noise Removal output @ " << tnr_tmp_file << ".tif";
+            GeoTiffWriteFile(thermal_noise_remover.GetOutputDataset().first.get(), tnr_tmp_file);
+        }
+    }
+}
+
+void Execute::Calibration(const std::vector<std::shared_ptr<snapengine::Product>>& tnr_products,
+                          const std::vector<std::shared_ptr<GDALDataset>>& tnr_datasets,
+                          const std::vector<std::string>& subswaths, std::string_view output_dir,
+                          std::vector<std::string>& output_names,
+                          std::vector<std::shared_ptr<snapengine::Product>>& calib_products,
+                          std::vector<std::shared_ptr<GDALDataset>>& calib_datasets) const {
+    const auto cal_start = std::chrono::steady_clock::now();
+    if (calib_products.empty()) {
+        calib_products.resize(tnr_products.size());
+    }
+    if (calib_datasets.empty()) {
+        calib_datasets.resize(tnr_datasets.size());
+    }
+    if (tnr_datasets.size() != calib_datasets.size() || tnr_products.size() != calib_products.size()) {
+        THROW_ALGORITHM_EXCEPTION(ALG_NAME, "TNR and Calibration product count mismatch!.");
+    }
+    for (size_t i = 0; i < tnr_products.size(); i++) {
+        sentinel1calibrate::Sentinel1Calibrator calibrator{tnr_products.at(i),
+                                                           tnr_datasets.at(i).get(),
+                                                           {subswaths.at(i)},
+                                                           {params_.polarisation},
+                                                           calibration_types_selected_,
+                                                           output_dir,
+                                                           false,
+                                                           TILE_SIZE_DIMENSION,
+                                                           TILE_SIZE_DIMENSION};
+        calibrator.Execute();
+        calib_products.at(i) = calibrator.GetTargetProduct();
+        calib_datasets.at(i) = calibrator.GetOutputDatasets().begin()->second;
+
+        output_names.at(i) = calibrator.GetTargetPath(subswaths.at(i));
+    }
+
+    LOGI << "Sentinel1 calibration done - "
+         << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - cal_start).count()
+         << "ms";
+}
+void Execute::Deburst(const std::vector<std::shared_ptr<snapengine::Product>>& calib_products,
+                      std::vector<std::shared_ptr<GDALDataset>>& calib_datasets, std::vector<std::string>& output_names,
+                      std::vector<std::shared_ptr<snapengine::Product>>& deburst_products) const {
+    const auto deburst_start = std::chrono::steady_clock::now();
+    if (deburst_products.empty()) {
+        deburst_products.resize(calib_products.size());
+    }
+    if (calib_products.size() != deburst_products.size()) {
+        THROW_ALGORITHM_EXCEPTION(ALG_NAME, "Calibration and Deburst product count mismatch!.");
+    }
+    for (size_t i = 0; i < calib_products.size(); i++) {
+        auto data_reader = std::make_shared<snapengine::custom::GdalImageReader>();
+        data_reader->TakeExternalDataset(calib_datasets.at(i).get());
+
+        calib_products.at(i)->SetImageReader(data_reader);
+        auto data_writer = std::make_shared<snapengine::custom::GdalImageWriter>();
+        auto deburst_op = s1tbx::TOPSARDeburstOp::CreateTOPSARDeburstOp(calib_products.at(i));
+        deburst_products.at(i) = deburst_op->GetTargetProduct();
+
+        auto& output_name = output_names.at(i);
+        output_name = boost::filesystem::change_extension(output_name, "").string() + "_deb.tif";
+        data_writer->Open(output_name, deburst_products.at(i)->GetSceneRasterWidth(),
+                          deburst_products.at(i)->GetSceneRasterHeight(), data_reader->GetGeoTransform(),
+                          data_reader->GetDataProjection(), true);
+        deburst_products.at(i)->SetImageWriter(data_writer);
+        deburst_op->Compute();
+        calib_datasets.at(i).reset();
+
+        if (params_.wif) {
+            LOGI << "Deburst output @ " << output_name;
+            GeoTiffWriteFile(data_writer->GetDataset(), output_name);
+        }
+
+        auto deb_reader = std::make_shared<snapengine::custom::GdalImageReader>();
+        deb_reader->TakeExternalDataset(data_writer->GetDataset());
+        data_writer->ReleaseDataset();
+        deburst_products.at(i)->SetImageReader(deb_reader);
+        data_reader->ReleaseDataset();
+    }
+    LOGI << "TOPSAR Deburst done - "
+         << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - deburst_start)
+                .count()
+         << "ms";
+}
+void Execute::Merge(const std::vector<std::shared_ptr<snapengine::Product>>& deburst_products,
+                    std::vector<std::string>& output_names, std::shared_ptr<snapengine::Product>& merge_output) const {
+    auto merge_start = std::chrono::steady_clock::now();
+    if (deburst_products.size() == 1) {
+        merge_output = deburst_products.front();
+        output_names.resize(1);
+    } else {
+        output_names.resize(1);
+        output_names.front() = boost::filesystem::change_extension(output_names.front(), "").string() + "_mrg.tif";
+        std::vector<std::string> merge_polarisations(deburst_products.size(), params_.polarisation);
+
+        auto data_writer = std::make_shared<snapengine::custom::GdalImageWriter>();
+        const size_t merge_tile_size = 1024;  // NB! merge not tile size independent
+        topsarmerge::TopsarMergeOperator merge_op(deburst_products, merge_polarisations, merge_tile_size,
+                                                  merge_tile_size, output_names.front());
+
+        auto target = merge_op.GetTargetProduct();
+
+        data_writer->Open(target->GetFileLocation().generic_path().string(), target->GetSceneRasterWidth(),
+                          target->GetSceneRasterHeight(), {}, {}, true);
+        target->SetImageWriter(data_writer);
+        merge_op.Compute();
+
+        if (params_.wif) {
+            LOGI << "Merge output @ " << output_names.front();
+            GeoTiffWriteFile(data_writer->GetDataset(), output_names.front());
+        }
+        merge_output = merge_op.GetTargetProduct();
+    }
+    LOGI
+        << "Merge done - "
+        << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - merge_start).count()
+        << "ms";
+}
+std::string Execute::TerrainCorrection(const std::shared_ptr<snapengine::Product>& merge_product,
+                                       size_t deb_product_count, std::string_view output_name,
+                                       std::shared_ptr<app::DemAssistant> dem_assistant,
+                                       std::string_view predefined_output_name) const {
+    const auto tc_start = std::chrono::steady_clock::now();
+
+    terraincorrection::Metadata metadata(merge_product);
+
+    const auto* d_srtm_3_tiles = dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo();
+    const size_t srtm_3_tiles_length = dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount();
+    const int selected_band{1};
+
+    // unfortunately have to assume this downcast is valid, because TC does not use the ImageWriter interface
+    GDALDataset* tc_in_dataset = nullptr;
+    if (deb_product_count > 1U) {
+        tc_in_dataset = std::dynamic_pointer_cast<snapengine::custom::GdalImageWriter>(merge_product->GetImageWriter())
+                            ->GetDataset();
+    } else {
+        tc_in_dataset = std::dynamic_pointer_cast<snapengine::custom::GdalImageReader>(merge_product->GetImageReader())
+                            ->GetDataset();
+    }
+
+    const auto total_dimension_edge = 4096;
+    const auto x_tile_size =
+        static_cast<int>((tc_in_dataset->GetRasterXSize() /
+                          static_cast<double>(tc_in_dataset->GetRasterXSize() + tc_in_dataset->GetRasterYSize())) *
+                         total_dimension_edge);
+    const auto y_tile_size = total_dimension_edge - x_tile_size;
+
+    terraincorrection::TerrainCorrection tc(tc_in_dataset, metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
+                                            metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length,
+                                            selected_band);
+    std::string tc_output_file = predefined_output_name.empty()
+                                     ? boost::filesystem::change_extension(output_name.data(), "").string() + "_tc.tif"
+                                     : std::string(predefined_output_name);
+    tc.ExecuteTerrainCorrection(tc_output_file, x_tile_size, y_tile_size);
+    LOGI << "Terrain correction done - "
+         << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - tc_start).count()
+         << "ms";
+
+    return tc_output_file;
+}
 
 }  // namespace alus::calibrationroutine

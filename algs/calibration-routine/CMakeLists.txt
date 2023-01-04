@@ -26,6 +26,7 @@ target_link_libraries(alus-cal
         topsar-split-static
         common-util-static
         thermal-noise-static
+        topsar-merge-static
         )
 
 set_target_properties(alus-cal
