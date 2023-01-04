@@ -1,6 +1,7 @@
 list(APPEND CUDA_UTIL_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/cuda_device.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/cuda_device_init.cu
+        ${CMAKE_CURRENT_LIST_DIR}/src/memory_policy.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/cuda_util.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/cuda_util.cu
         )

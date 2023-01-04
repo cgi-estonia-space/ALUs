@@ -1,4 +1,4 @@
-name: End-to-end tests on AWS GPU isntance
+name: End-to-end tests on AWS GPU instance
 
 on:
   push:

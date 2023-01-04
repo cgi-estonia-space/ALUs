@@ -18,6 +18,7 @@
 #include <string_view>
 #include <vector>
 
+#include "cuda_device_init.h"
 #include "filter_bank.h"
 #include "patch_result.h"
 #include "patched_image.h"
@@ -27,7 +28,8 @@ namespace alus::featurextractiongabor {
 class Execute final {
 public:
     Execute() = delete;
-    Execute(size_t orientation_count, size_t frequency_count, size_t patch_edge_dimension, std::string_view input);
+    Execute(size_t orientation_count, size_t frequency_count, size_t patch_edge_dimension, std::string_view input,
+            cuda::CudaInit& cuda_init, size_t gpu_mem_percentage);
 
     Execute(const Execute& other) = delete;
     Execute& operator=(const Execute& other) = delete;
@@ -40,6 +42,7 @@ public:
     ~Execute();
 
 private:
+    void FinalizeCudaInit();
     [[nodiscard]] std::vector<size_t> ExtractfilterEdgeSizes() const;
     void SaveFilterBanks(std::string_view path) const;
     void SavePatchedImages(std::string_view path) const;
@@ -47,9 +50,12 @@ private:
     size_t orientation_count_;
     size_t frequency_count_;
     size_t patch_edge_dimension_;
+    cuda::CudaInit& cuda_init_;
+    size_t gpu_mem_percentage_;
     std::vector<FilterBankItem> filter_banks_;
     PatchedImage patched_image_;
     Result result_;
+    std::string output_stem_;
 };
 
 }  // namespace alus::featurextractiongabor

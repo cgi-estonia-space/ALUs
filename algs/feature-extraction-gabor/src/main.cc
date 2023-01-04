@@ -21,12 +21,14 @@
 #include "app_error_code.h"
 #include "command_line_options.h"
 #include "constants.h"
+#include "cuda_device_init.h"
 #include "execute.h"
 
 int main(int argc, char* argv[]) {
     std::string help_string{};
     try {
         alus::common::log::Initialize();
+        auto cuda_init = alus::cuda::CudaInit();
 
         alus::featurextractiongabor::Arguments args;
         help_string = args.GetHelp();
@@ -41,11 +43,15 @@ int main(int argc, char* argv[]) {
         alus::common::log::SetLevel(args.GetLogLevel());
 
         alus::featurextractiongabor::Execute exe(args.GetOrientationCount(), args.GetFrequencyCount(),
-                                                 args.GetPatchSize(), args.GetInput());
+                                                 args.GetPatchSize(), args.GetInput(), cuda_init,
+                                                 args.GetGpuMemoryPercentage());
+
+        LOGI << "Generating patches";
         exe.GenerateInputs();
         if (args.IsConvolutionInputsRequested()) {
             exe.SaveGaborInputsTo(args.GetConvolutionInputsStorePath());
         }
+        LOGI << "Calculating results";
         exe.CalculateGabor();
         exe.SaveResultsTo(args.GetOutputPath());
 

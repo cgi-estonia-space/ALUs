@@ -18,6 +18,7 @@
 
 #include <gdal_frmts.h>
 #include <gdal_priv.h>
+#include <ogrsf_frmts.h>
 
 #include "alus_log.h"
 
@@ -74,6 +75,8 @@ void Initialize() {
     GDALRegister_JP2OpenJPEG();
     GDALRegister_SENTINEL2();
     GDALRegister_netCDF();
+    RegisterOGRSQLite();
+    GetGDALDriverManager()->AutoSkipDrivers();
 }
 
 void Deinitialize() { CPLSetErrorHandler(CPLDefaultErrorHandler); }

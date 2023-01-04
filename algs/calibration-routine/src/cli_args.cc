@@ -98,7 +98,7 @@ void Arguments::Construct() {
         ("wif,w",
             "Write intermediate results (will be saved in the same folder as final outcome)."
             " NOTE - this may decrease performance. Default OFF.")
-        ("sw", po::value<std::string>(&subswath_)->required(), subswath_help.c_str())
+        ("sw", po::value<std::string>(&subswath_), subswath_help.c_str())
         ("polarisation,p", po::value<std::string>(&polarisation_)->required(), polarisation_help.c_str())
         ("bi1", po::value<size_t>(&burst_start_index_),
             "First burst index - starting at '1', leave unspecified for whole subswath")

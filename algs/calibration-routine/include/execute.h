@@ -19,7 +19,10 @@
 #include <vector>
 
 #include "cuda_device_init.h"
+#include "dem_assistant.h"
+#include "gdal_image_writer.h"
 #include "sentinel1_calibrate.h"
+#include "topsar_split.h"
 
 namespace alus::calibrationroutine {
 
@@ -53,6 +56,32 @@ private:
     void ValidateSubSwath() const;
     void ValidatePolarisation() const;
     void ValidateParameters() const;
+    void Split(const std::string& path, size_t burst_index_start, size_t burst_index_end,
+               std::vector<std::shared_ptr<topsarsplit::TopsarSplit>>& splits,
+               std::vector<std::string>& swath_selection) const;
+    void ThermalNoiseRemoval(const std::vector<std::shared_ptr<topsarsplit::TopsarSplit>>& splits,
+                             const std::vector<std::string>& subswaths, std::string_view output_dir,
+                             std::vector<std::shared_ptr<snapengine::Product>>& tnr_products,
+                             std::vector<std::shared_ptr<GDALDataset>>& tnr_datasets) const;
+
+    void Calibration(const std::vector<std::shared_ptr<snapengine::Product>>& tnr_products,
+                     const std::vector<std::shared_ptr<GDALDataset>>& tnr_datasets,
+                     const std::vector<std::string>& subswaths, std::string_view output_dir,
+                     std::vector<std::string>& output_names,
+                     std::vector<std::shared_ptr<snapengine::Product>>& calib_products,
+                     std::vector<std::shared_ptr<GDALDataset>>& calib_datasets) const;
+
+    void Deburst(const std::vector<std::shared_ptr<snapengine::Product>>& calib_products,
+                 std::vector<std::shared_ptr<GDALDataset>>& calib_datasets,
+                 std::vector<std::string>& output_names,
+                 std::vector<std::shared_ptr<snapengine::Product>>& deburst_products) const;
+
+    void Merge(const std::vector<std::shared_ptr<snapengine::Product>>& deburst_products,
+               std::vector<std::string>& output_names, std::shared_ptr<snapengine::Product>& merge_output) const;
+
+    std::string TerrainCorrection(const std::shared_ptr<snapengine::Product>& merge_product, size_t deb_product_count,
+                                  std::string_view output_name, std::shared_ptr<app::DemAssistant> dem_assistant,
+                                  std::string_view predefined_output_name) const;
 
     const Parameters params_;
     sentinel1calibrate::SelectedCalibrationBands calibration_types_selected_{};

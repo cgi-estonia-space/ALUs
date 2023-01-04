@@ -41,6 +41,18 @@ std::vector<CohTile> CohTilesGenerator::GenerateTiles() const {
 
     int x_tiles = GetNumberOfTilesDim(band_x_size_, tile_x_size_);
     int y_tiles = GetNumberOfTilesDim(band_y_size_, tile_y_size_);
+
+    // skip border tiles, if they are smaller than the window
+    const int x_last_tile = band_x_size_ % tile_x_size_;
+    if (x_last_tile != 0 && x_last_tile <= coh_x * 2) {
+        x_tiles--;
+    }
+
+    const int y_last_tile = band_y_size_ % tile_y_size_;
+    if (y_last_tile != 0 && y_last_tile <= coh_y * 2) {
+        y_tiles--;
+    }
+
     std::vector<CohTile> tiles;
     //    todo::investigate
     tiles.reserve(static_cast<unsigned long>(y_tiles * x_tiles));
@@ -136,5 +148,5 @@ int CohTilesGenerator::GetNumberOfTilesDim(int band_size_dim, int tile_size_dim)
 
 std::vector<CohTile> CohTilesGenerator::GetTiles() const { return this->GenerateTiles(); }
 
-}  // namespace coherence-cuda
+}  // namespace coherence_cuda
 }  // namespace alus

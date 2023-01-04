@@ -18,7 +18,10 @@
 #include <string_view>
 #include <vector>
 
+#include <ogr_spatialref.h>
+
 #include "patch_assembly.h"
+#include "raster_properties.h"
 
 namespace alus::featurextractiongabor {
 
@@ -28,8 +31,8 @@ public:
     explicit PatchedImage(std::string_view input_path);
 
     void CreatePatchedImagesFor(const std::vector<size_t>& filter_edge_sizes, size_t patch_edge_size);
-    size_t GetBandCount() const { return band_count_; }
-    const std::vector<size_t>& GetFilterEdgeSizes() const { return filter_edge_sizes_; }
+    [[nodiscard]] size_t GetBandCount() const { return band_count_; }
+    [[nodiscard]] const std::vector<size_t>& GetFilterEdgeSizes() const { return filter_edge_sizes_; }
 
     struct Item {
         PaddedPatchParameters padding;
@@ -38,7 +41,19 @@ public:
         size_t filter_edge_size;
         std::vector<float> buffer;
     };
-    const Item& GetPatchedImageFor(size_t band, size_t filter_edge_size) const;
+    [[nodiscard]] const Item& GetPatchedImageFor(size_t band, size_t filter_edge_size) const;
+    /**
+     * Should be called after CreatePatchedImageFor()
+     */
+    [[nodiscard]] GeoTransformParameters GetPatchesGeoTransform() const { return patches_gt_; }
+    /**
+     * Should be called after CreatePatchedImageFor()
+     */
+    [[nodiscard]] OGRSpatialReference GetPatchesSrs() const { return patches_srs_; }
+    /**
+     * Should be called after CreatePatchedImageFor()
+     */
+    [[nodiscard]] RasterDimension GetPatchesAggregateDimension() const { return patches_aggregate_dimension_; };
 
     ~PatchedImage() = default;
 
@@ -48,5 +63,8 @@ private:
     std::vector<size_t> filter_edge_sizes_;
     // per band, vector contains all patches with different filter borders.
     std::map<size_t, std::vector<Item>> patched_images_;
+    GeoTransformParameters patches_gt_{};
+    OGRSpatialReference patches_srs_{};
+    RasterDimension patches_aggregate_dimension_{};
 };
 }  // namespace alus::featurextractiongabor

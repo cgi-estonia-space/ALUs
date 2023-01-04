@@ -36,5 +36,5 @@ public:
                       int coh_win_az);
     [[nodiscard]] std::vector<CohTile> GetTiles() const override;
 };
-}  // namespace coherence-cuda
+}  // namespace coherence_cuda
 }  // namespace alus

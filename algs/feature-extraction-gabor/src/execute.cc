@@ -14,9 +14,14 @@
 
 #include "execute.h"
 
+#include <chrono>
+#include <filesystem>
+
 #include <gdal_priv.h>
 
+#include "algorithm_exception.h"
 #include "alus_log.h"
+#include "constants.h"
 #include "conv_kernel.h"
 #include "cuda_copies.h"
 #include "cuda_ptr.h"
@@ -24,16 +29,22 @@
 #include "filter_bank.h"
 #include "gdal_management.h"
 #include "gdal_util.h"
+#include "memory_policy.h"
 #include "patch_assembly.h"
 #include "patch_reduction.h"
+#include "result_export.h"
 
 namespace alus::featurextractiongabor {
 
-Execute::Execute(size_t orientation_count, size_t frequency_count, size_t patch_edge_dimension, std::string_view input)
+Execute::Execute(size_t orientation_count, size_t frequency_count, size_t patch_edge_dimension, std::string_view input,
+                 cuda::CudaInit& cuda_init, size_t gpu_mem_percentage)
     : orientation_count_{orientation_count},
       frequency_count_{frequency_count},
       patch_edge_dimension_{patch_edge_dimension},
-      patched_image_(input) {
+      cuda_init_{cuda_init},
+      gpu_mem_percentage_{gpu_mem_percentage},
+      patched_image_(input),
+      output_stem_(std::filesystem::path(input).stem().string()) {
     alus::gdalmanagement::Initialize();
 }
 
@@ -44,8 +55,15 @@ void Execute::GenerateInputs() {
 }
 
 void Execute::CalculateGabor() {
+    FinalizeCudaInit();
+
+    const auto& cuda_devices = cuda_init_.GetDevices();
+    const auto& cuda_device = cuda_devices.front();
     const auto band_count = patched_image_.GetBandCount();
+    cuda::MemoryFitPolice device_mem_check(cuda_device, gpu_mem_percentage_);
+
     for (size_t band_i{}; band_i < band_count; band_i++) {
+        LOGI << "Band " << band_i + 1;
         for (const auto& filter : filter_banks_) {
             const auto& patch_item = patched_image_.GetPatchedImageFor(band_i, filter.edge_size);
             const auto patch_edge = static_cast<int>(patch_item.padding.padded_patch_edge_size);
@@ -53,6 +71,16 @@ void Execute::CalculateGabor() {
             const auto patches_x = static_cast<int>(patch_item.width / patch_edge);
             const auto patches_y = static_cast<int>(patch_item.height / patch_edge);
             const auto n_patches = patches_x * patches_y;
+
+            cuda::MemoryAllocationForecast forecast(cuda_device.GetMemoryAlignment());
+            forecast.Add(filter.filter_buffer.size() * sizeof(float));  // filter
+            forecast.Add(patch_item.buffer.size() * sizeof(float));     // raster data
+            forecast.Add(patch_item.buffer.size() * sizeof(float));     // convolution results
+            forecast.Add(n_patches * 2 * sizeof(float));                // Mean and std dev results
+            if (!device_mem_check.CanFit(forecast.Get())) {
+                THROW_ALGORITHM_EXCEPTION(ALG_NAME, "Required " + std::to_string(forecast.Get() >> 20) +
+                                                        "MiB cannot be loaded, not enough GPU memory.");
+            }
 
             // setup filter on device
             std::vector<float> h_filt = filter.filter_buffer;
@@ -62,19 +90,21 @@ void Execute::CalculateGabor() {
 
             // move input to GPU
             cuda::DeviceBuffer<float> d_src(patch_item.buffer.size());
-            cuda::CopyArrayH2D(d_src.Get(), patch_item.buffer.data(), d_src.size()); // optimization: do this once per frequency
+            cuda::CopyArrayH2D(d_src.Get(), patch_item.buffer.data(),
+                               d_src.size());  // optimization: do this once per frequency
 
             // convolution
             cuda::DeviceBuffer<float> d_conv(d_src.size());
-            LaunchConvKernel(d_src.Get(), static_cast<int>(patch_item.width), static_cast<int>(patch_item.height), patch_size, d_conv.Get(), d_filt.Get(),
-                             static_cast<int>(filter.edge_size));
+            LaunchConvKernel(d_src.Get(), static_cast<int>(patch_item.width), static_cast<int>(patch_item.height),
+                             patch_size, d_conv.Get(), d_filt.Get(), static_cast<int>(filter.edge_size));
 
             // mean & std deviation calculation
             cuda::DeviceBuffer<float> d_means(n_patches);
             cuda::DeviceBuffer<float> d_std_devs(n_patches);
-            LaunchPatchMeanReduction(d_conv.Get(), d_means.Get(), patch_size, static_cast<int>(filter.edge_size), patches_x, patches_y);
-            LaunchPatchStdDevReduction(d_conv.Get(), d_means.Get(), d_std_devs.Get(), patch_size, static_cast<int>(filter.edge_size),
-                                       patches_x, patches_y);
+            LaunchPatchMeanReduction(d_conv.Get(), d_means.Get(), patch_size, static_cast<int>(filter.edge_size),
+                                     patches_x, patches_y);
+            LaunchPatchStdDevReduction(d_conv.Get(), d_means.Get(), d_std_devs.Get(), patch_size,
+                                       static_cast<int>(filter.edge_size), patches_x, patches_y);
 
             CHECK_CUDA_ERR(cudaDeviceSynchronize());
             CHECK_CUDA_ERR(cudaGetLastError());
@@ -107,9 +137,34 @@ void Execute::SaveGaborInputsTo(std::string_view path) const {
     SavePatchedImages(path);
 }
 
-void Execute::SaveResultsTo(std::string_view) const {
-    result_.LogConsoleResult();
-    // result as file/image in future task
+void Execute::SaveResultsTo(std::string_view path) const {
+
+    LOGI << "Saving results";
+
+    const auto patches_gt = patched_image_.GetPatchesGeoTransform();
+    auto patches_srs = patched_image_.GetPatchesSrs();
+    // const auto patches_dim = patched_image_.GetPatchesAggregateDimension();
+    const auto band_count = result_.GetBandCount();
+    const auto orientation_count = result_.GetOrientationCount();
+    const auto frequency_count = result_.GetFrequencyCount();
+    const auto filename = std::string(path) + std::filesystem::path::preferred_separator + output_stem_;
+    ResultExport res_exp(filename.c_str(), &patches_srs, patches_gt, orientation_count, frequency_count);
+
+    for (size_t b_i{}; b_i < band_count; b_i++) {
+        for (size_t o_i{}; o_i < orientation_count; o_i++) {
+            for (size_t f_i{}; f_i < frequency_count; f_i++) {
+                const auto& patch_stats = result_.GetPatchesReadOnly(b_i, o_i, f_i);
+                for (const auto& stat : patch_stats) {
+                    res_exp.Add(stat);
+                }
+            }
+        }
+    }
+
+    LOGI << "Storing on disk";
+    res_exp.StoreFeatures();
+
+    LOGI << "Done";
 }
 
 void Execute::SaveFilterBanks(std::string_view path) const {
@@ -207,6 +262,25 @@ std::vector<size_t> Execute::ExtractfilterEdgeSizes() const {
     }
 
     return edge_sizes;
+}
+
+void Execute::FinalizeCudaInit() {
+    constexpr size_t TIMEOUT_MS{10000};
+    const auto timeout_point = std::chrono::steady_clock::now() + std::chrono::duration<size_t, std::milli>(TIMEOUT_MS);
+    while (!cuda_init_.IsFinished()) {
+        if (std::chrono::steady_clock::now() > timeout_point) {
+            THROW_ALGORITHM_EXCEPTION(ALG_NAME, "Timeout for CUDA initialization.");
+        }
+    }
+
+    const auto& cuda_devices = cuda_init_.GetDevices();
+    if (cuda_devices.empty()) {
+        THROW_ALGORITHM_EXCEPTION(ALG_NAME, "No Nvidia CUDA GPUs detected.");
+    }
+
+    const auto& gpu_device = cuda_devices.front();
+    gpu_device.Set();
+    LOGI << "Using '" << gpu_device.GetName() << "' device nr " << gpu_device.GetDeviceNr() << " for processing";
 }
 
 Execute::~Execute() { alus::gdalmanagement::Deinitialize(); }

@@ -41,6 +41,13 @@ time alus-cal -i $test_dataset_dir/S1A_IW_SLC__1SDV_20210722T005537_20210722T005
      --sw IW2 --polarisation VV -t gamma --bi1 2 --bi2 6 \
      --dem $dem_files_dir/srtm_51_09.zip --dem $dem_files_dir/srtm_52_09.zip --ll info
 
+test_3_prod_path=$output_dir/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_tnr_Cal_deb_tc_aoi_merge.tif
+time alus-cal -i $test_dataset_dir/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58.SAFE \
+     -o $test_3_prod_path \
+     --aoi "POLYGON((16.4519,73.3234 17.2811,73.3234 17.2811,74.6600 16.4519,74.6600))" \
+     --polarisation VV -t gamma \
+     --dem $dem_files_dir/srtm_51_09.zip --dem $dem_files_dir/srtm_52_09.zip --ll info
+
 if [[ -z "${NIGHTLY_GOLDEN_DIR}" ]]; then
   echo "no golden directory defined, no verification executed"
   exit 0
@@ -50,5 +57,7 @@ echo "Validating $test_1_prod_path"
 ./alus_result_check.py -I $test_1_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_tnr_Calib_b26_tc.tif
 echo "Validating $test_2_prod_path"
 ./alus_result_check.py -I $test_2_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_tnr_Calib_b26_tc.tif
+echo "Validating $test_3_prod_path"
+./alus_result_check.py -I $test_3_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_tnr_Cal_deb_tc_aoi_merge.tif
 
 exit $?

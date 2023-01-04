@@ -341,6 +341,8 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
 }
 
 void Execute::RunSinglePair(alus::cuda::CudaInit& cuda_init, size_t) const {
+
+
     alus::snapengine::SystemUtils::SetAuxDataPath(params_.orbit_dir + "/");
     std::shared_ptr<app::DemAssistant> dem_assistant{nullptr};
     auto cuda_init_dem_load = std::async(std::launch::async, [&dem_assistant, &cuda_init, this]() {

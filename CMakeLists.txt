@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 project(ALUs
         LANGUAGES CXX CUDA
         DESCRIPTION "Parallel ALUs for geospatial data processing"
-        VERSION 1.2.0
+        VERSION 1.4.0
         )
 
 set(CMAKE_CUDA_STANDARD 17)
@@ -105,6 +105,7 @@ add_subdirectory(algs/calibration-routine)
 add_subdirectory(algs/resample)
 add_subdirectory(algs/topsar-merge)
 add_subdirectory(algs/thermal-noise-removal)
+add_subdirectory(algs/palsar-focus)
 
 # Test helpers
 add_subdirectory(test/range-doppler-geocoding)
