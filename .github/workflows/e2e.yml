@@ -1,9 +1,6 @@
 name: End-to-end tests on AWS GPU instance
 
 on:
-  push:
-    branches: [ "actions" ]
-    max-concurrency: 1
   pull_request:
     branches: [ "development" ]
     max-concurrency: 1
