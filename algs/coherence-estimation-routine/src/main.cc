@@ -12,6 +12,7 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <tuple>
@@ -87,12 +88,25 @@ void ExceptionMessagePrint(const T& e) {
 int main(int argc, char* argv[]) {
     std::string args_help{};
     try {
-        alus::common::log::Initialize();
+        std::vector<char*> args_vector;
+        auto log_format = alus::common::log::Format::DEFAULT;
+        // Determine if it is run as CREODIAS service log format. Filter out this argument, for avoiding 'unrecognized
+        // option' exception later on.
+        for (int i = 0; i < argc; i++) {
+            if (std::string(argv[i]) == std::string("--log_format_creodias")) {
+                log_format = alus::common::log::Format::CREODIAS;
+            } else {
+                auto test = argv[i];
+                args_vector.push_back(test);
+            }
+        }
+
+        alus::common::log::Initialize(log_format);
         auto cuda_init = alus::cuda::CudaInit();
 
         alus::coherenceestimationroutine::Arguments args(RUN_TIMELINE);
         args_help = args.GetHelp();
-        args.Parse(std::vector<char*>(argv, argv + argc));
+        args.Parse(args_vector);
 
         if (args.IsHelpRequested()) {
             std::cout << alus::app::GenerateHelpMessage(alus::coherenceestimationroutine::ALG_NAME, args_help);
