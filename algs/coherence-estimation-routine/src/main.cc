@@ -88,17 +88,14 @@ void ExceptionMessagePrint(const T& e) {
 int main(int argc, char* argv[]) {
     std::string args_help{};
     try {
-        std::vector<char*> args_vector;
+        std::vector<char*> args_vector(argv, argv + argc);
         auto log_format = alus::common::log::Format::DEFAULT;
         // Determine if it is run as CREODIAS service log format. Filter out this argument, for avoiding 'unrecognized
         // option' exception later on.
-        for (int i = 0; i < argc; i++) {
-            if (std::string(argv[i]) == std::string("--log_format_creodias")) {
-                log_format = alus::common::log::Format::CREODIAS;
-            } else {
-                auto test = argv[i];
-                args_vector.push_back(test);
-            }
+        auto it = std::find(args_vector.begin(), args_vector.end(), std::string_view("--log_format_creodias"));
+        if (it != args_vector.end()) {
+            log_format = alus::common::log::Format::CREODIAS;
+            args_vector.erase(it);
         }
 
         alus::common::log::Initialize(log_format);
