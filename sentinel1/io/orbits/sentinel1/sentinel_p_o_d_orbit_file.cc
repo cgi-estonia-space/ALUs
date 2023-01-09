@@ -173,7 +173,8 @@ boost::filesystem::path SentinelPODOrbitFile::RetrieveOrbitFile(std::string_view
         // todo:replace boost directory
         boost::filesystem::path dest_folder = GetDestFolder(mission_prefix, orbit_type, year, month);
         throw std::runtime_error("No valid orbit file found for " + time_str +
-                                 "\nOrbit files may be downloaded from https://qc.sentinel1.eo.esa.int/" +
+                                 "\nOrbit files may be downloaded from https://scihub.copernicus.eu/gnss/ or " +
+                                 "https://s1qc.asf.alaska.edu/aux_poeorb/ or https://s1qc.asf.alaska.edu/aux_resorb/"
                                  "\nand placed in " + boost::filesystem::canonical(dest_folder).string());
     }
 

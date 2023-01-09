@@ -38,7 +38,9 @@ ApplyOrbitFileOp::ApplyOrbitFileOp(const std::shared_ptr<snapengine::Product>& s
     : source_product_(source_product) {}
 
 ApplyOrbitFileOp::ApplyOrbitFileOp(const std::shared_ptr<snapengine::Product>& source_product, bool modify_source_only)
-    : source_product_(source_product), modify_source_only_(modify_source_only) {}
+    : ApplyOrbitFileOp(source_product) {
+    modify_source_only_ = modify_source_only;
+}
 
 void ApplyOrbitFileOp::GetSourceMetadata() {
     // original snap version creates Product when it is opened inside snap, it uses DimapProductHelpers and calls
@@ -56,6 +58,18 @@ void ApplyOrbitFileOp::GetSourceMetadata() {
     // todo:check these, took from metadata vs from product dimensions in java (if something is missing)
     source_image_width_ = abs_root_->GetAttributeInt(snapengine::AbstractMetadata::NUM_SAMPLES_PER_LINE);
     source_image_height_ = abs_root_->GetAttributeInt(snapengine::AbstractMetadata::NUM_OUTPUT_LINES);
+}
+
+void ApplyOrbitFileOp::InitializeWithoutUpdate() {
+    try {
+        GetSourceMetadata();
+
+        if (!modify_source_only_) {
+            CreateTargetProduct();
+        }
+    } catch (std::exception& e) {
+        throw std::runtime_error("ApplyOrbitFileOp exception: " + std::string(e.what()));
+    }
 }
 
 void ApplyOrbitFileOp::Initialize() {
@@ -214,16 +228,16 @@ void ApplyOrbitFileOp::WriteProductFiles(std::shared_ptr<snapengine::IMetaDataWr
     // temporary workaround to forward tie_point_grids directory...
 
     std::filesystem::copy(source_product_->GetFileLocation().parent_path().generic_path().string() +
-                                std::filesystem::path::preferred_separator + "tie_point_grids",
-                            target_product_->GetFileLocation().parent_path().generic_path().string() +
-                                std::filesystem::path::preferred_separator + "tie_point_grids",
-                            std::filesystem::copy_options::recursive);
+                              std::filesystem::path::preferred_separator + "tie_point_grids",
+                          target_product_->GetFileLocation().parent_path().generic_path().string() +
+                              std::filesystem::path::preferred_separator + "tie_point_grids",
+                          std::filesystem::copy_options::recursive);
     // temporary workaround to forward vector directory...
     std::filesystem::copy(source_product_->GetFileLocation().parent_path().generic_path().string() +
-                                std::filesystem::path::preferred_separator + "vector_data",
-                            target_product_->GetFileLocation().parent_path().generic_path().string() +
-                                std::filesystem::path::preferred_separator + "vector_data",
-                            std::filesystem::copy_options::recursive);
+                              std::filesystem::path::preferred_separator + "vector_data",
+                          target_product_->GetFileLocation().parent_path().generic_path().string() +
+                              std::filesystem::path::preferred_separator + "vector_data",
+                          std::filesystem::copy_options::recursive);
     // write metadata file
     target_product_->SetMetadataWriter(metadata_writer);
     target_product_->GetMetadataWriter()->Write();

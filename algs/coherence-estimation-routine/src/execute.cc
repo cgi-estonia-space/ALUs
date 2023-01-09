@@ -316,9 +316,11 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
     // unfortunately have to assume this downcast is valid, because TC does not use the ImageWriter interface
     GDALDataset* tc_in_dataset = nullptr;
     if (deb_products.size() > 1U) {
-        tc_in_dataset = std::dynamic_pointer_cast<snapengine::custom::GdalImageWriter>(tc_input->GetImageWriter())->GetDataset();
+        tc_in_dataset =
+            std::dynamic_pointer_cast<snapengine::custom::GdalImageWriter>(tc_input->GetImageWriter())->GetDataset();
     } else {
-        tc_in_dataset = std::dynamic_pointer_cast<snapengine::custom::GdalImageReader>(tc_input->GetImageReader())->GetDataset();
+        tc_in_dataset =
+            std::dynamic_pointer_cast<snapengine::custom::GdalImageReader>(tc_input->GetImageReader())->GetDataset();
     }
     const auto total_dimension_edge = 4096;
     const auto x_tile_size =
@@ -341,8 +343,6 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
 }
 
 void Execute::RunSinglePair(alus::cuda::CudaInit& cuda_init, size_t) const {
-
-
     alus::snapengine::SystemUtils::SetAuxDataPath(params_.orbit_dir + "/");
     std::shared_ptr<app::DemAssistant> dem_assistant{nullptr};
     auto cuda_init_dem_load = std::async(std::launch::async, [&dem_assistant, &cuda_init, this]() {
@@ -554,7 +554,11 @@ void Execute::SplitApplyOrbit(const std::string& path, size_t burst_index_start,
     for (const auto& split : splits) {
         split->OpenPixelReader(path);
         auto orbit_op = std::make_unique<s1tbx::ApplyOrbitFileOp>(split->GetTargetProduct(), true);
-        orbit_op->Initialize();
+        if (params_.orbit_dir.empty() && !snapengine::AlusUtils::IsOrbitFileAssigned()) {
+            orbit_op->InitializeWithoutUpdate();
+        } else {
+            orbit_op->Initialize();
+        }
     }
 }
 
