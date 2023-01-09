@@ -485,8 +485,8 @@ void TerrainCorrection::CalculateTile(TcTileCoordinates tile_coordinates, Shared
             source_buffer = std::unique_ptr<float[]>(new float[source_rect_sz]);
             h_source_buffer = source_buffer.get();
             if (ctx->use_pinned_memory) {
-                LOGD << "target/sz ratio = " << static_cast<double>(source_rect_sz) / static_cast<double>(target_sz);
-                LOGD << "target rect = [" << tile_coordinates.target_x_0 << ", " << tile_coordinates.target_y_0 << ", "
+                LOGV << "target/sz ratio = " << static_cast<double>(source_rect_sz) / static_cast<double>(target_sz);
+                LOGV << "target rect = [" << tile_coordinates.target_x_0 << ", " << tile_coordinates.target_y_0 << ", "
                      << tile_coordinates.target_width << ", " << tile_coordinates.target_height << "]";
             }
         }

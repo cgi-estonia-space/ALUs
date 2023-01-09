@@ -19,8 +19,9 @@
 namespace alus::common::log {
 
 enum class Level { VERBOSE, DEBUG, INFO, WARNING, ERROR };
+enum class Format { DEFAULT, CREODIAS };
 
-void Initialize();
+void Initialize(Format f = Format::DEFAULT);
 void SetLevel(Level level);
 
 }  // namespace alus::common::log
