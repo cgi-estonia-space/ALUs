@@ -119,18 +119,6 @@ void Arguments::Check() {
             "Use -a [ --aoi ] to skip defining burst indexes.");
     }
 
-    if (!timeline_args_) {
-        if ((vm_.count("orbit_ref") == 0U || vm_.count("orbit_sec") == 0U) && vm_.count("orbit_dir") == 0U) {
-            throw std::invalid_argument(
-                "Orbit files must be supplied for both scenes. "
-                "Use --orbit_dir for determining the right one during processing.");
-        }
-    } else {
-        if (vm_.count("orbit_dir") == 0U) {
-            throw std::invalid_argument("Orbit files directory(--orbit_dir) must be supplied.");
-        }
-    }
-
     if (timeline_args_ && !timeline_mission_.empty()) {
         if (timeline_mission_ != "S1B" && timeline_mission_ != "S1A") {
             throw std::invalid_argument("timeline_mission must be S1A, S1B or empty");
