@@ -555,6 +555,8 @@ void Execute::SplitApplyOrbit(const std::string& path, size_t burst_index_start,
         split->OpenPixelReader(path);
         auto orbit_op = std::make_unique<s1tbx::ApplyOrbitFileOp>(split->GetTargetProduct(), true);
         if (params_.orbit_dir.empty() && !snapengine::AlusUtils::IsOrbitFileAssigned()) {
+            LOGI << "No orbital information update for " << split->GetTargetProduct()->GetName() << " "
+                 << split->GetSubswath();
             orbit_op->InitializeWithoutUpdate();
         } else {
             orbit_op->Initialize();

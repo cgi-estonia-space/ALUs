@@ -53,9 +53,10 @@ void Arguments::Construct() {
             "Secondary scene's first burst index - starting at '1', leave unspecified for whole subswath")
         ( "b_sec2", po::value<size_t>(&burst_last_index_secondary_),
             "Secondary scene's last burst index - starting at '1', leave unspecified for whole subswath")
-        ( "orbit_ref", po::value<std::string>(&orbit_file_reference_), "Reference scene's POEORB file")
+        ( "orbit_ref", po::value<std::string>(&orbit_file_reference_),
+            "Reference scene's POEORB/RESORB file. Can be unspecified.")
         ( "orbit_sec", po::value<std::string>(&orbit_file_secondary_),
-            "Secondary scenes's POEORB file");
+            "Secondary scene's POEORB/RESORB file. Can be unspecified.");
         // clang-format on
     } else {
         // clang-format off
@@ -80,7 +81,8 @@ void Arguments::Construct() {
         ("no_mask_cor", po::bool_switch(&disable_coregistration_elevation_mask_),
          "Do not mask out areas without elevation in coregistration")
         ("orbit_dir", po::value<std::string>(&orbit_file_dir_),
-        "Directory of orbit files. Can be used to find correct one during processing. "
+        "Directory of orbit files (restituted and/or precise). Can be used to find correct one during processing. "
+        "Can be unspecified - hence no orbital information is updated. "
         "Also supports ESA SNAP compatible folder for example: /home/<user>/.snap/auxData/Orbits/Sentinel-1/POEORB/")
         ("srp_number_points", po::value<size_t>(&srp_number_points_)->default_value(501), "")
         ("srp_polynomial_degree", po::value<size_t>(&srp_polynomial_degree_)->default_value(5), "")

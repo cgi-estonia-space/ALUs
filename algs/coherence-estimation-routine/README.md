@@ -30,8 +30,10 @@ Coherence estimation routine consists of:
   --b_sec2 arg                          Secondary scene's last burst index - 
                                         starting at '1', leave unspecified for 
                                         whole subswath
-  --orbit_ref arg                       Reference scene's POEORB file
-  --orbit_sec arg                       Secondary scenes's POEORB file
+  --orbit_ref arg                       Reference scene's POEORB/RESORB file. 
+                                        Can be unspecified.
+  --orbit_sec arg                       Secondary scene's POEORB/RESORB file. 
+                                        Can be unspecified.
   -o [ --output ] arg                   Output folder or filename
   -p [ --polarisation ] arg             Polarisation for which coherence 
                                         estimation will be performed - VV;VH
@@ -42,11 +44,14 @@ Coherence estimation routine consists of:
                                         supported.
   --no_mask_cor                         Do not mask out areas without elevation
                                         in coregistration
-  --orbit_dir arg                       ESA SNAP compatible root folder of 
-                                        orbit files. Can be used to find 
-                                        correct one during processing. For 
-                                        example: /home/<user>/.snap/auxData/Orb
-                                        its/Sentinel-1/POEORB/
+  --orbit_dir arg                       Directory of orbit files (restituted 
+                                        and/or precise). Can be used to find 
+                                        correct one during processing. Can be 
+                                        unspecified - hence no orbital 
+                                        information is updated. Also supports 
+                                        ESA SNAP compatible folder for example:
+                                        /home/<user>/.snap/auxData/Orbits/Senti
+                                        nel-1/POEORB/
   --srp_number_points arg (=501)
   --srp_polynomial_degree arg (=5)
   --subtract_flat_earth_phase arg (=1)  Compute flat earth phase subtraction 
@@ -72,7 +77,7 @@ Coherence estimation routine consists of:
 ### alus-coht
 
 ```
- -h [ --help ]                         Print help
+  -h [ --help ]                         Print help
   -i [ --input ] arg                    Timeline search directory
   -s [ --timeline_start ] arg           Timeline start - format YYYYMMDD
   -e [ --timeline_end ] arg             Timeline end - format YYYYMMDD
@@ -87,11 +92,14 @@ Coherence estimation routine consists of:
                                         supported.
   --no_mask_cor                         Do not mask out areas without elevation
                                         in coregistration
-  --orbit_dir arg                       ESA SNAP compatible root folder of 
-                                        orbit files. Can be used to find 
-                                        correct one during processing. For 
-                                        example: /home/<user>/.snap/auxData/Orb
-                                        its/Sentinel-1/POEORB/
+  --orbit_dir arg                       Directory of orbit files (restituted 
+                                        and/or precise). Can be used to find 
+                                        correct one during processing. Can be 
+                                        unspecified - hence no orbital 
+                                        information is updated. Also supports 
+                                        ESA SNAP compatible folder for example:
+                                        /home/<user>/.snap/auxData/Orbits/Senti
+                                        nel-1/POEORB/
   --srp_number_points arg (=501)
   --srp_polynomial_degree arg (=5)
   --subtract_flat_earth_phase arg (=1)  Compute flat earth phase subtraction 

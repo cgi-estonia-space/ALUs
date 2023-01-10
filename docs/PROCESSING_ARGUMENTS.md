@@ -16,60 +16,74 @@ input plus processing steps acronym. One can also define final result filename, 
 ``--help`` output
 
 ```
-  -h [ --help ]                     Print help
-  -r [ --in_ref ] arg               Reference scene's input SAFE dataset 
-                                    (zipped or unpacked)
-  -s [ --in_sec ] arg               Secondary scene's input SAFE dataset 
-                                    (zipped or unpacked)
-  -o [ --output ] arg               Output folder or filename
-  -p [ --polarisation ] arg         Polarisation for which coherence estimation
-                                    will be performed - VV;VH
-  --sw arg                          Reference scene's subswath
-  --b_ref1 arg                      Reference scene's first burst index - 
-                                    starting at '1', leave unspecified for 
-                                    whole subswath
-  --b_ref2 arg                      Reference scene's last burst index - 
-                                    starting at '1', leave unspecified for 
-                                    whole subswath
-  --b_sec1 arg                      Secondary scene's first burst index - 
-                                    starting at '1', leave unspecified for 
-                                    whole subswath
-  --b_sec2 arg                      Secondary scene's last burst index - 
-                                    starting at '1', leave unspecified for 
-                                    whole subswath
-  -a [ --aoi ] arg                  Area Of Interest WKT polygon, overrules 
-                                    first and last burst indexes
-  --dem arg                         DEM file(s). Only SRTM3 is currently 
-                                    supported.
-  --orbit_ref arg                   Reference scene's POEORB file
-  --orbit_sec arg                   Secondary scenes's POEORB file
-  --orbit_dir arg                   ESA SNAP compatible root folder of orbit 
-                                    files. Can be used to find correct one 
-                                    during processing. For example: 
-                                    /home/<user>/.snap/auxData/Orbits/Sentinel-
-                                    1/POEORB/
+Arguments:
+
+  -h [ --help ]                         Print help
+  -r [ --in_ref ] arg                   Reference scene's input SAFE dataset 
+                                        (zipped or unpacked)
+  -s [ --in_sec ] arg                   Secondary scene's input SAFE dataset 
+                                        (zipped or unpacked)
+  --b_ref1 arg                          Reference scene's first burst index - 
+                                        starting at '1', leave unspecified for 
+                                        whole subswath
+  --b_ref2 arg                          Reference scene's last burst index - 
+                                        starting at '1', leave unspecified for 
+                                        whole subswath
+  --b_sec1 arg                          Secondary scene's first burst index - 
+                                        starting at '1', leave unspecified for 
+                                        whole subswath
+  --b_sec2 arg                          Secondary scene's last burst index - 
+                                        starting at '1', leave unspecified for 
+                                        whole subswath
+  --orbit_ref arg                       Reference scene's POEORB/RESORB file. 
+                                        Can be unspecified.
+  --orbit_sec arg                       Secondary scene's POEORB/RESORB file. 
+                                        Can be unspecified.
+  -o [ --output ] arg                   Output folder or filename
+  -p [ --polarisation ] arg             Polarisation for which coherence 
+                                        estimation will be performed - VV;VH
+  --sw arg                              Reference scene's subswath
+  -a [ --aoi ] arg                      Area Of Interest WKT polygon, overrules
+                                        first and last burst indexes
+  --dem arg                             DEM file(s). Only SRTM3 is currently 
+                                        supported.
+  --no_mask_cor                         Do not mask out areas without elevation
+                                        in coregistration
+  --orbit_dir arg                       Directory of orbit files (restituted 
+                                        and/or precise). Can be used to find 
+                                        correct one during processing. Can be 
+                                        unspecified - hence no orbital 
+                                        information is updated. Also supports 
+                                        ESA SNAP compatible folder for example:
+                                        /home/<user>/.snap/auxData/Orbits/Senti
+                                        nel-1/POEORB/
   --srp_number_points arg (=501)
   --srp_polynomial_degree arg (=5)
-  --subtract_flat_earth_phase       Compute flat earth phase subtraction during
-                                    coherence operation. By default on.
-  --rg_win arg (=15)                range window size in pixels.
-  --az_win arg (=0)                 azimuth window size in pixels, if zero 
-                                    derived from range window.
+  --subtract_flat_earth_phase arg (=1)  Compute flat earth phase subtraction 
+                                        during coherence operation. By default 
+                                        on.
+  --rg_win arg (=15)                    range window size in pixels.
+  --az_win arg (=0)                     azimuth window size in pixels, if zero 
+                                        derived from range window.
   --orbit_degree arg (=3)
-  -w [ --wif ]                      Write intermediate results (will be saved 
-                                    in the same folder as final outcome). NOTE 
-                                    - this may decrease performance. By default
-                                    off.
+  -w [ --wif ]                          Write intermediate results (will be 
+                                        saved in the same folder as final 
+                                        outcome). NOTE - this may decrease 
+                                        performance. By default off.
 
-  --ll arg (=verbose)               Log level, one of the following - 
-                                    verbose|debug|info|warning|error
-  --gpu_mem arg (=100)              Percentage of how much GPU memory can be 
-                                    used for processing
+  --ll arg (=verbose)                   Log level, one of the following - 
+                                        verbose|debug|info|warning|error
+  --gpu_mem arg (=100)                  Percentage of how much GPU memory can 
+                                        be used for processing
+
 ```
 
 For orbit files there are multiple options. If a user has a SNAP installation and has processed the same scenes already, the existing orbit files
 can be used by supplying SNAP's orbit file directory e.g. ``--orbit_dir  /home/<user>/.snap/auxData/Orbits/Sentinel-1/POEORB/``.
-If such option does not exist or there are no specific orbit files present, one can use [sentineleof](https://github.com/scottstanie/sentineleof) and then supply downloaded files via ``--orbit_ref`` and ``--orbit_sec``.
+If such option does not exist or there are no specific orbit files present, one can use [sentineleof](https://github.com/scottstanie/sentineleof)
+and then supply downloaded files via ``--orbit_ref`` and ``--orbit_sec``. Also orbit files could be collected into directory,
+the tool can search for correct one. Supports restituted(RESORB) and precise(POEORB) orbits.
+If no orbit arguments are supplied, the orbital information is simply not updated during the calculations.
 
 When specifying an area to be processed traditional subswath and burst index parameters can be used. However, it might be simpler
 to use ``-a``/``--aoi`` parameter to specify exact region. This must be a WKT polygon and does not have to follow burst boundaries exactly.

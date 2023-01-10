@@ -48,6 +48,7 @@ public:
     [[nodiscard]] std::shared_ptr<snapengine::Product> GetTargetProduct() const { return target_product_; }
     void OpenPixelReader(std::string_view filename);
     [[nodiscard]] const std::shared_ptr<C16Dataset<int16_t>>& GetPixelReader() const { return pixel_reader_; }
+    std::string_view GetSubswath() const { return subswath_; }
 
     constexpr static int BURST_INDEX_OFFSET{1};
 
