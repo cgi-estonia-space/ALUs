@@ -69,6 +69,9 @@ void Initialize() {
     CPLSetErrorHandler(GdalErrorHandle);
     // Driver registration example from https://github.com/OSGeo/gdal/blob/master/frmts/gdalallregister.cpp
     GDALRegister_GTiff();
+#ifdef USE_GDAL_COG_DRIVER
+    GDALRegister_COG();
+#endif
     GDALRegister_VRT();
     GDALRegister_MEM();
     GDALRegister_ENVI();  // ENVI .img and .hdr

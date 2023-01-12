@@ -202,7 +202,7 @@ target_include_directories(integration-test-backgeocoding
 # Only because of thrust::device_vector include
 target_compile_options(integration-test-backgeocoding
         PRIVATE
-       $<$<COMPILE_LANGUAGE:CXX>:-Wno-unused-parameter>
+       $<$<COMPILE_LANGUAGE:CXX>:-Wno-unused-parameter, -Wno-unknown-pragmas>
        )
 target_link_libraries(integration-test-backgeocoding
         PRIVATE
@@ -246,6 +246,10 @@ list(APPEND TEST_SOURCES_TOPSAR_DEBURST_OP
 add_executable(integration-test-topsar-deburst-op ${TEST_SOURCES_TOPSAR_DEBURST_OP})
 
 target_include_directories(integration-test-topsar-deburst-op PUBLIC ${TEST_INCLUDE})
+target_compile_options(integration-test-topsar-deburst-op
+        PRIVATE
+       $<$<COMPILE_LANGUAGE:CXX>:-Wno-unknown-pragmas>
+       )
 
 target_link_libraries(integration-test-topsar-deburst-op
         PRIVATE

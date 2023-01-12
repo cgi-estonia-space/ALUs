@@ -41,6 +41,11 @@ find_package(Boost 1.71.0 REQUIRED COMPONENTS program_options date_time filesyst
 
 find_package(GDAL REQUIRED)
 include_directories(${GDAL_INCLUDE_DIRS})
+# Forward GDAL version check. If possible, use cloud optimized GeoTIFF driver
+if (GDAL_VERSION VERSION_GREATER_EQUAL 3.1)
+    message(STATUS "GDAL version enables to use COG")
+    add_compile_definitions(USE_GDAL_COG_DRIVER)
+endif()
 
 find_package(Eigen3 REQUIRED)
 
@@ -144,6 +149,8 @@ if (ENABLE_TESTS)
                 ${googletest_SOURCE_DIR}
                 ${googletest_BINARY_DIR}
         )
+        target_compile_options(gtest PRIVATE -Wno-deprecated-copy)
+        target_compile_options(gmock PRIVATE -Wno-deprecated-copy)
 
         # Silence std::tr1 warning on MSVC
         if (MSVC)

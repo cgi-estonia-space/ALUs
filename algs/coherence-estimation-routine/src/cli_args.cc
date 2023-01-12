@@ -15,7 +15,7 @@
 #include "cli_args.h"
 
 #include <filesystem>
-#include <sstream>
+#include <optional>
 #include <string>
 #include <vector>
 

@@ -367,11 +367,6 @@ snapengine::old::Product TerrainCorrection::CreateTargetProduct(
         LOGE << "OGR ERROR: " << error;  // TODO: implement some real error (SNAPGPU-163)
     }
 
-    GDALDriver* output_driver = GetGdalGeoTiffDriver();
-
-    CHECK_GDAL_PTR(output_driver);
-
-    GDALDataset* output_dataset;
     int a{static_cast<int>(std::floor((target_bounds[2]) / pixel_size_x))};
     int b{static_cast<int>(std::floor((target_bounds[3]) / pixel_size_y))};
 
@@ -382,14 +377,22 @@ snapengine::old::Product TerrainCorrection::CreateTargetProduct(
 
     // TODO Optimization, should tiff tile size determine calculation tile size or vice versa?
     char** output_driver_options = nullptr;
+#ifdef USE_GDAL_COG_DRIVER
+    GDALDriver* output_driver = GetGdalCogDriver();
+#else
+    GDALDriver* output_driver = GetGdalGeoTiffDriver();
     output_driver_options = CSLSetNameValue(output_driver_options, "TILED", "YES");
     output_driver_options = CSLSetNameValue(output_driver_options, "BLOCKXSIZE", x_tile_sz.c_str());
     output_driver_options = CSLSetNameValue(output_driver_options, "BLOCKYSIZE", y_tile_sz.c_str());
 
     auto csl_destroy = [](char** options) { CSLDestroy(options); };
     std::unique_ptr<char*, decltype(csl_destroy)> driver_opt_guard(output_driver_options, csl_destroy);
-    output_dataset = output_driver->Create(output_filename.data(), a, b, 1, GDT_Float32, output_driver_options);
+#endif
 
+    CHECK_GDAL_PTR(output_driver);
+
+    GDALDataset* output_dataset =
+        output_driver->Create(output_filename.data(), a, b, 1, GDT_Float32, output_driver_options);
     CHECK_GDAL_PTR(output_dataset);
 
     output_.first = output_filename;

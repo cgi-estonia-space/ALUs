@@ -76,7 +76,7 @@ target_link_libraries(unit-test
 # Only because of thrust::device_vector included
 target_compile_options(unit-test
        PRIVATE
-       $<$<COMPILE_LANGUAGE:CXX>:-Wno-unused-parameter>
+       $<$<COMPILE_LANGUAGE:CXX>:-Wno-unused-parameter, -Wno-unknown-pragmas>
        )
 
 set_target_properties(unit-test

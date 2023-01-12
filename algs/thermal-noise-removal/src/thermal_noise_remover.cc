@@ -319,8 +319,14 @@ std::vector<Rectangle> ThermalNoiseRemover::CalculateTiles(snapengine::Band& tar
 void ThermalNoiseRemover::CreateTargetDatasetFromProduct() {
     auto get_band_sub_swath = [](std::string_view band_name) {
         auto delimiter_pos = band_name.find('_');
+        if (delimiter_pos == std::string::npos) {
+            throw std::invalid_argument("Band name '" + std::string(band_name) + "' is in invalid format");
+        }
         const auto first_sub_string = band_name.substr(delimiter_pos + 1);
         delimiter_pos = first_sub_string.find('_');
+        if (delimiter_pos == std::string::npos) {
+            throw std::invalid_argument("Band name '" + std::string(band_name) + "' is in invalid format");
+        }
         const auto sub_swath = first_sub_string.substr(0, delimiter_pos);
         return std::string(sub_swath);
     };
