@@ -75,7 +75,8 @@ void Arguments::Construct() {
         ("polarisation,p", po::value<std::string>(&polarisation_)->required(), polarisation_help.c_str())
         ("sw", po::value<std::string>(&subswath_), "Reference scene's subswath")
         ("aoi,a", po::value<std::string>(&aoi_),
-         "Area Of Interest WKT polygon, overrules first and last burst indexes")
+         "Area Of Interest WKT polygon. Or shapefile (.shp) consisting similar geometry."
+         "Overrules first and last burst indexes and subswath selections.")
         ("dem", po::value<std::vector<std::string>>(&dem_files_)->required(),
          "DEM file(s). Only SRTM3 is currently supported.")
         ("no_mask_cor", po::bool_switch(&disable_coregistration_elevation_mask_),

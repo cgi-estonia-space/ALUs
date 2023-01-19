@@ -102,6 +102,8 @@ add_custom_target(integration-test-prepare-data ALL
         COMMAND mkdir -p ${INTEGRATION_TEST_DATA_FOLDER}/topsar-merge
         COMMAND unzip -oq ${ALUS_LFS_GOODS}/topsar_merge_test_data.zip -d ${INTEGRATION_TEST_DATA_FOLDER}/topsar-merge
 
+        COMMAND sh -c "cp ${CMAKE_CURRENT_LIST_DIR}/goods/alus_aoi* ${INTEGRATION_TEST_DATA_FOLDER}/"
+
         VERBATIM
         )
 
@@ -352,6 +354,19 @@ target_link_libraries(integration-test-tnr
 
 add_dependencies(integration-test-tnr integration-test-prepare-data)
 
+list(APPEND TEST_SOURCES_GDAL_UTIL
+        src/gdal_util_test.cc
+        )
+
+add_executable(integration-test-gdal-util ${TEST_SOURCES_GDAL_UTIL})
+
+target_link_libraries(integration-test-gdal-util
+        PRIVATE
+        gdal-util-static
+        alus-gmock-main
+        )
+add_dependencies(integration-test-gdal-util integration-test-prepare-data)
+
 #----------------Build all integration-tests----------------------------------------
 add_custom_target(integration-test-all)
 add_dependencies(integration-test-all
@@ -367,4 +382,5 @@ add_dependencies(integration-test-all
         integration-test-sentinel1-calibrate
         integration-test-prepare-data
         integration-test-topsar-merge
+        integration-test-gdal-util
         )
