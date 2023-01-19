@@ -12,6 +12,7 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 
+#include <filesystem>
 #include <iostream>
 #include <string_view>
 
@@ -26,8 +27,23 @@
 #include "cuda_device_init.h"
 #include "cuda_util.h"
 #include "execute.h"
+#include "gdal_util.h"
 
 namespace {
+
+std::string ConditionAoi(const std::optional<std::string>& aoi_arg) {
+    if (!aoi_arg.has_value()) {
+        return "";
+    }
+
+    const auto arg_val = aoi_arg.value();
+    if (!std::filesystem::exists(arg_val)) {
+        return arg_val;
+    }
+
+    return alus::ConvertToWkt(arg_val);
+}
+
 alus::calibrationroutine::Execute::Parameters AssembleParameters(const alus::calibrationroutine::Arguments& args) {
     alus::calibrationroutine::Execute::Parameters params;
     params.input = args.GetInput();
@@ -36,7 +52,7 @@ alus::calibrationroutine::Execute::Parameters AssembleParameters(const alus::cal
     params.subswath = args.GetSubswath();
     params.polarisation = args.GetPolarisation();
     params.calibration_type = args.GetCalibrationType();
-    params.aoi = args.GetAoi().value_or("");
+    params.aoi = ConditionAoi(args.GetAoi());
     params.burst_first_index = alus::calibrationroutine::INVALID_BURST_INDEX;
     params.burst_last_index = alus::calibrationroutine::INVALID_BURST_INDEX;
     if (const auto bursts = args.GetBurstIndexes(); bursts.has_value()) {

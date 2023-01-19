@@ -71,6 +71,12 @@ test_6_prod_path=$output_dir/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_03
 time alus-coh -r $test_dataset_dir/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7.SAFE -s $test_dataset_dir/S1B_IW_SLC__1SDV_20210721T055001_20210721T055028_027888_0353E2_E1B5.SAFE \
      -p VH $dem_files_arg -o $test_6_prod_path --ll info
 
+test_7_prod_path=$output_dir/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_Orb_Stack_coh_deb_tc_IW_2_3_mrg_shp.tif
+time alus-coh -r $test_dataset_dir/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7.SAFE -s $test_dataset_dir/S1B_IW_SLC__1SDV_20210721T055001_20210721T055028_027888_0353E2_E1B5.SAFE \
+     --orbit_ref $orbit_files_dir/S1A_OPER_AUX_POEORB_OPOD_20210723T121923_V20210702T225942_20210704T005942.EOF.zip \
+     --orbit_sec $orbit_files_dir/S1B_OPER_AUX_POEORB_OPOD_20210810T111942_V20210720T225942_20210722T005942.EOF.zip \
+     -p VV --aoi $test_dataset_dir/flood_bel_ger_test7_aoi.shp $dem_files_arg -o $test_7_prod_path --ll info
+
 if [[ -z "${NIGHTLY_GOLDEN_DIR}" ]]; then
   echo "no golden directory defined, no verification executed"
   exit 0
@@ -96,7 +102,10 @@ res5=$?
 echo "Validating $test_6_prod_path"
 ./alus_result_check.py -I $test_6_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_Orb_Stack_coh_deb_tc_mrg_no_orb.tif
 res6=$?
+echo "Validating $test_7_prod_path"
+./alus_result_check.py -I $test_7_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_Orb_Stack_coh_deb_tc_IW_2_3_mrg.tif
+res7=$?
 
 
 
-exit $(($res1 | $res2 | $res3 | $res4 | $res5 | $res6))
+exit $(($res1 | $res2 | $res3 | $res4 | $res5 | $res6 | $res7))

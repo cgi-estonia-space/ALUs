@@ -366,21 +366,3 @@ target_link_libraries(integration-test-gdal-util
         alus-gmock-main
         )
 add_dependencies(integration-test-gdal-util integration-test-prepare-data)
-
-#----------------Build all integration-tests----------------------------------------
-add_custom_target(integration-test-all)
-add_dependencies(integration-test-all
-        integration-test-topsar-split
-        integration-test-coregistration
-        integration-test-snap-engine
-        integration-test-coherence-cuda
-        integration-test-tc
-        integration-test-backgeocoding
-        integration-test-apply-orbit-file-op
-        integration-test-topsar-deburst-op
-        integration-sentinel1_product_reader
-        integration-test-sentinel1-calibrate
-        integration-test-prepare-data
-        integration-test-topsar-merge
-        integration-test-gdal-util
-        )
