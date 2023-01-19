@@ -87,6 +87,7 @@ public:
      */
     //    @Override  //looks like currently we don't have similar Operator concept, but we might add it
     void Initialize();
+    void InitializeWithoutUpdate();
     /**
      * write target product files using respective writers
      */

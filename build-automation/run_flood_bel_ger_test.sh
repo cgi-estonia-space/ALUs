@@ -67,6 +67,9 @@ time alus-coh -r $test_dataset_dir/S1A_IW_SLC__1SDV_20210703T055050_20210703T055
      -p VV --aoi "POLYGON((4.46044921875 50.22963791789675,4.993286132812499 50.21909462044749,4.987792968749999 50.071243660444736,4.449462890625 50.10296448723352,4.46044921875 50.22963791789675))" \
      $dem_files_arg -o $test_5_prod_path --ll info
 
+test_6_prod_path=$output_dir/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_Orb_Stack_coh_deb_tc_mrg_no_orb.tif
+time alus-coh -r $test_dataset_dir/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7.SAFE -s $test_dataset_dir/S1B_IW_SLC__1SDV_20210721T055001_20210721T055028_027888_0353E2_E1B5.SAFE \
+     -p VH $dem_files_arg -o $test_6_prod_path --ll info
 
 if [[ -z "${NIGHTLY_GOLDEN_DIR}" ]]; then
   echo "no golden directory defined, no verification executed"
@@ -90,7 +93,10 @@ res4=$?
 echo "Validating $test_5_prod_path"
 ./alus_result_check.py -I $test_5_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_Orb_Stack_coh_deb_tc_IW_2_3_mrg.tif
 res5=$?
+echo "Validating $test_6_prod_path"
+./alus_result_check.py -I $test_6_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_Orb_Stack_coh_deb_tc_mrg_no_orb.tif
+res6=$?
 
 
 
-exit $(($res1 | $res2 | $res3 | $res4 | $res5))
+exit $(($res1 | $res2 | $res3 | $res4 | $res5 | $res6))
