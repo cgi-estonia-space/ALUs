@@ -78,7 +78,9 @@ private:
     void SplitApplyOrbit(const std::string& path, size_t burst_index_start, size_t burst_index_stop,
                          std::vector<std::shared_ptr<alus::topsarsplit::TopsarSplit>>& slave_splits,
                          std::vector<std::string>& swath_selection) const;
-    const Parameters params_;
+    std::string ConditionAoi(const std::string& aoi) const;
+
+    Parameters params_;
     const std::vector<std::string>& dem_files_;
 };
 

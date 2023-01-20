@@ -81,7 +81,8 @@ std::string AdjustFilePath(std::string_view file_path) {
 
 std::string ConvertToWkt(std::string_view shp_file_path) {
 
-    auto ds = (GDALDataset*)GDALOpenEx( shp_file_path.data(), GDAL_OF_VECTOR, NULL, NULL, NULL );
+    auto ds = (GDALDataset*)GDALOpenEx( shp_file_path.data(), GDAL_OF_VECTOR, nullptr, nullptr, nullptr);
+
     CHECK_GDAL_PTR(ds);
 
     auto layers = ds->GetLayers();

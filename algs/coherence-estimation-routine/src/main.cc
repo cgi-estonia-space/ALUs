@@ -13,7 +13,6 @@
  */
 
 #include <algorithm>
-#include <filesystem>
 #include <iostream>
 #include <string>
 #include <tuple>
@@ -29,25 +28,11 @@
 #include "constants.h"
 #include "cuda_device_init.h"
 #include "cuda_util.h"
-#include "gdal_util.h"
 #include "execute.h"
 
 namespace {
 
 constexpr bool RUN_TIMELINE = COHERENCE_TIMELINE;
-
-std::string ConditionAoi(const std::optional<std::string>& aoi_arg) {
-    if (!aoi_arg.has_value()) {
-        return "";
-    }
-
-    const auto arg_val = aoi_arg.value();
-    if (!std::filesystem::exists(arg_val)) {
-        return arg_val;
-    }
-
-    return alus::ConvertToWkt(arg_val);
-}
 
 alus::coherenceestimationroutine::Execute::Parameters AssembleParameters(
     const alus::coherenceestimationroutine::Arguments& args) {
@@ -72,7 +57,7 @@ alus::coherenceestimationroutine::Execute::Parameters AssembleParameters(
     }
 
     params.mask_out_area_without_elevation = args.DoMaskOutAreaWithoutElevation();
-    params.aoi = ConditionAoi(args.GetAoi());
+    params.aoi = args.GetAoi().value_or("");
     params.orbit_reference = args.GetOrbitFileReference();
     params.orbit_secondary = args.GetOrbitFileSecondary();
     params.orbit_dir = args.GetOrbitDirectory();

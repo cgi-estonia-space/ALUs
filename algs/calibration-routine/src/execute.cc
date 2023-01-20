@@ -31,6 +31,7 @@
 #include "gdal_image_reader.h"
 #include "gdal_image_writer.h"
 #include "gdal_management.h"
+#include "gdal_util.h"
 #include "sentinel1_calibrate.h"
 #include "sentinel1_product_reader_plug_in.h"
 #include "terrain_correction.h"
@@ -57,6 +58,7 @@ namespace alus::calibrationroutine {
 Execute::Execute(Parameters params, const std::vector<std::string>& dem_files)
     : params_{std::move(params)}, dem_files_{dem_files} {
     alus::gdalmanagement::Initialize();
+    params_.aoi = ConditionAoi(params_.aoi);
 }
 
 void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
@@ -446,6 +448,15 @@ std::string Execute::TerrainCorrection(const std::shared_ptr<snapengine::Product
          << "ms";
 
     return tc_output_file;
+}
+
+
+std::string Execute::ConditionAoi(const std::string& aoi) const {
+    if (aoi.empty() or !std::filesystem::exists(aoi)) {
+        return aoi;
+    }
+
+    return alus::ConvertToWkt(aoi);
 }
 
 }  // namespace alus::calibrationroutine
