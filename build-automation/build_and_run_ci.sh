@@ -24,9 +24,9 @@ bash execute_execs.sh --gtest_output=xml:test-results/
 unit_test_success=$?
 cd ../test-integration
 is_error_then_quit
-cp ../../test-integration/integration_tests_run_all.sh .
+cp ../../build-automation/execute_execs.sh .
 is_error_then_quit
-./integration_tests_run_all.sh --gtest_output=xml:test-results/
+bash ./execute_execs.sh --gtest_output=xml:test-results/
 integration_test_success=$?
 
 exit $(($unit_test_success | $integration_test_success))

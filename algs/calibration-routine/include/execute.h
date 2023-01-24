@@ -82,8 +82,9 @@ private:
     std::string TerrainCorrection(const std::shared_ptr<snapengine::Product>& merge_product, size_t deb_product_count,
                                   std::string_view output_name, std::shared_ptr<app::DemAssistant> dem_assistant,
                                   std::string_view predefined_output_name) const;
+    std::string ConditionAoi(const std::string& aoi) const;
 
-    const Parameters params_;
+    Parameters params_;
     sentinel1calibrate::SelectedCalibrationBands calibration_types_selected_{};
     const std::vector<std::string>& dem_files_;
 };

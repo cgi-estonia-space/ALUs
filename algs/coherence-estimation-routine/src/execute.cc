@@ -32,6 +32,7 @@
 #include "gdal_image_writer.h"
 #include "gdal_management.h"
 #include "gdal_tile_writer.h"
+#include "gdal_util.h"
 #include "meta_data.h"
 #include "product.h"
 #include "s1tbx-io/sentinel1/sentinel1_product_reader_plug_in.h"
@@ -63,6 +64,7 @@ Execute::Execute(Parameters params, const std::vector<std::string>& dem_files)
     : params_{std::move(params)}, dem_files_{dem_files} {
     alus::gdalmanagement::Initialize();
     alus::gdalmanagement::SetCacheMax(GDAL_CACHE_SIZE);
+    params_.aoi = ConditionAoi(params_.aoi);
 }
 
 void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsarsplit::TopsarSplit>>& reference_splits,
@@ -562,6 +564,14 @@ void Execute::SplitApplyOrbit(const std::string& path, size_t burst_index_start,
             orbit_op->Initialize();
         }
     }
+}
+
+std::string Execute::ConditionAoi(const std::string& aoi) const {
+    if (aoi.empty() or !std::filesystem::exists(aoi)) {
+        return aoi;
+    }
+
+    return alus::ConvertToWkt(aoi);
 }
 
 Execute::~Execute() { alus::gdalmanagement::Deinitialize(); }

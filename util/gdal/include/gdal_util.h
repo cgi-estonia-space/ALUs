@@ -180,4 +180,6 @@ std::string FindOptimalTileSize(int raster_dimension);
  * @return File path with a correct prefix if needed.
  */
 std::string AdjustFilePath(std::string_view file_path);
+
+std::string ConvertToWkt(std::string_view shp_file_path);
 }  // namespace alus

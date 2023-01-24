@@ -105,7 +105,8 @@ void Arguments::Construct() {
         ("bi2", po::value<size_t>(&burst_last_index_),
             "Last burst index - starting at '1', leave unspecified for whole subswath")
         ("aoi,a", po::value<std::string>(&aoi_),
-            "Area Of Interest WKT polygon, overrules first and last burst indexes")
+         "Area Of Interest WKT polygon. Or shapefile (.shp) consisting similar geometry."
+         "Overrules first and last burst indexes and subswath selections.")
         ("type,t", po::value<std::string>(&calibration_type_)->required(), calibration_type_help.c_str())
         ("dem", po::value<std::vector<std::string>>(&dem_files_)->required(),
             "DEM file(s). Only SRTM3 is currently supported.");

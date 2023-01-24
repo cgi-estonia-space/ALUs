@@ -76,6 +76,7 @@ void Initialize() {
     GDALRegister_SENTINEL2();
     GDALRegister_netCDF();
     RegisterOGRSQLite();
+    RegisterOGRShape();
     GetGDALDriverManager()->AutoSkipDrivers();
 }
 

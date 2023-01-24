@@ -41,7 +41,7 @@ protected:
 
 TEST_F(ThermalNoiseRemovalTest, fullSubswathProcessing) {
     const std::string result_file{
-        "/tmp/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6_NR_IW1.tif"};
+        "/tmp/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6_tnr_IW1.tif"};
     std::remove(result_file.data());
 
     {
@@ -71,7 +71,7 @@ TEST_F(ThermalNoiseRemovalTest, fullSubswathProcessing) {
 
 TEST_F(ThermalNoiseRemovalTest, partialSubswathProcessing) {
     const std::string result_file{
-        "/tmp/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6_NR_IW1.tif"};
+        "/tmp/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6_tnr_IW1.tif"};
     std::remove(result_file.data());
 
     {

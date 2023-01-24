@@ -13,11 +13,11 @@
  */
 #include "gdal_util.h"
 
-#include "general_constants.h"
+#include <filesystem>
+#include <stdexcept>
 
-#include <alus_log.h>
+#include <ogrsf_frmts.h>
 
-#include <boost/filesystem/path.hpp>
 
 namespace alus {
 void GeoTiffWriteFile(GDALDataset* input_dataset, const std::string_view output_file) {
@@ -62,7 +62,7 @@ std::string FindOptimalTileSize(int raster_dimension) {
 }
 
 std::string AdjustFilePath(std::string_view file_path) {
-    const auto file_extension = boost::filesystem::path(file_path.data()).extension().string();
+    const auto file_extension = std::filesystem::path(file_path.data()).extension().string();
     if (file_extension == gdal::constants::ZIP_EXTENSION) {
         return std::string(gdal::constants::GDAL_ZIP_PREFIX).append(file_path);
     }
@@ -76,5 +76,33 @@ std::string AdjustFilePath(std::string_view file_path) {
     }
 
     throw std::invalid_argument(std::string("Unknown file extension: ").append(file_extension));
+}
+
+
+std::string ConvertToWkt(std::string_view shp_file_path) {
+
+    auto ds = (GDALDataset*)GDALOpenEx( shp_file_path.data(), GDAL_OF_VECTOR, nullptr, nullptr, nullptr);
+
+    CHECK_GDAL_PTR(ds);
+
+    auto layers = ds->GetLayers();
+    if (layers.size() != 1) {
+        throw std::invalid_argument("Expecting a shapefile with 1 layer exact.");
+    }
+
+    auto aoi_layer = layers[0];
+    if (aoi_layer->GetFeatureCount() == 0) {
+        throw std::invalid_argument("Expecting a shapefile with some features.");
+    }
+    auto* feat = aoi_layer->GetNextFeature();
+    CHECK_GDAL_PTR(feat);
+    auto gref = feat->GetGeometryRef();
+    CHECK_GDAL_PTR(gref);
+    char* wkt_shp;
+    CHECK_OGR_ERROR(gref->exportToWkt(&wkt_shp));
+    auto cpl_free = [](char* csl) { CPLFree(csl); };
+    std::unique_ptr<char, decltype(cpl_free)> guard(wkt_shp, cpl_free);
+
+    return std::string(wkt_shp);
 }
 }  // namespace alus
