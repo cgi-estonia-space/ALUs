@@ -28,15 +28,15 @@
 #include "raster_properties.h"
 #include "snap-dem/dem/dataio/earth_gravitational_model96_computation.h"
 
-#include "../../../snap-engine/srtm3_elevation_calc.cuh"
 #include "backgeocoding_utils.cuh"
 #include "cuda_util.cuh"
+#include "dem_calc.cuh"
+#include "dem_property.h"
 #include "s1tbx-commons/sentinel1_utils.cuh"
 #include "snap-dem/dem/dataio/earth_gravitational_model96.cuh"
 #include "snap-engine-utilities/engine-utilities/eo/geo_utils.cuh"
 
-namespace alus {
-namespace backgeocoding {
+namespace alus::backgeocoding {
 
 namespace {
 constexpr int index_step{20};
@@ -56,6 +56,7 @@ struct ExtendedAmountKernelArgs {
     double dt;
     size_t col_count;
     size_t row_count;
+    const dem::Property* dem_property;
 };
 
 __global__ void ComputeExtendedAmountKernel(ExtendedAmountKernelArgs args, AzimuthAndRangeBounds* result) {
@@ -84,7 +85,7 @@ __global__ void ComputeExtendedAmountKernel(ExtendedAmountKernelArgs args, Azimu
         s1tbx::GetLatitude(sentinel_index, args.latitudes, args.subswath_info->num_of_geo_points_per_line);
     double longitude =
         s1tbx::GetLongitude(sentinel_index, args.longitudes, args.subswath_info->num_of_geo_points_per_line);
-    double altitude = snapengine::srtm3elevationmodel::GetElevation(latitude, longitude, &args.tiles);
+    double altitude = snapengine::dem::GetElevation(latitude, longitude, &args.tiles, args.dem_property);
     // TODO: we may have to rewire this in the future, but no idea to where atm.
     //       (see algs/backgeocoding/src/backgeocoding.cc)
     if (altitude == snapengine::srtm3elevationmodel::NO_DATA_VALUE) {
@@ -110,7 +111,7 @@ void PrepareArguments(ExtendedAmountKernelArgs* args, PointerArray tiles,
                       snapengine::OrbitStateVectorComputation* d_orbit_state_vectors, size_t nr_of_vectors,
                       double vectors_dt, const s1tbx::SubSwathInfo& subswath_info,
                       s1tbx::DeviceSentinel1Utils* d_sentinel_1_utils, s1tbx::DeviceSubswathInfo* d_subswath_info,
-                      Rectangle& bounds, float* egm) {
+                      Rectangle& bounds, float* egm, const dem::Property* dem_property) {
     args->tiles.array = tiles.array;
     args->tiles.size = tiles.size;
 
@@ -132,6 +133,7 @@ void PrepareArguments(ExtendedAmountKernelArgs* args, PointerArray tiles,
     args->subswath_info = d_subswath_info;
 
     args->egm = egm;
+    args->dem_property = dem_property;
 }
 
 }  // namespace
@@ -141,7 +143,7 @@ cudaError_t LaunchComputeExtendedAmount(Rectangle bounds, AzimuthAndRangeBounds&
                                         double vectors_dt, const s1tbx::SubSwathInfo& subswath_info,
                                         s1tbx::DeviceSentinel1Utils* d_sentinel_1_utils,
                                         s1tbx::DeviceSubswathInfo* d_subswath_info, const PointerArray& tiles,
-                                        float* egm) {
+                                        float* egm, const dem::Property* dem_property) {
     ExtendedAmountKernelArgs args{};
 
     const int idx_max = std::numeric_limits<int>::max();
@@ -155,7 +157,7 @@ cudaError_t LaunchComputeExtendedAmount(Rectangle bounds, AzimuthAndRangeBounds&
     cuda::CopyH2D(d_az_rg_bounds.Get(), &h_az_rg_bounds);
 
     PrepareArguments(&args, tiles, d_vectors, nr_of_vectors, vectors_dt, subswath_info, d_sentinel_1_utils,
-                     d_subswath_info, bounds, egm);
+                     d_subswath_info, bounds, egm, dem_property);
 
     dim3 block_dim{20, 20};
     dim3 grid_dim(cuda::GetGridDim(block_dim.x, cuda::GetGridDim(index_step, bounds.width)),
@@ -176,5 +178,4 @@ cudaError_t LaunchComputeExtendedAmount(Rectangle bounds, AzimuthAndRangeBounds&
 
     return error;
 }
-}  // namespace backgeocoding
-}  // namespace alus
+}  // namespace alus::backgeocoding

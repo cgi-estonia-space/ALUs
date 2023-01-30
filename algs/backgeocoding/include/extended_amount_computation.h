@@ -15,6 +15,7 @@
 
 #include <driver_types.h>
 
+#include "dem_property.h"
 #include "orbit_state_vector_computation.h"
 #include "pointer_holders.h"
 #include "s1tbx-commons/sentinel1_utils_computation.h"
@@ -22,8 +23,8 @@
 #include "s1tbx-commons/subswath_info_computation.h"
 #include "shapes.h"
 
-namespace alus {
-namespace backgeocoding {
+namespace alus::backgeocoding {
+
 struct AzimuthAndRangeBounds {
     int azimuth_min;
     int azimuth_max;
@@ -37,6 +38,5 @@ cudaError_t LaunchComputeExtendedAmount(Rectangle bounds, AzimuthAndRangeBounds&
                                         const s1tbx::SubSwathInfo& subswath_info,
                                         s1tbx::DeviceSentinel1Utils* d_sentinel_1_utils,
                                         s1tbx::DeviceSubswathInfo* d_subswath_info, const PointerArray& tiles,
-                                        float* egm);
-}  // namespace backgeocoding
-}  // namespace alus
+                                        float* egm, const dem::Property* dem_property);
+}  // namespace alus::backgeocoding

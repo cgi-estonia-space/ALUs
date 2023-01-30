@@ -38,7 +38,7 @@ Srtm3ElevationModel::~Srtm3ElevationModel() {
         init_thread_.join();
     }
 
-    this->DeviceFree();
+    this->ReleaseFromDevice();
 }
 
 void Srtm3ElevationModel::ReadSrtmTilesThread() {
@@ -64,7 +64,32 @@ void Srtm3ElevationModel::ReadSrtmTilesThread() {
             srtm_data.egm = const_cast<float*>(egm_96_->GetDeviceValues());
 
             this->srtm_format_info_.push_back(srtm_data);
+
+            dem::Property prop;
+            prop.pixels_per_tile_inverted_x_axis = srtm3elevationmodel::NUM_PIXELS_PER_TILE_INVERTED;
+            prop.pixels_per_tile_inverted_y_axis = srtm3elevationmodel::NUM_PIXELS_PER_TILE_INVERTED;
+            prop.pixels_per_tile_x_axis = srtm3elevationmodel::NUM_PIXELS_PER_TILE;
+            prop.pixels_per_tile_y_axis = srtm3elevationmodel::NUM_PIXELS_PER_TILE;
+            prop.tiles_x_axis = srtm3elevationmodel::NUM_X_TILES;
+            prop.tiles_y_axis = srtm3elevationmodel::NUM_Y_TILES;
+            prop.raster_width = srtm3elevationmodel::RASTER_WIDTH;
+            prop.raster_height = srtm3elevationmodel::RASTER_HEIGHT;
+            prop.no_data_value = srtm3elevationmodel::NO_DATA_VALUE;
+            prop.pixel_size_degrees_x_axis = srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE;
+            prop.pixel_size_degrees_y_axis = srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE;
+            prop.pixel_size_degrees_inverted_x_axis =
+                srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED;
+            prop.pixel_size_degrees_inverted_y_axis =
+                srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED;
+            prop.lat_coverage = srtm3elevationmodel::MAX_LAT_COVERAGE;
+            prop.lon_coverage = srtm3elevationmodel::MAX_LON_COVERAGE;
+            prop.lat_origin = srtm_data.m12;
+            prop.lat_extent = prop.lat_origin + (ds.GetRasterSizeY() * ds.GetPixelSizeLat());
+            prop.lon_origin = srtm_data.m02;
+            prop.lon_extent = prop.lon_origin + (ds.GetRasterSizeX() * ds.GetPixelSizeLon());
+            dem_property_host_.push_back(prop);
         }
+
     } catch (const std::exception&) {
         elevation_exception_ = std::current_exception();
     }
@@ -136,6 +161,13 @@ void Srtm3ElevationModel::HostToDeviceThread() {
             CHECK_CUDA_ERR(cudaMemcpy(this->device_formated_srtm_buffers_info_, temp_tiles.data(),
                                       nr_of_tiles * sizeof(PointerHolder), cudaMemcpyHostToDevice));
             device_srtm3_tiles_count_ = nr_of_tiles;
+
+            const auto dem_property_count = dem_property_host_.size();
+            CHECK_CUDA_ERR(cudaMalloc(&dem_property_, sizeof(dem::Property) * dem_property_count));
+            for (size_t i = 0; i < dem_property_count; i++) {
+                CHECK_CUDA_ERR(cudaMemcpy(dem_property_ + i, dem_property_host_.data() + i, sizeof(dem::Property),
+                                          cudaMemcpyHostToDevice));
+            }
         } catch (const std::exception&) {
             elevation_exception_ = std::current_exception();
         }
@@ -147,15 +179,13 @@ void Srtm3ElevationModel::HostToDeviceThread() {
     copy_var_.notify_all();
 }
 
-void Srtm3ElevationModel::HostToDevice() {
+void Srtm3ElevationModel::TransferToDevice() {
     if (!copy_thread_.joinable()) {
         copy_thread_ = std::thread(&Srtm3ElevationModel::HostToDeviceThread, this);
     }
 }
 
-void Srtm3ElevationModel::DeviceToHost() { CHECK_CUDA_ERR(cudaErrorNotYetImplemented); }
-
-void Srtm3ElevationModel::DeviceFree() {
+void Srtm3ElevationModel::ReleaseFromDevice() {
     if (device_formated_srtm_buffers_info_ != nullptr) {
         LOGI << "Unloading SRTM3 tiles from GPU";
         REPORT_WHEN_CUDA_ERR(cudaFree(this->device_formated_srtm_buffers_info_));
@@ -166,9 +196,14 @@ void Srtm3ElevationModel::DeviceFree() {
         REPORT_WHEN_CUDA_ERR(cudaFree(buf));
     }
     this->device_formated_srtm_buffers_.clear();
+
+    if (dem_property_ != nullptr) {
+        REPORT_WHEN_CUDA_ERR(cudaFree(dem_property_));
+        dem_property_ = nullptr;
+    }
 }
 
-PointerHolder* Srtm3ElevationModel::GetSrtmBuffersInfo() {
+PointerHolder* Srtm3ElevationModel::GetBuffers() {
     std::unique_lock info_lock(info_mutex_);
     copy_var_.wait(info_lock, [this]() { return is_on_device_; });
 
@@ -177,7 +212,7 @@ PointerHolder* Srtm3ElevationModel::GetSrtmBuffersInfo() {
     }
     return device_formated_srtm_buffers_info_;
 }
-size_t Srtm3ElevationModel::GetDeviceSrtm3TilesCount() {
+size_t Srtm3ElevationModel::GetTileCount() {
     std::unique_lock buffer_lock(buffer_mutex_);
     copy_var_.wait(buffer_lock, [this]() { return is_on_device_; });
 
@@ -185,6 +220,26 @@ size_t Srtm3ElevationModel::GetDeviceSrtm3TilesCount() {
         std::rethrow_exception(elevation_exception_);
     }
     return device_srtm3_tiles_count_;
+}
+
+const dem::Property* Srtm3ElevationModel::GetProperties() {
+    std::unique_lock info_lock(info_mutex_);
+    copy_var_.wait(info_lock, [this]() { return is_on_device_; });
+
+    if (elevation_exception_ != nullptr) {
+        std::rethrow_exception(elevation_exception_);
+    }
+    return dem_property_;
+}
+
+const std::vector<dem::Property>& Srtm3ElevationModel::GetPropertiesValue() {
+    std::unique_lock info_lock(info_mutex_);
+    copy_var_.wait(info_lock, [this]() { return is_on_device_; });
+
+    if (elevation_exception_ != nullptr) {
+        std::rethrow_exception(elevation_exception_);
+    }
+    return dem_property_host_;
 }
 
 }  // namespace alus::snapengine

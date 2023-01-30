@@ -80,7 +80,7 @@ private:
                std::vector<std::string>& output_names, std::shared_ptr<snapengine::Product>& merge_output) const;
 
     std::string TerrainCorrection(const std::shared_ptr<snapengine::Product>& merge_product, size_t deb_product_count,
-                                  std::string_view output_name, std::shared_ptr<app::DemAssistant> dem_assistant,
+                                  std::string_view output_name, std::shared_ptr<dem::Assistant> dem_assistant,
                                   std::string_view predefined_output_name) const;
     std::string ConditionAoi(const std::string& aoi) const;
 

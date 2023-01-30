@@ -1,7 +1,6 @@
 
 list(APPEND APP_UNIT_TEST_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/algorithm_parameters.cc
-        ${CMAKE_CURRENT_LIST_DIR}/dem_assistant.cc
         )
 
 add_executable(app-unit-test ${APP_UNIT_TEST_SOURCES})

@@ -24,6 +24,7 @@
 #include "alus_file_reader.h"
 #include "alus_file_writer.h"
 #include "backgeocoding.h"
+#include "dem_property.h"
 #include "pointer_holders.h"
 #include "snap-core/core/datamodel/product.h"
 
@@ -59,7 +60,7 @@ public:
     BackgeocodingController& operator=(const BackgeocodingController&) = delete;
 
     void PrepareToCompute(const float* egm96_device_Array, PointerArray srtm3_tiles,
-                          bool mask_out_area_without_elevation);
+                          bool mask_out_area_without_elevation, const dem::Property* dem_property);
     void RegisterException(std::exception_ptr e);
     void ReadMaster(Rectangle master_area, int16_t* i_tile, int16_t* q_tile) const;
     PositionComputeResults PositionCompute(int m_burst_index, int s_burst_index, Rectangle target_area,

@@ -13,7 +13,7 @@
  */
 #include "srtm3_test_util.cuh"
 
-#include "srtm3_elevation_calc.cuh"
+#include "dem_calc.cuh"
 
 namespace alus {
 namespace tests {
@@ -22,7 +22,7 @@ __global__ void SRTM3AltitudeTester(double* lats, double* lons, double* results,
     const int idx = threadIdx.x + (blockDim.x * blockIdx.x);
 
     if (idx < data.size) {
-        results[idx] = snapengine::srtm3elevationmodel::GetElevation(lats[idx], lons[idx], &data.tiles);
+        results[idx] = snapengine::dem::GetElevation(lats[idx], lons[idx], &data.tiles, data.dem_property);
     }
 }
 

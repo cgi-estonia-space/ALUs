@@ -52,9 +52,11 @@ BackgeocodingController::BackgeocodingController(std::shared_ptr<AlusFileReader<
       master_product_(std::move(master_product)),
       slave_product_(std::move(slave_product)) {}
 
-void BackgeocodingController::PrepareToCompute(const float* egm96_device_array, PointerArray srtm3_tiles, bool mask_out_area_without_elevation) {
+void BackgeocodingController::PrepareToCompute(const float* egm96_device_array, PointerArray srtm3_tiles,
+                                               bool mask_out_area_without_elevation,
+                                               const dem::Property* dem_property) {
     backgeocoding_ = std::make_unique<Backgeocoding>();
-    backgeocoding_->SetElevationData(egm96_device_array, srtm3_tiles, mask_out_area_without_elevation);
+    backgeocoding_->SetElevationData(egm96_device_array, srtm3_tiles, mask_out_area_without_elevation, dem_property);
     if (beam_dimap_mode_) {
         backgeocoding_->PrepareToCompute(master_metadata_file_, slave_metadata_file_);
     } else {
@@ -196,7 +198,7 @@ void BackgeocodingController::Initialize() {
     s1tbx::Sentinel1Utils* master_utils = backgeocoding_->GetMasterUtils();
 
     std::vector<std::string> m_sub_swath_names = master_utils->GetSubSwathNames();
-    //std::vector<std::string> m_polarizations = master_utils->GetPolarizations();
+    // std::vector<std::string> m_polarizations = master_utils->GetPolarizations();
 
     // TODO(unknown): not checking any of that. Is it needed?
     /*for(SlaveData slaveData : slaveDataList) {

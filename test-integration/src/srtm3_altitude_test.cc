@@ -112,12 +112,13 @@ TEST(SRTM3, altitudeCalc) {
     std::vector<std::string> files{"./goods/srtm_41_01.tif", "./goods/srtm_42_01.tif"};
     alus::snapengine::Srtm3ElevationModel srtm_3_dem(files);
     srtm_3_dem.ReadSrtmTiles(egm_96);
-    srtm_3_dem.HostToDevice();
+    srtm_3_dem.TransferToDevice();
 
     SRTM3TestData calc_data;
     calc_data.size = tester.size_;
-    calc_data.tiles.array = srtm_3_dem.GetSrtmBuffersInfo();
-    calc_data.tiles.size = srtm_3_dem.GetDeviceSrtm3TilesCount();
+    calc_data.tiles.array = srtm_3_dem.GetBuffers();
+    calc_data.tiles.size = srtm_3_dem.GetTileCount();
+    calc_data.dem_property = srtm_3_dem.GetProperties();
 
     CHECK_CUDA_ERR(LaunchSRTM3AltitudeTester(grid_size, block_size, tester.device_lats_, tester.device_lons_,
                                              tester.device_alts_, calc_data));

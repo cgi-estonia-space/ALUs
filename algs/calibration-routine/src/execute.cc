@@ -120,10 +120,10 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
     tnr_products.clear();
     tnr_datasets.clear();
 
-    auto dem_assistant = app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(dem_files_);
+    auto dem_assistant = dem::Assistant::CreateFormattedDemTilesOnGpuFrom(dem_files_);
     // start thread for srtm calculations parallel with CPU deburst
     // rethink this part if we add support for larger GPUs with full chain on GPU processing
-    dem_assistant->GetSrtm3Manager()->HostToDevice();
+    dem_assistant->GetElevationManager()->TransferToDevice();
 
     if (params_.wif) {
         for (size_t i = 0; i < output_names.size(); i++) {
@@ -411,14 +411,14 @@ void Execute::Merge(const std::vector<std::shared_ptr<snapengine::Product>>& deb
 }
 std::string Execute::TerrainCorrection(const std::shared_ptr<snapengine::Product>& merge_product,
                                        size_t deb_product_count, std::string_view output_name,
-                                       std::shared_ptr<app::DemAssistant> dem_assistant,
+                                       std::shared_ptr<dem::Assistant> dem_assistant,
                                        std::string_view predefined_output_name) const {
     const auto tc_start = std::chrono::steady_clock::now();
 
     terraincorrection::Metadata metadata(merge_product);
 
-    const auto* d_srtm_3_tiles = dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo();
-    const size_t srtm_3_tiles_length = dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount();
+    const auto* d_dem_tiles = dem_assistant->GetElevationManager()->GetBuffers();
+    const size_t dem_tiles_length = dem_assistant->GetElevationManager()->GetTileCount();
     const int selected_band{1};
 
     // unfortunately have to assume this downcast is valid, because TC does not use the ImageWriter interface
@@ -439,7 +439,9 @@ std::string Execute::TerrainCorrection(const std::shared_ptr<snapengine::Product
     const auto y_tile_size = total_dimension_edge - x_tile_size;
 
     terraincorrection::TerrainCorrection tc(tc_in_dataset, metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
-                                            metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length,
+                                            metadata.GetLonTiePointGrid(), d_dem_tiles, dem_tiles_length,
+                                            dem_assistant->GetElevationManager()->GetProperties(),
+                                            dem_assistant->GetElevationManager()->GetPropertiesValue(),
                                             selected_band);
     std::string tc_output_file = predefined_output_name.empty()
                                      ? boost::filesystem::change_extension(output_name.data(), "").string() + "_tc.tif"

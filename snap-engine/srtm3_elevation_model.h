@@ -20,8 +20,9 @@
 #include <thread>
 #include <vector>
 
-#include "cuda_friendly_object.h"
 #include "dataset.h"
+#include "dem_aggregation.h"
+#include "dem_property.h"
 #include "pointer_holders.h"
 #include "shapes.h"
 #include "snap-dem/dem/dataio/earth_gravitational_model96.h"
@@ -38,13 +39,16 @@ namespace alus::snapengine {
     This class is given the tile coordinates using a map and then it finds those tiles, formats them and
     makes them available on the gpu.
 */
-class Srtm3ElevationModel : public cuda::CudaFriendlyObject {
+class Srtm3ElevationModel : public dem::Aggregation {
 private:
     std::vector<std::string> file_names_;
     std::vector<Dataset<float>> srtms_;
     // use this for cudaFree once you are done with image.
     std::vector<float*> device_formated_srtm_buffers_;
     PointerHolder* device_formated_srtm_buffers_info_{nullptr};
+    std::vector<dem::Property> dem_property_host_;
+    dem::Property* dem_property_{nullptr};
+
     size_t device_srtm3_tiles_count_;
     std::vector<Srtm3FormatComputation> srtm_format_info_;
 
@@ -70,12 +74,13 @@ public:
     virtual ~Srtm3ElevationModel();
 
     void ReadSrtmTiles(std::shared_ptr<EarthGravitationalModel96>& egm_96);
-    PointerHolder* GetSrtmBuffersInfo();
-    size_t GetDeviceSrtm3TilesCount();
+    PointerHolder* GetBuffers() override;
+    size_t GetTileCount() override;
+    const dem::Property* GetProperties() override;
+    const std::vector<dem::Property>& GetPropertiesValue() override;
 
-    void HostToDevice() override;
-    void DeviceToHost() override;
-    void DeviceFree() override;
+    void TransferToDevice() override;
+    void ReleaseFromDevice() override;
 
     constexpr static int GetTileWidthInDegrees() { return srtm3elevationmodel::DEGREE_RES; }
     constexpr static int GetTileWidth() { return srtm3elevationmodel::TILE_WIDTH_PIXELS; }

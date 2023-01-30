@@ -14,7 +14,7 @@
 #include <cmath>
 #include <cstddef>
 
-#include "../../../snap-engine/srtm3_elevation_calc.cuh"
+#include "dem_calc.cuh"
 #include "get_position.cuh"
 #include "math_utils.cuh"
 #include "range_doppler_geocoding.cuh"
@@ -160,8 +160,8 @@ __global__ void GetSourceRectangleKernel(TcTileCoordinates tile_coordinates, Get
     if (args.use_avg_scene_height) {
         altitude = args.avg_scene_height;
     } else {
-        altitude = snapengine::srtm3elevationmodel::GetElevation(coordinates.lat, coordinates.lon,
-                                                                 const_cast<PointerArray*>(&args.srtm_3_tiles));
+        altitude = snapengine::dem::GetElevation(coordinates.lat, coordinates.lon,
+                                                                 const_cast<PointerArray*>(&args.srtm_3_tiles), args.dem_property);
         if (altitude == args.dem_no_data_value) {
             args.d_azimuth_index[index] = CUDART_NAN;
             return;

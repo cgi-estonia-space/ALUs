@@ -15,17 +15,19 @@
 
 #include <driver_types.h>
 
+#include "dem_property.h"
 #include "orbit_state_vector_computation.h"
 #include "pointer_holders.h"
 #include "s1tbx-commons/sentinel1_utils_computation.h"
 #include "s1tbx-commons/subswath_info_computation.h"
 
-namespace alus {
-namespace backgeocoding {
+namespace alus::backgeocoding {
+
 struct BurstOffsetKernelArgs {
     double* latitudes;
     double* longitudes;
     PointerArray srtm3_tiles;
+    const dem::Property* dem_property_;
     int* burst_offset;
 
     const s1tbx::DeviceSubswathInfo* master_subswath_info;
@@ -45,5 +47,4 @@ struct BurstOffsetKernelArgs {
 };
 
 cudaError_t LaunchBurstOffsetKernel(BurstOffsetKernelArgs& args, int* burst_offset);
-}  // namespace backgeocoding
-}  // namespace alus
+}  // namespace alus::backgeocoding

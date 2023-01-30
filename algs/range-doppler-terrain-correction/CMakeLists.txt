@@ -25,6 +25,7 @@ target_link_libraries(terrain-correction-static
         PUBLIC
         cuda-util-static
         common-util-static
+        dem-util-static
         exotic-operations-static
         gdal-util-static
         snap-engine-static

@@ -137,6 +137,7 @@ target_link_libraries(integration-test-coregistration
         backgeocoding-static
         apply-orbit-file-op-static
         coregistration-static
+        dem-util-static
         )
 
 add_dependencies(integration-test-coregistration integration-test-prepare-data)
@@ -214,7 +215,7 @@ target_link_libraries(integration-test-backgeocoding
         snap-engine-static
         gdal-util-static
         exotic-operations-static
-        app-util-static
+        dem-util-static
         )
 
 add_dependencies(integration-test-backgeocoding integration-test-prepare-data)

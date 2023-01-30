@@ -8,7 +8,6 @@ list(APPEND TEST_SOURCES
         src/dataset_test.cc
         src/terrain_correction_test.cc
         src/terrain_correction_test_kernels.cu
-        src/dem_test.cc
         src/orbit_state_vectors_test.cc
         src/sentinel1_test.cc
         src/geo_utils_test.cc

@@ -34,6 +34,7 @@ target_link_libraries(alus-coh
         topsar-merge-static
         terrain-correction-static
         common-util-static
+        dem-util-static
         )
 
 target_link_libraries(alus-coht
@@ -49,6 +50,7 @@ target_link_libraries(alus-coht
         topsar-merge-static
         terrain-correction-static
         common-util-static
+        dem-util-static
         )
 
 target_compile_definitions(alus-coh PRIVATE COHERENCE_TIMELINE=0)

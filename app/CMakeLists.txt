@@ -6,7 +6,6 @@ list(APPEND APP_INCLUDE_DIRS
 list(APPEND APP_UTIL_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/algorithm_parameters.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/app_utils.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/dem_assistant.cc
         )
 add_library(app-util-static STATIC ${APP_UTIL_SOURCES})
 target_include_directories(app-util-static
@@ -16,7 +15,6 @@ target_include_directories(app-util-static
 target_link_libraries(app-util-static
         PUBLIC
         Boost::program_options
-        snap-engine-static
         )
 set_target_properties(app-util-static
         PROPERTIES

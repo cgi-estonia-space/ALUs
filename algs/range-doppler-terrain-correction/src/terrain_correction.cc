@@ -73,6 +73,7 @@ void FreeThreadContext(alus::terraincorrection::PerThreadData* ctx) {
 }
 
 namespace alus::terraincorrection {
+
 struct TerrainCorrection::SharedThreadData {
     // read-write access, must explictly synchronize between threads
     ThreadSafeTileQueue<TcTileCoordinates> tile_queue;
@@ -170,11 +171,15 @@ TerrainCorrection::TerrainCorrection(GDALDataset* input_dataset, const RangeDopp
                                      const snapengine::tiepointgrid::TiePointGrid& lat_tie_point_grid,
                                      const snapengine::tiepointgrid::TiePointGrid& lon_tie_point_grid,
                                      const PointerHolder* srtm_3_tiles, size_t srtm_3_tiles_length,
-                                     int selected_band_id, bool use_average_scene_height)
+                                     const dem::Property* dem_property,
+                                     const std::vector<dem::Property>& dem_property_value, int selected_band_id,
+                                     bool use_average_scene_height)
     : input_ds_{input_dataset},
       metadata_{metadata},
       d_srtm_3_tiles_(srtm_3_tiles),
       d_srtm_3_tiles_length_(srtm_3_tiles_length),
+      dem_property_{dem_property},
+      dem_property_value_{dem_property_value},
       selected_band_id_(selected_band_id),
       lat_tie_point_grid_{lat_tie_point_grid},
       lon_tie_point_grid_{lon_tie_point_grid},
@@ -448,8 +453,10 @@ void TerrainCorrection::CalculateTile(TcTileCoordinates tile_coordinates, Shared
     src_args.get_position_metadata = shared->terrain_correction->d_get_position_metadata_;
     src_args.use_avg_scene_height = shared->terrain_correction->use_average_scene_height_;
     src_args.avg_scene_height = shared->terrain_correction->metadata_.avg_scene_height;
-    // TODO: value should originate from DEM dataset (SNAPGPU-193)
-    src_args.dem_no_data_value = snapengine::srtm3elevationmodel::NO_DATA_VALUE;
+    src_args.dem_property = shared->terrain_correction->dem_property_;
+    if (!shared->terrain_correction->use_average_scene_height_) {
+        src_args.dem_no_data_value = shared->terrain_correction->dem_property_value_.front().no_data_value;
+    }
     src_args.source_image_width = band->GetXSize();
     src_args.source_image_height = band->GetYSize();
     src_args.diff_lat = shared->diff_lat;

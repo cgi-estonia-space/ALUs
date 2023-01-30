@@ -27,9 +27,9 @@ namespace {
 constexpr std::string_view TIF_EXTENSION{".tif"};
 }
 
-namespace alus::app {
+namespace alus::dem {
 
-bool DemAssistant::ArgumentsExtract::IsValid(std::string_view dem_file) {
+bool Assistant::ArgumentsExtract::IsValidSrtm3Filename(std::string_view dem_file) {
     const auto extension = boost::filesystem::path(dem_file.data()).extension().string();
     bool is_valid = extension == TIF_EXTENSION;
     if (extension == gdal::constants::ZIP_EXTENSION) {
@@ -41,7 +41,7 @@ bool DemAssistant::ArgumentsExtract::IsValid(std::string_view dem_file) {
     return is_valid;
 }
 
-std::vector<std::string> DemAssistant::ArgumentsExtract::ExtractSrtm3Files(
+std::vector<std::string> Assistant::ArgumentsExtract::ExtractSrtm3Files(
     const std::vector<std::string>& cmd_line_arguments) {
     std::vector<std::string> srtm3_files{};
     for (auto&& arg : cmd_line_arguments) {
@@ -49,16 +49,42 @@ std::vector<std::string> DemAssistant::ArgumentsExtract::ExtractSrtm3Files(
         boost::split(argument_values, arg, boost::is_any_of("\t "));
 
         for (const auto& value : argument_values) {
-            if (!IsValid(arg)) {
-                throw std::invalid_argument("Invalid DEM file - " + arg);
+            if (!IsValidSrtm3Filename(arg)) {
+                throw std::invalid_argument("Following filename - '" + arg + "' - is not a SRTM3 format");
             }
 
-            srtm3_files.push_back(AdjustSrtm3Path(value));
+            srtm3_files.push_back(AdjustZipPath(value));
         }
     }
     return srtm3_files;
 }
-std::string DemAssistant::ArgumentsExtract::AdjustSrtm3Path(std::string_view path) {
+
+bool Assistant::ArgumentsExtract::IsValidCopDem30mFilename(std::string_view filename) {
+    (void)filename;
+    const auto extension = boost::filesystem::path(filename.data()).extension().string();
+    if (extension != TIF_EXTENSION) {
+        return false;
+    }
+
+    std::vector<std::string> filename_items{};
+    boost::split(filename_items, filename, boost::is_any_of("_"));
+
+
+
+    return true;
+}
+
+std::vector<std::string> Assistant::ArgumentsExtract::ExtractCopDem30mFiles(
+    const std::vector<std::string>& cmd_line_arguments) {
+    (void)cmd_line_arguments;
+
+    // if (!IsValidCopDem30mFilename(cmd_line_arguments))
+    throw std::invalid_argument("Following filename - '" + std::string("") + "' - is not a Cop DEM 30m DGED format");
+
+    return {};
+}
+
+std::string Assistant::ArgumentsExtract::AdjustZipPath(std::string_view path) {
     if (const auto file_path = boost::filesystem::path(path.data());
         file_path.extension().string() == gdal::constants::ZIP_EXTENSION) {
         const auto tiff_name = boost::filesystem::change_extension(file_path.leaf(), TIF_EXTENSION.data());
@@ -67,15 +93,15 @@ std::string DemAssistant::ArgumentsExtract::AdjustSrtm3Path(std::string_view pat
     return path.data();
 }
 
-std::shared_ptr<DemAssistant> DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(
+std::shared_ptr<Assistant> Assistant::CreateFormattedDemTilesOnGpuFrom(
     const std::vector<std::string>& cmd_line_arguments) {
-    return std::make_shared<DemAssistant>(DemAssistant::ArgumentsExtract::ExtractSrtm3Files(cmd_line_arguments));
+    return std::make_shared<Assistant>(Assistant::ArgumentsExtract::ExtractSrtm3Files(cmd_line_arguments));
 }
 
-DemAssistant::DemAssistant(std::vector<std::string> srtm3_files)
+Assistant::Assistant(std::vector<std::string> srtm3_files)
     : model_(std::move(srtm3_files)), egm96_{std::make_shared<snapengine::EarthGravitationalModel96>()} {
     egm96_->HostToDevice();
     model_.ReadSrtmTiles(egm96_);
 }
 
-}  // namespace alus::app
+}  // namespace alus::dem

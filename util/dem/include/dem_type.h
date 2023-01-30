@@ -11,20 +11,11 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
+
 #pragma once
 
-#include "dem_property.h"
-#include "pointer_holders.h"
+namespace alus::dem {
 
-namespace alus::tests {
+enum class Type { SRTM3, COPDEM30m };
 
-struct SRTM3TestData {
-    int size;
-    PointerArray tiles;
-    const dem::Property* dem_property;
-};
-
-cudaError_t LaunchSRTM3AltitudeTester(dim3 grid_size, dim3 block_size, double* lats, double* lons, double* results,
-                                      SRTM3TestData data);
-
-}  // namespace alus::tests
+}

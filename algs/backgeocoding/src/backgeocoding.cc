@@ -67,8 +67,9 @@ void Backgeocoding::PrepareToCompute(std::string_view master_metadata_file, std:
 
 void Backgeocoding::PrepareToComputeBody() {
     // Exclusively supporting srtm3 atm
-    dem_sampling_lat_ = static_cast<double>(snapengine::Srtm3ElevationModel::GetTileWidthInDegrees()) /
-                        static_cast<double>(snapengine::Srtm3ElevationModel::GetTileWidth());
+    dem_sampling_lat_ =
+        static_cast<double>(snapengine::Srtm3ElevationModel::GetTileWidthInDegrees()) /
+        static_cast<double>(snapengine::Srtm3ElevationModel::GetTileWidth());  // REPLACE with dem property.
     dem_sampling_lon_ = dem_sampling_lat_;
 
     slave_utils_->ComputeDopplerRate();
@@ -198,7 +199,7 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index, int s_burst_index, Rec
     double lon_max = lat_lon_min_max.at(3) + extralon;
 
     double upper_left_x =
-        (lon_min + 180.0) * snapengine::srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED;
+        (lon_min + 180.0) * snapengine::srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED; // TODO Replace with dynamic properties
     double upper_left_y =
         (60.0 - lat_max) * snapengine::srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED;
     double lower_right_x =
@@ -214,6 +215,7 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index, int s_burst_index, Rec
     calc_data.num_lines = calc_data.lat_min_idx - calc_data.lat_max_idx;
     calc_data.num_pixels = calc_data.lon_max_idx - calc_data.lon_min_idx;
     calc_data.tiles = srtm3_tiles_;
+    calc_data.dem_property = dem_property_;
     calc_data.egm = egm96_device_array_;
     calc_data.max_lats = alus::snapengine::earthgravitationalmodel96computation::MAX_LATS;
     calc_data.max_lons = alus::snapengine::earthgravitationalmodel96computation::MAX_LONS;
@@ -364,6 +366,7 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index, int s_burst_index, Rec
         mask_data.mask_out_area_without_elevation = mask_out_area_without_elevation_;
         mask_data.size = array_size;
         mask_data.tiles = srtm3_tiles_;
+        mask_data.dem_property = dem_property_;
 
         int not_invalid_counter = 0;
 
@@ -455,11 +458,12 @@ AzimuthAndRangeBounds Backgeocoding::ComputeExtendedAmount(int x_0, int y_0, int
         {x_0, y_0, w, h}, extended_amount, d_master_orbit_vectors_.array, d_master_orbit_vectors_.size,
         master_utils_->GetOrbitStateVectors()->GetDt(), *master_utils_->subswath_.at(0),
         master_utils_->device_sentinel_1_utils_, master_utils_->subswath_.at(0)->device_subswath_info_, srtm3_tiles_,
-        const_cast<float*>(egm96_device_array_)));
+        const_cast<float*>(egm96_device_array_), dem_property_));
     return extended_amount;
 }
 
 void PrepareBurstOffsetKernelArguments(BurstOffsetKernelArgs& args, PointerArray srtm3_tiles,
+                                       const dem::Property* dem_property,
                                        s1tbx::Sentinel1Utils* master_utils, s1tbx::Sentinel1Utils* slave_utils) {
     s1tbx::OrbitStateVectors* master_vectors = master_utils->GetOrbitStateVectors();
     s1tbx::OrbitStateVectors* slave_vectors = slave_utils->GetOrbitStateVectors();
@@ -481,6 +485,7 @@ void PrepareBurstOffsetKernelArguments(BurstOffsetKernelArgs& args, PointerArray
 
     args.srtm3_tiles.array = srtm3_tiles.array;
     args.srtm3_tiles.size = srtm3_tiles.size;
+    args.dem_property_ = dem_property;
 
     args.master_sentinel_utils = master_utils->device_sentinel_1_utils_;
     args.master_subswath_info = master_utils->subswath_.at(0)->device_subswath_info_;
@@ -524,7 +529,8 @@ void FreeBurstOffsetArguments(BurstOffsetKernelArgs& args) {
 int Backgeocoding::ComputeBurstOffset() {
     BurstOffsetKernelArgs args{};
 
-    PrepareBurstOffsetKernelArguments(args, srtm3_tiles_, this->master_utils_.get(), this->slave_utils_.get());
+    PrepareBurstOffsetKernelArguments(args, srtm3_tiles_, dem_property_, this->master_utils_.get(),
+                                      this->slave_utils_.get());
 
     int burst_offset;
     CHECK_CUDA_ERR(LaunchBurstOffsetKernel(args, &burst_offset));

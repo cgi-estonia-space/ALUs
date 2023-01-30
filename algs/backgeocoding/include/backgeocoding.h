@@ -18,6 +18,7 @@
 #include <string_view>
 #include <vector>
 
+#include "dem_property.h"
 #include "extended_amount_computation.h"
 #include "kernel_array.h"
 #include "orbit_state_vector_computation.h"
@@ -75,10 +76,11 @@ public:
     [[nodiscard]] s1tbx::Sentinel1Utils* GetSlaveUtils() const { return slave_utils_.get(); }
 
     void SetElevationData(const float* egm96_device_array, PointerArray srtm3_tiles,
-                          bool mask_out_area_without_elevation) {
+                          bool mask_out_area_without_elevation, const dem::Property* dem_property) {
         egm96_device_array_ = egm96_device_array;
         srtm3_tiles_ = srtm3_tiles;
         mask_out_area_without_elevation_ = mask_out_area_without_elevation;
+        dem_property_ = dem_property;
     }
 
 private:
@@ -104,6 +106,7 @@ private:
 
     const float* egm96_device_array_;
     PointerArray srtm3_tiles_;
+    const dem::Property* dem_property_;
     bool mask_out_area_without_elevation_ = true;
 
     std::vector<double> ComputeImageGeoBoundary(s1tbx::SubSwathInfo* sub_swath, int burst_index, int x_min, int x_max,

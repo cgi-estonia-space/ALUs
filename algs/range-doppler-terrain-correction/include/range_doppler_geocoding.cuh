@@ -62,12 +62,12 @@ inline __device__ __host__ void GetSubTileData(const snapengine::resampling::Til
 inline __device__ double Resample(PointerArray* tiles, snapengine::resampling::ResamplingIndex* index, int raster_width,
                                   double no_value, int use_no_data,
                                   int get_samples_function(PointerArray*, int*, int*, double*, int, int, double, int)) {
-    return snapengine::bilinearinterpolation::Resample(tiles, index, raster_width, no_value, use_no_data,
+    return snapengine::bilinearinterpolation::ResampleNoDem(tiles, index, raster_width, no_value, use_no_data,
                                                        get_samples_function);
 }
 
 inline __device__ int GetSamples(PointerArray* tiles, int* x_values, int* y_values, double* samples, int width,
-                                 int height, double no_value, int use_no_data) {
+                                 int, double , int ) {
     bool all_valid = true;
     auto* values = (float*)tiles->array[0].pointer;
 

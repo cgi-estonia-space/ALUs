@@ -16,7 +16,7 @@
 #include "backgeocoding_constants.h"
 #include "position_data.h"
 
-#include "../../../snap-engine/srtm3_elevation_calc.cuh"
+#include "dem_calc.cuh"
 #include "backgeocoding_utils.cuh"
 #include "math_utils.cuh"
 #include "snap-engine-utilities/engine-utilities/eo/geo_utils.cuh"
@@ -34,7 +34,7 @@ __global__ void ComputeBurstOffsetKernel(BurstOffsetKernelArgs args) {
     const double latitude = args.latitudes[index_y * args.width + index_x];
     const double longitude = args.longitudes[index_x + index_y * args.width];
 
-    const double altitude = snapengine::srtm3elevationmodel::GetElevation(latitude, longitude, &args.srtm3_tiles);
+    const double altitude = snapengine::dem::GetElevation(latitude, longitude, &args.srtm3_tiles, args.dem_property_);
     if (altitude == snapengine::srtm3elevationmodel::NO_DATA_VALUE) {
         return;
     }

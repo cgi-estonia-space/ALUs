@@ -34,6 +34,7 @@ target_link_libraries(alus-palsar-focus
         app-util-static
         common-util-static
         cufft
+        pugixml-static
         )
 
 set_target_properties(alus-palsar-focus

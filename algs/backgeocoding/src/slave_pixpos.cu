@@ -15,9 +15,9 @@
 
 #include <cstdio>
 
-#include "../../../snap-engine/srtm3_elevation_calc.cuh"
 #include "backgeocoding_constants.h"
 #include "backgeocoding_utils.cuh"
+#include "dem_calc.cuh"
 #include "position_data.h"
 #include "snap-dem/dem/dataio/earth_gravitational_model96.cuh"
 #include "snap-engine-utilities/engine-utilities/eo/geo_utils.cuh"
@@ -59,7 +59,7 @@ __global__ void SlavePixPos(SlavePixPosData calc_data) {
     calc_data.device_lats[my_index] = geo_pos_lat;
     calc_data.device_lons[my_index] = geo_pos_lon;
 
-    alt = snapengine::srtm3elevationmodel::GetElevation(geo_pos_lat, geo_pos_lon, &calc_data.tiles);
+    alt = snapengine::dem::GetElevation(geo_pos_lat, geo_pos_lon, &calc_data.tiles, calc_data.dem_property);
     if (alt == calc_data.dem_no_data_value && !calc_data.mask_out_area_without_elevation) {
         alt = snapengine::earthgravitationalmodel96computation::GetEGM96(geo_pos_lat, geo_pos_lon, calc_data.max_lats,
                                                                          calc_data.max_lons, calc_data.egm);

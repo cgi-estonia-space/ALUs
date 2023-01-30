@@ -87,7 +87,7 @@ public:
         std::vector<std::string> files{"./goods/srtm_41_01.tif", "./goods/srtm_42_01.tif"};
         srtm_3_model_ = std::make_unique<Srtm3ElevationModel>(files);
         srtm_3_model_->ReadSrtmTiles(egm_96_);
-        srtm_3_model_->HostToDevice();
+        srtm_3_model_->TransferToDevice();
     }
 
     std::optional<Dataset<double>> coh_ds_;
@@ -437,7 +437,8 @@ TEST_F(TerrainCorrectionTest, CreateTargetProduct) {
     coh_dataset.LoadRasterBand(1);
     TerrainCorrection terrain_correction(coh_dataset.GetGdalDataset(), metadata_.value().GetMetadata(),
                                          metadata_.value().GetLatTiePointGrid(), metadata_.value().GetLonTiePointGrid(),
-                                         srtm_3_model_->GetSrtmBuffersInfo(), srtm_3_tiles_length_);
+                                         srtm_3_model_->GetBuffers(), srtm_3_tiles_length_,
+                                         srtm_3_model_->GetProperties(), srtm_3_model_->GetPropertiesValue());
     auto target = terrain_correction.CreateTargetProduct(&source_geocoding, TC_OUTPUT);
     const int geo_transform_array_length{6};
     double target_geo_transform[geo_transform_array_length];

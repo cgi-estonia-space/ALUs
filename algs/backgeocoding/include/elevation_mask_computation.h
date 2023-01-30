@@ -15,6 +15,7 @@
 
 #include <driver_types.h>
 
+#include "dem_property.h"
 #include "pointer_holders.h"
 
 namespace alus::backgeocoding {
@@ -28,6 +29,7 @@ struct ElevationMaskData {
     double* device_lon_array;
     bool mask_out_area_without_elevation;
     PointerArray tiles;
+    const dem::Property* dem_property;
 };
 
 cudaError_t LaunchElevationMask(ElevationMaskData data);

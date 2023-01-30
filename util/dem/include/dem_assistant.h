@@ -18,35 +18,46 @@
 #include <string>
 #include <vector>
 
+#include "dem_aggregation.h"
+#include "dem_type.h"
 #include "pointer_holders.h"
 #include "snap-dem/dem/dataio/earth_gravitational_model96.h"
 #include "srtm3_elevation_model.h"
 
-namespace alus::app {
+namespace alus::dem {
 
-class DemAssistant final {
+class Assistant final {
 public:
     class ArgumentsExtract final {
     public:
-        bool static IsValid(std::string_view dem_file);
+        bool static IsValidSrtm3Filename(std::string_view dem_file);
+        bool static IsValidCopDem30mFilename(std::string_view filename);
         std::vector<std::string> static ExtractSrtm3Files(const std::vector<std::string>& cmd_line_arguments);
+        std::vector<std::string> static ExtractCopDem30mFiles(const std::vector<std::string>& cmd_line_arguments);
 
     private:
-        static std::string AdjustSrtm3Path(std::string_view path);
+        static std::string AdjustZipPath(std::string_view path);
     };
 
-    DemAssistant() = delete;
-    explicit DemAssistant(std::vector<std::string> srtm3_files);
+    Assistant() = delete;
+    explicit Assistant(std::vector<std::string> srtm3_files);
 
-    static std::shared_ptr<DemAssistant> CreateFormattedSrtm3TilesOnGpuFrom(
+    static std::shared_ptr<Assistant> CreateFormattedDemTilesOnGpuFrom(
         const std::vector<std::string>& cmd_line_arguments);
 
-    snapengine::Srtm3ElevationModel* GetSrtm3Manager() { return &model_; }
+    Type GetType() const;
+
+    Aggregation* GetElevationManager() { return &model_; }
     snapengine::EarthGravitationalModel96* GetEgm96Manager() { return egm96_.get(); }
 
-    ~DemAssistant() = default;
+    ~Assistant() = default;
 
 private:
+    static std::shared_ptr<Assistant> TryCreateCopDem30mFrom(const std::vector<std::string>& cmd_line_arguments);
+    static std::shared_ptr<Assistant> TryCreateSrtm3From(
+        const std::vector<std::string>& cmd_line_arguments);
+
+    Type type_;
     snapengine::Srtm3ElevationModel model_;
     std::shared_ptr<snapengine::EarthGravitationalModel96> egm96_;
 };

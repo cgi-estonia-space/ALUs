@@ -8,6 +8,7 @@ list(APPEND SRTM3_TEST_UTIL_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/../../util/exotic-operations/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/cuda/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/common/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/dem/include
         )
 
 add_library(srtm3-test-util-obj

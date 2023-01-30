@@ -73,7 +73,7 @@ private:
         std::vector<std::string> files{"./goods/srtm_41_01.tif", "./goods/srtm_42_01.tif"};
         srtm_3_dem_ = std::make_unique<Srtm3ElevationModel>(files);
         srtm_3_dem_->ReadSrtmTiles(egm_96_);
-        srtm_3_dem_->HostToDevice();
+        srtm_3_dem_->TransferToDevice();
     }
     void PrepareMasterSentinelUtils() {
         DeviceSentinel1Utils temp_utils{};
@@ -228,8 +228,9 @@ private:
     }
 
     void PrepareBurstOffsetKernelArgs() {
-        args_.srtm3_tiles.array = srtm_3_dem_->GetSrtmBuffersInfo();
-        args_.srtm3_tiles.size = srtm_3_dem_->GetDeviceSrtm3TilesCount();
+        args_.srtm3_tiles.array = srtm_3_dem_->GetBuffers();
+        args_.srtm3_tiles.size = srtm_3_dem_->GetTileCount();
+        args_.dem_property_ = srtm_3_dem_->GetProperties();
         args_.master_subswath_info = master_info_;
         args_.master_sentinel_utils = master_utils_;
         args_.slave_subswath_info = slave_info_;
