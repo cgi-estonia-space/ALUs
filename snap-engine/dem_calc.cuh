@@ -15,6 +15,7 @@
 
 #include <cstdio>
 
+#include "dem_calc.h"
 #include "dem_property.h"
 #include "math_constants.h"  //not sure if required
 #include "resampling.h"
@@ -74,7 +75,7 @@ inline __device__ int GetSamples(PointerArray* tiles, int* x, int* y, double* sa
 inline __device__ double GetElevation(double geo_pos_lat, double geo_pos_lon, PointerArray* p_array,
                                       const alus::dem::Property* dem_prop) {
     if (geo_pos_lon > 180.0) {
-        geo_pos_lat -= 360.0;
+        geo_pos_lon -= 360.0;
     }
 
     double pixel_y = (dem_prop->lat_coverage - geo_pos_lat) * dem_prop->pixel_size_degrees_inverted_y_axis;
@@ -98,5 +99,7 @@ inline __device__ double GetElevation(double geo_pos_lat, double geo_pos_lon, Po
 
     return isnan(elevation) ? dem_prop->no_data_value : elevation;
 }
+
+__device__ alus::dem::GetElevationFuncTd get_elevation_srtm3 = snapengine::dem::GetElevation;
 
 }  // namespace alus::snapengine::dem
