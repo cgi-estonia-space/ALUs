@@ -71,8 +71,8 @@ private:
         egm_96_->HostToDevice();
 
         std::vector<std::string> files{"./goods/srtm_41_01.tif", "./goods/srtm_42_01.tif"};
-        srtm_3_dem_ = std::make_unique<Srtm3ElevationModel>(files);
-        srtm_3_dem_->ReadSrtmTiles(egm_96_);
+        srtm_3_dem_ = std::make_unique<Srtm3ElevationModel>(files, egm_96_);
+        srtm_3_dem_->LoadTiles();
         srtm_3_dem_->TransferToDevice();
     }
     void PrepareMasterSentinelUtils() {

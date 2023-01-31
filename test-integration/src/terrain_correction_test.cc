@@ -81,8 +81,8 @@ TEST_F(TerrainCorrectionIntegrationTest, Saaremaa1) {
     egm_96->HostToDevice();
 
     std::vector<std::string> files{"./goods/srtm_41_01.tif", "./goods/srtm_42_01.tif"};
-    auto srtm_3_model = std::make_unique<Srtm3ElevationModel>(files);
-    srtm_3_model->ReadSrtmTiles(egm_96);
+    auto srtm_3_model = std::make_unique<Srtm3ElevationModel>(files, egm_96);
+    srtm_3_model->LoadTiles();
     srtm_3_model->TransferToDevice();
 
     const auto* d_srtm_3_tiles = srtm_3_model->GetBuffers();
@@ -173,8 +173,8 @@ TEST_F(TerrainCorrectionIntegrationTest, BeirutExplosion) {
     egm_96->HostToDevice();
 
     std::vector<std::string> files{"./goods/srtm_43_06.tif", "./goods/srtm_44_06.tif"};
-    auto srtm_3_model = std::make_unique<Srtm3ElevationModel>(files);
-    srtm_3_model->ReadSrtmTiles(egm_96);
+    auto srtm_3_model = std::make_unique<Srtm3ElevationModel>(files, egm_96);
+    srtm_3_model->LoadTiles();
     srtm_3_model->TransferToDevice();
 
     const auto* d_srtm_3_tiles = srtm_3_model->GetBuffers();

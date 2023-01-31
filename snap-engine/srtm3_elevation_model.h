@@ -48,6 +48,7 @@ private:
     PointerHolder* device_formated_srtm_buffers_info_{nullptr};
     std::vector<dem::Property> dem_property_host_;
     dem::Property* dem_property_{nullptr};
+    std::shared_ptr<EarthGravitationalModel96> egm_96_;
 
     size_t device_srtm3_tiles_count_;
     std::vector<Srtm3FormatComputation> srtm_format_info_;
@@ -63,17 +64,16 @@ private:
     std::thread init_thread_;
     std::thread copy_thread_;
 
-    std::shared_ptr<EarthGravitationalModel96> egm_96_;
     std::exception_ptr elevation_exception_{nullptr};
 
     void ReadSrtmTilesThread();
     void HostToDeviceThread();
 
 public:
-    explicit Srtm3ElevationModel(std::vector<std::string> file_names);
+    explicit Srtm3ElevationModel(std::vector<std::string> file_names, std::shared_ptr<EarthGravitationalModel96> egm);
     virtual ~Srtm3ElevationModel();
 
-    void ReadSrtmTiles(std::shared_ptr<EarthGravitationalModel96>& egm_96);
+    void LoadTiles() override;
     PointerHolder* GetBuffers() override;
     size_t GetTileCount() override;
     const dem::Property* GetProperties() override;

@@ -67,8 +67,8 @@ TEST(SRTM3, tileFormating) {
     egm_96->HostToDevice();
 
     std::vector<std::string> files{"./goods/srtm_41_01.tif", "./goods/srtm_42_01.tif"};
-    alus::snapengine::Srtm3ElevationModel srtm_3_dem(files);
-    srtm_3_dem.ReadSrtmTiles(egm_96);
+    alus::snapengine::Srtm3ElevationModel srtm_3_dem(files, egm_96);
+    srtm_3_dem.LoadTiles();
     srtm_3_dem.TransferToDevice();
 
     std::vector<float> end_tile;

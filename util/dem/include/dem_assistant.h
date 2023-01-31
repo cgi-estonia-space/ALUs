@@ -40,25 +40,24 @@ public:
     };
 
     Assistant() = delete;
-    explicit Assistant(std::vector<std::string> srtm3_files);
+    explicit Assistant(std::vector<std::string> filenames, Type type);
 
     static std::shared_ptr<Assistant> CreateFormattedDemTilesOnGpuFrom(
         const std::vector<std::string>& cmd_line_arguments);
 
-    Type GetType() const;
+    Type GetType() const { return type_; }
 
-    Aggregation* GetElevationManager() { return &model_; }
-    snapengine::EarthGravitationalModel96* GetEgm96Manager() { return egm96_.get(); }
+    std::shared_ptr<Aggregation> GetElevationManager() { return model_; }
+    std::shared_ptr<snapengine::EarthGravitationalModel96> GetEgm96Manager() { return egm96_; }
 
     ~Assistant() = default;
 
 private:
     static std::shared_ptr<Assistant> TryCreateCopDem30mFrom(const std::vector<std::string>& cmd_line_arguments);
-    static std::shared_ptr<Assistant> TryCreateSrtm3From(
-        const std::vector<std::string>& cmd_line_arguments);
+    static std::shared_ptr<Assistant> TryCreateSrtm3From(const std::vector<std::string>& cmd_line_arguments);
 
     Type type_;
-    snapengine::Srtm3ElevationModel model_;
+    std::shared_ptr<Aggregation> model_;
     std::shared_ptr<snapengine::EarthGravitationalModel96> egm96_;
 };
-}  // namespace alus::app
+}  // namespace alus::dem

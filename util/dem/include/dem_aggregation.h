@@ -26,13 +26,13 @@ class Aggregation {
 public:
 
     //   virtual Type GetType() const = 0;
+    virtual void LoadTiles() = 0;
     virtual size_t GetTileCount() = 0;
     virtual const PointerHolder* GetBuffers() = 0;
     virtual const Property* GetProperties() = 0;
     virtual const std::vector<Property>& GetPropertiesValue() = 0;
     virtual void TransferToDevice() = 0;
     virtual void ReleaseFromDevice() = 0;
-
 };
 
 }

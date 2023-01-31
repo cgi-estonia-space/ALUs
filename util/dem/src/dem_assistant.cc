@@ -69,8 +69,6 @@ bool Assistant::ArgumentsExtract::IsValidCopDem30mFilename(std::string_view file
     std::vector<std::string> filename_items{};
     boost::split(filename_items, filename, boost::is_any_of("_"));
 
-
-
     return true;
 }
 
@@ -95,13 +93,23 @@ std::string Assistant::ArgumentsExtract::AdjustZipPath(std::string_view path) {
 
 std::shared_ptr<Assistant> Assistant::CreateFormattedDemTilesOnGpuFrom(
     const std::vector<std::string>& cmd_line_arguments) {
-    return std::make_shared<Assistant>(Assistant::ArgumentsExtract::ExtractSrtm3Files(cmd_line_arguments));
+    return std::make_shared<Assistant>(Assistant::ArgumentsExtract::ExtractSrtm3Files(cmd_line_arguments), Type::SRTM3);
 }
 
-Assistant::Assistant(std::vector<std::string> srtm3_files)
-    : model_(std::move(srtm3_files)), egm96_{std::make_shared<snapengine::EarthGravitationalModel96>()} {
+Assistant::Assistant(std::vector<std::string> filenames, Type mission)
+    : egm96_{std::make_shared<snapengine::EarthGravitationalModel96>()} {
     egm96_->HostToDevice();
-    model_.ReadSrtmTiles(egm96_);
+    switch (mission) {
+        case Type::SRTM3:
+            model_ = std::make_shared<snapengine::Srtm3ElevationModel>(std::move(filenames), egm96_);
+            break;
+        case Type::COPDEM_COG30m:
+            model_ = nullptr;
+            [[fallthrough]];
+        default:
+            throw std::runtime_error("This code should not reach to unknown DEM type.");
+    }
+    model_->LoadTiles();
 }
 
 }  // namespace alus::dem

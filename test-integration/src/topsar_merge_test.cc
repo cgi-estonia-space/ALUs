@@ -209,8 +209,8 @@ TEST_F(TopsarMergeTest, OverlappingSubSwathsMergeWithTC) {
         auto egm_96 = std::make_shared<EarthGravitationalModel96>();
         egm_96->HostToDevice();
         std::vector<std::string> srtm3_files{"./goods/srtm_41_01.tif", "./goods/srtm_42_01.tif"};
-        auto srtm_3_model = std::make_unique<Srtm3ElevationModel>(srtm3_files);
-        srtm_3_model->ReadSrtmTiles(egm_96);
+        auto srtm_3_model = std::make_unique<Srtm3ElevationModel>(srtm3_files, egm_96);
+        srtm_3_model->LoadTiles();
         srtm_3_model->TransferToDevice();
         const auto* d_srtm_3_tiles = srtm_3_model->GetBuffers();
         const size_t srtm_3_tiles_length{2};

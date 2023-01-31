@@ -26,7 +26,9 @@
 
 namespace alus::snapengine {
 
-Srtm3ElevationModel::Srtm3ElevationModel(std::vector<std::string> file_names) : file_names_(std::move(file_names)) {
+Srtm3ElevationModel::Srtm3ElevationModel(std::vector<std::string> file_names,
+                                         std::shared_ptr<EarthGravitationalModel96> egm)
+    : file_names_(std::move(file_names)), egm_96_{egm} {
     device_srtm3_tiles_count_ = 0;
 }
 
@@ -77,10 +79,8 @@ void Srtm3ElevationModel::ReadSrtmTilesThread() {
             prop.no_data_value = srtm3elevationmodel::NO_DATA_VALUE;
             prop.pixel_size_degrees_x_axis = srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE;
             prop.pixel_size_degrees_y_axis = srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE;
-            prop.pixel_size_degrees_inverted_x_axis =
-                srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED;
-            prop.pixel_size_degrees_inverted_y_axis =
-                srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED;
+            prop.pixel_size_degrees_inverted_x_axis = srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED;
+            prop.pixel_size_degrees_inverted_y_axis = srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED;
             prop.lat_coverage = srtm3elevationmodel::MAX_LAT_COVERAGE;
             prop.lon_coverage = srtm3elevationmodel::MAX_LON_COVERAGE;
             prop.lat_origin = srtm_data.m12;
@@ -99,9 +99,8 @@ void Srtm3ElevationModel::ReadSrtmTilesThread() {
 }
 
 // use a preconfigured emg96 instance with the tiles already loaded onto the gpu.
-void Srtm3ElevationModel::ReadSrtmTiles(std::shared_ptr<EarthGravitationalModel96>& egm_96) {
+void Srtm3ElevationModel::LoadTiles() {
     if (!init_thread_.joinable()) {
-        egm_96_ = egm_96;
         init_thread_ = std::thread(&Srtm3ElevationModel::ReadSrtmTilesThread, this);
     }
 }
