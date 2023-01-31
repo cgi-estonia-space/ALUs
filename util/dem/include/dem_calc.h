@@ -18,6 +18,6 @@
 
 namespace alus::dem {
 
-using GetElevationFunc = double(double, double, PointerArray*, const alus::dem::Property*);
-typedef double (*GetElevationFuncTd)(double, double, PointerArray*, const alus::dem::Property*);
+using GetElevationFunc = double(*)(double, double, PointerArray*, const Property*);
+
 }  // namespace alus::dem

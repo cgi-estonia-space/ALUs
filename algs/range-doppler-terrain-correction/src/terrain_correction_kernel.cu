@@ -145,7 +145,7 @@ cudaError_t LaunchTerrainCorrectionKernel(TcTileCoordinates tc_tile_coordinates,
 }
 
 __global__ void GetSourceRectangleKernel(TcTileCoordinates tile_coordinates, GetSourceRectangleKernelArgs args,
-                                         SourceRectangeResult* result, dem::GetElevationFuncTd* get_elevation) {
+                                         SourceRectangeResult* result, dem::GetElevationFunc* get_elevation) {
     const auto thread_x = threadIdx.x + blockIdx.x * blockDim.x;
     const auto thread_y = threadIdx.y + blockIdx.y * blockDim.y;
 
@@ -201,7 +201,7 @@ Rectangle GetSourceRectangle(TcTileCoordinates tile_coordinates, GetSourceRectan
     auto* d_result = ctx->device_memory_arena.Alloc<SourceRectangeResult>();
 
     cuda::CopyAsyncH2D(d_result, h_result, ctx->stream);
-    cuda::FunctionPointer<dem::GetElevationFuncTd> ge(&snapengine::dem::get_elevation_srtm3);
+    cuda::FunctionPointer<dem::GetElevationFunc> ge(&snapengine::dem::get_elevation_srtm3);
     GetSourceRectangleKernel<<<grid_dim, block_dim, 0, ctx->stream>>>(tile_coordinates, args, d_result,
                                                                       ge.value);
     cuda::CopyAsyncD2H(h_result, d_result, ctx->stream);

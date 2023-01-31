@@ -100,6 +100,6 @@ inline __device__ double GetElevation(double geo_pos_lat, double geo_pos_lon, Po
     return isnan(elevation) ? dem_prop->no_data_value : elevation;
 }
 
-__device__ alus::dem::GetElevationFuncTd get_elevation_srtm3 = snapengine::dem::GetElevation;
+__device__ alus::dem::GetElevationFunc get_elevation_srtm3 = snapengine::dem::GetElevation;
 
 }  // namespace alus::snapengine::dem
