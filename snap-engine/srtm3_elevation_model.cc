@@ -46,8 +46,7 @@ Srtm3ElevationModel::~Srtm3ElevationModel() {
 void Srtm3ElevationModel::ReadSrtmTilesThread() {
     try {
         for (auto&& dem_file : file_names_) {
-            // TODO: Priority needed for keeping results as close as possible to SNAP.  // NOLINT is this todo or just a
-            // simple comment
+            // Priority needed for keeping results as close as possible to SNAP
             auto& ds = srtms_.emplace_back(dem_file, GeoTransformSourcePriority::WORLDFILE_PAM_INTERNAL_TABFILE_NONE);
             ds.LoadRasterBand(1);
             const auto* geo_transform = ds.GetTransform();

@@ -14,13 +14,16 @@
 
 #include "dem_assistant.h"
 
+#include <algorithm>
+#include <filesystem>
 #include <stdexcept>
 #include <string_view>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
 
+#include "copdem_cog_30m.h"
 #include "gdal_util.h"
+#include "srtm3_elevation_model.h"
 #include "zip_util.h"
 
 namespace {
@@ -30,15 +33,28 @@ constexpr std::string_view TIF_EXTENSION{".tif"};
 namespace alus::dem {
 
 bool Assistant::ArgumentsExtract::IsValidSrtm3Filename(std::string_view dem_file) {
-    const auto extension = boost::filesystem::path(dem_file.data()).extension().string();
+    const auto extension = std::filesystem::path(dem_file.data()).extension().string();
     bool is_valid = extension == TIF_EXTENSION;
     if (extension == gdal::constants::ZIP_EXTENSION) {
         const auto zip_contents = common::zip::GetZipContents(dem_file);
         is_valid |= std::any_of(std::begin(zip_contents), std::end(zip_contents), [](const auto& file) {
-            return boost::filesystem::path(file).extension().string() == TIF_EXTENSION;
+            return std::filesystem::path(file).extension().string() == TIF_EXTENSION;
         });
     }
-    return is_valid;
+
+    if (!is_valid) {
+        return is_valid;
+    }
+
+    std::vector<std::string> filename_items{};
+    boost::split(filename_items, std::filesystem::path(dem_file).stem().string(), boost::is_any_of("_"));
+    // Example - 'srtm_41_40.tif'
+    if (filename_items.size() != 3) {
+        return false;
+    }
+
+    constexpr std::string_view begin_pattern{"srtm"};
+    return filename_items.front() == begin_pattern;
 }
 
 std::vector<std::string> Assistant::ArgumentsExtract::ExtractSrtm3Files(
@@ -49,51 +65,71 @@ std::vector<std::string> Assistant::ArgumentsExtract::ExtractSrtm3Files(
         boost::split(argument_values, arg, boost::is_any_of("\t "));
 
         for (const auto& value : argument_values) {
-            if (!IsValidSrtm3Filename(arg)) {
-                throw std::invalid_argument("Following filename - '" + arg + "' - is not a SRTM3 format");
+            if (!IsValidSrtm3Filename(value)) {
+                throw std::invalid_argument("Following filename - '" + value + "' - is not a SRTM3 format");
             }
 
-            srtm3_files.push_back(AdjustZipPath(value));
+            srtm3_files.push_back(AdjustZipPathForSrtm3(value));
         }
     }
     return srtm3_files;
 }
 
-bool Assistant::ArgumentsExtract::IsValidCopDem30mFilename(std::string_view filename) {
-    (void)filename;
-    const auto extension = boost::filesystem::path(filename.data()).extension().string();
+bool Assistant::ArgumentsExtract::IsValidCopDemCog30mFilename(std::string_view filename) {
+    const auto extension = std::filesystem::path(filename).extension().string();
     if (extension != TIF_EXTENSION) {
         return false;
     }
 
+    const auto filename_stem = std::filesystem::path(filename).stem().string();
     std::vector<std::string> filename_items{};
-    boost::split(filename_items, filename, boost::is_any_of("_"));
+    boost::split(filename_items, filename_stem, boost::is_any_of("_"));
+    // Example - 'Copernicus_DSM_COG_10_S18_00_E020_00_DEM.tif'
+    if (filename_items.size() != 9) {
+        return false;
+    }
 
-    return true;
+    constexpr std::string_view begin_pattern{"Copernicus_DSM_COG_10"};
+    return filename_stem.substr(0, begin_pattern.length()) == begin_pattern;
 }
 
-std::vector<std::string> Assistant::ArgumentsExtract::ExtractCopDem30mFiles(
-    const std::vector<std::string>& cmd_line_arguments) {
-    (void)cmd_line_arguments;
-
-    // if (!IsValidCopDem30mFilename(cmd_line_arguments))
-    throw std::invalid_argument("Following filename - '" + std::string("") + "' - is not a Cop DEM 30m DGED format");
-
-    return {};
-}
-
-std::string Assistant::ArgumentsExtract::AdjustZipPath(std::string_view path) {
-    if (const auto file_path = boost::filesystem::path(path.data());
+std::string Assistant::ArgumentsExtract::AdjustZipPathForSrtm3(std::string_view path) {
+    if (const auto file_path = std::filesystem::path(path.data());
         file_path.extension().string() == gdal::constants::ZIP_EXTENSION) {
-        const auto tiff_name = boost::filesystem::change_extension(file_path.leaf(), TIF_EXTENSION.data());
-        return gdal::constants::GDAL_ZIP_PREFIX.data() + file_path.string() + "/" + tiff_name.string();
+        const auto tiff_name = file_path.filename().stem().string() + TIF_EXTENSION.data();
+        return gdal::constants::GDAL_ZIP_PREFIX.data() + file_path.string() + "/" + tiff_name;
     }
     return path.data();
 }
 
+std::vector<std::string> Assistant::ArgumentsExtract::PrepareArgs(const std::vector<std::string>& cmd_line_arguments) {
+    std::vector<std::string> dem_files{};
+    for (auto&& arg : cmd_line_arguments) {
+        std::vector<std::string> argument_values{};
+        boost::split(argument_values, arg, boost::is_any_of("\t "));
+
+        for (const auto& value : argument_values) {
+            if (value.empty()) {
+                continue;
+            }
+            dem_files.push_back(value);
+        }
+    }
+
+    return dem_files;
+}
+
 std::shared_ptr<Assistant> Assistant::CreateFormattedDemTilesOnGpuFrom(
     const std::vector<std::string>& cmd_line_arguments) {
-    return std::make_shared<Assistant>(Assistant::ArgumentsExtract::ExtractSrtm3Files(cmd_line_arguments), Type::SRTM3);
+    const auto filenames = ArgumentsExtract::PrepareArgs(cmd_line_arguments);
+    if (std::all_of(filenames.cbegin(), filenames.cend(), Assistant::ArgumentsExtract::IsValidCopDemCog30mFilename)) {
+        return std::make_shared<Assistant>(std::move(filenames), Type::COPDEM_COG30m);
+    } else if (std::all_of(filenames.cbegin(), filenames.cend(), Assistant::ArgumentsExtract::IsValidSrtm3Filename)) {
+        return std::make_shared<Assistant>(Assistant::ArgumentsExtract::ExtractSrtm3Files(std::move(filenames)),
+                                           Type::SRTM3);
+    } else {
+        throw std::invalid_argument("Not supported DEM filenames detected.");
+    }
 }
 
 Assistant::Assistant(std::vector<std::string> filenames, Type mission)
@@ -104,8 +140,8 @@ Assistant::Assistant(std::vector<std::string> filenames, Type mission)
             model_ = std::make_shared<snapengine::Srtm3ElevationModel>(std::move(filenames), egm96_);
             break;
         case Type::COPDEM_COG30m:
-            model_ = nullptr;
-            [[fallthrough]];
+            model_ = std::make_shared<CopDemCog30m>(std::move(filenames));
+            break;
         default:
             throw std::runtime_error("This code should not reach to unknown DEM type.");
     }

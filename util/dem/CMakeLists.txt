@@ -1,7 +1,7 @@
 
 list(APPEND DEM_UTIL_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/dem_assistant.cc
-        ${CMAKE_CURRENT_LIST_DIR}/src/copdem_30m_dged.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/copdem_cog_30m.cc
         )
 
 list(APPEND DEM_UTIL_INCLUDE_DIRS
@@ -25,6 +25,7 @@ target_link_libraries(dem-util-static
         gdal
         exotic-operations-static
         snap-engine-static
+        common-util-static
         )
 
 if (ENABLE_TESTS)

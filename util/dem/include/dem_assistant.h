@@ -31,12 +31,13 @@ public:
     class ArgumentsExtract final {
     public:
         bool static IsValidSrtm3Filename(std::string_view dem_file);
-        bool static IsValidCopDem30mFilename(std::string_view filename);
+        bool static IsValidCopDemCog30mFilename(std::string_view filename);
         std::vector<std::string> static ExtractSrtm3Files(const std::vector<std::string>& cmd_line_arguments);
         std::vector<std::string> static ExtractCopDem30mFiles(const std::vector<std::string>& cmd_line_arguments);
+        std::vector<std::string> static PrepareArgs(const std::vector<std::string>& cmd_line_arguments);
 
     private:
-        static std::string AdjustZipPath(std::string_view path);
+        static std::string AdjustZipPathForSrtm3(std::string_view path);
     };
 
     Assistant() = delete;

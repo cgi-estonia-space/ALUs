@@ -25,7 +25,7 @@ using ::testing::IsTrue;
 
 using alus::dem::Assistant;
 
-TEST(DemAssistantArgumentExtract, ThrowsWhenInvalidSrtm3ArgumentsSupplied) {
+TEST(AssistantArgumentExtract, ThrowsWhenInvalidSrtm3ArgumentsSupplied) {
     EXPECT_THROW(Assistant::ArgumentsExtract::ExtractSrtm3Files({{"srtm_41_01.tif"}, {"srtm_42_01.txt"}}),
                  std::invalid_argument);
     EXPECT_THROW(Assistant::ArgumentsExtract::ExtractSrtm3Files({{"srtm_41_01.tiff"}, {"srtm_42_01.tif"}}),
@@ -34,47 +34,46 @@ TEST(DemAssistantArgumentExtract, ThrowsWhenInvalidSrtm3ArgumentsSupplied) {
                  std::invalid_argument);
 }
 
-TEST(DemAssistantArgumentExtract, ThrowsWhenInvalidCopDem30mArgumentsSupplied) {
-    EXPECT_THROW(Assistant::ArgumentsExtract::ExtractCopDem30mFiles(
-                     {"Copernicus_DSM_30_S18_00_E020_00_DEM.tif Copernicus_DEM_COG_10_N49_00_E005_00_DEM.tif "
-                      "Nopernicus_DSM_COG_10_N49_00_E005_00_DEM.tif"}),
-                 std::invalid_argument);
-    EXPECT_THROW(Assistant::ArgumentsExtract::ExtractCopDem30mFiles(
-                     {"Copernicus_DSM_10_S00_00_E020_00_DEM.tif Copernicus_DSM_COG_10_N90_00_W000_00_DEM.tif "
-                      "Copernicus_DSM_COG_10_N49_00_E180_00_DEM.tif"}),
-                 std::invalid_argument);
-}
-
-TEST(DemAssistantArgumentExtract, DetectsInvalidSrtm3FilePatterns) {
+TEST(AssistantArgumentExtract, DetectsInvalidSrtm3FilePatterns) {
     EXPECT_THAT(Assistant::ArgumentsExtract::IsValidSrtm3Filename("srtm_42_01.tiff"), IsFalse());
     EXPECT_THAT(Assistant::ArgumentsExtract::IsValidSrtm3Filename("srtm_42_01"), IsFalse());
     EXPECT_THAT(Assistant::ArgumentsExtract::IsValidSrtm3Filename("srtm_42_01.txt"), IsFalse());
     EXPECT_THAT(Assistant::ArgumentsExtract::IsValidSrtm3Filename("srtm_42_01_tif"), IsFalse());
 }
 
-TEST(DemAssistantArgumentExtract, DetectsValidSrtm3FilePatterns) {
+TEST(AssistantArgumentExtract, DetectsValidSrtm3FilePatterns) {
     EXPECT_THAT(Assistant::ArgumentsExtract::IsValidSrtm3Filename("srtm_42_01.tif"), IsTrue());
     EXPECT_THAT(Assistant::ArgumentsExtract::IsValidSrtm3Filename("srtm_46_04.tif"), IsTrue());
 }
 
-TEST(DemAssistantArgumentExtract, DetectsValidCopDem30mFilePatterns) {
-    EXPECT_THAT(Assistant::ArgumentsExtract::IsValidCopDem30mFilename({"Copernicus_DSM_10_S18_00_E020_00_DEM.tif"}),
-                IsTrue());
+TEST(AssistantArgumentExtract, DetectsValidCopDemCog30mFilePatterns) {
     EXPECT_THAT(
-        Assistant::ArgumentsExtract::IsValidCopDem30mFilename({"Copernicus_DSM_COG_10_N49_00_E005_00_DEM.tif"}),
+        Assistant::ArgumentsExtract::IsValidCopDemCog30mFilename({"Copernicus_DSM_COG_10_N49_00_E005_00_DEM.tif"}),
         IsTrue());
+    EXPECT_THAT(Assistant::ArgumentsExtract::IsValidCopDemCog30mFilename(
+                    {"/tmp/folder/Copernicus_DSM_COG_10_N49_00_E005_00_DEM.tif"}), IsTrue());
 }
 
-TEST(DemAssistan, RetainsInitialSrtm3VectorValues) {
-    std::vector<std::string> expected{{"/some/path/srtm42_01.tif"}, {"./path/srtm_40_05.tif"}, {"./srtm_39_17.tif"}};
+TEST(AssistantArgumentExtract, DetectsInvalidCopDemCog30mFilePatterns) {
+    EXPECT_THAT(Assistant::ArgumentsExtract::IsValidCopDemCog30mFilename({"Copernicus_DSM_10_S18_00_E020_00_DEM.tif"}),
+                IsFalse());
+    EXPECT_THAT(Assistant::ArgumentsExtract::IsValidCopDemCog30mFilename({"Copernicus_DSM_S18_00_E020_00_DEM.tif"}),
+                IsFalse());
+    EXPECT_THAT(
+        Assistant::ArgumentsExtract::IsValidCopDemCog30mFilename({"Copernicus_DSS_COG_10_N49_00_E005_00_DEM.tif"}),
+        IsFalse());
+}
+
+TEST(Assistant, RetainsInitialSrtm3VectorValues) {
+    std::vector<std::string> expected{{"/some/path/srtm_42_01.tif"}, {"./path/srtm_40_05.tif"}, {"./srtm_39_17.tif"}};
     const auto& result = Assistant::ArgumentsExtract::ExtractSrtm3Files(expected);
     EXPECT_THAT(result, ContainerEq(expected));
 }
 
 TEST(Assistant, ParsesCorrectlySpaceSeparatedSrtm3DemFiles) {
-    std::vector<std::string> expected{{"/some/path/srtm42_01.tif"}, {"./path/srtm_40_05.tif"}, {"./srtm_39_17.tif"}};
+    std::vector<std::string> expected{{"/some/path/srtm_42_01.tif"}, {"./path/srtm_40_05.tif"}, {"./srtm_39_17.tif"}};
     const auto& result =
-        Assistant::ArgumentsExtract::ExtractSrtm3Files({"/some/path/srtm42_01.tif "
+        Assistant::ArgumentsExtract::ExtractSrtm3Files({"/some/path/srtm_42_01.tif "
                                                         "./path/srtm_40_05.tif ./srtm_39_17.tif"});
     EXPECT_THAT(result, ContainerEq(expected));
 }
@@ -87,4 +86,21 @@ TEST(Assistant, ParsesCorrectlyMixedSuppliedSrtm3DemFiles) {
                                                                          {"./path/srtm_21_09.tif"}});
     EXPECT_THAT(result, ContainerEq(result));
 }
+
+TEST(Assistant, PreparesCmdArgInputCorrectly) {
+    const std::vector<std::string> example1{"srtm_41_01.tif srtm_20_08.tif    ./path/srtm_21_09.tif"};
+    const std::vector<std::string> expected1{{"srtm_41_01.tif"}, {"srtm_20_08.tif"}, {"./path/srtm_21_09.tif"}};
+    const auto result1 = Assistant::ArgumentsExtract::PrepareArgs(example1);
+    ASSERT_THAT(result1, ContainerEq(expected1));
+
+    const std::vector<std::string> example2{
+        "Copernicus_DSM_COG_10_N49_00_E005_00_DEM.tif", "Copernicus_DSM_COG_10_N49_00_E009_00_DEM.tif",
+        "Copernicus_DSM_COG_10_N50_00_E005_00_DEM.tif Copernicus_DSM_COG_10_N51_00_E005_00_DEM.tif"};
+    const std::vector<std::string> expected2{
+        "Copernicus_DSM_COG_10_N49_00_E005_00_DEM.tif", "Copernicus_DSM_COG_10_N49_00_E009_00_DEM.tif",
+        "Copernicus_DSM_COG_10_N50_00_E005_00_DEM.tif", "Copernicus_DSM_COG_10_N51_00_E005_00_DEM.tif"};
+    const auto result2 = Assistant::ArgumentsExtract::PrepareArgs(example2);
+    ASSERT_THAT(result2, ContainerEq(expected2));
+}
+
 }  // namespace
