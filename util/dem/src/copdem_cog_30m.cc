@@ -14,7 +14,10 @@
 
 #include "copdem_cog_30m.h"
 
+#include <algorithm>
+#include <array>
 #include <chrono>
+#include <cmath>
 #include <future>
 #include <stdexcept>
 
@@ -30,11 +33,46 @@ constexpr double PIXELS_PER_TILE_HEIGHT_INVERTED{1 / static_cast<double>(TILE_HE
 constexpr double PIXEL_SIZE_Y_DEGREES{RASTER_HEIGHT_DEG / static_cast<double>(TILE_HEIGHT_PIXELS)};
 constexpr double PIXEL_SIZE_Y_DEGREES_INVERTED{1 / PIXEL_SIZE_Y_DEGREES};
 constexpr double NO_DATA_VALUE{0.0};
-}
+constexpr std::array<size_t, 7> ALLOWED_WIDTHS{TILE_HEIGHT_PIXELS, 2400, 1800, 1200, 720, 360};
+
+int DoubleForCompare(double value, size_t digits) { return value * std::pow(10, digits); }
+
+}  // namespace
 
 namespace alus::dem {
 
 CopDemCog30m::CopDemCog30m(std::vector<std::string> filenames) : filenames_(std::move(filenames)) {}
+
+void CopDemCog30m::VerifyProperties(const Property& prop, const Dataset<float>& ds, std::string_view filename) {
+    std::string exception_message_header = "Given file '" + std::string(filename) + "'";
+    if (prop.pixels_per_tile_y_axis != TILE_HEIGHT_PIXELS || ds.GetRasterSizeY() != TILE_HEIGHT_PIXELS) {
+        std::runtime_error(exception_message_header + " height '" + std::to_string(prop.pixels_per_tile_y_axis) +
+                           "' is not COPDEM 30m COG height(" + std::to_string(TILE_HEIGHT_PIXELS) + ")");
+    }
+    if (!std::any_of(ALLOWED_WIDTHS.cbegin(), ALLOWED_WIDTHS.cend(),
+                     [&prop](size_t v) { return v == prop.pixels_per_tile_x_axis; })) {
+        std::runtime_error(exception_message_header + " width '" + std::to_string(prop.pixels_per_tile_x_axis) +
+                           "' is not COPDEM 30m COG width");
+    }
+    if (prop.pixels_per_tile_x_axis != static_cast<size_t>(ds.GetRasterSizeX())) {
+        throw std::logic_error("COPDEM property width does not equal real raster one.");
+    }
+    constexpr size_t dig_comp{12};
+    if (DoubleForCompare(prop.pixels_per_tile_inverted_x_axis, dig_comp) !=
+            DoubleForCompare(prop.pixel_size_degrees_x_axis, dig_comp) ||
+        DoubleForCompare(prop.pixels_per_tile_inverted_x_axis, dig_comp) !=
+            DoubleForCompare(ds.GetPixelSizeLon(), dig_comp)) {
+        throw std::runtime_error(exception_message_header +
+                                 " pixel 'X' size does not equal to inverted value of pixel count");
+    }
+    if (DoubleForCompare(prop.pixels_per_tile_inverted_y_axis, dig_comp) !=
+            DoubleForCompare(prop.pixel_size_degrees_y_axis, dig_comp) ||
+        DoubleForCompare(prop.pixels_per_tile_inverted_y_axis, dig_comp) !=
+            DoubleForCompare(std::abs(ds.GetPixelSizeLat()), dig_comp)) {
+        throw std::runtime_error(exception_message_header +
+                                 " pixel 'Y' size does not equal to inverted value of pixel count");
+    }
+}
 
 void CopDemCog30m::LoadTilesThread() {
     for (auto&& dem_file : filenames_) {
@@ -53,7 +91,7 @@ void CopDemCog30m::LoadTilesThread() {
         prop.no_data_value = NO_DATA_VALUE;
         prop.pixel_size_degrees_x_axis = ds.GetPixelSizeLon();
         prop.pixel_size_degrees_y_axis = PIXEL_SIZE_Y_DEGREES;
-        prop.pixel_size_degrees_inverted_x_axis = 1 / static_cast<double>(ds.GetRasterSizeX());
+        prop.pixel_size_degrees_inverted_x_axis = 1 / static_cast<double>(ds.GetPixelSizeLon());
         prop.pixel_size_degrees_inverted_y_axis = PIXEL_SIZE_Y_DEGREES_INVERTED;
         prop.lat_coverage = 90.0;
         prop.lon_coverage = 180.0;
@@ -64,6 +102,7 @@ void CopDemCog30m::LoadTilesThread() {
         host_dem_properties_.push_back(prop);
 
         LOGI << "Loaded " << dem_file;
+        VerifyProperties(prop, ds, dem_file);
     }
 }
 

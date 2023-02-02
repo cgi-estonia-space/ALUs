@@ -16,6 +16,7 @@
 
 #include <future>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "dataset.h"
@@ -44,13 +45,14 @@ private:
 
     void LoadTilesThread();
     void WaitLoadTilesAndCheckErrors();
+    void VerifyProperties(const Property& prop, const Dataset<float>& ds, std::string_view filename);
 
     std::vector<std::string> filenames_;
     std::vector<Dataset<float>> datasets_;
 
     std::vector<float*> device_formated_buffers_;
     PointerHolder* device_formated_buffers_table_{nullptr};
-    std::vector<dem::Property> host_dem_properties_;
+    std::vector<Property> host_dem_properties_;
     dem::Property* device_dem_properties_{nullptr};
 
     std::future<void> load_tiles_future_;

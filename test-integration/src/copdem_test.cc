@@ -43,15 +43,11 @@ TEST(CopDemCog30m, LoadsTilesCorrectly) {
     n49_e004_prop.pixels_per_tile_y_axis = 3600;
     n49_e004_prop.raster_width = 3600 * 360;
     n49_e004_prop.pixel_size_degrees_x_axis = 0.000277777777778;
-
-    //    double pixel_size_degrees_inverted_x_axis;  // DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED
-    //    double pixel_size_degrees_inverted_y_axis;  // DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED
-    //    double lat_coverage;
-    //    double lon_coverage;
-    //    double lat_origin;
-    //    double lat_extent;
-    //    double lon_origin;
-    //    double lon_extent;
+    n49_e004_prop.pixel_size_degrees_inverted_x_axis = 3600;
+    n49_e004_prop.lat_origin = 50.000138888888891;
+    n49_e004_prop.lon_origin = 3.999861111111111;
+    n49_e004_prop.lat_extent = 49.0001389;
+    n49_e004_prop.lon_extent = 4.9998611;
 
     alus::dem::Property n51_e006_prop{};
     n51_e006_prop.pixels_per_tile_inverted_x_axis = 1 / 2400.0;
@@ -60,6 +56,12 @@ TEST(CopDemCog30m, LoadsTilesCorrectly) {
     n51_e006_prop.pixels_per_tile_y_axis = 3600;
     n51_e006_prop.raster_width = 2400 * 360;
     n51_e006_prop.pixel_size_degrees_x_axis = 0.000416666666667;
+    n51_e006_prop.pixel_size_degrees_inverted_x_axis = 2400;
+    n51_e006_prop.lat_origin = 52.000138888888891;
+    n51_e006_prop.lon_origin = 5.999791666666667;
+    n51_e006_prop.lat_extent = 51.0001389;
+    n51_e006_prop.lon_extent = 6.9997917;
+
 
     std::vector<alus::dem::Property> expectedProperties{n49_e004_prop, n51_e006_prop};
     for (size_t i = 0; i < dem_properties.size(); i++) {
@@ -76,6 +78,14 @@ TEST(CopDemCog30m, LoadsTilesCorrectly) {
         ASSERT_THAT(p.no_data_value, DoubleEq(0.0));
         ASSERT_THAT(p.pixel_size_degrees_x_axis, DoubleNear(ep.pixel_size_degrees_x_axis, 1e-12));
         ASSERT_THAT(p.pixel_size_degrees_y_axis, DoubleNear(0.000277777777778, 1e-12));
+        ASSERT_THAT(p.pixel_size_degrees_inverted_x_axis, DoubleNear(ep.pixel_size_degrees_inverted_x_axis, 1e-12));
+        ASSERT_THAT(p.pixel_size_degrees_inverted_y_axis, DoubleNear(3600, 1e-12));
+        ASSERT_THAT(p.lat_coverage, Eq(90));
+        ASSERT_THAT(p.lon_coverage, Eq(180));
+        ASSERT_THAT(p.lat_origin, DoubleNear(ep.lat_origin, 1e-12));
+        ASSERT_THAT(p.lat_extent, DoubleNear(ep.lat_extent, 1e-7));
+        ASSERT_THAT(p.lon_origin, DoubleNear(ep.lon_origin, 1e-12));
+        ASSERT_THAT(p.lon_extent, DoubleNear(ep.lon_extent, 1e-7));
     }
 }
 

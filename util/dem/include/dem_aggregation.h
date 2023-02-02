@@ -33,6 +33,7 @@ public:
     virtual const std::vector<Property>& GetPropertiesValue() = 0;
     virtual void TransferToDevice() = 0;
     virtual void ReleaseFromDevice() = 0;
+    virtual ~Aggregation() = default;
 };
 
 }
