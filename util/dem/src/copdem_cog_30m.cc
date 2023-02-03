@@ -80,19 +80,19 @@ void CopDemCog30m::LoadTilesThread() {
         ds.LoadRasterBand(1);
 
         Property prop;
-        prop.pixels_per_tile_inverted_x_axis = 1 / static_cast<double>(ds.GetRasterSizeX());
-        prop.pixels_per_tile_inverted_y_axis = PIXELS_PER_TILE_HEIGHT_INVERTED;
         prop.pixels_per_tile_x_axis = ds.GetRasterSizeX();
-        prop.pixels_per_tile_y_axis = TILE_HEIGHT_PIXELS;
+        prop.pixels_per_tile_y_axis = ds.GetRasterSizeY();
+        prop.pixels_per_tile_inverted_x_axis = 1.0 / prop.pixels_per_tile_x_axis;
+        prop.pixels_per_tile_inverted_y_axis = 1.0 / prop.pixels_per_tile_y_axis;
         prop.tiles_x_axis = RASTER_X_TILE_COUNT;
         prop.tiles_y_axis = RASTER_Y_TILE_COUNT;
-        prop.raster_width = ds.GetRasterSizeX() * RASTER_X_TILE_COUNT;
+        prop.raster_width = prop.pixels_per_tile_x_axis * RASTER_X_TILE_COUNT;
         prop.raster_height = TILE_HEIGHT_PIXELS * RASTER_Y_TILE_COUNT;
         prop.no_data_value = NO_DATA_VALUE;
         prop.pixel_size_degrees_x_axis = ds.GetPixelSizeLon();
-        prop.pixel_size_degrees_y_axis = PIXEL_SIZE_Y_DEGREES;
-        prop.pixel_size_degrees_inverted_x_axis = 1 / static_cast<double>(ds.GetPixelSizeLon());
-        prop.pixel_size_degrees_inverted_y_axis = PIXEL_SIZE_Y_DEGREES_INVERTED;
+        prop.pixel_size_degrees_y_axis = std::abs(ds.GetPixelSizeLat());
+        prop.pixel_size_degrees_inverted_x_axis = 1 / prop.pixel_size_degrees_x_axis;
+        prop.pixel_size_degrees_inverted_y_axis = 1 / prop.pixel_size_degrees_y_axis;
         prop.lat_coverage = 90.0;
         prop.lon_coverage = 180.0;
         prop.lat_origin = ds.GetOriginLat();
