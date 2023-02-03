@@ -25,9 +25,9 @@ set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr")
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --Werror all-warnings")
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --extended-lambda")
 # mapping executable GPU code to source code, only enable for testing/profiling
-#set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -g -G")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -g -G")
 #set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -lineinfo")
-#set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --resource-usage")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --resource-usage")
 
 INCLUDE_DIRECTORIES(${CUDAToolkit_INCLUDE_DIRS})
 

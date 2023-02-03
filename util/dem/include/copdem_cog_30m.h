@@ -39,23 +39,29 @@ public:
     void TransferToDevice() override;
     void ReleaseFromDevice() override;
 
+    static int ComputeId(double lon_origin, double lat_origin);
+
     ~CopDemCog30m();
 
 private:
 
-    void LoadTilesThread();
+    void LoadTilesImpl();
+    void TransferToDeviceImpl();
+    static void WaitFutureAndCheckErrorsDefault(std::future<void>& f, size_t tile_count, std::string_view ex_msg);
     void WaitLoadTilesAndCheckErrors();
+    void WaitTransferDeviceAndCheckErrors();
     void VerifyProperties(const Property& prop, const Dataset<float>& ds, std::string_view filename);
 
     std::vector<std::string> filenames_;
     std::vector<Dataset<float>> datasets_;
 
-    std::vector<float*> device_formated_buffers_;
+    std::vector<float*> device_formated_buffers_{};
     PointerHolder* device_formated_buffers_table_{nullptr};
-    std::vector<Property> host_dem_properties_;
+    std::vector<Property> host_dem_properties_{};
     dem::Property* device_dem_properties_{nullptr};
 
     std::future<void> load_tiles_future_;
+    std::future<void> transfer_to_device_future_;
 };
 
 }  // namespace alus::dem

@@ -25,6 +25,7 @@ namespace {
 using ::testing::DoubleEq;
 using ::testing::DoubleNear;
 using ::testing::Eq;
+using ::testing::Ne;
 using ::testing::SizeIs;
 
 TEST(CopDemCog30m, LoadsTilesCorrectly) {
@@ -87,6 +88,12 @@ TEST(CopDemCog30m, LoadsTilesCorrectly) {
         ASSERT_THAT(p.lon_origin, DoubleNear(ep.lon_origin, 1e-12));
         ASSERT_THAT(p.lon_extent, DoubleNear(ep.lon_extent, 1e-7));
     }
+
+    manager.TransferToDevice();
+    const auto count = manager.GetTileCount();
+    ASSERT_THAT(count, Eq(2));
+    ASSERT_THAT(manager.GetProperties(), Ne(nullptr));
+    ASSERT_THAT(manager.GetBuffers(), Ne(nullptr));
 }
 
 }  // namespace

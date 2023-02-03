@@ -12,8 +12,8 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 #include <cmath>
-#include <cstddef>
 
+#include "copdem_cog_30m_calc.cuh"
 #include "dem_calc.cuh"
 #include "dem_calc.h"
 #include "get_position.cuh"
@@ -201,7 +201,7 @@ Rectangle GetSourceRectangle(TcTileCoordinates tile_coordinates, GetSourceRectan
     auto* d_result = ctx->device_memory_arena.Alloc<SourceRectangeResult>();
 
     cuda::CopyAsyncH2D(d_result, h_result, ctx->stream);
-    cuda::FunctionPointer<dem::GetElevationFunc> ge(&snapengine::dem::get_elevation_srtm3);
+    cuda::FunctionPointer<dem::GetElevationFunc> ge(&dem::get_elevation_cop_dem_cog_30m);
     GetSourceRectangleKernel<<<grid_dim, block_dim, 0, ctx->stream>>>(tile_coordinates, args, d_result,
                                                                       ge.value);
     cuda::CopyAsyncD2H(h_result, d_result, ctx->stream);
