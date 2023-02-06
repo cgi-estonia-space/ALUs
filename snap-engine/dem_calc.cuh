@@ -28,27 +28,27 @@ namespace alus::snapengine::dem {
 inline __device__ int GetSamples(PointerArray* tiles, int* x, int* y, double* samples, int width, int height,
                                  double /*no_value*/, int /*use_no_data*/, const alus::dem::Property* dem_prop) {
     int allValid = 1;
-    int xSize = dem_prop->pixels_per_tile_x_axis;
+    int xSize = dem_prop->tile_pixel_count_x;
 
     int i = 0;
     for (int yI = 0; yI < height; yI++) {
-        const int tile_y_index = (int)(y[yI] * dem_prop->pixels_per_tile_inverted_y_axis);
-        const int pixel_y = y[yI] - tile_y_index * dem_prop->pixels_per_tile_y_axis;
+        const int tile_y_index = (int)(y[yI] * dem_prop->tile_pixel_count_inverted_y);
+        const int pixel_y = y[yI] - tile_y_index * dem_prop->tile_pixel_count_y;
 
         int j = 0;
         for (int xI = 0; xI < width; xI++) {
-            const int tile_x_index = (int)(x[xI] * dem_prop->pixels_per_tile_inverted_x_axis);
+            const int tile_x_index = (int)(x[xI] * dem_prop->tile_pixel_count_inverted_x);
 
             const int samples_index = i * width + j;
             // make sure that the tile we want is actually listed
-            if (tile_x_index > static_cast<int>(dem_prop->tiles_x_axis) || tile_x_index < 0 ||
-                tile_y_index > static_cast<int>(dem_prop->tiles_y_axis) || tile_y_index < 0) {
+            if (tile_x_index > static_cast<int>(dem_prop->grid_tile_count_x) || tile_x_index < 0 ||
+                tile_y_index > static_cast<int>(dem_prop->grid_tile_count_y) || tile_y_index < 0) {
                 samples[samples_index] = CUDART_NAN;
                 allValid = 0;
                 ++j;
                 continue;
             }
-            const int pixel_x = x[xI] - tile_x_index * dem_prop->pixels_per_tile_x_axis;
+            const int pixel_x = x[xI] - tile_x_index * dem_prop->tile_pixel_count_x;
             const int srtm_source_index = pixel_x + xSize * pixel_y;
             // ID field in PointerHolder is used for identifying SRTM3 tile indexes. File data in srtm_42_01.tif results
             // in ID with 4201. Yes, it is hacky.
@@ -79,11 +79,11 @@ inline __device__ double GetElevation(double geo_pos_lat, double geo_pos_lon, Po
         geo_pos_lon -= 360.0;
     }
 
-    double pixel_y = (dem_prop->lat_coverage - geo_pos_lat) * dem_prop->pixel_size_degrees_inverted_y_axis;
+    double pixel_y = (dem_prop->grid_max_lat - geo_pos_lat) * dem_prop->tile_pixel_size_deg_inverted_y;
     if (pixel_y < 0 || isnan(pixel_y)) {
         return dem_prop->no_data_value;
     }
-    double pixel_x = (geo_pos_lon + dem_prop->lon_coverage) * dem_prop->pixel_size_degrees_inverted_x_axis;
+    double pixel_x = (geo_pos_lon + dem_prop->grid_max_lon) * dem_prop->tile_pixel_size_deg_inverted_x;
 
     // computing corner based index
     double index_i[2];
@@ -92,8 +92,8 @@ inline __device__ double GetElevation(double geo_pos_lat, double geo_pos_lon, Po
     double index_kj[1];
     snapengine::resampling::ResamplingIndex index{0, 0, 0, 0, 0, 0, index_i, index_j, index_ki, index_kj};
     snapengine::bilinearinterpolation::ComputeIndex(pixel_x + 0.5, pixel_y + 0.5,
-                                                    static_cast<int>(dem_prop->raster_width),
-                                                    static_cast<int>(dem_prop->raster_height), &index);
+                                                    static_cast<int>(dem_prop->grid_total_width_pixels),
+                                                    static_cast<int>(dem_prop->grid_total_height_pixels), &index);
 
     auto elevation =
         snapengine::bilinearinterpolation::Resample(p_array, &index, 2, CUDART_NAN, 1, dem_prop, GetSamples);

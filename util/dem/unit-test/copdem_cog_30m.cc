@@ -22,8 +22,8 @@ using ::testing::Eq;
 
 TEST(CopDemCog30m, ComputeIdReturnsCorrectResult) {
     // Bottom left points.
-    ASSERT_THAT(alus::dem::CopDemCog30m::ComputeId(-180, -90), Eq(0));
-    ASSERT_THAT(alus::dem::CopDemCog30m::ComputeId(179, 89), Eq(359 * 1000 + 179));
-    ASSERT_THAT(alus::dem::CopDemCog30m::ComputeId(4.0, 49.0), Eq((180 + 4) * 1000 + (90 + 49)));
+    ASSERT_THAT(alus::dem::CopDemCog30m::ComputeId(-180, -90), Eq(180));
+    ASSERT_THAT(alus::dem::CopDemCog30m::ComputeId(179, 89), Eq(359 * 1000 + 1));
+    ASSERT_THAT(alus::dem::CopDemCog30m::ComputeId(4.0, 49.0), Eq((180 + 4) * 1000 + 41));
 }
 }

@@ -66,25 +66,25 @@ void Srtm3ElevationModel::ReadSrtmTilesThread() {
             this->srtm_format_info_.push_back(srtm_data);
 
             dem::Property prop;
-            prop.pixels_per_tile_inverted_x_axis = srtm3elevationmodel::NUM_PIXELS_PER_TILE_INVERTED;
-            prop.pixels_per_tile_inverted_y_axis = srtm3elevationmodel::NUM_PIXELS_PER_TILE_INVERTED;
-            prop.pixels_per_tile_x_axis = srtm3elevationmodel::NUM_PIXELS_PER_TILE;
-            prop.pixels_per_tile_y_axis = srtm3elevationmodel::NUM_PIXELS_PER_TILE;
-            prop.tiles_x_axis = srtm3elevationmodel::NUM_X_TILES;
-            prop.tiles_y_axis = srtm3elevationmodel::NUM_Y_TILES;
-            prop.raster_width = srtm3elevationmodel::RASTER_WIDTH;
-            prop.raster_height = srtm3elevationmodel::RASTER_HEIGHT;
+            prop.tile_pixel_count_inverted_x = srtm3elevationmodel::NUM_PIXELS_PER_TILE_INVERTED;
+            prop.tile_pixel_count_inverted_y = srtm3elevationmodel::NUM_PIXELS_PER_TILE_INVERTED;
+            prop.tile_pixel_count_x = srtm3elevationmodel::NUM_PIXELS_PER_TILE;
+            prop.tile_pixel_count_y = srtm3elevationmodel::NUM_PIXELS_PER_TILE;
+            prop.grid_tile_count_x = srtm3elevationmodel::NUM_X_TILES;
+            prop.grid_tile_count_y = srtm3elevationmodel::NUM_Y_TILES;
+            prop.grid_total_width_pixels = srtm3elevationmodel::RASTER_WIDTH;
+            prop.grid_total_height_pixels = srtm3elevationmodel::RASTER_HEIGHT;
             prop.no_data_value = srtm3elevationmodel::NO_DATA_VALUE;
-            prop.pixel_size_degrees_x_axis = srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE;
-            prop.pixel_size_degrees_y_axis = srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE;
-            prop.pixel_size_degrees_inverted_x_axis = srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED;
-            prop.pixel_size_degrees_inverted_y_axis = srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED;
-            prop.lat_coverage = srtm3elevationmodel::MAX_LAT_COVERAGE;
-            prop.lon_coverage = srtm3elevationmodel::MAX_LON_COVERAGE;
-            prop.lat_origin = srtm_data.m12;
-            prop.lat_extent = prop.lat_origin + (ds.GetRasterSizeY() * ds.GetPixelSizeLat());
-            prop.lon_origin = srtm_data.m02;
-            prop.lon_extent = prop.lon_origin + (ds.GetRasterSizeX() * ds.GetPixelSizeLon());
+            prop.tile_pixel_size_deg_x = srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE;
+            prop.tile_pixel_size_deg_y = srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE;
+            prop.tile_pixel_size_deg_inverted_x = srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED;
+            prop.tile_pixel_size_deg_inverted_y = srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED;
+            prop.grid_max_lat = srtm3elevationmodel::MAX_LAT_COVERAGE;
+            prop.grid_max_lon = srtm3elevationmodel::MAX_LON_COVERAGE;
+            prop.tile_lat_origin = srtm_data.m12;
+            prop.tile_lat_extent = prop.tile_lat_origin + (ds.GetRasterSizeY() * ds.GetPixelSizeLat());
+            prop.tile_lon_origin = srtm_data.m02;
+            prop.tile_lon_extent = prop.tile_lon_origin + (ds.GetRasterSizeX() * ds.GetPixelSizeLon());
             dem_property_host_.push_back(prop);
         }
 

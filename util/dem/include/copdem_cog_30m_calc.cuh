@@ -13,7 +13,6 @@
  */
 #pragma once
 
-#include <stdio.h>
 #include <math_constants.h>
 
 #include "dem_calc.h"
@@ -26,30 +25,29 @@ namespace alus::dem {
 inline __device__ int GetSamples(PointerArray* tiles, int* x, int* y, double* samples, int width, int height,
                                  double /*no_value*/, int /*use_no_data*/, const alus::dem::Property* dem_prop) {
     int all_valid = 1;
-    int tile_pixel_count_x = dem_prop[0].pixels_per_tile_x_axis;
+    int tile_pixel_count_x = dem_prop[0].tile_pixel_count_x;
 
     int i = 0;
     for (int yI = 0; yI < height; yI++) {
-        const int tile_y_index = (int)(y[yI] * dem_prop->pixels_per_tile_inverted_y_axis);
-        const int pixel_y = y[yI] - tile_y_index * dem_prop->pixels_per_tile_y_axis;
+        const int tile_y_index = (int)(y[yI] * dem_prop->tile_pixel_count_inverted_y);
+        const int pixel_y = y[yI] - tile_y_index * dem_prop->tile_pixel_count_y;
 
         int j = 0;
         for (int xI = 0; xI < width; xI++) {
-            const int tile_x_index = (int)(x[xI] * dem_prop->pixels_per_tile_inverted_x_axis);
+            const int tile_x_index = (int)(x[xI] * dem_prop->tile_pixel_count_inverted_x);
 
             const int samples_index = i * width + j;
             // make sure that the tile we want is actually listed
-            if (tile_x_index > static_cast<int>(dem_prop->tiles_x_axis) || tile_x_index < 0 ||
-                tile_y_index > static_cast<int>(dem_prop->tiles_y_axis) || tile_y_index < 0) {
+            if (tile_x_index > static_cast<int>(dem_prop->grid_tile_count_x) || tile_x_index < 0 ||
+                tile_y_index > static_cast<int>(dem_prop->grid_tile_count_y) || tile_y_index < 0) {
                 samples[samples_index] = CUDART_NAN;
                 all_valid = 0;
                 ++j;
                 continue;
             }
-            const int pixel_x = x[xI] - tile_x_index * dem_prop->pixels_per_tile_x_axis;
+            const int pixel_x = x[xI] - tile_x_index * dem_prop->tile_pixel_count_x;
             const int tile_pixel_index = pixel_x + tile_pixel_count_x * pixel_y;
-            const int tile_id = tile_x_index * 1000 + tile_y_index;
-            printf("ID %d x_i %d y_i %d\n", tile_id, tile_x_index, tile_y_index);
+            const int tile_id = tile_x_index * 1000 + tile_y_index + 1;
             for (int tile_i = 0; tile_i < (int)tiles->size; tile_i++) {
                 if (tiles->array[tile_i].id == tile_id) {
                     const float* array = (float*)tiles->array[tile_i].pointer;
@@ -70,22 +68,22 @@ inline __device__ int GetSamples(PointerArray* tiles, int* x, int* y, double* sa
     return all_valid;
 }
 
-inline __device__ __host__ size_t GetCopDemCog30mRasterWidth(double lat) {
+inline __device__ __host__ size_t GetCopDemCog30mTileWidth(double lat) {
     const int abs_lat = (int)abs(lat);
     if (abs_lat < 50) {
-        return 1200;
+        return 1200 * 3;
     } else if (abs_lat >= 50 && abs_lat < 60) {
-        return 800;
+        return 800 * 3;
     } else if (abs_lat >= 60 && abs_lat < 70) {
-        return 600;
+        return 600 * 3;
     } else if (abs_lat >= 70 && abs_lat < 75) {
-        return 400;
+        return 400 * 3;
     } else if (abs_lat >= 75 && abs_lat < 80) {
-        return 400;
+        return 400 * 3;
     } else if (abs_lat >= 80 && abs_lat < 85) {
-        return 240;
+        return 240 * 3;
     } else {
-        return 120;
+        return 120 * 3;
     }
 }
 
@@ -95,11 +93,11 @@ inline __device__ double CopDemCog30mGetElevation(double geo_pos_lat, double geo
         geo_pos_lon -= 360.0;
     }
 
-    const auto raster_width_for_pos = GetCopDemCog30mRasterWidth(geo_pos_lat);
+    const auto tile_width_for_pos = GetCopDemCog30mTileWidth(geo_pos_lat);
     const auto dem_tile_count = p_array->size;
     const alus::dem::Property* dp = nullptr;
     for (size_t i = 0; i < dem_tile_count; i++) {
-        if (dem_prop[i].raster_width == raster_width_for_pos) {
+        if (dem_prop[i].tile_pixel_count_x == tile_width_for_pos) {
             dp = dem_prop + i;
             break;
         }
@@ -109,12 +107,11 @@ inline __device__ double CopDemCog30mGetElevation(double geo_pos_lat, double geo
         return dem_prop->no_data_value;
     }
 
-    double pixel_y = (dp->lat_coverage - geo_pos_lat) * dp->pixel_size_degrees_inverted_y_axis;
+    double pixel_y = (dp->grid_max_lat - geo_pos_lat) * dp->tile_pixel_size_deg_inverted_y;
     if (pixel_y < 0 || isnan(pixel_y)) {
         return dp->no_data_value;
     }
-    double pixel_x = (geo_pos_lon + dp->lon_coverage) * dp->pixel_size_degrees_inverted_x_axis;
-
+    double pixel_x = (geo_pos_lon + dp->grid_max_lon) * dp->tile_pixel_size_deg_inverted_x;
     // computing corner based index
     double index_i[2];
     double index_j[2];
@@ -122,8 +119,8 @@ inline __device__ double CopDemCog30mGetElevation(double geo_pos_lat, double geo
     double index_kj[1];
     snapengine::resampling::ResamplingIndex index{0, 0, 0, 0, 0, 0, index_i, index_j, index_ki, index_kj};
     snapengine::bilinearinterpolation::ComputeIndex(pixel_x + 0.5, pixel_y + 0.5,
-                                                    static_cast<int>(dp->raster_width),
-                                                    static_cast<int>(dp->raster_height), &index);
+                                                    static_cast<int>(dp->grid_total_width_pixels),
+                                                    static_cast<int>(dp->grid_total_height_pixels), &index);
 
     auto elevation =
         snapengine::bilinearinterpolation::Resample(p_array, &index, 2, CUDART_NAN, 1, dp, GetSamples);

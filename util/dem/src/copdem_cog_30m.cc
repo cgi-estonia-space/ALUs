@@ -27,15 +27,15 @@
 #include "cuda_util.h"
 
 namespace {
-constexpr size_t RASTER_WIDTH_DEG{1};
-constexpr size_t RASTER_HEIGHT_DEG{1};
+constexpr size_t RASTER_DEG_RES_X{1};
+constexpr size_t RASTER_DEG_RES_Y{1};
 constexpr size_t MAX_LON_COVERAGE{180};
 constexpr size_t MAX_LAT_COVERAGE{90};
 constexpr size_t RASTER_X_TILE_COUNT{360};
 constexpr size_t RASTER_Y_TILE_COUNT{180};
 constexpr size_t TILE_HEIGHT_PIXELS{3600};
 constexpr double PIXELS_PER_TILE_HEIGHT_INVERTED{1 / static_cast<double>(TILE_HEIGHT_PIXELS)};
-constexpr double PIXEL_SIZE_Y_DEGREES{RASTER_HEIGHT_DEG / static_cast<double>(TILE_HEIGHT_PIXELS)};
+constexpr double PIXEL_SIZE_Y_DEGREES{RASTER_DEG_RES_Y / static_cast<double>(TILE_HEIGHT_PIXELS)};
 constexpr double PIXEL_SIZE_Y_DEGREES_INVERTED{1 / PIXEL_SIZE_Y_DEGREES};
 constexpr double NO_DATA_VALUE{0.0};
 constexpr std::array<size_t, 7> ALLOWED_WIDTHS{TILE_HEIGHT_PIXELS, 2400, 1800, 1200, 720, 360};
@@ -54,29 +54,29 @@ CopDemCog30m::CopDemCog30m(std::vector<std::string> filenames) : filenames_(std:
 
 void CopDemCog30m::VerifyProperties(const Property& prop, const Dataset<float>& ds, std::string_view filename) {
     std::string exception_message_header = "Given file '" + std::string(filename) + "'";
-    if (prop.pixels_per_tile_y_axis != TILE_HEIGHT_PIXELS || ds.GetRasterSizeY() != TILE_HEIGHT_PIXELS) {
-        std::runtime_error(exception_message_header + " height '" + std::to_string(prop.pixels_per_tile_y_axis) +
+    if (prop.tile_pixel_count_y != TILE_HEIGHT_PIXELS || ds.GetRasterSizeY() != TILE_HEIGHT_PIXELS) {
+        std::runtime_error(exception_message_header + " height '" + std::to_string(prop.tile_pixel_count_y) +
                            "' is not COPDEM 30m COG height(" + std::to_string(TILE_HEIGHT_PIXELS) + ")");
     }
     if (!std::any_of(ALLOWED_WIDTHS.cbegin(), ALLOWED_WIDTHS.cend(),
-                     [&prop](size_t v) { return v == prop.pixels_per_tile_x_axis; })) {
-        std::runtime_error(exception_message_header + " width '" + std::to_string(prop.pixels_per_tile_x_axis) +
+                     [&prop](size_t v) { return v == prop.tile_pixel_count_x; })) {
+        std::runtime_error(exception_message_header + " width '" + std::to_string(prop.tile_pixel_count_x) +
                            "' is not COPDEM 30m COG width");
     }
-    if (prop.pixels_per_tile_x_axis != static_cast<size_t>(ds.GetRasterSizeX())) {
+    if (prop.tile_pixel_count_x != static_cast<size_t>(ds.GetRasterSizeX())) {
         throw std::logic_error("COPDEM property width does not equal real raster one.");
     }
     constexpr size_t dig_comp{12};
-    if (DoubleForCompare(prop.pixels_per_tile_inverted_x_axis, dig_comp) !=
-            DoubleForCompare(prop.pixel_size_degrees_x_axis, dig_comp) ||
-        DoubleForCompare(prop.pixels_per_tile_inverted_x_axis, dig_comp) !=
+    if (DoubleForCompare(prop.tile_pixel_count_inverted_x, dig_comp) !=
+            DoubleForCompare(prop.tile_pixel_size_deg_x, dig_comp) ||
+        DoubleForCompare(prop.tile_pixel_count_inverted_x, dig_comp) !=
             DoubleForCompare(ds.GetPixelSizeLon(), dig_comp)) {
         throw std::runtime_error(exception_message_header +
                                  " pixel 'X' size does not equal to inverted value of pixel count");
     }
-    if (DoubleForCompare(prop.pixels_per_tile_inverted_y_axis, dig_comp) !=
-            DoubleForCompare(prop.pixel_size_degrees_y_axis, dig_comp) ||
-        DoubleForCompare(prop.pixels_per_tile_inverted_y_axis, dig_comp) !=
+    if (DoubleForCompare(prop.tile_pixel_count_inverted_y, dig_comp) !=
+            DoubleForCompare(prop.tile_pixel_size_deg_y, dig_comp) ||
+        DoubleForCompare(prop.tile_pixel_count_inverted_y, dig_comp) !=
             DoubleForCompare(std::abs(ds.GetPixelSizeLat()), dig_comp)) {
         throw std::runtime_error(exception_message_header +
                                  " pixel 'Y' size does not equal to inverted value of pixel count");
@@ -89,25 +89,25 @@ void CopDemCog30m::LoadTilesImpl() {
         ds.LoadRasterBand(1);
 
         Property prop;
-        prop.pixels_per_tile_x_axis = ds.GetRasterSizeX();
-        prop.pixels_per_tile_y_axis = ds.GetRasterSizeY();
-        prop.pixels_per_tile_inverted_x_axis = 1.0 / prop.pixels_per_tile_x_axis;
-        prop.pixels_per_tile_inverted_y_axis = 1.0 / prop.pixels_per_tile_y_axis;
-        prop.tiles_x_axis = RASTER_X_TILE_COUNT;
-        prop.tiles_y_axis = RASTER_Y_TILE_COUNT;
-        prop.raster_width = prop.pixels_per_tile_x_axis * RASTER_X_TILE_COUNT;
-        prop.raster_height = TILE_HEIGHT_PIXELS * RASTER_Y_TILE_COUNT;
+        prop.tile_pixel_count_x = ds.GetRasterSizeX();
+        prop.tile_pixel_count_y = ds.GetRasterSizeY();
+        prop.tile_pixel_count_inverted_x = 1.0 / prop.tile_pixel_count_x;
+        prop.tile_pixel_count_inverted_y = 1.0 / prop.tile_pixel_count_y;
+        prop.grid_tile_count_x = RASTER_X_TILE_COUNT;
+        prop.grid_tile_count_y = RASTER_Y_TILE_COUNT;
+        prop.grid_total_width_pixels = prop.tile_pixel_count_x * RASTER_X_TILE_COUNT;
+        prop.grid_total_height_pixels = TILE_HEIGHT_PIXELS * RASTER_Y_TILE_COUNT;
         prop.no_data_value = NO_DATA_VALUE;
-        prop.pixel_size_degrees_x_axis = ds.GetPixelSizeLon();
-        prop.pixel_size_degrees_y_axis = std::abs(ds.GetPixelSizeLat());
-        prop.pixel_size_degrees_inverted_x_axis = 1 / prop.pixel_size_degrees_x_axis;
-        prop.pixel_size_degrees_inverted_y_axis = 1 / prop.pixel_size_degrees_y_axis;
-        prop.lat_coverage = 90.0;
-        prop.lon_coverage = 180.0;
-        prop.lat_origin = ds.GetOriginLat();
-        prop.lat_extent = prop.lat_origin + (ds.GetRasterSizeY() * ds.GetPixelSizeLat());
-        prop.lon_origin = ds.GetOriginLon();
-        prop.lon_extent = prop.lon_origin + (ds.GetRasterSizeX() * ds.GetPixelSizeLon());
+        prop.tile_pixel_size_deg_x = ds.GetPixelSizeLon();
+        prop.tile_pixel_size_deg_y = std::abs(ds.GetPixelSizeLat());
+        prop.tile_pixel_size_deg_inverted_x = 1 / prop.tile_pixel_size_deg_x;
+        prop.tile_pixel_size_deg_inverted_y = 1 / prop.tile_pixel_size_deg_y;
+        prop.grid_max_lat = 90.0;
+        prop.grid_max_lon = 180.0;
+        prop.tile_lat_origin = ds.GetOriginLat();
+        prop.tile_lat_extent = prop.tile_lat_origin + (ds.GetRasterSizeY() * ds.GetPixelSizeLat());
+        prop.tile_lon_origin = ds.GetOriginLon();
+        prop.tile_lon_extent = prop.tile_lon_origin + (ds.GetRasterSizeX() * ds.GetPixelSizeLon());
         host_dem_properties_.push_back(prop);
 
         LOGI << "Loaded " << dem_file;
@@ -123,8 +123,8 @@ void CopDemCog30m::TransferToDeviceImpl() {
     //    constexpr dim3 BLOCK_SIZE(20, 20);
 
     for (size_t i = 0; i < nr_of_tiles; i++) {
-        const auto x_size = host_dem_properties_.at(i).pixels_per_tile_x_axis;
-        const auto y_size = host_dem_properties_.at(i).pixels_per_tile_y_axis;
+        const auto x_size = host_dem_properties_.at(i).tile_pixel_count_x;
+        const auto y_size = host_dem_properties_.at(i).tile_pixel_count_y;
         const auto dem_size_bytes = x_size * y_size * sizeof(float);
         CHECK_CUDA_ERR(cudaMalloc((void**)&device_formated_buffers_.at(i), dem_size_bytes));
         //        float* temp_buffer;
@@ -142,8 +142,8 @@ void CopDemCog30m::TransferToDeviceImpl() {
         // When converting to integer C++ rules cast down positive float numbers and towards zero for negative
         // float numbers. Since values are slightly below whole, for example 34.999567 a whole number 35 is desired
         // for index calculations. Without std::round() first the result would be 34.
-        const auto lon = static_cast<int>(std::round(host_dem_properties_.at(i).lon_origin));
-        const auto lat = static_cast<int>(std::round(host_dem_properties_.at(i).lat_origin - 1.0));
+        const auto lon = static_cast<int>(std::round(host_dem_properties_.at(i).tile_lon_origin));
+        const auto lat = static_cast<int>(std::round(host_dem_properties_.at(i).tile_lat_origin - 1.0));
         // ID according to the bottom left point. E.g W01 + S90 = 0 or E179 + N89 = 359 * 1000 + 179.
         temp_tiles.at(i).id = ComputeId(lon, lat);
         temp_tiles.at(i).x = x_size;
@@ -269,8 +269,8 @@ void CopDemCog30m::WaitTransferDeviceAndCheckErrors() {
 
 // Calculates according to bottom left point.
 int CopDemCog30m::ComputeId(double lon_origin, double lat_origin) {
-    return ((lon_origin + MAX_LON_COVERAGE) / RASTER_WIDTH_DEG) * 1000 +
-           ((lat_origin + MAX_LAT_COVERAGE) / RASTER_HEIGHT_DEG);
+    return ((MAX_LON_COVERAGE + lon_origin) / RASTER_DEG_RES_X) * 1000 +
+           ((MAX_LAT_COVERAGE - lat_origin) / RASTER_DEG_RES_Y);
 }
 
 }  // namespace alus::dem

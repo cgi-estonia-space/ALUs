@@ -20,6 +20,9 @@
 #include "copdem_cog_30m.h"
 #include "dem_property.h"
 
+double GetElevationWrapper(double lon, double lat, alus::PointerArray p_array,
+                           const alus::dem::Property* dem_prop);
+
 namespace {
 
 using ::testing::DoubleEq;
@@ -38,55 +41,55 @@ TEST(CopDemCog30m, LoadsTilesCorrectly) {
     ASSERT_THAT(dem_properties, SizeIs(2));
 
     alus::dem::Property n49_e004_prop{};
-    n49_e004_prop.pixels_per_tile_inverted_x_axis = 1 / 3600.0;
-    n49_e004_prop.pixels_per_tile_inverted_y_axis = 1 / 3600.0;
-    n49_e004_prop.pixels_per_tile_x_axis = 3600;
-    n49_e004_prop.pixels_per_tile_y_axis = 3600;
-    n49_e004_prop.raster_width = 3600 * 360;
-    n49_e004_prop.pixel_size_degrees_x_axis = 0.000277777777778;
-    n49_e004_prop.pixel_size_degrees_inverted_x_axis = 3600;
-    n49_e004_prop.lat_origin = 50.000138888888891;
-    n49_e004_prop.lon_origin = 3.999861111111111;
-    n49_e004_prop.lat_extent = 49.0001389;
-    n49_e004_prop.lon_extent = 4.9998611;
+    n49_e004_prop.tile_pixel_count_inverted_x = 1 / 3600.0;
+    n49_e004_prop.tile_pixel_count_inverted_y = 1 / 3600.0;
+    n49_e004_prop.tile_pixel_count_x = 3600;
+    n49_e004_prop.tile_pixel_count_y = 3600;
+    n49_e004_prop.grid_total_width_pixels = 3600 * 360;
+    n49_e004_prop.tile_pixel_size_deg_x = 0.000277777777778;
+    n49_e004_prop.tile_pixel_size_deg_inverted_x = 3600;
+    n49_e004_prop.tile_lat_origin = 50.000138888888891;
+    n49_e004_prop.tile_lon_origin = 3.999861111111111;
+    n49_e004_prop.tile_lat_extent = 49.0001389;
+    n49_e004_prop.tile_lon_extent = 4.9998611;
 
     alus::dem::Property n51_e006_prop{};
-    n51_e006_prop.pixels_per_tile_inverted_x_axis = 1 / 2400.0;
-    n51_e006_prop.pixels_per_tile_inverted_y_axis = 1 / 3600.0;
-    n51_e006_prop.pixels_per_tile_x_axis = 2400;
-    n51_e006_prop.pixels_per_tile_y_axis = 3600;
-    n51_e006_prop.raster_width = 2400 * 360;
-    n51_e006_prop.pixel_size_degrees_x_axis = 0.000416666666667;
-    n51_e006_prop.pixel_size_degrees_inverted_x_axis = 2400;
-    n51_e006_prop.lat_origin = 52.000138888888891;
-    n51_e006_prop.lon_origin = 5.999791666666667;
-    n51_e006_prop.lat_extent = 51.0001389;
-    n51_e006_prop.lon_extent = 6.9997917;
+    n51_e006_prop.tile_pixel_count_inverted_x = 1 / 2400.0;
+    n51_e006_prop.tile_pixel_count_inverted_y = 1 / 3600.0;
+    n51_e006_prop.tile_pixel_count_x = 2400;
+    n51_e006_prop.tile_pixel_count_y = 3600;
+    n51_e006_prop.grid_total_width_pixels = 2400 * 360;
+    n51_e006_prop.tile_pixel_size_deg_x = 0.000416666666667;
+    n51_e006_prop.tile_pixel_size_deg_inverted_x = 2400;
+    n51_e006_prop.tile_lat_origin = 52.000138888888891;
+    n51_e006_prop.tile_lon_origin = 5.999791666666667;
+    n51_e006_prop.tile_lat_extent = 51.0001389;
+    n51_e006_prop.tile_lon_extent = 6.9997917;
 
 
     std::vector<alus::dem::Property> expectedProperties{n49_e004_prop, n51_e006_prop};
     for (size_t i = 0; i < dem_properties.size(); i++) {
         const auto& p = dem_properties.at(i);
         const auto& ep = expectedProperties.at(i);
-        ASSERT_THAT(p.pixels_per_tile_inverted_x_axis, DoubleEq(ep.pixels_per_tile_inverted_x_axis));
-        ASSERT_THAT(p.pixels_per_tile_inverted_y_axis, DoubleEq(ep.pixels_per_tile_inverted_y_axis));
-        ASSERT_THAT(p.pixels_per_tile_x_axis, Eq(ep.pixels_per_tile_x_axis));
-        ASSERT_THAT(p.pixels_per_tile_y_axis, Eq(ep.pixels_per_tile_y_axis));
-        ASSERT_THAT(p.tiles_x_axis, Eq(360));
-        ASSERT_THAT(p.tiles_y_axis, Eq(180));
-        ASSERT_THAT(p.raster_width, Eq(ep.raster_width));
-        ASSERT_THAT(p.raster_height, Eq(180 * 3600));
+        ASSERT_THAT(p.tile_pixel_count_inverted_x, DoubleEq(ep.tile_pixel_count_inverted_x));
+        ASSERT_THAT(p.tile_pixel_count_inverted_y, DoubleEq(ep.tile_pixel_count_inverted_y));
+        ASSERT_THAT(p.tile_pixel_count_x, Eq(ep.tile_pixel_count_x));
+        ASSERT_THAT(p.tile_pixel_count_y, Eq(ep.tile_pixel_count_y));
+        ASSERT_THAT(p.grid_tile_count_x, Eq(360));
+        ASSERT_THAT(p.grid_tile_count_y, Eq(180));
+        ASSERT_THAT(p.grid_total_width_pixels, Eq(ep.grid_total_width_pixels));
+        ASSERT_THAT(p.grid_total_height_pixels, Eq(180 * 3600));
         ASSERT_THAT(p.no_data_value, DoubleEq(0.0));
-        ASSERT_THAT(p.pixel_size_degrees_x_axis, DoubleNear(ep.pixel_size_degrees_x_axis, 1e-12));
-        ASSERT_THAT(p.pixel_size_degrees_y_axis, DoubleNear(0.000277777777778, 1e-12));
-        ASSERT_THAT(p.pixel_size_degrees_inverted_x_axis, DoubleNear(ep.pixel_size_degrees_inverted_x_axis, 1e-12));
-        ASSERT_THAT(p.pixel_size_degrees_inverted_y_axis, DoubleNear(3600, 1e-12));
-        ASSERT_THAT(p.lat_coverage, Eq(90));
-        ASSERT_THAT(p.lon_coverage, Eq(180));
-        ASSERT_THAT(p.lat_origin, DoubleNear(ep.lat_origin, 1e-12));
-        ASSERT_THAT(p.lat_extent, DoubleNear(ep.lat_extent, 1e-7));
-        ASSERT_THAT(p.lon_origin, DoubleNear(ep.lon_origin, 1e-12));
-        ASSERT_THAT(p.lon_extent, DoubleNear(ep.lon_extent, 1e-7));
+        ASSERT_THAT(p.tile_pixel_size_deg_x, DoubleNear(ep.tile_pixel_size_deg_x, 1e-12));
+        ASSERT_THAT(p.tile_pixel_size_deg_y, DoubleNear(0.000277777777778, 1e-12));
+        ASSERT_THAT(p.tile_pixel_size_deg_inverted_x, DoubleNear(ep.tile_pixel_size_deg_inverted_x, 1e-12));
+        ASSERT_THAT(p.tile_pixel_size_deg_inverted_y, DoubleNear(3600, 1e-12));
+        ASSERT_THAT(p.grid_max_lat, Eq(90));
+        ASSERT_THAT(p.grid_max_lon, Eq(180));
+        ASSERT_THAT(p.tile_lat_origin, DoubleNear(ep.tile_lat_origin, 1e-12));
+        ASSERT_THAT(p.tile_lat_extent, DoubleNear(ep.tile_lat_extent, 1e-7));
+        ASSERT_THAT(p.tile_lon_origin, DoubleNear(ep.tile_lon_origin, 1e-12));
+        ASSERT_THAT(p.tile_lon_extent, DoubleNear(ep.tile_lon_extent, 1e-7));
     }
 
     manager.TransferToDevice();
@@ -94,6 +97,10 @@ TEST(CopDemCog30m, LoadsTilesCorrectly) {
     ASSERT_THAT(count, Eq(2));
     ASSERT_THAT(manager.GetProperties(), Ne(nullptr));
     ASSERT_THAT(manager.GetBuffers(), Ne(nullptr));
+
+    alus::PointerArray dem_buffers {const_cast<alus::PointerHolder*>(manager.GetBuffers()), manager.GetTileCount()};
+    double result = GetElevationWrapper(4.1727, 49.7889, dem_buffers, manager.GetProperties());
+    std::cout << "RESULT: " << result << std::endl;
 }
 
 }  // namespace

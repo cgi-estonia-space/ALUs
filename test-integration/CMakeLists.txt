@@ -372,7 +372,8 @@ add_dependencies(integration-test-gdal-util integration-test-prepare-data)
 
 #--------------DEM util integration tests---------------------------
 list(APPEND TEST_SOURCES_DEM_UTIL
-        src/copdem_test.cc)
+        src/copdem_test.cc
+        src/copdem_test.cu)
 
 add_executable(integration-test-dem-util ${TEST_SOURCES_DEM_UTIL})
 

@@ -18,25 +18,25 @@
 namespace alus::dem {
 
 struct Property {
-    double pixels_per_tile_inverted_x_axis;  // NUM_PIXELS_PER_TILE_INVERTED
-    double pixels_per_tile_inverted_y_axis;  // NUM_PIXELS_PER_TILE_INVERTED
-    size_t pixels_per_tile_x_axis;           // NUM_PIXELS_PER_TILE
-    size_t pixels_per_tile_y_axis;           // NUM_PIXELS_PER_TILE
-    size_t tiles_x_axis;                     // NUM_X_TILES
-    size_t tiles_y_axis;                     // NUM_Y_TILES
-    size_t raster_width;                     // RASTER_WIDTH
-    size_t raster_height;                    // RASTER_HEIGHT
+    double tile_pixel_count_inverted_x;  // NUM_PIXELS_PER_TILE_INVERTED
+    double tile_pixel_count_inverted_y;  // NUM_PIXELS_PER_TILE_INVERTED
+    size_t tile_pixel_count_x;           // NUM_PIXELS_PER_TILE
+    size_t tile_pixel_count_y;           // NUM_PIXELS_PER_TILE
+    size_t grid_tile_count_x;            // NUM_X_TILES
+    size_t grid_tile_count_y;            // NUM_Y_TILES
+    size_t grid_total_width_pixels;      // RASTER_WIDTH
+    size_t grid_total_height_pixels;     // RASTER_HEIGHT
     double no_data_value;
-    double pixel_size_degrees_x_axis;           // DEGREE_RES_BY_NUM_PIXELS_PER_TILE
-    double pixel_size_degrees_y_axis;           // DEGREE_RES_BY_NUM_PIXELS_PER_TILE
-    double pixel_size_degrees_inverted_x_axis;  // DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED
-    double pixel_size_degrees_inverted_y_axis;  // DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED
-    double lat_coverage;
-    double lon_coverage;
-    double lat_origin;
-    double lat_extent;
-    double lon_origin;
-    double lon_extent;
+    double tile_pixel_size_deg_x;           // DEGREE_RES_BY_NUM_PIXELS_PER_TILE
+    double tile_pixel_size_deg_y;           // DEGREE_RES_BY_NUM_PIXELS_PER_TILE
+    double tile_pixel_size_deg_inverted_x;  // DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED
+    double tile_pixel_size_deg_inverted_y;  // DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED
+    double grid_max_lat;
+    double grid_max_lon;
+    double tile_lat_origin;
+    double tile_lat_extent;
+    double tile_lon_origin;
+    double tile_lon_extent;
 };
 
 static_assert(sizeof(Property) % 8 == 0);
