@@ -42,16 +42,19 @@ inline __device__ int GetSamples(PointerArray* tiles, int* x, int* y, double* sa
                 tile_y_index > static_cast<int>(dem_prop->grid_tile_count_y) || tile_y_index < 0) {
                 samples[samples_index] = CUDART_NAN;
                 all_valid = 0;
+                printf("not listed\n");
                 ++j;
                 continue;
             }
             const int pixel_x = x[xI] - tile_x_index * dem_prop->tile_pixel_count_x;
             const int tile_pixel_index = pixel_x + tile_pixel_count_x * pixel_y;
             const int tile_id = tile_x_index * 1000 + tile_y_index + 1;
+            printf("Tile id %d\n", tile_id);
             for (int tile_i = 0; tile_i < (int)tiles->size; tile_i++) {
                 if (tiles->array[tile_i].id == tile_id) {
                     const float* array = (float*)tiles->array[tile_i].pointer;
                     const float value = array[tile_pixel_index];
+                    printf("value %f samples index %d\n", value, samples_index);
                     samples[samples_index] = value;
                     break;
                 }
@@ -60,6 +63,7 @@ inline __device__ int GetSamples(PointerArray* tiles, int* x, int* y, double* sa
             if (samples[samples_index] == dem_prop->no_data_value) {
                 samples[samples_index] = CUDART_NAN;
                 all_valid = 0;
+                printf("no data\n");
             }
             ++j;
         }
@@ -124,6 +128,7 @@ inline __device__ double CopDemCog30mGetElevation(double geo_pos_lat, double geo
 
     auto elevation =
         snapengine::bilinearinterpolation::Resample(p_array, &index, 2, CUDART_NAN, 1, dp, GetSamples);
+    printf("elev %f\n", elevation);
 
     return isnan(elevation) ? dp->no_data_value : elevation;
 }

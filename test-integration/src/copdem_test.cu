@@ -22,6 +22,7 @@
 __global__ void GetElevationWrapperKernel(double lat, double lon, alus::PointerArray p_array,
                                           const alus::dem::Property* dem_prop, double* result) {
     *result = alus::dem::CopDemCog30mGetElevation(lat, lon, &p_array, dem_prop);
+    printf("res kernel %f\n", *result);
 }
 
 __host__ double GetElevationWrapper(double lon, double lat, alus::PointerArray p_array,
@@ -32,7 +33,7 @@ __host__ double GetElevationWrapper(double lon, double lat, alus::PointerArray p
     CHECK_CUDA_ERR(cudaDeviceSynchronize());
     CHECK_CUDA_ERR(cudaGetLastError());
     double result{};
-    CHECK_CUDA_ERR(cudaMemcpy(&result, dev_result, 4, cudaMemcpyDeviceToHost));
+    CHECK_CUDA_ERR(cudaMemcpy(&result, dev_result, sizeof(double), cudaMemcpyDeviceToHost));
 
     return result;
 }

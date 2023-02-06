@@ -23,6 +23,7 @@
 #include "computation_metadata.h"
 #include "dataset.h"
 #include "dem_property.h"
+#include "dem_type.h"
 #include "get_position.h"
 #include "pointer_holders.h"
 #include "product_old.h"
@@ -40,7 +41,7 @@ public:
                                const snapengine::tiepointgrid::TiePointGrid& lat_tie_point_grid,
                                const snapengine::tiepointgrid::TiePointGrid& lon_tie_point_grid,
                                const PointerHolder* srtm_3_tiles, size_t srtm_3_tiles_length_,
-                               const dem::Property* dem_property,
+                               const dem::Property* dem_property, const dem::Type dem_type,
                                const std::vector<dem::Property>& dem_property_value, int selected_band_id = 1,
                                bool use_average_scene_height = false);
 
@@ -65,6 +66,7 @@ private:
     const PointerHolder* d_srtm_3_tiles_;
     const size_t d_srtm_3_tiles_length_;
     const dem::Property* dem_property_;
+    const dem::Type dem_type_;
     const std::vector<dem::Property> dem_property_value_;
     std::vector<void*> cuda_arrays_to_clean_{};
     const int selected_band_id_;

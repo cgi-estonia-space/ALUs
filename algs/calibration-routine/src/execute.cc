@@ -438,11 +438,10 @@ std::string Execute::TerrainCorrection(const std::shared_ptr<snapengine::Product
                          total_dimension_edge);
     const auto y_tile_size = total_dimension_edge - x_tile_size;
 
-    terraincorrection::TerrainCorrection tc(tc_in_dataset, metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
-                                            metadata.GetLonTiePointGrid(), d_dem_tiles, dem_tiles_length,
-                                            dem_assistant->GetElevationManager()->GetProperties(),
-                                            dem_assistant->GetElevationManager()->GetPropertiesValue(),
-                                            selected_band);
+    terraincorrection::TerrainCorrection tc(
+        tc_in_dataset, metadata.GetMetadata(), metadata.GetLatTiePointGrid(), metadata.GetLonTiePointGrid(),
+        d_dem_tiles, dem_tiles_length, dem_assistant->GetElevationManager()->GetProperties(), dem_assistant->GetType(),
+        dem_assistant->GetElevationManager()->GetPropertiesValue(), selected_band);
     std::string tc_output_file = predefined_output_name.empty()
                                      ? boost::filesystem::change_extension(output_name.data(), "").string() + "_tc.tif"
                                      : std::string(predefined_output_name);

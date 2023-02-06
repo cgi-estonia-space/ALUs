@@ -162,7 +162,7 @@ __global__ void GetSourceRectangleKernel(TcTileCoordinates tile_coordinates, Get
         altitude = args.avg_scene_height;
     } else {
         altitude = (*get_elevation)(coordinates.lat, coordinates.lon, const_cast<PointerArray*>(&args.srtm_3_tiles),
-                                 args.dem_property);
+                                    args.dem_property);
         if (altitude == args.dem_no_data_value) {
             args.d_azimuth_index[index] = CUDART_NAN;
             return;
@@ -201,14 +201,21 @@ Rectangle GetSourceRectangle(TcTileCoordinates tile_coordinates, GetSourceRectan
     auto* d_result = ctx->device_memory_arena.Alloc<SourceRectangeResult>();
 
     cuda::CopyAsyncH2D(d_result, h_result, ctx->stream);
-    cuda::FunctionPointer<dem::GetElevationFunc> ge(&dem::get_elevation_cop_dem_cog_30m);
-    GetSourceRectangleKernel<<<grid_dim, block_dim, 0, ctx->stream>>>(tile_coordinates, args, d_result,
-                                                                      ge.value);
-    cuda::CopyAsyncD2H(h_result, d_result, ctx->stream);
-
-    // need to wait for async memcpy to complete
-    CHECK_CUDA_ERR(cudaStreamSynchronize(ctx->stream));
-    CHECK_CUDA_ERR(cudaGetLastError());
+    if (args.dem_type == dem::Type::SRTM3) {
+        cuda::FunctionPointer<dem::GetElevationFunc> ge(&snapengine::dem::get_elevation_srtm3);
+        GetSourceRectangleKernel<<<grid_dim, block_dim, 0, ctx->stream>>>(tile_coordinates, args, d_result, ge.value);
+        cuda::CopyAsyncD2H(h_result, d_result, ctx->stream);
+        // need to wait for async memcpy to complete
+        CHECK_CUDA_ERR(cudaStreamSynchronize(ctx->stream));
+        CHECK_CUDA_ERR(cudaGetLastError());
+    } else if (args.dem_type == dem::Type::COPDEM_COG30m) {
+        cuda::FunctionPointer<dem::GetElevationFunc> ge(&dem::get_elevation_cop_dem_cog_30m);
+        GetSourceRectangleKernel<<<grid_dim, block_dim, 0, ctx->stream>>>(tile_coordinates, args, d_result, ge.value);
+        cuda::CopyAsyncD2H(h_result, d_result, ctx->stream);
+        // need to wait for async memcpy to complete
+        CHECK_CUDA_ERR(cudaStreamSynchronize(ctx->stream));
+        CHECK_CUDA_ERR(cudaGetLastError());
+    }
 
     if (h_result->max_azimuth == INT32_MIN) {
         return {};

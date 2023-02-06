@@ -94,7 +94,8 @@ TEST_F(TerrainCorrectionIntegrationTest, Saaremaa1) {
         const int tile_side_length{1000};
         TerrainCorrection tc(input.GetGdalDataset(), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
                              metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length,
-                             srtm_3_model->GetProperties(), srtm_3_model->GetPropertiesValue(), selected_band);
+                             srtm_3_model->GetProperties(), alus::dem::Type::SRTM3, srtm_3_model->GetPropertiesValue(),
+                             selected_band);
         tc.ExecuteTerrainCorrection(output_path, tile_side_length, tile_side_length);
         const auto output = tc.GetOutputDataset();
     }
@@ -137,8 +138,8 @@ TEST_F(TerrainCorrectionIntegrationTest, SaaremaaAverageSceneHeight) {
     {
         const int tile_side_length{1000};
         TerrainCorrection tc(input.GetGdalDataset(), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
-                             metadata.GetLonTiePointGrid(), nullptr, 0, nullptr, {}, selected_band,
-                             use_avg_scene_height);
+                             metadata.GetLonTiePointGrid(), nullptr, 0, nullptr, alus::dem::Type::SRTM3, {},
+                             selected_band, use_avg_scene_height);
         tc.ExecuteTerrainCorrection(output_path, tile_side_length, tile_side_length);
     }
 
@@ -186,7 +187,8 @@ TEST_F(TerrainCorrectionIntegrationTest, BeirutExplosion) {
         const int tile_side_length{1000};
         TerrainCorrection tc(input.GetGdalDataset(), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
                              metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length,
-                             srtm_3_model->GetProperties(), srtm_3_model->GetPropertiesValue(), selected_band);
+                             srtm_3_model->GetProperties(), alus::dem::Type::SRTM3, srtm_3_model->GetPropertiesValue(),
+                             selected_band);
         tc.ExecuteTerrainCorrection(output_path, tile_side_length, tile_side_length);
     }
 

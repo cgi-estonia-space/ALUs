@@ -435,10 +435,10 @@ TEST_F(TerrainCorrectionTest, CreateTargetProduct) {
     TiePointGeocoding source_geocoding(lat_grid, lon_grid);
     auto coh_dataset = Dataset<double>(COH_1_TIF);
     coh_dataset.LoadRasterBand(1);
-    TerrainCorrection terrain_correction(coh_dataset.GetGdalDataset(), metadata_.value().GetMetadata(),
-                                         metadata_.value().GetLatTiePointGrid(), metadata_.value().GetLonTiePointGrid(),
-                                         srtm_3_model_->GetBuffers(), srtm_3_tiles_length_,
-                                         srtm_3_model_->GetProperties(), srtm_3_model_->GetPropertiesValue());
+    TerrainCorrection terrain_correction(
+        coh_dataset.GetGdalDataset(), metadata_.value().GetMetadata(), metadata_.value().GetLatTiePointGrid(),
+        metadata_.value().GetLonTiePointGrid(), srtm_3_model_->GetBuffers(), srtm_3_tiles_length_,
+        srtm_3_model_->GetProperties(), alus::dem::Type::SRTM3, srtm_3_model_->GetPropertiesValue());
     auto target = terrain_correction.CreateTargetProduct(&source_geocoding, TC_OUTPUT);
     const int geo_transform_array_length{6};
     double target_geo_transform[geo_transform_array_length];

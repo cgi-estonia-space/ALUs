@@ -171,7 +171,7 @@ TerrainCorrection::TerrainCorrection(GDALDataset* input_dataset, const RangeDopp
                                      const snapengine::tiepointgrid::TiePointGrid& lat_tie_point_grid,
                                      const snapengine::tiepointgrid::TiePointGrid& lon_tie_point_grid,
                                      const PointerHolder* srtm_3_tiles, size_t srtm_3_tiles_length,
-                                     const dem::Property* dem_property,
+                                     const dem::Property* dem_property, const dem::Type dem_type,
                                      const std::vector<dem::Property>& dem_property_value, int selected_band_id,
                                      bool use_average_scene_height)
     : input_ds_{input_dataset},
@@ -179,6 +179,7 @@ TerrainCorrection::TerrainCorrection(GDALDataset* input_dataset, const RangeDopp
       d_srtm_3_tiles_(srtm_3_tiles),
       d_srtm_3_tiles_length_(srtm_3_tiles_length),
       dem_property_{dem_property},
+      dem_type_{dem_type},
       dem_property_value_{dem_property_value},
       selected_band_id_(selected_band_id),
       lat_tie_point_grid_{lat_tie_point_grid},
@@ -230,7 +231,7 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
     LOGD << "TC tiles = " << tiles.size() << " threads = " << n_threads
          << " transfer mode = " << (use_pinned_memory ? "pinned" : "paged");
 
-    // setup data for use by threads, these must outlive threads themself
+    // setup data for use by threads, these must outlive threads themselves
     SharedThreadData shared_data = {};
     shared_data.terrain_correction = this;
     shared_data.output_dataset = target_product.dataset_.get();
@@ -454,6 +455,7 @@ void TerrainCorrection::CalculateTile(TcTileCoordinates tile_coordinates, Shared
     src_args.use_avg_scene_height = shared->terrain_correction->use_average_scene_height_;
     src_args.avg_scene_height = shared->terrain_correction->metadata_.avg_scene_height;
     src_args.dem_property = shared->terrain_correction->dem_property_;
+    src_args.dem_type = shared->terrain_correction->dem_type_;
     if (!shared->terrain_correction->use_average_scene_height_) {
         src_args.dem_no_data_value = shared->terrain_correction->dem_property_value_.front().no_data_value;
     }

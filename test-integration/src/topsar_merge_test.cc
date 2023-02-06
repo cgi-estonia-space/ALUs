@@ -219,7 +219,8 @@ TEST_F(TopsarMergeTest, OverlappingSubSwathsMergeWithTC) {
 
         TerrainCorrection tc(data_writer->GetDataset(), tc_metadata.GetMetadata(), tc_metadata.GetLatTiePointGrid(),
                              tc_metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length,
-                             srtm_3_model->GetProperties(), srtm_3_model->GetPropertiesValue(), selected_band);
+                             srtm_3_model->GetProperties(), alus::dem::Type::SRTM3, srtm_3_model->GetPropertiesValue(),
+                             selected_band);
         tc.ExecuteTerrainCorrection(OUTPUT_FILE_TC, 1000, 1000);  // NOLINT
     }
 

@@ -133,7 +133,7 @@ std::shared_ptr<Assistant> Assistant::CreateFormattedDemTilesOnGpuFrom(
 }
 
 Assistant::Assistant(std::vector<std::string> filenames, Type mission)
-    : egm96_{std::make_shared<snapengine::EarthGravitationalModel96>()} {
+    : type_{mission}, egm96_{std::make_shared<snapengine::EarthGravitationalModel96>()} {
     egm96_->HostToDevice();
     switch (mission) {
         case Type::SRTM3:

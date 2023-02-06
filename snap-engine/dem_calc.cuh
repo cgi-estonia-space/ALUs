@@ -28,7 +28,7 @@ namespace alus::snapengine::dem {
 inline __device__ int GetSamples(PointerArray* tiles, int* x, int* y, double* samples, int width, int height,
                                  double /*no_value*/, int /*use_no_data*/, const alus::dem::Property* dem_prop) {
     int allValid = 1;
-    int xSize = dem_prop->tile_pixel_count_x;
+    int xSize = tiles->array[0].x;
 
     int i = 0;
     for (int yI = 0; yI < height; yI++) {

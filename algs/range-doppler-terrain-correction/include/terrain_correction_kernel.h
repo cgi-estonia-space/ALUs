@@ -20,6 +20,7 @@
 #include "cuda_mem_arena.h"
 #include "cuda_ptr.h"
 #include "dem_property.h"
+#include "dem_type.h"
 #include "get_position.h"
 #include "kernel_array.h"
 #include "pointer_holders.h"
@@ -39,6 +40,7 @@ struct GetSourceRectangleKernelArgs {
     GeoTransformParameters target_geo_transform;
     PointerArray srtm_3_tiles;
     const dem::Property* dem_property;
+    dem::Type dem_type;
     double* d_azimuth_index;
     double* d_range_index;
 };
