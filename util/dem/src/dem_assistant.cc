@@ -140,7 +140,7 @@ Assistant::Assistant(std::vector<std::string> filenames, Type mission)
             model_ = std::make_shared<snapengine::Srtm3ElevationModel>(std::move(filenames), egm96_);
             break;
         case Type::COPDEM_COG30m:
-            model_ = std::make_shared<CopDemCog30m>(std::move(filenames));
+            model_ = std::make_shared<CopDemCog30m>(std::move(filenames), egm96_);
             break;
         default:
             throw std::runtime_error("This code should not reach to unknown DEM type.");

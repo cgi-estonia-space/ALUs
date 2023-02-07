@@ -101,8 +101,12 @@ TEST(CopDemCog30m, LoadsTilesCorrectly) {
     alus::PointerArray dem_buffers {const_cast<alus::PointerHolder*>(manager.GetBuffers()), manager.GetTileCount()};
     double result = GetElevationWrapper(4.0008, 49.9999, dem_buffers, manager.GetProperties());
     ASSERT_THAT(190.081, DoubleNear(result, 1e-3));
-    result = GetElevationWrapper(4.0009, 50.0001, dem_buffers, manager.GetProperties());
-    std::cout << result << std::endl;
+    result = GetElevationWrapper(6.4808, 51.0772, dem_buffers, manager.GetProperties());
+    ASSERT_THAT(-76.41619, DoubleNear(result, 0.3));
+//    double lon = 4.000021255615911;
+//    double lat = 49.99994097377295;
+//    double result = GetElevationWrapper(lon, lat, dem_buffers, manager.GetProperties());
+//    std::cout << result << std::endl;
 }
 
 }  // namespace

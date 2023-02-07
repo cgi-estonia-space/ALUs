@@ -25,6 +25,7 @@
 
 #include "alus_log.h"
 #include "cuda_util.h"
+#include "dem_egm96.h"
 
 namespace {
 constexpr size_t RASTER_DEG_RES_X{1};
@@ -50,6 +51,12 @@ CopDemCog30m::CopDemCog30m(std::vector<std::string> filenames) : filenames_(std:
     if (filenames_.size() == 0) {
         throw std::runtime_error("No sense to prepare DEM files without any filenames given");
     }
+}
+
+CopDemCog30m::CopDemCog30m(std::vector<std::string> filenames,
+                           std::shared_ptr<snapengine::EarthGravitationalModel96> egm96)
+    : CopDemCog30m(std::move(filenames)) {
+    egm96_ = egm96;
 }
 
 void CopDemCog30m::VerifyProperties(const Property& prop, const Dataset<float>& ds, std::string_view filename) {
@@ -120,25 +127,55 @@ void CopDemCog30m::TransferToDeviceImpl() {
     const auto nr_of_tiles = datasets_.size();
     temp_tiles.resize(nr_of_tiles);
     device_formated_buffers_.resize(nr_of_tiles);
-    //    constexpr dim3 BLOCK_SIZE(20, 20);
+    constexpr dim3 device_block_size(20, 20);
 
     for (size_t i = 0; i < nr_of_tiles; i++) {
         const auto x_size = host_dem_properties_.at(i).tile_pixel_count_x;
         const auto y_size = host_dem_properties_.at(i).tile_pixel_count_y;
         const auto dem_size_bytes = x_size * y_size * sizeof(float);
         CHECK_CUDA_ERR(cudaMalloc((void**)&device_formated_buffers_.at(i), dem_size_bytes));
-        //        float* temp_buffer;
-        //        CHECK_CUDA_ERR(cudaMalloc((void**)&temp_buffer, dem_size_bytes));
-        CHECK_CUDA_ERR(cudaMemcpy(device_formated_buffers_.at(i), datasets_.at(i).GetHostDataBuffer().data(),
-                                  dem_size_bytes, cudaMemcpyHostToDevice));
-        //        this->srtm_format_info_.at(i).x_size = x_size;
-        //        this->srtm_format_info_.at(i).y_size = y_size;
-        //        const dim3 grid_size(cuda::GetGridDim(BLOCK_SIZE.x, x_size),
-        //                             cuda::GetGridDim(static_cast<int>(BLOCK_SIZE.y), y_size));
+
+        //        srtm_data.m00 = static_cast<float>(geo_transform[transform::TRANSFORM_PIXEL_X_SIZE_INDEX]);
+        //        srtm_data.m10 = static_cast<float>(geo_transform[transform::TRANSFORM_ROTATION_1]);
+        //        srtm_data.m01 = static_cast<float>(geo_transform[transform::TRANSFORM_ROTATION_2]);
+        //        srtm_data.m11 = static_cast<float>(geo_transform[transform::TRANSFORM_PIXEL_Y_SIZE_INDEX]);
+        //        srtm_data.m02 = static_cast<float>(geo_transform[transform::TRANSFORM_LON_ORIGIN_INDEX]);
+        //        srtm_data.m12 = static_cast<float>(geo_transform[transform::TRANSFORM_LAT_ORIGIN_INDEX]);
         //
-        //        CHECK_CUDA_ERR(LaunchDemFormatter(grid_size, BLOCK_SIZE, this->device_formated_srtm_buffers_.at(i),
-        //                                          temp_buffer, this->srtm_format_info_.at(i)));
-        //        temp_tiles.at(i).pointer = this->device_formated_srtm_buffers_.at(i);
+        //        srtm_data.no_data_value = srtm3elevationmodel::NO_DATA_VALUE;
+        //        srtm_data.max_lats = alus::snapengine::earthgravitationalmodel96computation::MAX_LATS;
+        //        srtm_data.max_lons = alus::snapengine::earthgravitationalmodel96computation::MAX_LONS;
+        //        srtm_data.egm = const_cast<float*>(egm_96_->GetDeviceValues());
+
+        if (egm96_) {
+            float* device_dem_values;
+            CHECK_CUDA_ERR(cudaMalloc((void**)&device_dem_values, dem_size_bytes));
+            CHECK_CUDA_ERR(cudaMemcpy(device_dem_values, datasets_.at(i).GetHostDataBuffer().data(), dem_size_bytes,
+                                      cudaMemcpyHostToDevice));
+            double gt[transform::GEOTRANSFORM_ARRAY_LENGTH];
+            datasets_.at(i).GetGdalDataset()->GetGeoTransform(gt);
+            EgmFormatProperties prop;
+            prop.tile_size_x = x_size;
+            prop.tile_size_y = y_size;
+            prop.m00 = gt[transform::TRANSFORM_PIXEL_X_SIZE_INDEX];
+            prop.m10 = gt[transform::TRANSFORM_ROTATION_1];
+            prop.m01 = gt[transform::TRANSFORM_ROTATION_2];
+            prop.m11 = gt[transform::TRANSFORM_PIXEL_Y_SIZE_INDEX];
+            prop.m02 = gt[transform::TRANSFORM_LON_ORIGIN_INDEX];
+            prop.m12 = gt[transform::TRANSFORM_LAT_ORIGIN_INDEX];
+            prop.no_data_value = host_dem_properties_.at(i).no_data_value;
+            prop.grid_max_lon = host_dem_properties_.at(i).grid_max_lon;
+            prop.grid_max_lat = host_dem_properties_.at(i).grid_max_lat;
+            prop.device_egm_array = egm96_->GetDeviceValues();
+            const dim3 grid_size(cuda::GetGridDim(device_block_size.x, x_size),
+                                 cuda::GetGridDim(device_block_size.y, y_size));
+            ConditionWithEgm96(grid_size, device_block_size, device_formated_buffers_.at(i), device_dem_values, prop);
+            CHECK_CUDA_ERR(cudaFree(device_dem_values));
+        } else {
+            CHECK_CUDA_ERR(cudaMemcpy(device_formated_buffers_.at(i), datasets_.at(i).GetHostDataBuffer().data(),
+                                      dem_size_bytes, cudaMemcpyHostToDevice));
+        }
+
         // When converting to integer C++ rules cast down positive float numbers and towards zero for negative
         // float numbers. Since values are slightly below whole, for example 34.999567 a whole number 35 is desired
         // for index calculations. Without std::round() first the result would be 34.

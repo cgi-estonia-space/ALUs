@@ -22,7 +22,6 @@
 __global__ void GetElevationWrapperKernel(double lat, double lon, alus::PointerArray p_array,
                                           const alus::dem::Property* dem_prop, double* result) {
     *result = alus::dem::CopDemCog30mGetElevation(lat, lon, &p_array, dem_prop);
-    printf("res kernel %f\n", *result);
 }
 
 __host__ double GetElevationWrapper(double lon, double lat, alus::PointerArray p_array,

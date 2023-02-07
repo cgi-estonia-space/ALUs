@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <memory>
 #include <future>
 #include <string>
 #include <string_view>
@@ -23,6 +24,7 @@
 #include "dem_aggregation.h"
 #include "dem_property.h"
 #include "pointer_holders.h"
+#include "snap-dem/dem/dataio/earth_gravitational_model96.h"
 
 namespace alus::dem {
 
@@ -30,6 +32,7 @@ class CopDemCog30m : public Aggregation {
 public:
     CopDemCog30m() = delete;
     CopDemCog30m(std::vector<std::string> filenames);
+    CopDemCog30m(std::vector<std::string> filenames, std::shared_ptr<snapengine::EarthGravitationalModel96> egm96);
 
     void LoadTiles() override;
     size_t GetTileCount() override;
@@ -59,6 +62,7 @@ private:
     PointerHolder* device_formated_buffers_table_{nullptr};
     std::vector<Property> host_dem_properties_{};
     dem::Property* device_dem_properties_{nullptr};
+    std::shared_ptr<snapengine::EarthGravitationalModel96> egm96_;
 
     std::future<void> load_tiles_future_;
     std::future<void> transfer_to_device_future_;
