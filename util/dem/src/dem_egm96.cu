@@ -16,6 +16,7 @@
 
 #include "cuda_util.h"
 #include "snap-dem/dem/dataio/earth_gravitational_model96.cuh"
+#include "snap-dem/dem/dataio/earth_gravitational_model96_computation.h"
 
 namespace {
 
@@ -32,9 +33,10 @@ __global__ void ConditionKernel(float* target, float* source, alus::dem::EgmForm
             geo_pos_lon = tile_prop.m00 * (idx + 0.5) + tile_prop.m01 * (idy + 0.5) + tile_prop.m02;
             geo_pos_lat = tile_prop.m10 * (idx + 0.5) + tile_prop.m11 * (idy + 0.5) + tile_prop.m12;
             target[idx + tile_prop.tile_size_x * idy] =
-                source_value + alus::snapengine::earthgravitationalmodel96computation::GetEGM96(
-                                   geo_pos_lat, geo_pos_lon, tile_prop.grid_max_lat, tile_prop.grid_max_lon,
-                                   tile_prop.device_egm_array);
+                source_value +
+                alus::snapengine::earthgravitationalmodel96computation::GetEGM96(
+                    geo_pos_lat, geo_pos_lon, alus::snapengine::earthgravitationalmodel96computation::MAX_LATS,
+                    alus::snapengine::earthgravitationalmodel96computation::MAX_LONS, tile_prop.device_egm_array);
         } else {
             target[idx + tile_prop.tile_size_x * idy] = source_value;
         }

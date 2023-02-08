@@ -117,7 +117,6 @@ void CopDemCog30m::LoadTilesImpl() {
         prop.tile_lon_extent = prop.tile_lon_origin + (ds.GetRasterSizeX() * ds.GetPixelSizeLon());
         host_dem_properties_.push_back(prop);
 
-        LOGI << "Loaded " << dem_file;
         VerifyProperties(prop, ds, dem_file);
     }
 }
@@ -130,22 +129,11 @@ void CopDemCog30m::TransferToDeviceImpl() {
     constexpr dim3 device_block_size(20, 20);
 
     for (size_t i = 0; i < nr_of_tiles; i++) {
-        const auto x_size = host_dem_properties_.at(i).tile_pixel_count_x;
-        const auto y_size = host_dem_properties_.at(i).tile_pixel_count_y;
+        const auto& tile_prop = host_dem_properties_.at(i);
+        const auto x_size = tile_prop.tile_pixel_count_x;
+        const auto y_size = tile_prop.tile_pixel_count_y;
         const auto dem_size_bytes = x_size * y_size * sizeof(float);
         CHECK_CUDA_ERR(cudaMalloc((void**)&device_formated_buffers_.at(i), dem_size_bytes));
-
-        //        srtm_data.m00 = static_cast<float>(geo_transform[transform::TRANSFORM_PIXEL_X_SIZE_INDEX]);
-        //        srtm_data.m10 = static_cast<float>(geo_transform[transform::TRANSFORM_ROTATION_1]);
-        //        srtm_data.m01 = static_cast<float>(geo_transform[transform::TRANSFORM_ROTATION_2]);
-        //        srtm_data.m11 = static_cast<float>(geo_transform[transform::TRANSFORM_PIXEL_Y_SIZE_INDEX]);
-        //        srtm_data.m02 = static_cast<float>(geo_transform[transform::TRANSFORM_LON_ORIGIN_INDEX]);
-        //        srtm_data.m12 = static_cast<float>(geo_transform[transform::TRANSFORM_LAT_ORIGIN_INDEX]);
-        //
-        //        srtm_data.no_data_value = srtm3elevationmodel::NO_DATA_VALUE;
-        //        srtm_data.max_lats = alus::snapengine::earthgravitationalmodel96computation::MAX_LATS;
-        //        srtm_data.max_lons = alus::snapengine::earthgravitationalmodel96computation::MAX_LONS;
-        //        srtm_data.egm = const_cast<float*>(egm_96_->GetDeviceValues());
 
         if (egm96_) {
             float* device_dem_values;
@@ -154,7 +142,7 @@ void CopDemCog30m::TransferToDeviceImpl() {
                                       cudaMemcpyHostToDevice));
             double gt[transform::GEOTRANSFORM_ARRAY_LENGTH];
             datasets_.at(i).GetGdalDataset()->GetGeoTransform(gt);
-            EgmFormatProperties prop;
+            EgmFormatProperties prop{};
             prop.tile_size_x = x_size;
             prop.tile_size_y = y_size;
             prop.m00 = gt[transform::TRANSFORM_PIXEL_X_SIZE_INDEX];
@@ -163,9 +151,7 @@ void CopDemCog30m::TransferToDeviceImpl() {
             prop.m11 = gt[transform::TRANSFORM_PIXEL_Y_SIZE_INDEX];
             prop.m02 = gt[transform::TRANSFORM_LON_ORIGIN_INDEX];
             prop.m12 = gt[transform::TRANSFORM_LAT_ORIGIN_INDEX];
-            prop.no_data_value = host_dem_properties_.at(i).no_data_value;
-            prop.grid_max_lon = host_dem_properties_.at(i).grid_max_lon;
-            prop.grid_max_lat = host_dem_properties_.at(i).grid_max_lat;
+            prop.no_data_value = tile_prop.no_data_value;
             prop.device_egm_array = egm96_->GetDeviceValues();
             const dim3 grid_size(cuda::GetGridDim(device_block_size.x, x_size),
                                  cuda::GetGridDim(device_block_size.y, y_size));
@@ -187,7 +173,7 @@ void CopDemCog30m::TransferToDeviceImpl() {
         temp_tiles.at(i).y = y_size;
         temp_tiles.at(i).z = 1;
         temp_tiles.at(i).pointer = device_formated_buffers_.at(i);
-        LOGI << "Loading COPDEM COG 30m tile ID " << temp_tiles.at(i).id << " to GPU";
+        LOGI << "COPDEM COG 30m tile ID " << temp_tiles.at(i).id << " loaded to GPU";
     }
     CHECK_CUDA_ERR(cudaMalloc((void**)&this->device_formated_buffers_table_, nr_of_tiles * sizeof(PointerHolder)));
     CHECK_CUDA_ERR(cudaMemcpy(this->device_formated_buffers_table_, temp_tiles.data(),
@@ -262,7 +248,6 @@ void CopDemCog30m::ReleaseFromDevice() {
 }
 
 CopDemCog30m::~CopDemCog30m() {
-    LOGI << "DESTRUCTOR";
     // Just in case left hanging, do not deal with it if still running.
     if (load_tiles_future_.valid()) {
         load_tiles_future_.wait_for(std::chrono::seconds(0));
@@ -304,7 +289,6 @@ void CopDemCog30m::WaitTransferDeviceAndCheckErrors() {
     }
 }
 
-// Calculates according to bottom left point.
 int CopDemCog30m::ComputeId(double lon_origin, double lat_origin) {
     return ((MAX_LON_COVERAGE + lon_origin) / RASTER_DEG_RES_X) * 1000 +
            ((MAX_LAT_COVERAGE - lat_origin) / RASTER_DEG_RES_Y);

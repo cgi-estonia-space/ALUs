@@ -28,8 +28,6 @@ struct EgmFormatProperties {
     float no_data_value;
     int tile_size_x;
     int tile_size_y;
-    int grid_max_lat;
-    int grid_max_lon;
     const float* device_egm_array;
 };
 
