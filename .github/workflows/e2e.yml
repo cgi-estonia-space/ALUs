@@ -72,6 +72,7 @@ jobs:
           $GITHUB_WORKSPACE/build-automation/trigger_ec2_instance.sh ${{ secrets.ALUS_ALEX_INSTANCE_ID }} | tee trigger_out.txt
           ip_address=$(cat trigger_out.txt | tail -n 1)
           echo "instance_ip=$ip_address" >> $GITHUB_OUTPUT
+          sleep 5
 
   end-to-end-testing:
     name: End-to-end testing
@@ -99,7 +100,7 @@ jobs:
           instance_ip=${{ needs.start-gpu-instance.outputs.instance_ip }}
           package_filename=${{ needs.release-package.outputs.package_filename }}
           instance_package_dir=/tmp/${{ needs.release-package.outputs.package_name }} 
-          ssh -oStrictHostKeyChecking=no $INSTANCE_USERNAME@$instance_ip "rm -rf $instance_package_dir"
+          ssh -o "StrictHostKeyChecking no" $INSTANCE_USERNAME@$instance_ip "rm -rf $instance_package_dir"
           ssh -o "StrictHostKeyChecking no" $INSTANCE_USERNAME@$instance_ip "mkdir $instance_package_dir"
           scp -o "StrictHostKeyChecking no" $package_filename $INSTANCE_USERNAME@$instance_ip:$instance_package_dir/
           echo "instance_package_dir=$instance_package_dir" >> $GITHUB_OUTPUT
