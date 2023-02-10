@@ -35,9 +35,6 @@ constexpr size_t MAX_LAT_COVERAGE{90};
 constexpr size_t RASTER_X_TILE_COUNT{360};
 constexpr size_t RASTER_Y_TILE_COUNT{180};
 constexpr size_t TILE_HEIGHT_PIXELS{3600};
-constexpr double PIXELS_PER_TILE_HEIGHT_INVERTED{1 / static_cast<double>(TILE_HEIGHT_PIXELS)};
-constexpr double PIXEL_SIZE_Y_DEGREES{RASTER_DEG_RES_Y / static_cast<double>(TILE_HEIGHT_PIXELS)};
-constexpr double PIXEL_SIZE_Y_DEGREES_INVERTED{1 / PIXEL_SIZE_Y_DEGREES};
 constexpr double NO_DATA_VALUE{0.0};
 constexpr std::array<size_t, 7> ALLOWED_WIDTHS{TILE_HEIGHT_PIXELS, 2400, 1800, 1200, 720, 360};
 
