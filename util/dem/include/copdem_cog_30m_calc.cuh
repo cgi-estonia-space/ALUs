@@ -15,7 +15,6 @@
 
 #include <math_constants.h>
 
-#include "dem_calc.h"
 #include "dem_property.h"
 #include "resampling.h"
 #include "snap-core/core/dataop/resamp/bilinear_interpolation.cuh"
@@ -88,21 +87,24 @@ inline __device__ __host__ size_t GetCopDemCog30mTileWidth(double lat) {
     }
 }
 
+inline __device__ __host__ const Property* GetCopDemPropertyBy(double lat, const Property* dem_props, size_t count) {
+    const auto tile_width_for_lat = GetCopDemCog30mTileWidth(lat);
+    for (size_t i = 0; i < count; i++) {
+        if (dem_props[i].tile_pixel_count_x == tile_width_for_lat) {
+            return dem_props + i;
+        }
+    }
+
+    return nullptr;
+}
+
 inline __device__ double CopDemCog30mGetElevation(double geo_pos_lat, double geo_pos_lon, PointerArray* p_array,
                                                   const alus::dem::Property* dem_prop) {
     if (geo_pos_lon > 180.0) {
         geo_pos_lon -= 360.0;
     }
 
-    const auto tile_width_for_pos = GetCopDemCog30mTileWidth(geo_pos_lat);
-    const auto dem_tile_count = p_array->size;
-    const alus::dem::Property* dp = nullptr;
-    for (size_t i = 0; i < dem_tile_count; i++) {
-        if (dem_prop[i].tile_pixel_count_x == tile_width_for_pos) {
-            dp = dem_prop + i;
-            break;
-        }
-    }
+    const Property* dp = GetCopDemPropertyBy(geo_pos_lat, dem_prop, p_array->size);
 
     if (dp == nullptr) {
         return dem_prop->no_data_value;
@@ -129,7 +131,5 @@ inline __device__ double CopDemCog30mGetElevation(double geo_pos_lat, double geo
 //    printf("elev %f\n", elevation);
     return isnan(elevation) ? dp->no_data_value : elevation;
 }
-
-__device__ alus::dem::GetElevationFunc get_elevation_cop_dem_cog_30m = alus::dem::CopDemCog30mGetElevation;
 
 }  // namespace alus::dem

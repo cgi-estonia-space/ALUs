@@ -16,6 +16,7 @@
 #include <driver_types.h>
 
 #include "dem_property.h"
+#include "dem_type.h"
 #include "orbit_state_vector_computation.h"
 #include "pointer_holders.h"
 #include "s1tbx-commons/sentinel1_utils_computation.h"
@@ -38,5 +39,5 @@ cudaError_t LaunchComputeExtendedAmount(Rectangle bounds, AzimuthAndRangeBounds&
                                         const s1tbx::SubSwathInfo& subswath_info,
                                         s1tbx::DeviceSentinel1Utils* d_sentinel_1_utils,
                                         s1tbx::DeviceSubswathInfo* d_subswath_info, const PointerArray& tiles,
-                                        float* egm, const dem::Property* dem_property);
+                                        float* egm, const dem::Property* dem_property, dem::Type dem_type);
 }  // namespace alus::backgeocoding

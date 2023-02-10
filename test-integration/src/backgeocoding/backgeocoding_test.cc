@@ -170,10 +170,11 @@ TEST(backgeocoding, correctness) {
     coast_tester.ReadTestData();
 
     dem_assistant->GetElevationManager()->TransferToDevice();
-    backgeocoding.SetElevationData(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
-                                   {const_cast<alus::PointerHolder*>(dem_assistant->GetElevationManager()->GetBuffers()),
-                                    dem_assistant->GetElevationManager()->GetTileCount()},
-                                   true, dem_assistant->GetElevationManager()->GetProperties());
+    backgeocoding.SetElevationData(
+        dem_assistant->GetEgm96Manager()->GetDeviceValues(),
+        {const_cast<alus::PointerHolder*>(dem_assistant->GetElevationManager()->GetBuffers()),
+         dem_assistant->GetElevationManager()->GetTileCount()},
+        true, dem_assistant->GetElevationManager()->GetProperties(), dem_assistant->GetType());
     backgeocoding.PrepareToCompute("./goods/master_metadata.dim", "./goods/slave_metadata.dim");
 
     int burst_offset = backgeocoding.GetBurstOffset();

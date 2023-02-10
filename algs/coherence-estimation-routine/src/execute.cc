@@ -123,7 +123,7 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
                          {const_cast<PointerHolder*>(dem_assistant->GetElevationManager()->GetBuffers()),
                           dem_assistant->GetElevationManager()->GetTileCount()},
                          params_.mask_out_area_without_elevation,
-                         dem_assistant->GetElevationManager()->GetProperties());
+                         dem_assistant->GetElevationManager()->GetProperties(), dem_assistant->GetType());
             main_product = coreg.GetReferenceProduct();
             secondary_product = coreg.GetSecondaryProduct();
             auto coreg_target_dataset = coreg.GetTargetDataset();

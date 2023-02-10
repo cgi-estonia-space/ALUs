@@ -20,6 +20,8 @@
 #include <thread>
 
 #include "alus_log.h"
+#include "dem_property.h"
+#include "dem_type.h"
 #include "pointer_holders.h"
 #include "snap-core/core/datamodel/metadata_element.h"
 #include "snap-core/core/util/product_utils.h"
@@ -53,10 +55,11 @@ BackgeocodingController::BackgeocodingController(std::shared_ptr<AlusFileReader<
       slave_product_(std::move(slave_product)) {}
 
 void BackgeocodingController::PrepareToCompute(const float* egm96_device_array, PointerArray srtm3_tiles,
-                                               bool mask_out_area_without_elevation,
-                                               const dem::Property* dem_property) {
+                                               bool mask_out_area_without_elevation, const dem::Property* dem_property,
+                                               dem::Type dem_type) {
     backgeocoding_ = std::make_unique<Backgeocoding>();
-    backgeocoding_->SetElevationData(egm96_device_array, srtm3_tiles, mask_out_area_without_elevation, dem_property);
+    backgeocoding_->SetElevationData(egm96_device_array, srtm3_tiles, mask_out_area_without_elevation, dem_property,
+                                     dem_type);
     if (beam_dimap_mode_) {
         backgeocoding_->PrepareToCompute(master_metadata_file_, slave_metadata_file_);
     } else {

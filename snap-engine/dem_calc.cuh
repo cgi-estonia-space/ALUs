@@ -17,7 +17,6 @@
 
 #include <math_constants.h>  // CUDART_NAN
 
-#include "dem_calc.h"
 #include "dem_property.h"
 #include "resampling.h"
 #include "snap-core/core/dataop/resamp/bilinear_interpolation.cuh"
@@ -100,7 +99,5 @@ inline __device__ double GetElevation(double geo_pos_lat, double geo_pos_lon, Po
 
     return isnan(elevation) ? dem_prop->no_data_value : elevation;
 }
-
-__device__ alus::dem::GetElevationFunc get_elevation_srtm3 = snapengine::dem::GetElevation;
 
 }  // namespace alus::snapengine::dem

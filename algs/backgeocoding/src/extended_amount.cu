@@ -13,23 +13,16 @@
  */
 #include "extended_amount_computation.h"
 
-#include <thrust/device_vector.h>
-#include <thrust/execution_policy.h>
-#include <thrust/extrema.h>
-#include <thrust/sequence.h>
-
-#include "allocators.h"
 #include "cuda_copies.h"
 #include "cuda_ptr.h"
-#include "extended_amount_computation.h"
+#include "dem_type.h"
 #include "general_constants.h"
 #include "pointer_holders.h"
 #include "position_data.h"
-#include "raster_properties.h"
 #include "snap-dem/dem/dataio/earth_gravitational_model96_computation.h"
 
 #include "backgeocoding_utils.cuh"
-#include "cuda_util.cuh"
+#include "copdem_cog_30m_calc.cuh"
 #include "dem_calc.cuh"
 #include "dem_property.h"
 #include "s1tbx-commons/sentinel1_utils.cuh"
@@ -57,6 +50,7 @@ struct ExtendedAmountKernelArgs {
     size_t col_count;
     size_t row_count;
     const dem::Property* dem_property;
+    dem::Type dem_type;
 };
 
 __global__ void ComputeExtendedAmountKernel(ExtendedAmountKernelArgs args, AzimuthAndRangeBounds* result) {
@@ -85,16 +79,22 @@ __global__ void ComputeExtendedAmountKernel(ExtendedAmountKernelArgs args, Azimu
         s1tbx::GetLatitude(sentinel_index, args.latitudes, args.subswath_info->num_of_geo_points_per_line);
     double longitude =
         s1tbx::GetLongitude(sentinel_index, args.longitudes, args.subswath_info->num_of_geo_points_per_line);
-    double altitude = snapengine::dem::GetElevation(latitude, longitude, &args.tiles, args.dem_property);
+
+    double elevation{args.dem_property->no_data_value};
+    if (args.dem_type == dem::Type::COPDEM_COG30m) {
+        elevation = dem::CopDemCog30mGetElevation(latitude, longitude, &args.tiles, args.dem_property);
+    } else if (args.dem_type == dem::Type::SRTM3) {
+        elevation = snapengine::dem::GetElevation(latitude, longitude, &args.tiles, args.dem_property);
+    }
     // TODO: we may have to rewire this in the future, but no idea to where atm.
     //       (see algs/backgeocoding/src/backgeocoding.cc)
-    if (altitude == snapengine::srtm3elevationmodel::NO_DATA_VALUE) {
-        altitude = snapengine::earthgravitationalmodel96computation::GetEGM96(
+    if (elevation == args.dem_property->no_data_value) {
+        elevation = snapengine::earthgravitationalmodel96computation::GetEGM96(
             latitude, longitude, snapengine::earthgravitationalmodel96computation::MAX_LATS,
             snapengine::earthgravitationalmodel96computation::MAX_LONS, args.egm);
     }
     s1tbx::PositionData position_data{};
-    snapengine::geoutils::Geo2xyzWgs84Impl(latitude, longitude, altitude, position_data.earth_point);
+    snapengine::geoutils::Geo2xyzWgs84Impl(latitude, longitude, elevation, position_data.earth_point);
     if (backgeocoding::GetPosition(args.subswath_info, args.sentinel_utils, burst_index, &position_data,
                                    args.orbit_state_vectors, args.nr_of_orbit_vectors, args.dt, x, y)) {
         const int azimuth_extended_amount = static_cast<int>(position_data.azimuth_index - y);
@@ -111,7 +111,7 @@ void PrepareArguments(ExtendedAmountKernelArgs* args, PointerArray tiles,
                       snapengine::OrbitStateVectorComputation* d_orbit_state_vectors, size_t nr_of_vectors,
                       double vectors_dt, const s1tbx::SubSwathInfo& subswath_info,
                       s1tbx::DeviceSentinel1Utils* d_sentinel_1_utils, s1tbx::DeviceSubswathInfo* d_subswath_info,
-                      Rectangle& bounds, float* egm, const dem::Property* dem_property) {
+                      Rectangle& bounds, float* egm, const dem::Property* dem_property, dem::Type dem_type) {
     args->tiles.array = tiles.array;
     args->tiles.size = tiles.size;
 
@@ -134,6 +134,7 @@ void PrepareArguments(ExtendedAmountKernelArgs* args, PointerArray tiles,
 
     args->egm = egm;
     args->dem_property = dem_property;
+    args->dem_type = dem_type;
 }
 
 }  // namespace
@@ -143,7 +144,7 @@ cudaError_t LaunchComputeExtendedAmount(Rectangle bounds, AzimuthAndRangeBounds&
                                         double vectors_dt, const s1tbx::SubSwathInfo& subswath_info,
                                         s1tbx::DeviceSentinel1Utils* d_sentinel_1_utils,
                                         s1tbx::DeviceSubswathInfo* d_subswath_info, const PointerArray& tiles,
-                                        float* egm, const dem::Property* dem_property) {
+                                        float* egm, const dem::Property* dem_property, dem::Type dem_type) {
     ExtendedAmountKernelArgs args{};
 
     const int idx_max = std::numeric_limits<int>::max();
@@ -157,7 +158,7 @@ cudaError_t LaunchComputeExtendedAmount(Rectangle bounds, AzimuthAndRangeBounds&
     cuda::CopyH2D(d_az_rg_bounds.Get(), &h_az_rg_bounds);
 
     PrepareArguments(&args, tiles, d_vectors, nr_of_vectors, vectors_dt, subswath_info, d_sentinel_1_utils,
-                     d_subswath_info, bounds, egm, dem_property);
+                     d_subswath_info, bounds, egm, dem_property, dem_type);
 
     dim3 block_dim{20, 20};
     dim3 grid_dim(cuda::GetGridDim(block_dim.x, cuda::GetGridDim(index_step, bounds.width)),

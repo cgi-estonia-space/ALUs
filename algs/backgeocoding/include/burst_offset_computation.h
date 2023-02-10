@@ -16,6 +16,7 @@
 #include <driver_types.h>
 
 #include "dem_property.h"
+#include "dem_type.h"
 #include "orbit_state_vector_computation.h"
 #include "pointer_holders.h"
 #include "s1tbx-commons/sentinel1_utils_computation.h"
@@ -27,7 +28,8 @@ struct BurstOffsetKernelArgs {
     double* latitudes;
     double* longitudes;
     PointerArray srtm3_tiles;
-    const dem::Property* dem_property_;
+    const dem::Property* dem_property;
+    dem::Type dem_type;
     int* burst_offset;
 
     const s1tbx::DeviceSubswathInfo* master_subswath_info;

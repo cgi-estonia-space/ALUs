@@ -16,6 +16,7 @@
 #include <cuda_runtime.h>
 
 #include "dem_property.h"
+#include "dem_type.h"
 #include "general_constants.h"
 #include "orbit_state_vector_computation.h"
 #include "pointer_holders.h"
@@ -39,6 +40,7 @@ struct SlavePixPosData {
 
     PointerArray tiles;
     const dem::Property* dem_property;
+    dem::Type dem_type;
 
     // earth gravitational model
     const float* egm;

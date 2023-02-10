@@ -92,7 +92,7 @@ TEST(coregistration, full3) {
         cor->DoWork(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
                     {const_cast<alus::PointerHolder*>(dem_assistant->GetElevationManager()->GetBuffers()),
                      dem_assistant->GetElevationManager()->GetTileCount()},
-                    true, dem_assistant->GetElevationManager()->GetProperties());
+                    true, dem_assistant->GetElevationManager()->GetProperties(), dem_assistant->GetType());
 
             auto target_datasets = cor->GetTargetDataset()->GetDataset();
 
@@ -146,7 +146,7 @@ TEST(coregistration, splitCut) {
         cor->DoWork(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
                     {const_cast<alus::PointerHolder*>(dem_assistant->GetElevationManager()->GetBuffers()),
                      dem_assistant->GetElevationManager()->GetTileCount()},
-                    true, dem_assistant->GetElevationManager()->GetProperties());
+                    true, dem_assistant->GetElevationManager()->GetProperties(), dem_assistant->GetType());
 
         auto target_datasets = cor->GetTargetDataset()->GetDataset();
         const std::string_view output_slave_i{"./goods/beirut_images/coregistration_test_slave_I_cut.tif"};

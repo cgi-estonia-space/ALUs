@@ -17,13 +17,12 @@
 
 #include "backgeocoding_constants.h"
 #include "backgeocoding_utils.cuh"
+#include "copdem_cog_30m_calc.cuh"
+#include "cuda_util.h"
 #include "dem_calc.cuh"
 #include "position_data.h"
 #include "snap-dem/dem/dataio/earth_gravitational_model96.cuh"
 #include "snap-engine-utilities/engine-utilities/eo/geo_utils.cuh"
-
-#include "../../../snap-engine/srtm3_elevation_model_constants.h"
-#include "cuda_util.h"
 
 /**
  * The contents of this file refer to BackGeocodingOp.computeSlavePixPos in SNAP's java code.
@@ -38,9 +37,10 @@ __global__ void SlavePixPos(SlavePixPosData calc_data) {
     const int idx = threadIdx.x + (blockDim.x * blockIdx.x);
     const int idy = threadIdx.y + (blockDim.y * blockIdx.y);
     const size_t my_index = calc_data.num_pixels * idx + idy;
-    double geo_pos_lat;
-    double geo_pos_lon;
-    double alt;
+    double geo_pos_lat{};
+    double geo_pos_lon{};
+    double alt{calc_data.dem_property->no_data_value};
+    bool valid_coord{false};
     s1tbx::PositionData pos_data;
 
     pos_data.azimuth_index = 0;
@@ -50,22 +50,32 @@ __global__ void SlavePixPos(SlavePixPosData calc_data) {
         return;
     }
 
-    geo_pos_lat = (snapengine::srtm3elevationmodel::RASTER_HEIGHT - (calc_data.lat_max_idx + idx)) *
-                      snapengine::srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE -
-                  60.0;
-    geo_pos_lon =
-        (calc_data.lon_min_idx + idy) * snapengine::srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE - 180.0;
+    geo_pos_lat = (calc_data.dem_property->grid_total_height_pixels - (calc_data.lat_max_idx + idx)) *
+                      calc_data.dem_property->tile_pixel_size_deg_y - calc_data.dem_property->grid_max_lat;
+
+    if (calc_data.dem_type == dem::Type::COPDEM_COG30m) {
+        const auto* prop = dem::GetCopDemPropertyBy(geo_pos_lat, calc_data.dem_property, calc_data.tiles.size);
+        if (prop != nullptr) {
+            geo_pos_lon = (calc_data.lon_min_idx + idy) * prop->tile_pixel_size_deg_x - calc_data.dem_property->grid_max_lon;
+            alt = dem::CopDemCog30mGetElevation(geo_pos_lat, geo_pos_lon, &calc_data.tiles, calc_data.dem_property);
+            valid_coord = true;
+        }
+    } else if (calc_data.dem_type == dem::Type::SRTM3) {
+        geo_pos_lon = (calc_data.lon_min_idx + idy) * calc_data.dem_property->tile_pixel_size_deg_x -
+                      calc_data.dem_property->grid_max_lon;
+        alt = snapengine::dem::GetElevation(geo_pos_lat, geo_pos_lon, &calc_data.tiles, calc_data.dem_property);
+        valid_coord = true;
+    }
 
     calc_data.device_lats[my_index] = geo_pos_lat;
     calc_data.device_lons[my_index] = geo_pos_lon;
 
-    alt = snapengine::dem::GetElevation(geo_pos_lat, geo_pos_lon, &calc_data.tiles, calc_data.dem_property);
-    if (alt == calc_data.dem_no_data_value && !calc_data.mask_out_area_without_elevation) {
+    if (alt == calc_data.dem_no_data_value && !calc_data.mask_out_area_without_elevation && valid_coord) {
         alt = snapengine::earthgravitationalmodel96computation::GetEGM96(geo_pos_lat, geo_pos_lon, calc_data.max_lats,
                                                                          calc_data.max_lons, calc_data.egm);
     }
 
-    if (alt != calc_data.dem_no_data_value) {
+    if (alt != calc_data.dem_no_data_value && valid_coord) {
         snapengine::geoutils::Geo2xyzWgs84Impl(geo_pos_lat, geo_pos_lon, alt, pos_data.earth_point);
 
         if (GetPosition(calc_data.device_master_subswath, calc_data.device_master_utils, calc_data.m_burst_index,

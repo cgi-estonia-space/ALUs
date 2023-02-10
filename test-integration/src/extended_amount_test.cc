@@ -28,10 +28,11 @@ TEST(ExtendedAmountTest, ComputeExtendedAmount) {
     alus::backgeocoding::Backgeocoding backgeocoding;
 
     dem_assistant->GetElevationManager()->TransferToDevice();
-    backgeocoding.SetElevationData(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
-                                   {const_cast<alus::PointerHolder*>(dem_assistant->GetElevationManager()->GetBuffers()),
-                                    dem_assistant->GetElevationManager()->GetTileCount()},
-                                   true, dem_assistant->GetElevationManager()->GetProperties());
+    backgeocoding.SetElevationData(
+        dem_assistant->GetEgm96Manager()->GetDeviceValues(),
+        {const_cast<alus::PointerHolder*>(dem_assistant->GetElevationManager()->GetBuffers()),
+         dem_assistant->GetElevationManager()->GetTileCount()},
+        true, dem_assistant->GetElevationManager()->GetProperties(), dem_assistant->GetType());
     backgeocoding.PrepareToCompute("./goods/master_metadata.dim", "./goods/slave_metadata.dim");
 
     alus::Rectangle const input{4000, 17000, 100, 100};
