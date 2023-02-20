@@ -25,6 +25,7 @@
 #include "backgeocoding_constants.h"
 #include "bilinear_computation.h"
 #include "burst_offset_computation.h"
+#include "copdem_cog_30m_calc.h"
 #include "cuda_util.h"
 #include "delaunay_triangulator.h"
 #include "deramp_demod_computation.h"
@@ -34,8 +35,6 @@
 #include "slave_pixpos_computation.h"
 #include "snap-dem/dem/dataio/earth_gravitational_model96_computation.h"
 #include "snap-engine-utilities/engine-utilities/eo/constants.h"
-#include "srtm3_elevation_model.h"
-#include "srtm3_elevation_model_constants.h"
 #include "triangular_interpolation_computation.h"
 
 namespace alus::backgeocoding {
@@ -66,12 +65,6 @@ void Backgeocoding::PrepareToCompute(std::string_view master_metadata_file, std:
 }
 
 void Backgeocoding::PrepareToComputeBody() {
-    // Exclusively supporting srtm3 atm
-    dem_sampling_lat_ =
-        static_cast<double>(snapengine::Srtm3ElevationModel::GetTileWidthInDegrees()) /
-        static_cast<double>(snapengine::Srtm3ElevationModel::GetTileWidth());  // REPLACE with dem property.
-    dem_sampling_lon_ = dem_sampling_lat_;
-
     slave_utils_->ComputeDopplerRate();
     slave_utils_->ComputeReferenceTime();
     slave_utils_->subswath_.at(0)->HostToDevice();
@@ -189,23 +182,66 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index, int s_burst_index, Rec
     std::vector<double> lat_lon_min_max =
         this->ComputeImageGeoBoundary(master_utils_->subswath_.at(0).get(), m_burst_index, xmin, xmax, ymin, ymax);
 
-    double delta = fmax(this->dem_sampling_lat_, this->dem_sampling_lon_);
-    double extralat = 20 * delta;
-    double extralon = 20 * delta;
+    double dem_sampling_lon{};
+    double dem_sampling_lat{};
+    if (dem_type_ == dem::Type::SRTM3) {
+        dem_sampling_lon = dem_properties_.front().tile_pixel_size_deg_x;
+        dem_sampling_lat = dem_properties_.front().tile_pixel_size_deg_y;
+    } else if (dem_type_ == dem::Type::COPDEM_COG30m) {
+        // For this create functionality in DemAssistant or CopDemCog30m to sort tiles by latitude?
+        // In order to avoid CopDEM peculiarities, this should be perhaps so that delta does not cross different widths?
+        dem_sampling_lon = dem_properties_.front().tile_pixel_size_deg_x;
+        dem_sampling_lat = dem_properties_.front().tile_pixel_size_deg_y;
+    } else {
+        throw std::invalid_argument("Unsupported DEM type for " + std::string(__FUNCTION__ ) + " supplied");
+    }
 
-    double lat_min = lat_lon_min_max.at(0) - extralat;
-    double lat_max = lat_lon_min_max.at(1) + extralat;
-    double lon_min = lat_lon_min_max.at(2) - extralon;
-    double lon_max = lat_lon_min_max.at(3) + extralon;
+    double delta = fmax(dem_sampling_lat, dem_sampling_lon);
+    double extra_lat = 20 * delta;
+    double extra_lon = 20 * delta;
 
-    double upper_left_x =
-        (lon_min + 180.0) * snapengine::srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED; // TODO Replace with dynamic properties
-    double upper_left_y =
-        (60.0 - lat_max) * snapengine::srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED;
-    double lower_right_x =
-        (lon_max + 180.0) * snapengine::srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED;
-    double lower_right_y =
-        (60.0 - lat_min) * snapengine::srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED;
+    double lat_min = lat_lon_min_max.at(0) - extra_lat;
+    double lat_max = lat_lon_min_max.at(1) + extra_lat;
+    double lon_min = lat_lon_min_max.at(2) - extra_lon;
+    double lon_max = lat_lon_min_max.at(3) + extra_lon;
+
+    double pixel_degree_res_inverted_x{};
+    double pixel_degree_res_inverted_y{};
+    double dem_grid_lat_max{};
+    double dem_grid_lon_max{};
+
+    if (dem_type_ == dem::Type::SRTM3) {
+        dem_grid_lat_max = dem_properties_.front().grid_max_lat;
+        dem_grid_lon_max = dem_properties_.front().grid_max_lon;
+        pixel_degree_res_inverted_x = dem_properties_.front().tile_pixel_size_deg_inverted_x;
+        pixel_degree_res_inverted_y = dem_properties_.front().tile_pixel_size_deg_inverted_y;
+    } else if (dem_type_ == dem::Type::COPDEM_COG30m) {
+        dem_grid_lat_max = dem_properties_.front().grid_max_lat;
+        dem_grid_lon_max = dem_properties_.front().grid_max_lon;
+        auto get_dem_property = [&](double lat) -> const dem::Property* {
+            const auto target_tile_width = dem::copdemcog30m::GetTileWidth(lat);
+            for (size_t i = 0; i < dem_properties_.size(); i++) {
+                if (target_tile_width == dem_properties_.at(i).tile_pixel_count_x) {
+                    return dem_properties_.data() + i;
+                }
+            };
+            return nullptr;
+        };
+        const auto lat_max_dem_prop = get_dem_property(lat_max);
+        const auto lat_min_dem_prop = get_dem_property(lat_min);
+        if (lat_max_dem_prop == nullptr || lat_min_dem_prop == nullptr || lat_max_dem_prop != lat_min_dem_prop) {
+            return false;
+        }
+        pixel_degree_res_inverted_x = lat_max_dem_prop->tile_pixel_size_deg_inverted_x;
+        pixel_degree_res_inverted_y = lat_max_dem_prop->tile_pixel_size_deg_inverted_y;
+    } else {
+        throw std::invalid_argument("Unsupported DEM type for " + std::string(__FUNCTION__ ) + " supplied");
+    }
+
+    double upper_left_x = (lon_min + dem_grid_lon_max) * pixel_degree_res_inverted_x;
+    double upper_left_y = (dem_grid_lat_max - lat_max) * pixel_degree_res_inverted_y;
+    double lower_right_x = (lon_max + dem_grid_lon_max) * pixel_degree_res_inverted_x;
+    double lower_right_y = (dem_grid_lat_max - lat_min) * pixel_degree_res_inverted_y;
 
     calc_data.lat_max_idx = boost::numeric_cast<int>(floor(upper_left_y));
     calc_data.lat_min_idx = boost::numeric_cast<int>(ceil(lower_right_y));
@@ -215,13 +251,13 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index, int s_burst_index, Rec
     calc_data.num_lines = calc_data.lat_min_idx - calc_data.lat_max_idx;
     calc_data.num_pixels = calc_data.lon_max_idx - calc_data.lon_min_idx;
     calc_data.tiles = srtm3_tiles_;
-    calc_data.dem_property = dem_property_;
+    calc_data.dem_property = device_dem_properties_;
     calc_data.dem_type = dem_type_;
     calc_data.egm = egm96_device_array_;
     calc_data.max_lats = alus::snapengine::earthgravitationalmodel96computation::MAX_LATS;
     calc_data.max_lons = alus::snapengine::earthgravitationalmodel96computation::MAX_LONS;
     // we may have to rewire this in the future, but no idea to where atm.
-    calc_data.dem_no_data_value = alus::snapengine::srtm3elevationmodel::NO_DATA_VALUE;
+    calc_data.dem_no_data_value = dem_properties_.front().no_data_value;
     calc_data.mask_out_area_without_elevation = mask_out_area_without_elevation_;
 
     size_t valid_index_count = 0;
@@ -367,7 +403,7 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index, int s_burst_index, Rec
         mask_data.mask_out_area_without_elevation = mask_out_area_without_elevation_;
         mask_data.size = array_size;
         mask_data.tiles = srtm3_tiles_;
-        mask_data.dem_property = dem_property_;
+        mask_data.dem_property = device_dem_properties_;
         mask_data.dem_type = dem_type_;
 
         int not_invalid_counter = 0;
@@ -460,7 +496,7 @@ AzimuthAndRangeBounds Backgeocoding::ComputeExtendedAmount(int x_0, int y_0, int
         {x_0, y_0, w, h}, extended_amount, d_master_orbit_vectors_.array, d_master_orbit_vectors_.size,
         master_utils_->GetOrbitStateVectors()->GetDt(), *master_utils_->subswath_.at(0),
         master_utils_->device_sentinel_1_utils_, master_utils_->subswath_.at(0)->device_subswath_info_, srtm3_tiles_,
-        const_cast<float*>(egm96_device_array_), dem_property_, dem_type_));
+        const_cast<float*>(egm96_device_array_), device_dem_properties_, dem_type_));
     return extended_amount;
 }
 
@@ -532,7 +568,7 @@ void FreeBurstOffsetArguments(BurstOffsetKernelArgs& args) {
 int Backgeocoding::ComputeBurstOffset() {
     BurstOffsetKernelArgs args{};
 
-    PrepareBurstOffsetKernelArguments(args, srtm3_tiles_, dem_property_, dem_type_, this->master_utils_.get(),
+    PrepareBurstOffsetKernelArguments(args, srtm3_tiles_, device_dem_properties_, dem_type_, this->master_utils_.get(),
                                       this->slave_utils_.get());
 
     int burst_offset;

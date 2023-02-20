@@ -3,6 +3,7 @@ list(APPEND DEM_UTIL_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/dem_assistant.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/dem_egm96.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/copdem_cog_30m.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/copdem_cog_30m_calc.cu
         )
 
 list(APPEND DEM_UTIL_INCLUDE_DIRS

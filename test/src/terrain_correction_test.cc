@@ -28,7 +28,6 @@
 #include "position_data.h"
 #include "snap-engine-utilities/engine-utilities/eo/constants.h"
 #include "srtm3_elevation_model.h"
-#include "srtm3_elevation_model_constants.h"
 #include "tc_tile.h"
 #include "terrain_correction.h"
 #include "terrain_correction_kernel.h"

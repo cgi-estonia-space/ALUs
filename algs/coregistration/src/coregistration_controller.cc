@@ -149,10 +149,10 @@ void Coregistration::Initialize(std::shared_ptr<topsarsplit::TopsarSplit> split_
 }
 
 void Coregistration::DoWork(const float* egm96_device_array, PointerArray srtm3_tiles,
-                            bool mask_out_area_without_elevation, const dem::Property* dem_property,
-                            dem::Type dem_type) const {
-    backgeocoding_->PrepareToCompute(egm96_device_array, srtm3_tiles, mask_out_area_without_elevation, dem_property,
-                                     dem_type);
+                            bool mask_out_area_without_elevation, const dem::Property* device_dem_properties,
+                            const std::vector<dem::Property> dem_properties, dem::Type dem_type) const {
+    backgeocoding_->PrepareToCompute(egm96_device_array, srtm3_tiles, mask_out_area_without_elevation,
+                                     device_dem_properties, dem_properties, dem_type);
     backgeocoding_->DoWork();
 }
 

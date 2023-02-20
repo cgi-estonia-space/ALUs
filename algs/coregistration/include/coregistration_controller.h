@@ -58,7 +58,8 @@ public:
                     std::shared_ptr<topsarsplit::TopsarSplit> split_secondary);
 
     void DoWork(const float* egm96_device_array, PointerArray srtm3_tiles, bool mask_out_area_without_elevation,
-                const dem::Property* dem_property, dem::Type dem_type) const;
+                const dem::Property* device_dem_properties, const std::vector<dem::Property> dem_properties,
+                dem::Type dem_type) const;
 
     std::shared_ptr<snapengine::Product> GetReferenceProduct() { return split_reference_->GetTargetProduct(); }
 

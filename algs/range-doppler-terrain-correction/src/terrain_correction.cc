@@ -32,7 +32,6 @@
 #include "raster_properties.h"
 #include "shapes_util.h"
 #include "snap-engine-utilities/engine-utilities//eo/constants.h"
-#include "srtm3_elevation_model_constants.h"
 #include "tc_tile.h"
 #include "terrain_correction_constants.h"
 #include "terrain_correction_kernel.h"

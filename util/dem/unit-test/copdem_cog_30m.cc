@@ -15,6 +15,7 @@
 #include "gmock/gmock.h"
 
 #include "copdem_cog_30m.h"
+#include "copdem_cog_30m_calc.h"
 
 namespace {
 
@@ -25,5 +26,35 @@ TEST(CopDemCog30m, ComputeIdReturnsCorrectResult) {
     ASSERT_THAT(alus::dem::CopDemCog30m::ComputeId(-180, -90), Eq(180));
     ASSERT_THAT(alus::dem::CopDemCog30m::ComputeId(179, 89), Eq(359 * 1000 + 1));
     ASSERT_THAT(alus::dem::CopDemCog30m::ComputeId(4.0, 49.0), Eq((180 + 4) * 1000 + 41));
+}
+
+TEST(CopDemCog30M, GetCopDemCog30mTileWidthReturnsCorrectResult) {
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(0), Eq(3600));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(0.001), Eq(3600));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(49.999), Eq(3600));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(50), Eq(2400));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(59.99), Eq(2400));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(60), Eq(1800));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(69.99), Eq(1800));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(70), Eq(1200));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(79.99), Eq(1200));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(80), Eq(720));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(84.99), Eq(720));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(85), Eq(360));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(90), Eq(360));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(100), Eq(360));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(-0.001), Eq(3600));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(-49.999), Eq(3600));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(-50), Eq(2400));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(-59.99), Eq(2400));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(-60), Eq(1800));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(-69.99), Eq(1800));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(-70), Eq(1200));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(-79.99), Eq(1200));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(-80), Eq(720));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(-84.99), Eq(720));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(-85), Eq(360));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(-90), Eq(360));
+    ASSERT_THAT(alus::dem::copdemcog30m::GetTileWidth(-100), Eq(360));
 }
 }

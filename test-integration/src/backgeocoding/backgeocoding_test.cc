@@ -174,7 +174,8 @@ TEST(backgeocoding, correctness) {
         dem_assistant->GetEgm96Manager()->GetDeviceValues(),
         {const_cast<alus::PointerHolder*>(dem_assistant->GetElevationManager()->GetBuffers()),
          dem_assistant->GetElevationManager()->GetTileCount()},
-        true, dem_assistant->GetElevationManager()->GetProperties(), dem_assistant->GetType());
+        true, dem_assistant->GetElevationManager()->GetProperties(),
+        dem_assistant->GetElevationManager()->GetPropertiesValue(), dem_assistant->GetType());
     backgeocoding.PrepareToCompute("./goods/master_metadata.dim", "./goods/slave_metadata.dim");
 
     int burst_offset = backgeocoding.GetBurstOffset();

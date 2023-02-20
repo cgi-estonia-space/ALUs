@@ -22,7 +22,6 @@
 #include "dem_type.h"
 #include "pointer_holders.h"
 #include "snap-dem/dem/dataio/earth_gravitational_model96.h"
-#include "srtm3_elevation_model.h"
 
 namespace alus::dem {
 

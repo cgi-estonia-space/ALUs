@@ -61,7 +61,8 @@ public:
     BackgeocodingController& operator=(const BackgeocodingController&) = delete;
 
     void PrepareToCompute(const float* egm96_device_Array, PointerArray srtm3_tiles,
-                          bool mask_out_area_without_elevation, const dem::Property* dem_property, dem::Type dem_type);
+                          bool mask_out_area_without_elevation, const dem::Property* device_dem_properties,
+                          const std::vector<dem::Property>& dem_properties, dem::Type dem_type);
     void RegisterException(std::exception_ptr e);
     void ReadMaster(Rectangle master_area, int16_t* i_tile, int16_t* q_tile) const;
     PositionComputeResults PositionCompute(int m_burst_index, int s_burst_index, Rectangle target_area,

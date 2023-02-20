@@ -10,10 +10,16 @@
 *
 * You should have received a copy of the GNU General Public License along
 * with this program; if not, see http://www.gnu.org/licenses/
-*/
+ */
 
-#pragma once
+#include "copdem_cog_30m_calc.h"
+
+#include "copdem_cog_30m_calc.cuh"
 
 namespace alus::dem::copdemcog30m {
-    size_t GetTileWidth(double lat);
+
+size_t GetTileWidth(double lat) {
+    return GetCopDemCog30mTileWidth(lat);
+}
+
 }

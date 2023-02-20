@@ -71,19 +71,17 @@ inline __device__ int GetSamples(PointerArray* tiles, int* x, int* y, double* sa
 inline __device__ __host__ size_t GetCopDemCog30mTileWidth(double lat) {
     const int abs_lat = (int)abs(lat);
     if (abs_lat < 50) {
-        return 1200 * 3;
+        return 3600;
     } else if (abs_lat >= 50 && abs_lat < 60) {
-        return 800 * 3;
+        return 2400;
     } else if (abs_lat >= 60 && abs_lat < 70) {
-        return 600 * 3;
-    } else if (abs_lat >= 70 && abs_lat < 75) {
-        return 400 * 3;
-    } else if (abs_lat >= 75 && abs_lat < 80) {
-        return 400 * 3;
+        return 1800;
+    } else if (abs_lat >= 70 && abs_lat < 80) {
+        return 1200;
     } else if (abs_lat >= 80 && abs_lat < 85) {
-        return 240 * 3;
+        return 720;
     } else {
-        return 120 * 3;
+        return 360;
     }
 }
 

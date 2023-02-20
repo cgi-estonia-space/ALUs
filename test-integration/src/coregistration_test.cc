@@ -77,8 +77,7 @@ public:
 TEST(coregistration, full3) {
     {
         std::vector<std::string> srtm3_files{"./goods/srtm_43_06.tif", "./goods/srtm_44_06.tif"};
-        auto dem_assistant =
-            alus::dem::Assistant::CreateFormattedDemTilesOnGpuFrom(std::move(srtm3_files));
+        auto dem_assistant = alus::dem::Assistant::CreateFormattedDemTilesOnGpuFrom(std::move(srtm3_files));
         dem_assistant->GetElevationManager()->TransferToDevice();
 
         const std::string_view output_file{"./goods/beirut_images/coregistration_test.tif"};
@@ -92,9 +91,10 @@ TEST(coregistration, full3) {
         cor->DoWork(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
                     {const_cast<alus::PointerHolder*>(dem_assistant->GetElevationManager()->GetBuffers()),
                      dem_assistant->GetElevationManager()->GetTileCount()},
-                    true, dem_assistant->GetElevationManager()->GetProperties(), dem_assistant->GetType());
+                    true, dem_assistant->GetElevationManager()->GetProperties(),
+                    dem_assistant->GetElevationManager()->GetPropertiesValue(), dem_assistant->GetType());
 
-            auto target_datasets = cor->GetTargetDataset()->GetDataset();
+        auto target_datasets = cor->GetTargetDataset()->GetDataset();
 
         CoregTester tester("./goods/coregistration_strips.txt");
 
@@ -131,8 +131,7 @@ TEST(coregistration, full3) {
 TEST(coregistration, splitCut) {
     {
         std::vector<std::string> srtm3_files{"./goods/srtm_43_06.tif", "./goods/srtm_44_06.tif"};
-        auto dem_assistant =
-            alus::dem::Assistant::CreateFormattedDemTilesOnGpuFrom(std::move(srtm3_files));
+        auto dem_assistant = alus::dem::Assistant::CreateFormattedDemTilesOnGpuFrom(std::move(srtm3_files));
         dem_assistant->GetElevationManager()->TransferToDevice();
         const std::string_view output_file_cut{"./goods/beirut_images/coregistration_test_cut.tif"};
 
@@ -146,7 +145,8 @@ TEST(coregistration, splitCut) {
         cor->DoWork(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
                     {const_cast<alus::PointerHolder*>(dem_assistant->GetElevationManager()->GetBuffers()),
                      dem_assistant->GetElevationManager()->GetTileCount()},
-                    true, dem_assistant->GetElevationManager()->GetProperties(), dem_assistant->GetType());
+                    true, dem_assistant->GetElevationManager()->GetProperties(),
+                    dem_assistant->GetElevationManager()->GetPropertiesValue(), dem_assistant->GetType());
 
         auto target_datasets = cor->GetTargetDataset()->GetDataset();
         const std::string_view output_slave_i{"./goods/beirut_images/coregistration_test_slave_I_cut.tif"};
