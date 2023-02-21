@@ -29,7 +29,7 @@ fi
 
 mkdir -p $output_dir
 
-test_1_prod_path=$output_dir/S1A_IW_SLC__1SDV_20220306T235614_20220306T235642_042207_0507B2_2270_tnr_Cal_IW1_deb_mrg_tc.tif
+test_1_prod_path=$output_dir/S1A_IW_SLC__1SDV_20220306T235614_20220306T235642_042207_0507B2_2270_tnr_Cal_IW123_deb_mrg_tc.tif
 time alus-cal -i $test_dataset_dir/S1A_IW_SLC__1SDV_20220306T235614_20220306T235642_042207_0507B2_2270.zip \
      -o $test_1_prod_path --ll info \
      -p VV -t sigma \
@@ -49,7 +49,7 @@ fi
 set +e
 
 echo "Validating $test_1_prod_path"
-./alus_result_check.py -I $test_1_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20220306T235614_20220306T235642_042207_0507B2_2270_tnr_Cal_IW1_deb_mrg_tc.tif
+./alus_result_check.py -I $test_1_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20220306T235614_20220306T235642_042207_0507B2_2270_tnr_Cal_IW123_deb_mrg_tc.tif
 res1=$?
 
 

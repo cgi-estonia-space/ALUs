@@ -41,7 +41,7 @@ echo "
 disaster_test_exit=$?
 echo "
 *****BEL and GER flood coherence scenes*****"
-./run_flood_bel_ger_test.sh $test_datasets_dir $srtm3_files_dir $orbit_files_dir $products_output
+./run_flood_bel_ger_test.sh $test_datasets_dir $srtm3_files_dir $copdem30_files_dir $orbit_files_dir $products_output
 flood_test_exit=$?
 echo "
 *****Virumaa calibration scene*****"
