@@ -21,7 +21,6 @@
 
 #include <boost/numeric/conversion/cast.hpp>
 
-#include "alus_log.h"
 #include "backgeocoding_constants.h"
 #include "bilinear_computation.h"
 #include "burst_offset_computation.h"
@@ -193,7 +192,7 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index, int s_burst_index, Rec
         dem_sampling_lon = dem_properties_.front().tile_pixel_size_deg_x;
         dem_sampling_lat = dem_properties_.front().tile_pixel_size_deg_y;
     } else {
-        throw std::invalid_argument("Unsupported DEM type for " + std::string(__FUNCTION__ ) + " supplied");
+        throw std::invalid_argument("Unsupported DEM type for " + std::string(__FUNCTION__) + " supplied");
     }
 
     double delta = fmax(dem_sampling_lat, dem_sampling_lon);
@@ -235,7 +234,7 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index, int s_burst_index, Rec
         pixel_degree_res_inverted_x = lat_max_dem_prop->tile_pixel_size_deg_inverted_x;
         pixel_degree_res_inverted_y = lat_max_dem_prop->tile_pixel_size_deg_inverted_y;
     } else {
-        throw std::invalid_argument("Unsupported DEM type for " + std::string(__FUNCTION__ ) + " supplied");
+        throw std::invalid_argument("Unsupported DEM type for " + std::string(__FUNCTION__) + " supplied");
     }
 
     double upper_left_x = (lon_min + dem_grid_lon_max) * pixel_degree_res_inverted_x;
@@ -250,7 +249,7 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index, int s_burst_index, Rec
 
     calc_data.num_lines = calc_data.lat_min_idx - calc_data.lat_max_idx;
     calc_data.num_pixels = calc_data.lon_max_idx - calc_data.lon_min_idx;
-    calc_data.tiles = srtm3_tiles_;
+    calc_data.tiles = dem_tiles_;
     calc_data.dem_property = device_dem_properties_;
     calc_data.dem_type = dem_type_;
     calc_data.egm = egm96_device_array_;
@@ -402,7 +401,7 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index, int s_burst_index, Rec
         mask_data.device_lon_array = device_lon_array;
         mask_data.mask_out_area_without_elevation = mask_out_area_without_elevation_;
         mask_data.size = array_size;
-        mask_data.tiles = srtm3_tiles_;
+        mask_data.tiles = dem_tiles_;
         mask_data.dem_property = device_dem_properties_;
         mask_data.dem_type = dem_type_;
 
@@ -495,12 +494,12 @@ AzimuthAndRangeBounds Backgeocoding::ComputeExtendedAmount(int x_0, int y_0, int
     CHECK_CUDA_ERR(LaunchComputeExtendedAmount(
         {x_0, y_0, w, h}, extended_amount, d_master_orbit_vectors_.array, d_master_orbit_vectors_.size,
         master_utils_->GetOrbitStateVectors()->GetDt(), *master_utils_->subswath_.at(0),
-        master_utils_->device_sentinel_1_utils_, master_utils_->subswath_.at(0)->device_subswath_info_, srtm3_tiles_,
+        master_utils_->device_sentinel_1_utils_, master_utils_->subswath_.at(0)->device_subswath_info_, dem_tiles_,
         const_cast<float*>(egm96_device_array_), device_dem_properties_, dem_type_));
     return extended_amount;
 }
 
-void PrepareBurstOffsetKernelArguments(BurstOffsetKernelArgs& args, PointerArray srtm3_tiles,
+void PrepareBurstOffsetKernelArguments(BurstOffsetKernelArgs& args, PointerArray dem_tiles,
                                        const dem::Property* dem_property, dem::Type dem_type,
                                        s1tbx::Sentinel1Utils* master_utils, s1tbx::Sentinel1Utils* slave_utils) {
     s1tbx::OrbitStateVectors* master_vectors = master_utils->GetOrbitStateVectors();
@@ -521,8 +520,8 @@ void PrepareBurstOffsetKernelArguments(BurstOffsetKernelArgs& args, PointerArray
     CHECK_CUDA_ERR(cudaMemcpy(d_slave_orbit_state_vector, slave_vectors->orbit_state_vectors_computation_.data(),
                               slave_orbit_byte_size, cudaMemcpyHostToDevice));
 
-    args.srtm3_tiles.array = srtm3_tiles.array;
-    args.srtm3_tiles.size = srtm3_tiles.size;
+    args.dem_tiles.array = dem_tiles.array;
+    args.dem_tiles.size = dem_tiles.size;
     args.dem_property = dem_property;
     args.dem_type = dem_type;
 
@@ -568,7 +567,7 @@ void FreeBurstOffsetArguments(BurstOffsetKernelArgs& args) {
 int Backgeocoding::ComputeBurstOffset() {
     BurstOffsetKernelArgs args{};
 
-    PrepareBurstOffsetKernelArguments(args, srtm3_tiles_, device_dem_properties_, dem_type_, this->master_utils_.get(),
+    PrepareBurstOffsetKernelArguments(args, dem_tiles_, device_dem_properties_, dem_type_, this->master_utils_.get(),
                                       this->slave_utils_.get());
 
     int burst_offset;

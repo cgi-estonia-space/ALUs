@@ -26,7 +26,6 @@
 #include "pointer_holders.h"
 #include "shapes.h"
 #include "snap-dem/dem/dataio/earth_gravitational_model96.h"
-#include "srtm3_elevation_model_constants.h"
 #include "srtm3_format_computation.h"
 
 namespace alus::snapengine {
@@ -81,9 +80,6 @@ public:
 
     void TransferToDevice() override;
     void ReleaseFromDevice() override;
-
-    constexpr static int GetTileWidthInDegrees() { return srtm3elevationmodel::DEGREE_RES; }
-    constexpr static int GetTileWidth() { return srtm3elevationmodel::TILE_WIDTH_PIXELS; }
 
     Srtm3ElevationModel(const Srtm3ElevationModel&) = delete;  // class does not support copying(and moving)
     Srtm3ElevationModel& operator=(const Srtm3ElevationModel&) = delete;

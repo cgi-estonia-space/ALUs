@@ -54,12 +54,12 @@ BackgeocodingController::BackgeocodingController(std::shared_ptr<AlusFileReader<
       master_product_(std::move(master_product)),
       slave_product_(std::move(slave_product)) {}
 
-void BackgeocodingController::PrepareToCompute(const float* egm96_device_array, PointerArray srtm3_tiles,
+void BackgeocodingController::PrepareToCompute(const float* egm96_device_array, PointerArray dem_tiles,
                                                bool mask_out_area_without_elevation,
                                                const dem::Property* device_dem_properties,
                                                const std::vector<dem::Property>& dem_properties, dem::Type dem_type) {
     backgeocoding_ = std::make_unique<Backgeocoding>();
-    backgeocoding_->SetElevationData(egm96_device_array, srtm3_tiles, mask_out_area_without_elevation,
+    backgeocoding_->SetElevationData(egm96_device_array, dem_tiles, mask_out_area_without_elevation,
                                      device_dem_properties, dem_properties, dem_type);
     if (beam_dimap_mode_) {
         backgeocoding_->PrepareToCompute(master_metadata_file_, slave_metadata_file_);

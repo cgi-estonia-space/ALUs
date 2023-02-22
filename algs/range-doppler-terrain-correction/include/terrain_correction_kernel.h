@@ -38,7 +38,7 @@ struct GetSourceRectangleKernelArgs {
     unsigned int source_image_height;
     int diff_lat;
     GeoTransformParameters target_geo_transform;
-    PointerArray srtm_3_tiles;
+    PointerArray dem_tiles;
     const dem::Property* dem_property;
     dem::Type dem_type;
     double* d_azimuth_index;

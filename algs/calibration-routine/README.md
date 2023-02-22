@@ -31,8 +31,8 @@ Calibration routine consists of:
                              last burst indexes
   -t [ --type ] arg          Type of calibration to be performed, one of the 
                              following - sigma;beta;gamma;dn
-  --dem arg                  DEM file(s). Only SRTM3 is currently supported.
-
+  --dem arg                  DEM file(s). SRTM3 and Copernicus DEM 30m COG are
+                             currently supported.
   --ll arg (=verbose)        Log level, one of the following - 
                              verbose|debug|info|warning|error
   --gpu_mem arg (=100)       Percentage of how much GPU memory can be used for 

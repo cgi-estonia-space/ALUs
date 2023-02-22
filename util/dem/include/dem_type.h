@@ -18,5 +18,4 @@ namespace alus::dem {
 
 enum class Type { SRTM3, COPDEM_COG30m };
 
-
 }

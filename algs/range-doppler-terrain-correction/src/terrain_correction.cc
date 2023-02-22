@@ -16,7 +16,6 @@
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
 
-#include <algorithm>
 #include <cmath>
 #include <memory>
 #include <thread>
@@ -169,14 +168,14 @@ void TerrainCorrection::CreateGetPositionDeviceArrays(int y_size, double line_ti
 TerrainCorrection::TerrainCorrection(GDALDataset* input_dataset, const RangeDopplerTerrainMetadata& metadata,
                                      const snapengine::tiepointgrid::TiePointGrid& lat_tie_point_grid,
                                      const snapengine::tiepointgrid::TiePointGrid& lon_tie_point_grid,
-                                     const PointerHolder* srtm_3_tiles, size_t srtm_3_tiles_length,
+                                     const PointerHolder* dem_tiles, size_t dem_tiles_length,
                                      const dem::Property* dem_property, const dem::Type dem_type,
                                      const std::vector<dem::Property>& dem_property_value, int selected_band_id,
                                      bool use_average_scene_height)
     : input_ds_{input_dataset},
       metadata_{metadata},
-      d_srtm_3_tiles_(srtm_3_tiles),
-      d_srtm_3_tiles_length_(srtm_3_tiles_length),
+      d_dem_tiles_(dem_tiles),
+      d_dem_tiles_length_(dem_tiles_length),
       dem_property_{dem_property},
       dem_type_{dem_type},
       dem_property_value_{dem_property_value},
@@ -462,8 +461,8 @@ void TerrainCorrection::CalculateTile(TcTileCoordinates tile_coordinates, Shared
     src_args.source_image_height = band->GetYSize();
     src_args.diff_lat = shared->diff_lat;
     src_args.target_geo_transform = shared->target_geo_transform;
-    src_args.srtm_3_tiles = {const_cast<PointerHolder*>(shared->terrain_correction->d_srtm_3_tiles_),
-                             shared->terrain_correction->d_srtm_3_tiles_length_};
+    src_args.dem_tiles = {const_cast<PointerHolder*>(shared->terrain_correction->d_dem_tiles_),
+                          shared->terrain_correction->d_dem_tiles_length_};
 
     const size_t target_sz = tile_coordinates.target_height * tile_coordinates.target_width;
 

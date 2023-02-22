@@ -161,14 +161,14 @@ __global__ void GetSourceRectangleKernel(TcTileCoordinates tile_coordinates, Get
         altitude = args.avg_scene_height;
     } else if (args.dem_type == dem::Type::COPDEM_COG30m) {
         altitude = dem::CopDemCog30mGetElevation(coordinates.lat, coordinates.lon,
-                                                 const_cast<PointerArray*>(&args.srtm_3_tiles), args.dem_property);
+                                                 const_cast<PointerArray*>(&args.dem_tiles), args.dem_property);
         if (altitude == args.dem_no_data_value) {
             args.d_azimuth_index[index] = CUDART_NAN;
             return;
         }
     } else if (args.dem_type == dem::Type::SRTM3) {
         altitude = snapengine::dem::GetElevation(coordinates.lat, coordinates.lon,
-                                                 const_cast<PointerArray*>(&args.srtm_3_tiles), args.dem_property);
+                                                 const_cast<PointerArray*>(&args.dem_tiles), args.dem_property);
         if (altitude == args.dem_no_data_value) {
             args.d_azimuth_index[index] = CUDART_NAN;
             return;

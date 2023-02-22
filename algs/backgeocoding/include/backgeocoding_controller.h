@@ -60,7 +60,7 @@ public:
     BackgeocodingController(const BackgeocodingController&) = delete;  // class does not support copying(and moving)
     BackgeocodingController& operator=(const BackgeocodingController&) = delete;
 
-    void PrepareToCompute(const float* egm96_device_Array, PointerArray srtm3_tiles,
+    void PrepareToCompute(const float* egm96_device_array, PointerArray dem_tiles,
                           bool mask_out_area_without_elevation, const dem::Property* device_dem_properties,
                           const std::vector<dem::Property>& dem_properties, dem::Type dem_type);
     void RegisterException(std::exception_ptr e);

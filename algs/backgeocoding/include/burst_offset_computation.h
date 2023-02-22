@@ -27,7 +27,7 @@ namespace alus::backgeocoding {
 struct BurstOffsetKernelArgs {
     double* latitudes;
     double* longitudes;
-    PointerArray srtm3_tiles;
+    PointerArray dem_tiles;
     const dem::Property* dem_property;
     dem::Type dem_type;
     int* burst_offset;

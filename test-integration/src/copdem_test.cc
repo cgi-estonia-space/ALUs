@@ -20,8 +20,7 @@
 #include "copdem_cog_30m.h"
 #include "dem_property.h"
 
-double GetElevationWrapper(double lon, double lat, alus::PointerArray p_array,
-                           const alus::dem::Property* dem_prop);
+double GetElevationWrapper(double lon, double lat, alus::PointerArray p_array, const alus::dem::Property* dem_prop);
 
 namespace {
 
@@ -66,7 +65,6 @@ TEST(CopDemCog30m, LoadsTilesCorrectly) {
     n51_e006_prop.tile_lat_extent = 51.0001389;
     n51_e006_prop.tile_lon_extent = 6.9997917;
 
-
     std::vector<alus::dem::Property> expectedProperties{n49_e004_prop, n51_e006_prop};
     for (size_t i = 0; i < dem_properties.size(); i++) {
         const auto& p = dem_properties.at(i);
@@ -98,7 +96,7 @@ TEST(CopDemCog30m, LoadsTilesCorrectly) {
     ASSERT_THAT(manager.GetProperties(), Ne(nullptr));
     ASSERT_THAT(manager.GetBuffers(), Ne(nullptr));
 
-    alus::PointerArray dem_buffers {const_cast<alus::PointerHolder*>(manager.GetBuffers()), manager.GetTileCount()};
+    alus::PointerArray dem_buffers{const_cast<alus::PointerHolder*>(manager.GetBuffers()), manager.GetTileCount()};
     double result = GetElevationWrapper(4.0008, 49.9999, dem_buffers, manager.GetProperties());
     ASSERT_THAT(190.081, DoubleNear(result, 1e-3));
     result = GetElevationWrapper(6.4808, 51.0772, dem_buffers, manager.GetProperties());

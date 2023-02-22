@@ -37,9 +37,9 @@ __global__ void ComputeBurstOffsetKernel(BurstOffsetKernelArgs args) {
 
     double elevation{args.dem_property->no_data_value};
     if (args.dem_type == dem::Type::COPDEM_COG30m) {
-        elevation = dem::CopDemCog30mGetElevation(latitude, longitude, &args.srtm3_tiles, args.dem_property);
+        elevation = dem::CopDemCog30mGetElevation(latitude, longitude, &args.dem_tiles, args.dem_property);
     } else if (args.dem_type == dem::Type::SRTM3) {
-        elevation = snapengine::dem::GetElevation(latitude, longitude, &args.srtm3_tiles, args.dem_property);
+        elevation = snapengine::dem::GetElevation(latitude, longitude, &args.dem_tiles, args.dem_property);
     }
 
     if (elevation == args.dem_property->no_data_value) {

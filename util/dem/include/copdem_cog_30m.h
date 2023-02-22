@@ -14,8 +14,8 @@
 
 #pragma once
 
-#include <memory>
 #include <future>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -47,7 +47,6 @@ public:
     ~CopDemCog30m();
 
 private:
-
     void LoadTilesImpl();
     void TransferToDeviceImpl();
     static void WaitFutureAndCheckErrorsDefault(std::future<void>& f, size_t tile_count, std::string_view ex_msg);

@@ -78,7 +78,7 @@ void Arguments::Construct() {
          "Area Of Interest WKT polygon. Or shapefile (.shp) consisting similar geometry."
          "Overrules first and last burst indexes and subswath selections.")
         ("dem", po::value<std::vector<std::string>>(&dem_files_)->required(),
-         "DEM file(s). Only SRTM3 is currently supported.")
+         "DEM file(s). SRTM3 and Copernicus DEM 30m COG are currently supported.")
         ("no_mask_cor", po::bool_switch(&disable_coregistration_elevation_mask_),
          "Do not mask out areas without elevation in coregistration")
         ("orbit_dir", po::value<std::string>(&orbit_file_dir_),

@@ -40,8 +40,8 @@ Coherence estimation routine consists of:
   --sw arg                              Reference scene's subswath
   -a [ --aoi ] arg                      Area Of Interest WKT polygon, overrules
                                         first and last burst indexes
-  --dem arg                             DEM file(s). Only SRTM3 is currently 
-                                        supported.
+  --dem arg                             DEM file(s). SRTM3 and Copernicus DEM
+                                        30m COG are currently supported.
   --no_mask_cor                         Do not mask out areas without elevation
                                         in coregistration
   --orbit_dir arg                       Directory of orbit files (restituted 

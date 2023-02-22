@@ -37,6 +37,7 @@ constexpr size_t RASTER_Y_TILE_COUNT{180};
 constexpr size_t TILE_HEIGHT_PIXELS{3600};
 constexpr double NO_DATA_VALUE{0.0};
 constexpr std::array<size_t, 7> ALLOWED_WIDTHS{TILE_HEIGHT_PIXELS, 2400, 1800, 1200, 720, 360};
+constexpr size_t TIMEOUT_SEC_PER_TILE{10};
 
 int DoubleForCompare(double value, size_t digits) { return value * std::pow(10, digits); }
 
@@ -260,7 +261,7 @@ CopDemCog30m::~CopDemCog30m() {
 void CopDemCog30m::WaitFutureAndCheckErrorsDefault(std::future<void>& f, size_t tile_count, std::string_view ex_msg) {
     if (f.valid()) {
         // For each tile 10 seconds is given. If it takes longer, regard this as a stupid slow system.
-        const auto status = f.wait_for(std::chrono::seconds(tile_count * 10));
+        const auto status = f.wait_for(std::chrono::seconds(tile_count * TIMEOUT_SEC_PER_TILE));
         if (status == std::future_status::timeout) {
             throw std::runtime_error(std::string(ex_msg));
         }

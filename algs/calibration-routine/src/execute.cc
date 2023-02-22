@@ -387,7 +387,7 @@ void Execute::Merge(const std::vector<std::shared_ptr<snapengine::Product>>& deb
         auto data_writer = std::make_shared<snapengine::custom::GdalImageWriter>();
         // TODO NB! merge not tile size independent - it has been decreased from 1024 since larger tile sizes introduce
         // a bug - https://github.com/cgi-estonia-space/ALUs/issues/18
-        const size_t merge_tile_size = 256; // Up until 256 merge operation processing time got smaller significantly.
+        const size_t merge_tile_size = 256;  // Up until 256 merge operation processing time got smaller significantly.
         topsarmerge::TopsarMergeOperator merge_op(deburst_products, merge_polarisations, merge_tile_size,
                                                   merge_tile_size, output_names.front());
 

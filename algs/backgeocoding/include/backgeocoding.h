@@ -76,11 +76,11 @@ public:
     [[nodiscard]] s1tbx::Sentinel1Utils* GetMasterUtils() const { return master_utils_.get(); }
     [[nodiscard]] s1tbx::Sentinel1Utils* GetSlaveUtils() const { return slave_utils_.get(); }
 
-    void SetElevationData(const float* egm96_device_array, PointerArray srtm3_tiles,
+    void SetElevationData(const float* egm96_device_array, PointerArray dem_tiles,
                           bool mask_out_area_without_elevation, const dem::Property* device_dem_properties,
                           const std::vector<dem::Property>& dem_properties, dem::Type dem_type) {
         egm96_device_array_ = egm96_device_array;
-        srtm3_tiles_ = srtm3_tiles;
+        dem_tiles_ = dem_tiles;
         mask_out_area_without_elevation_ = mask_out_area_without_elevation;
         device_dem_properties_ = device_dem_properties;
         dem_properties_ = dem_properties;
@@ -107,7 +107,7 @@ private:
     cuda::KernelArray<snapengine::OrbitStateVectorComputation> d_slave_orbit_vectors_{};
 
     const float* egm96_device_array_;
-    PointerArray srtm3_tiles_;
+    PointerArray dem_tiles_;
     const dem::Property* device_dem_properties_;
     std::vector<dem::Property> dem_properties_;
     dem::Type dem_type_;

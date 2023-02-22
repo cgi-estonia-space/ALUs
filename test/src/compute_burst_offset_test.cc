@@ -229,8 +229,8 @@ private:
     }
 
     void PrepareBurstOffsetKernelArgs() {
-        args_.srtm3_tiles.array = srtm_3_dem_->GetBuffers();
-        args_.srtm3_tiles.size = srtm_3_dem_->GetTileCount();
+        args_.dem_tiles.array = srtm_3_dem_->GetBuffers();
+        args_.dem_tiles.size = srtm_3_dem_->GetTileCount();
         args_.dem_property = srtm_3_dem_->GetProperties();
         args_.dem_type = alus::dem::Type::SRTM3;
         args_.master_subswath_info = master_info_;
