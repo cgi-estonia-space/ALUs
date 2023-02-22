@@ -82,6 +82,8 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
     // TC ouput = ~1GB
     alus::gdalmanagement::SetCacheMax(GDAL_CACHE_SIZE);
 
+    auto dem_assistant = dem::Assistant::CreateFormattedDemTilesOnGpuFrom(dem_files_);
+
     // split
     std::vector<std::shared_ptr<alus::topsarsplit::TopsarSplit>> splits;
     std::vector<std::string> swath_selection;
@@ -120,17 +122,16 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
     tnr_products.clear();
     tnr_datasets.clear();
 
-    auto dem_assistant = dem::Assistant::CreateFormattedDemTilesOnGpuFrom(dem_files_);
-    // start thread for srtm calculations parallel with CPU deburst
-    // rethink this part if we add support for larger GPUs with full chain on GPU processing
-    dem_assistant->GetElevationManager()->TransferToDevice();
-
     if (params_.wif) {
         for (size_t i = 0; i < output_names.size(); i++) {
             LOGI << "Calibration output @ " << output_names.at(i) << ".tif";
             GeoTiffWriteFile(calib_datasets.at(i).get(), output_names.at(i));
         }
     }
+
+    // start thread for DEM calculations parallel with deburst which does not use GPU
+    // rethink this part if we add support for larger GPUs with full chain on GPU processing
+    dem_assistant->GetElevationManager()->TransferToDevice();
 
     // deburst
     std::vector<std::shared_ptr<snapengine::Product>> deburst_products(tnr_products.size());
