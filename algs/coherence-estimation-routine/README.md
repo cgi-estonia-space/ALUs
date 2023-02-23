@@ -154,6 +154,7 @@ Processing options:
 For more raw computing comparison, the IW2 subswath GeoTIFF file has been stored on ram disk - this way I/O influences
 results less. Also outputs are stored on ram disk.
 
+When using SRTM3 DEM
 ```
 ./gpt coherence_estimation_snap_graph.xml -Preference=S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7.SAFE/manifest.safe 
 -Psecondary=S1B_IW_SLC__1SDV_20210721T055001_20210721T055028_027888_0353E2_E1B5.SAFE/manifest.safe -Psw=IW2 -Ppol=VV 
@@ -200,3 +201,5 @@ Full scene</br>
 
 Orbit state vector related, [see cause](../../docs/GPU-GSTP-MPR-0008.pdf)
 ![spots](../../docs/coh_relative_error_spots.png)
+
+For Copernicus DEM such comparison is not done because of the pending issues found in the SNAP - https://forum.step.esa.int/t/copernicus-dem-complications-when-coregistering-s1/38659/2

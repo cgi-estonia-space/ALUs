@@ -141,7 +141,7 @@ time ~/alus/alus-github/cmake-build-release/alus_package/alus-cal -i ../S1A_IW_S
 
 Output:
 ```
-[2023-02-22 16:14:45.802223] [0x00007f56b8beb000] [info]    Processing parameters:
+[2023-02-23 11:24:53.843607] [0x00007f32c100b000] [info]    Processing parameters:
 Input product - ../S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7.SAFE
 Subswath - IW2
 Polarisation - VV
@@ -151,31 +151,31 @@ Last burst index - 0
 AOI - 
 Write intermediate files - NO
 
-[2023-02-22 16:14:45.970436] [0x00007f56b8beb000] [info]    Sentinel 1 split done - 168ms
-[2023-02-22 16:14:45.970468] [0x00007f56b8beb000] [info]    Using 'NVIDIA GeForce GTX 1660 Ti' device nr 0 for calculations
-[2023-02-22 16:14:45.980603] [0x00007f56b8beb000] [info]    Target bands count: 1
-[2023-02-22 16:14:45.980623] [0x00007f56b8beb000] [info]    Processing band i_IW2_VV_VV
-[2023-02-22 16:14:48.551814] [0x00007f56b8beb000] [info]    Thermal noise removal done - 2581ms
-[2023-02-22 16:14:48.577451] [0x00007f56b8beb000] [info]    target bands count 1
-[2023-02-22 16:14:48.577472] [0x00007f56b8beb000] [info]    Processing band Sigma0_IW2_VV_VV
-[2023-02-22 16:14:49.305179] [0x00007f56b8beb000] [info]    Sentinel1 calibration done - 753ms
-[2023-02-22 16:14:49.423885] [0x00007f56b8beb000] [info]    COPDEM COG 30m tile ID 184041 loaded to GPU
-[2023-02-22 16:14:49.451727] [0x00007f56b8beb000] [info]    COPDEM COG 30m tile ID 185041 loaded to GPU
-[2023-02-22 16:14:49.469917] [0x00007f56b8beb000] [info]    COPDEM COG 30m tile ID 184040 loaded to GPU
-[2023-02-22 16:14:49.489668] [0x00007f56b8beb000] [info]    COPDEM COG 30m tile ID 185040 loaded to GPU
-[2023-02-22 16:14:49.507455] [0x00007f56b8beb000] [info]    COPDEM COG 30m tile ID 186040 loaded to GPU
-[2023-02-22 16:14:49.526330] [0x00007f56b8beb000] [info]    COPDEM COG 30m tile ID 184039 loaded to GPU
-[2023-02-22 16:14:49.547010] [0x00007f56b8beb000] [info]    COPDEM COG 30m tile ID 185039 loaded to GPU
-[2023-02-22 16:14:50.888571] [0x00007f56b8beb000] [info]    TOPSAR Deburst done - 1340ms
-[2023-02-22 16:14:50.888591] [0x00007f56b8beb000] [info]    Merge done - 0ms
-[2023-02-22 16:14:52.809788] [0x00007f56b8beb000] [info]    Terrain correction done - 1921ms
-[2023-02-22 16:14:53.065011] [0x00007f56b8beb000] [info]    Algorithm completed, output file @ S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_split_IW2_tnr_cal_deb_tc_copdem.tif
-[2023-02-22 16:14:53.065030] [0x00007f56b8beb000] [info]    Another test
-[2023-02-22 16:14:53.191100] [0x00007f56b8beb000] [info]    Unloading COPDEM COG 30m tiles
-~/alus/alus-github/cmake-build-release/alus_package/alus-cal -i  -t sigma -p   12.02s user 4.90s system 224% cpu 7.544 total
+[2023-02-23 11:24:54.030635] [0x00007f32c100b000] [info]    Sentinel 1 split done - 186ms
+[2023-02-23 11:24:54.030664] [0x00007f32c100b000] [info]    Using 'NVIDIA GeForce GTX 1660 Ti' device nr 0 for calculations
+[2023-02-23 11:24:54.040753] [0x00007f32c100b000] [info]    Target bands count: 1
+[2023-02-23 11:24:54.040771] [0x00007f32c100b000] [info]    Processing band i_IW2_VV_VV
+[2023-02-23 11:24:56.622863] [0x00007f32c100b000] [info]    Thermal noise removal done - 2592ms
+[2023-02-23 11:24:56.645418] [0x00007f32c100b000] [info]    target bands count 1
+[2023-02-23 11:24:56.645439] [0x00007f32c100b000] [info]    Processing band Sigma0_IW2_VV_VV
+[2023-02-23 11:24:57.373840] [0x00007f32c100b000] [info]    Sentinel1 calibration done - 750ms
+[2023-02-23 11:24:57.486067] [0x00007f32b98d7000] [info]    COPDEM COG 30m tile ID 184041 loaded to GPU
+[2023-02-23 11:24:57.512886] [0x00007f32b98d7000] [info]    COPDEM COG 30m tile ID 185041 loaded to GPU
+[2023-02-23 11:24:57.532775] [0x00007f32b98d7000] [info]    COPDEM COG 30m tile ID 184040 loaded to GPU
+[2023-02-23 11:24:57.553562] [0x00007f32b98d7000] [info]    COPDEM COG 30m tile ID 185040 loaded to GPU
+[2023-02-23 11:24:57.573801] [0x00007f32b98d7000] [info]    COPDEM COG 30m tile ID 186040 loaded to GPU
+[2023-02-23 11:24:57.592789] [0x00007f32b98d7000] [info]    COPDEM COG 30m tile ID 184039 loaded to GPU
+[2023-02-23 11:24:57.611409] [0x00007f32b98d7000] [info]    COPDEM COG 30m tile ID 185039 loaded to GPU
+[2023-02-23 11:24:58.635122] [0x00007f32c100b000] [info]    TOPSAR Deburst done - 1175ms
+[2023-02-23 11:24:58.635144] [0x00007f32c100b000] [info]    Merge done - 0ms
+[2023-02-23 11:25:00.550532] [0x00007f32c100b000] [info]    Terrain correction done - 1915ms
+[2023-02-23 11:25:00.803102] [0x00007f32c100b000] [info]    Algorithm completed, output file @ S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_split_IW2_tnr_cal_deb_tc_copdem.tif
+[2023-02-23 11:25:00.803121] [0x00007f32c100b000] [info]    Another test
+[2023-02-23 11:25:00.951947] [0x00007f32c100b000] [info]    Unloading COPDEM COG 30m tiles
+~/alus/alus-github/cmake-build-release/alus_package/alus-cal -i  -t sigma -p   11.87s user 4.84s system 229% cpu 7.288 total
 ```
 
-~7.5-8 seconds
+~7.2 seconds
 
 ## Comparison
 

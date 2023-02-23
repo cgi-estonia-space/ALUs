@@ -125,7 +125,6 @@ void CopDemCog30m::TransferToDeviceImpl() {
     temp_tiles.resize(nr_of_tiles);
     device_formated_buffers_.resize(nr_of_tiles);
     constexpr dim3 device_block_size(20, 20);
-
     for (size_t i = 0; i < nr_of_tiles; i++) {
         const auto& tile_prop = host_dem_properties_.at(i);
         const auto x_size = tile_prop.tile_pixel_count_x;
@@ -224,7 +223,7 @@ void CopDemCog30m::TransferToDevice() {
         throw std::runtime_error("A call to 'LoadTiles()' is needed first in order to transfer DEM files");
     }
 
-    TransferToDeviceImpl();
+    transfer_to_device_future_ = std::async([this]() { this->TransferToDeviceImpl(); });
 }
 
 void CopDemCog30m::ReleaseFromDevice() {
