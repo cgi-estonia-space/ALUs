@@ -25,7 +25,7 @@ With this setup, improving the GPU would lower the overall algorithm execution t
 However there is no point using a high-end GPU with low-end disk, as then the bottleneck would be disk I/O.
 
 Profiling graphs exported from [NVVP](https://developer.nvidia.com/nvidia-visual-profiler) :  
-![calibration](docs/cal_nvvp.png)  
+![calibration](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/calibration_routine_readme/cal_nvvp.png)  
 ![coherence](docs/coh_nvvp.png)
 
 ## Factors heavily influencing performance

@@ -179,13 +179,12 @@ Write intermediate files - NO
 
 ## Comparison
 
+Resulting diff file statistics when using SRTM3:
 ```
 gdal_calc.py -A S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_split_tnr_Cal_deb_TC_snap.tif 
 -B S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_tnr_Cal_IW2_deb_tc.tif --calc="A-B" 
 --outfile=/tmp/snap_man_min_alus_cal_diff.tif --NoDataValue=0
 ```
-
-Resulting diff file statistics when using SRTM3:
 ```
 Band 1 Block=14224x1 Type=Float32, ColorInterp=Gray
     Computed Min/Max=-0.004,0.004
@@ -200,10 +199,10 @@ Band 1 Block=14224x1 Type=Float32, ColorInterp=Gray
 ```
 
 Legend</br>
-![relative_error_legend](../../docs/relative_error_legend.png)
+![relative_error_legend](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/calibration_routine_readme/relative_error_legend.png)
 
 Difference when using SRTM3 DEM</br>
-![full_scene](../../docs/cal_relative_error_colored.png)
+![srtm3_iw2](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/calibration_routine_readme/cal_relative_error_colored.png)
 
 Difference when using Copernicus DEM 30m COG</br>
 
@@ -229,8 +228,12 @@ Band 1 Block=14224x1 Type=Float32, ColorInterp=Gray
 
 The match is nearly identical for Copernicus DEM, since its resolution is higher and less floating point arithmetics
 introduced rounding errors between interpolated values of the pixels. The relative difference picture is almost
-completely dark, hence not shown here, since there are very few pixels with very little difference that are not visually
-detectable.
+completely dark. The 'nodata' values are a box with white color, inside, the difference can be seen (black == equal).
+
+![copdem_iw2](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/calibration_routine_readme/cal_relative_error_copdem.png)
+
+Here is a zoomed in picture where pixels are different on byte level (maximum difference 4.5299530029297e-05) are marked with white, highlighted with red.
+![copdem_iw2_rel_highlight](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/calibration_routine_readme/cal_rel_error_highlight_red.png)
 
 ## Sources and resulting files
 
