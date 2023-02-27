@@ -33,6 +33,7 @@ __host__ double GetElevationWrapper(double lon, double lat, alus::PointerArray p
     CHECK_CUDA_ERR(cudaGetLastError());
     double result{};
     CHECK_CUDA_ERR(cudaMemcpy(&result, dev_result, sizeof(double), cudaMemcpyDeviceToHost));
+    CHECK_CUDA_ERR(cudaFree(dev_result));
 
     return result;
 }

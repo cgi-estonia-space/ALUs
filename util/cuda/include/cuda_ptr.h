@@ -75,20 +75,4 @@ private:
 template <class T>
 using DeviceBuffer = CudaPtr<T>;
 
-template <typename T>
-struct FunctionPointer {
-public:
-    FunctionPointer(T* f) {
-        T func_container_host;
-        CHECK_CUDA_ERR(cudaMalloc((void**)&value, sizeof(T)));
-
-        CHECK_CUDA_ERR(cudaMemcpyFromSymbol(&func_container_host, *f, sizeof(T)));
-        CHECK_CUDA_ERR(cudaMemcpy(value, &func_container_host, sizeof(T), cudaMemcpyHostToDevice));
-    }
-
-    ~FunctionPointer() { cudaFree(value); }
-
-    T* value;
-};
-
 }  // namespace alus::cuda
