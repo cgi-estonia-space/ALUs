@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "dataset.h"
-#include "dem_aggregation.h"
+#include "dem_management.h"
 #include "dem_property.h"
 #include "pointer_holders.h"
 #include "shapes.h"
@@ -38,7 +38,7 @@ namespace alus::snapengine {
     This class is given the tile coordinates using a map and then it finds those tiles, formats them and
     makes them available on the gpu.
 */
-class Srtm3ElevationModel : public dem::Aggregation {
+class Srtm3ElevationModel : public dem::Management {
 private:
     std::vector<std::string> file_names_;
     std::vector<Dataset<float>> srtms_;
@@ -79,7 +79,7 @@ public:
     const std::vector<dem::Property>& GetPropertiesValue() override;
 
     void TransferToDevice() override;
-    void ReleaseFromDevice() override;
+    void ReleaseFromDevice() noexcept override;
 
     Srtm3ElevationModel(const Srtm3ElevationModel&) = delete;  // class does not support copying(and moving)
     Srtm3ElevationModel& operator=(const Srtm3ElevationModel&) = delete;

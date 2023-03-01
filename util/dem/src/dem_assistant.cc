@@ -60,7 +60,7 @@ bool Assistant::ArgumentsExtract::IsValidSrtm3Filename(std::string_view dem_file
 std::vector<std::string> Assistant::ArgumentsExtract::ExtractSrtm3Files(
     const std::vector<std::string>& cmd_line_arguments) {
     std::vector<std::string> srtm3_files{};
-    for (auto&& arg : cmd_line_arguments) {
+    for (const auto& arg : cmd_line_arguments) {
         std::vector<std::string> argument_values{};
         boost::split(argument_values, arg, boost::is_any_of("\t "));
 
@@ -104,7 +104,7 @@ std::string Assistant::ArgumentsExtract::AdjustZipPathForSrtm3(std::string_view 
 
 std::vector<std::string> Assistant::ArgumentsExtract::PrepareArgs(const std::vector<std::string>& cmd_line_arguments) {
     std::vector<std::string> dem_files{};
-    for (auto&& arg : cmd_line_arguments) {
+    for (const auto& arg : cmd_line_arguments) {
         std::vector<std::string> argument_values{};
         boost::split(argument_values, arg, boost::is_any_of("\t "));
 

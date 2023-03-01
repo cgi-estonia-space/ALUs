@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 
-#include "dem_aggregation.h"
+#include "dem_management.h"
 #include "dem_type.h"
 #include "pointer_holders.h"
 #include "snap-dem/dem/dataio/earth_gravitational_model96.h"
@@ -47,7 +47,7 @@ public:
 
     Type GetType() const { return type_; }
 
-    std::shared_ptr<Aggregation> GetElevationManager() { return model_; }
+    std::shared_ptr<Management> GetElevationManager() { return model_; }
     std::shared_ptr<snapengine::EarthGravitationalModel96> GetEgm96Manager() { return egm96_; }
 
     ~Assistant() = default;
@@ -57,7 +57,7 @@ private:
     static std::shared_ptr<Assistant> TryCreateSrtm3From(const std::vector<std::string>& cmd_line_arguments);
 
     Type type_;
-    std::shared_ptr<Aggregation> model_;
+    std::shared_ptr<Management> model_;
     std::shared_ptr<snapengine::EarthGravitationalModel96> egm96_;
 };
 }  // namespace alus::dem

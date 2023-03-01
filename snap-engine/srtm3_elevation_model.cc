@@ -44,7 +44,7 @@ Srtm3ElevationModel::~Srtm3ElevationModel() {
 
 void Srtm3ElevationModel::ReadSrtmTilesThread() {
     try {
-        for (auto&& dem_file : file_names_) {
+        for (const auto& dem_file : file_names_) {
             // Priority needed for keeping results as close as possible to SNAP
             auto& ds = srtms_.emplace_back(dem_file, GeoTransformSourcePriority::WORLDFILE_PAM_INTERNAL_TABFILE_NONE);
             ds.LoadRasterBand(1);
@@ -182,14 +182,14 @@ void Srtm3ElevationModel::TransferToDevice() {
     }
 }
 
-void Srtm3ElevationModel::ReleaseFromDevice() {
+void Srtm3ElevationModel::ReleaseFromDevice() noexcept {
     if (device_formated_srtm_buffers_info_ != nullptr) {
         LOGI << "Unloading SRTM3 tiles from GPU";
         REPORT_WHEN_CUDA_ERR(cudaFree(this->device_formated_srtm_buffers_info_));
         device_formated_srtm_buffers_info_ = nullptr;
     }
 
-    for (auto&& buf : device_formated_srtm_buffers_) {
+    for (auto* buf : device_formated_srtm_buffers_) {
         REPORT_WHEN_CUDA_ERR(cudaFree(buf));
     }
     this->device_formated_srtm_buffers_.clear();

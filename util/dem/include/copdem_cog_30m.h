@@ -21,14 +21,14 @@
 #include <vector>
 
 #include "dataset.h"
-#include "dem_aggregation.h"
+#include "dem_management.h"
 #include "dem_property.h"
 #include "pointer_holders.h"
 #include "snap-dem/dem/dataio/earth_gravitational_model96.h"
 
 namespace alus::dem {
 
-class CopDemCog30m : public Aggregation {
+class CopDemCog30m : public Management {
 public:
     CopDemCog30m() = delete;
     CopDemCog30m(std::vector<std::string> filenames);
@@ -40,7 +40,7 @@ public:
     const Property* GetProperties() override;
     const std::vector<Property>& GetPropertiesValue() override;
     void TransferToDevice() override;
-    void ReleaseFromDevice() override;
+    void ReleaseFromDevice() noexcept override;
 
     static int ComputeId(double lon_origin, double lat_origin);
 

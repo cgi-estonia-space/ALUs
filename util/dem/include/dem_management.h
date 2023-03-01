@@ -22,7 +22,7 @@
 
 namespace alus::dem {
 
-class Aggregation {
+class Management {
 public:
     virtual void LoadTiles() = 0;
     virtual size_t GetTileCount() = 0;
@@ -30,8 +30,8 @@ public:
     virtual const Property* GetProperties() = 0;
     virtual const std::vector<Property>& GetPropertiesValue() = 0;
     virtual void TransferToDevice() = 0;
-    virtual void ReleaseFromDevice() = 0;
-    virtual ~Aggregation() = default;
+    virtual void ReleaseFromDevice() noexcept = 0;
+    virtual ~Management() = default;
 };
 
 }  // namespace alus::dem

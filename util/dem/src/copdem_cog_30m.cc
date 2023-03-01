@@ -89,7 +89,7 @@ void CopDemCog30m::VerifyProperties(const Property& prop, const Dataset<float>& 
 }
 
 void CopDemCog30m::LoadTilesImpl() {
-    for (auto&& dem_file : filenames_) {
+    for (const auto& dem_file : filenames_) {
         auto& ds = datasets_.emplace_back(dem_file);
         ds.LoadRasterBand(1);
 
@@ -226,17 +226,17 @@ void CopDemCog30m::TransferToDevice() {
     transfer_to_device_future_ = std::async([this]() { this->TransferToDeviceImpl(); });
 }
 
-void CopDemCog30m::ReleaseFromDevice() {
-    LOGI << "Unloading COPDEM COG 30m tiles";
+void CopDemCog30m::ReleaseFromDevice() noexcept {
+    if (device_formated_buffers_table_ != nullptr) {
+        LOGI << "Unloading COPDEM COG 30m tiles";
+        REPORT_WHEN_CUDA_ERR(cudaFree(device_formated_buffers_table_));
+        device_formated_buffers_table_ = nullptr;
+    }
+
     for (auto* buf : device_formated_buffers_) {
         REPORT_WHEN_CUDA_ERR(cudaFree(buf));
     }
     device_formated_buffers_.clear();
-
-    if (device_formated_buffers_table_ != nullptr) {
-        REPORT_WHEN_CUDA_ERR(cudaFree(device_formated_buffers_table_));
-        device_formated_buffers_table_ = nullptr;
-    }
 
     if (device_dem_properties_ != nullptr) {
         REPORT_WHEN_CUDA_ERR(cudaFree(device_dem_properties_));
