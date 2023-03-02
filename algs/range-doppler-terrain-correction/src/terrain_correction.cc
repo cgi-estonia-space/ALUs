@@ -461,7 +461,7 @@ void TerrainCorrection::CalculateTile(TcTileCoordinates tile_coordinates, Shared
     src_args.source_image_height = band->GetYSize();
     src_args.diff_lat = shared->diff_lat;
     src_args.target_geo_transform = shared->target_geo_transform;
-    src_args.dem_tiles = {const_cast<PointerHolder*>(shared->terrain_correction->d_dem_tiles_),
+    src_args.dem_tiles = {shared->terrain_correction->d_dem_tiles_,
                           shared->terrain_correction->d_dem_tiles_length_};
 
     const size_t target_sz = tile_coordinates.target_height * tile_coordinates.target_width;

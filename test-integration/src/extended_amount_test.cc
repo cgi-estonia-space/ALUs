@@ -30,7 +30,7 @@ TEST(ExtendedAmountTest, ComputeExtendedAmount) {
     dem_assistant->GetElevationManager()->TransferToDevice();
     backgeocoding.SetElevationData(
         dem_assistant->GetEgm96Manager()->GetDeviceValues(),
-        {const_cast<alus::PointerHolder*>(dem_assistant->GetElevationManager()->GetBuffers()),
+        {dem_assistant->GetElevationManager()->GetBuffers(),
          dem_assistant->GetElevationManager()->GetTileCount()},
         true, dem_assistant->GetElevationManager()->GetProperties(),
         dem_assistant->GetElevationManager()->GetPropertiesValue(), dem_assistant->GetType());

@@ -61,7 +61,7 @@ void Srtm3ElevationModel::ReadSrtmTilesThread() {
             srtm_data.no_data_value = srtm3elevationmodel::NO_DATA_VALUE;
             srtm_data.max_lats = alus::snapengine::earthgravitationalmodel96computation::MAX_LATS;
             srtm_data.max_lons = alus::snapengine::earthgravitationalmodel96computation::MAX_LONS;
-            srtm_data.egm = const_cast<float*>(egm_96_->GetDeviceValues());
+            srtm_data.egm = egm_96_->GetDeviceValues();
 
             this->srtm_format_info_.push_back(srtm_data);
 

@@ -37,7 +37,7 @@ constexpr int index_step{20};
 struct ExtendedAmountKernelArgs {
     s1tbx::DeviceSentinel1Utils* sentinel_utils;
     s1tbx::DeviceSubswathInfo* subswath_info;
-    float* egm;
+    const float* egm;
     Rectangle bounds;
     double* latitudes;
     double* longitudes;
@@ -111,7 +111,7 @@ void PrepareArguments(ExtendedAmountKernelArgs* args, PointerArray tiles,
                       snapengine::OrbitStateVectorComputation* d_orbit_state_vectors, size_t nr_of_vectors,
                       double vectors_dt, const s1tbx::SubSwathInfo& subswath_info,
                       s1tbx::DeviceSentinel1Utils* d_sentinel_1_utils, s1tbx::DeviceSubswathInfo* d_subswath_info,
-                      Rectangle& bounds, float* egm, const dem::Property* dem_property, dem::Type dem_type) {
+                      Rectangle& bounds, const float* egm, const dem::Property* dem_property, dem::Type dem_type) {
     args->tiles.array = tiles.array;
     args->tiles.size = tiles.size;
 
@@ -144,7 +144,7 @@ cudaError_t LaunchComputeExtendedAmount(Rectangle bounds, AzimuthAndRangeBounds&
                                         double vectors_dt, const s1tbx::SubSwathInfo& subswath_info,
                                         s1tbx::DeviceSentinel1Utils* d_sentinel_1_utils,
                                         s1tbx::DeviceSubswathInfo* d_subswath_info, const PointerArray& tiles,
-                                        float* egm, const dem::Property* dem_property, dem::Type dem_type) {
+                                        const float* egm, const dem::Property* dem_property, dem::Type dem_type) {
     ExtendedAmountKernelArgs args{};
 
     const int idx_max = std::numeric_limits<int>::max();

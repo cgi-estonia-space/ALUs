@@ -120,7 +120,7 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
 
             const auto coreg_gpu_start = std::chrono::steady_clock::now();
             coreg.DoWork(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
-                         {const_cast<PointerHolder*>(dem_assistant->GetElevationManager()->GetBuffers()),
+                         {dem_assistant->GetElevationManager()->GetBuffers(),
                           dem_assistant->GetElevationManager()->GetTileCount()},
                          params_.mask_out_area_without_elevation, dem_assistant->GetElevationManager()->GetProperties(),
                          dem_assistant->GetElevationManager()->GetPropertiesValue(), dem_assistant->GetType());

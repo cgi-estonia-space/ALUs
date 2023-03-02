@@ -96,7 +96,7 @@ TEST(CopDemCog30m, LoadsTilesCorrectly) {
     ASSERT_THAT(manager.GetProperties(), Ne(nullptr));
     ASSERT_THAT(manager.GetBuffers(), Ne(nullptr));
 
-    alus::PointerArray dem_buffers{const_cast<alus::PointerHolder*>(manager.GetBuffers()), manager.GetTileCount()};
+    alus::PointerArray dem_buffers{manager.GetBuffers(), manager.GetTileCount()};
     double result = GetElevationWrapper(4.0008, 49.9999, dem_buffers, manager.GetProperties());
     ASSERT_THAT(190.081, DoubleNear(result, 1e-3));
     result = GetElevationWrapper(6.4808, 51.0772, dem_buffers, manager.GetProperties());

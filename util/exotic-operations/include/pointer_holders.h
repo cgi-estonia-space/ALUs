@@ -34,7 +34,7 @@ struct PointerHolder {
 };
 
 struct PointerArray {
-    PointerHolder* array;
+    const PointerHolder* array;
     size_t size;
 };
 }  // namespace alus

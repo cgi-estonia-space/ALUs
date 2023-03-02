@@ -495,7 +495,7 @@ AzimuthAndRangeBounds Backgeocoding::ComputeExtendedAmount(int x_0, int y_0, int
         {x_0, y_0, w, h}, extended_amount, d_master_orbit_vectors_.array, d_master_orbit_vectors_.size,
         master_utils_->GetOrbitStateVectors()->GetDt(), *master_utils_->subswath_.at(0),
         master_utils_->device_sentinel_1_utils_, master_utils_->subswath_.at(0)->device_subswath_info_, dem_tiles_,
-        const_cast<float*>(egm96_device_array_), device_dem_properties_, dem_type_));
+        egm96_device_array_, device_dem_properties_, dem_type_));
     return extended_amount;
 }
 

@@ -39,5 +39,5 @@ cudaError_t LaunchComputeExtendedAmount(Rectangle bounds, AzimuthAndRangeBounds&
                                         const s1tbx::SubSwathInfo& subswath_info,
                                         s1tbx::DeviceSentinel1Utils* d_sentinel_1_utils,
                                         s1tbx::DeviceSubswathInfo* d_subswath_info, const PointerArray& tiles,
-                                        float* egm, const dem::Property* dem_property, dem::Type dem_type);
+                                        const float* egm, const dem::Property* dem_property, dem::Type dem_type);
 }  // namespace alus::backgeocoding

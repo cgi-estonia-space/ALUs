@@ -88,7 +88,7 @@ TEST(coregistration, full3) {
             "./goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.SAFE",
             output_file.data(), "IW1", "VV");
         cor->DoWork(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
-                    {const_cast<alus::PointerHolder*>(dem_assistant->GetElevationManager()->GetBuffers()),
+                    {dem_assistant->GetElevationManager()->GetBuffers(),
                      dem_assistant->GetElevationManager()->GetTileCount()},
                     true, dem_assistant->GetElevationManager()->GetProperties(),
                     dem_assistant->GetElevationManager()->GetPropertiesValue(), dem_assistant->GetType());
@@ -142,7 +142,7 @@ TEST(coregistration, splitCut) {
                         output_file_cut.data(), "IW1", "VV", 4, 6);  // NOLINT
 
         cor->DoWork(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
-                    {const_cast<alus::PointerHolder*>(dem_assistant->GetElevationManager()->GetBuffers()),
+                    {dem_assistant->GetElevationManager()->GetBuffers(),
                      dem_assistant->GetElevationManager()->GetTileCount()},
                     true, dem_assistant->GetElevationManager()->GetProperties(),
                     dem_assistant->GetElevationManager()->GetPropertiesValue(), dem_assistant->GetType());
