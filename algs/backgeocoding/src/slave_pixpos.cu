@@ -13,8 +13,6 @@
  */
 #include "slave_pixpos_computation.h"
 
-#include <cstdio>
-
 #include "backgeocoding_constants.h"
 #include "backgeocoding_utils.cuh"
 #include "copdem_cog_30m_calc.cuh"
@@ -54,12 +52,10 @@ __global__ void SlavePixPos(SlavePixPosData calc_data) {
                       calc_data.dem_property->tile_pixel_size_deg_y - calc_data.dem_property->grid_max_lat;
 
     if (calc_data.dem_type == dem::Type::COPDEM_COG30m) {
-        const auto* prop = dem::GetCopDemPropertyBy(geo_pos_lat, calc_data.dem_property, calc_data.tiles.size);
-        if (prop != nullptr) {
-            geo_pos_lon = (calc_data.lon_min_idx + idy) * prop->tile_pixel_size_deg_x - calc_data.dem_property->grid_max_lon;
-            alt = dem::CopDemCog30mGetElevation(geo_pos_lat, geo_pos_lon, &calc_data.tiles, calc_data.dem_property);
-            valid_coord = true;
-        }
+        const auto* prop = calc_data.dem_property;
+        geo_pos_lon = (calc_data.lon_min_idx + idy) * prop->tile_pixel_size_deg_x - calc_data.dem_property->grid_max_lon;
+        alt = dem::CopDemCog30mGetElevation(geo_pos_lat, geo_pos_lon, &calc_data.tiles, calc_data.dem_property);
+        valid_coord = true;
     } else if (calc_data.dem_type == dem::Type::SRTM3) {
         geo_pos_lon = (calc_data.lon_min_idx + idy) * calc_data.dem_property->tile_pixel_size_deg_x -
                       calc_data.dem_property->grid_max_lon;

@@ -67,42 +67,13 @@ inline __device__ int GetSamples(PointerArray* tiles, int* x, int* y, double* sa
     return all_valid;
 }
 
-inline __device__ __host__ int GetCopDemCog30mTileWidth(double lat) {
-    const int abs_lat = (int)abs(lat);
-    if (abs_lat < 50) {
-        return 3600;
-    } else if (abs_lat >= 50 && abs_lat < 60) {
-        return 2400;
-    } else if (abs_lat >= 60 && abs_lat < 70) {
-        return 1800;
-    } else if (abs_lat >= 70 && abs_lat < 80) {
-        return 1200;
-    } else if (abs_lat >= 80 && abs_lat < 85) {
-        return 720;
-    } else {
-        return 360;
-    }
-}
-
-inline __device__ __host__ const Property* GetCopDemPropertyBy(double lat, const Property* dem_props, size_t count) {
-    const auto tile_width_for_lat = GetCopDemCog30mTileWidth(lat);
-    for (size_t i = 0; i < count; i++) {
-        if (dem_props[i].tile_pixel_count_x == tile_width_for_lat) {
-            return dem_props + i;
-        }
-    }
-
-    return nullptr;
-}
-
 inline __device__ double CopDemCog30mGetElevation(double geo_pos_lat, double geo_pos_lon, PointerArray* p_array,
                                                   const alus::dem::Property* dem_prop) {
     if (geo_pos_lon > 180.0) {
         geo_pos_lon -= 360.0;
     }
 
-    const Property* dp = GetCopDemPropertyBy(geo_pos_lat, dem_prop, p_array->size);
-
+    const Property* dp = dem_prop;
     if (dp == nullptr) {
         return dem_prop->no_data_value;
     }

@@ -13,6 +13,8 @@
  */
 #include "delaunay_triangulator.h"
 
+#include <algorithm>
+
 #include "delaunay_triangulator_cpu.h"
 #include "snap_delaunay_triangulator.h"
 #include "snap_triangle.h"
@@ -63,25 +65,6 @@ void DelaunayTriangulator::TriangulateCPU(const double* x_coords, double x_multi
     }
 }
 
-int SnapCompareTo(const void* v1, const void* v2) {
-    alus::PointDouble* p1;
-    alus::PointDouble* p2;
-
-    p1 = reinterpret_cast<alus::PointDouble*>(const_cast<void*>(v1));
-    p2 = reinterpret_cast<alus::PointDouble*>(const_cast<void*>(v2));
-
-    if (p1->x < p2->x) {
-        return -1;
-    }
-    if (p1->x > p2->x) {
-        return 1;
-    }
-    if (p1->y < p2->y) {
-        return -1;
-    }
-    return p1->y > p2->y ? 1 : 0;
-}
-
 void DelaunayTriangulator::TriangulateCPU2(const double* x_coords, double x_multiplier, const double* y_coords,
                                            double y_multiplier, int size, double invalid_index) {
     std::vector<alus::PointDouble> points;
@@ -95,7 +78,15 @@ void DelaunayTriangulator::TriangulateCPU2(const double* x_coords, double x_mult
         }
     }
 
-    qsort(points.data(), points.size(), sizeof(alus::PointDouble), SnapCompareTo);
+    std::sort(points.begin(), points.end(), [](alus::PointDouble p1, alus::PointDouble p2) {
+        if (p1.x < p2.x) return true;
+        if (p1.x > p2.x) return false;
+
+        if (p1.y < p2.y) {
+            return true;
+        }
+        return p1.y > p2.y ? false : true;
+    });
     external::delaunay::SnapDelaunayTriangulator triangulator;
     triangulator.Triangulate(points.data(), points.size());
 

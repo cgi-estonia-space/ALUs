@@ -62,6 +62,7 @@ private:
     std::vector<Property> host_dem_properties_{};
     dem::Property* device_dem_properties_{nullptr};
     std::shared_ptr<snapengine::EarthGravitationalModel96> egm96_;
+    bool resample_to_identical_width{true};
 
     std::future<void> load_tiles_future_;
     std::future<void> transfer_to_device_future_;
