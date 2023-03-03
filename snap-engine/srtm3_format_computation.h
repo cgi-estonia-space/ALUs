@@ -33,7 +33,7 @@ struct Srtm3FormatComputation {
     int x_size, y_size;
     int max_lats;
     int max_lons;
-    float* egm;
+    const float* egm;
 };
 
 cudaError_t LaunchDemFormatter(dim3 grid_size, dim3 block_size, float* target, float* source,

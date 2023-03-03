@@ -12,9 +12,9 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 #include <cmath>
-#include <cstddef>
 
-#include "../../../snap-engine/srtm3_elevation_calc.cuh"
+#include "copdem_cog_30m_calc.cuh"
+#include "dem_calc.cuh"
 #include "get_position.cuh"
 #include "math_utils.cuh"
 #include "range_doppler_geocoding.cuh"
@@ -159,9 +159,16 @@ __global__ void GetSourceRectangleKernel(TcTileCoordinates tile_coordinates, Get
     double altitude = 0;
     if (args.use_avg_scene_height) {
         altitude = args.avg_scene_height;
-    } else {
-        altitude = snapengine::srtm3elevationmodel::GetElevation(coordinates.lat, coordinates.lon,
-                                                                 const_cast<PointerArray*>(&args.srtm_3_tiles));
+    } else if (args.dem_type == dem::Type::COPDEM_COG30m) {
+        altitude = dem::CopDemCog30mGetElevation(coordinates.lat, coordinates.lon,
+                                                 &args.dem_tiles, args.dem_property);
+        if (altitude == args.dem_no_data_value) {
+            args.d_azimuth_index[index] = CUDART_NAN;
+            return;
+        }
+    } else if (args.dem_type == dem::Type::SRTM3) {
+        altitude = snapengine::dem::GetElevation(coordinates.lat, coordinates.lon,
+                                                 &args.dem_tiles, args.dem_property);
         if (altitude == args.dem_no_data_value) {
             args.d_azimuth_index[index] = CUDART_NAN;
             return;
@@ -202,7 +209,6 @@ Rectangle GetSourceRectangle(TcTileCoordinates tile_coordinates, GetSourceRectan
     cuda::CopyAsyncH2D(d_result, h_result, ctx->stream);
     GetSourceRectangleKernel<<<grid_dim, block_dim, 0, ctx->stream>>>(tile_coordinates, args, d_result);
     cuda::CopyAsyncD2H(h_result, d_result, ctx->stream);
-
     // need to wait for async memcpy to complete
     CHECK_CUDA_ERR(cudaStreamSynchronize(ctx->stream));
     CHECK_CUDA_ERR(cudaGetLastError());

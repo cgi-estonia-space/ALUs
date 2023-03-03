@@ -1,4 +1,5 @@
-test_data=/home/ubuntu/e2e/datasets
-dem_files=/home/ubuntu/e2e/srtm3
-orbit_files=/home/ubuntu/e2e/poeorb
-results=/home/ubuntu/e2e/results
+test_data_dir=/home/ubuntu/e2e/datasets
+srtm3_dir=/home/ubuntu/e2e/srtm3
+copdem30_dir=/home/ubuntu/e2e/copdem30
+orbit_dir=/home/ubuntu/e2e/poeorb
+results_dir=/home/ubuntu/e2e/results

@@ -20,6 +20,8 @@
 #include <thread>
 
 #include "alus_log.h"
+#include "dem_property.h"
+#include "dem_type.h"
 #include "pointer_holders.h"
 #include "snap-core/core/datamodel/metadata_element.h"
 #include "snap-core/core/util/product_utils.h"
@@ -52,9 +54,13 @@ BackgeocodingController::BackgeocodingController(std::shared_ptr<AlusFileReader<
       master_product_(std::move(master_product)),
       slave_product_(std::move(slave_product)) {}
 
-void BackgeocodingController::PrepareToCompute(const float* egm96_device_array, PointerArray srtm3_tiles, bool mask_out_area_without_elevation) {
+void BackgeocodingController::PrepareToCompute(const float* egm96_device_array, PointerArray dem_tiles,
+                                               bool mask_out_area_without_elevation,
+                                               const dem::Property* device_dem_properties,
+                                               const std::vector<dem::Property>& dem_properties, dem::Type dem_type) {
     backgeocoding_ = std::make_unique<Backgeocoding>();
-    backgeocoding_->SetElevationData(egm96_device_array, srtm3_tiles, mask_out_area_without_elevation);
+    backgeocoding_->SetElevationData(egm96_device_array, dem_tiles, mask_out_area_without_elevation,
+                                     device_dem_properties, dem_properties, dem_type);
     if (beam_dimap_mode_) {
         backgeocoding_->PrepareToCompute(master_metadata_file_, slave_metadata_file_);
     } else {
@@ -196,7 +202,7 @@ void BackgeocodingController::Initialize() {
     s1tbx::Sentinel1Utils* master_utils = backgeocoding_->GetMasterUtils();
 
     std::vector<std::string> m_sub_swath_names = master_utils->GetSubSwathNames();
-    //std::vector<std::string> m_polarizations = master_utils->GetPolarizations();
+    // std::vector<std::string> m_polarizations = master_utils->GetPolarizations();
 
     // TODO(unknown): not checking any of that. Is it needed?
     /*for(SlaveData slaveData : slaveDataList) {

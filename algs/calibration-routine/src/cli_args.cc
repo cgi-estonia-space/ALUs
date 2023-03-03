@@ -109,7 +109,7 @@ void Arguments::Construct() {
          "Overrules first and last burst indexes and subswath selections.")
         ("type,t", po::value<std::string>(&calibration_type_)->required(), calibration_type_help.c_str())
         ("dem", po::value<std::vector<std::string>>(&dem_files_)->required(),
-            "DEM file(s). Only SRTM3 is currently supported.");
+            "DEM file(s). SRTM3 and Copernicus DEM 30m COG are currently supported.");
     // clang-format on
 
     combined_args_.add(alg_args_).add(alus_args_.Get());

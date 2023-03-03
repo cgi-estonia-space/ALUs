@@ -24,15 +24,16 @@ namespace {
 
 TEST(ExtendedAmountTest, ComputeExtendedAmount) {
     std::vector<std::string> srtm3_files{"./goods/srtm_41_01.tif", "./goods/srtm_41_01.tif"};
-    std::shared_ptr<alus::app::DemAssistant> dem_assistant =
-        alus::app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(std::move(srtm3_files));
+    auto dem_assistant = alus::dem::Assistant::CreateFormattedDemTilesOnGpuFrom(std::move(srtm3_files));
     alus::backgeocoding::Backgeocoding backgeocoding;
 
-    dem_assistant->GetSrtm3Manager()->HostToDevice();
-    backgeocoding.SetElevationData(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
-                                   {dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo(),
-                                    dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()},
-                                   true);
+    dem_assistant->GetElevationManager()->TransferToDevice();
+    backgeocoding.SetElevationData(
+        dem_assistant->GetEgm96Manager()->GetDeviceValues(),
+        {dem_assistant->GetElevationManager()->GetBuffers(),
+         dem_assistant->GetElevationManager()->GetTileCount()},
+        true, dem_assistant->GetElevationManager()->GetProperties(),
+        dem_assistant->GetElevationManager()->GetPropertiesValue(), dem_assistant->GetType());
     backgeocoding.PrepareToCompute("./goods/master_metadata.dim", "./goods/slave_metadata.dim");
 
     alus::Rectangle const input{4000, 17000, 100, 100};

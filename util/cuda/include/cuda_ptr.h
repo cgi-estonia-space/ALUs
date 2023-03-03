@@ -17,8 +17,7 @@
 
 #include "cuda_util.h"
 
-namespace alus {  // NOLINT TODO: concatenate namespace and remove nolint after migrating to cuda 11+
-namespace cuda {
+namespace alus::cuda {
 
 /**
  * Use this class if you want to make sure that a cuda pointer gets freed, if it leaves scope. There is also free() and
@@ -76,5 +75,4 @@ private:
 template <class T>
 using DeviceBuffer = CudaPtr<T>;
 
-}  // namespace cuda
-}  // namespace alus
+}  // namespace alus::cuda

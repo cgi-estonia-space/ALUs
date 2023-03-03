@@ -11,10 +11,13 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
-#include "../../../snap-engine/srtm3_elevation_calc.cuh"
-#include "../../../snap-engine/srtm3_elevation_model_constants.h"
+
 #include "backgeocoding_constants.h"
+#include "copdem_cog_30m_calc.cuh"
 #include "cuda_util.h"
+#include "dem_calc.cuh"
+#include "dem_property.h"
+#include "dem_type.h"
 #include "elevation_mask_computation.h"
 
 namespace alus {
@@ -33,10 +36,15 @@ __global__ void ElevationMask(ElevationMaskData data) {
 
         const double lat = data.device_lat_array[idx];
         const double lon = data.device_lon_array[idx];
-        const double alt = snapengine::srtm3elevationmodel::GetElevation(lat, lon, &data.tiles);
+        double elevation{data.dem_property->no_data_value};
+        if (data.dem_type == dem::Type::COPDEM_COG30m) {
+            elevation = dem::CopDemCog30mGetElevation(lat, lon, &data.tiles, data.dem_property);
+        } else if (data.dem_type == dem::Type::SRTM3) {
+            elevation = snapengine::dem::GetElevation(lat, lon, &data.tiles, data.dem_property);
+        }
 
         // TODO: this may need to change if we decide not to use mask.
-        if (data.mask_out_area_without_elevation && alt == snapengine::srtm3elevationmodel::NO_DATA_VALUE) {
+        if (data.mask_out_area_without_elevation && elevation == data.dem_property->no_data_value) {
             data.device_x_points[idx] = INVALID_INDEX;
             data.device_y_points[idx] = INVALID_INDEX;
         } else {

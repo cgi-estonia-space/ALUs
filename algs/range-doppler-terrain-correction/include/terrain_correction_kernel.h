@@ -19,14 +19,15 @@
 #include "cuda_copies.h"
 #include "cuda_mem_arena.h"
 #include "cuda_ptr.h"
+#include "dem_property.h"
+#include "dem_type.h"
 #include "get_position.h"
 #include "kernel_array.h"
 #include "pointer_holders.h"
 #include "raster_properties.h"
 #include "resampling.h"
 
-namespace alus {
-namespace terraincorrection {
+namespace alus::terraincorrection {
 
 struct GetSourceRectangleKernelArgs {
     GetPositionMetadata get_position_metadata;
@@ -37,7 +38,9 @@ struct GetSourceRectangleKernelArgs {
     unsigned int source_image_height;
     int diff_lat;
     GeoTransformParameters target_geo_transform;
-    PointerArray srtm_3_tiles;
+    PointerArray dem_tiles;
+    const dem::Property* dem_property;
+    dem::Type dem_type;
     double* d_azimuth_index;
     double* d_range_index;
 };
@@ -89,5 +92,4 @@ cudaError_t LaunchTerrainCorrectionKernel(TcTileCoordinates tc_tile_coordinates,
  * @return Rectangle containing pixels corresponding to the given target tile.
  */
 Rectangle GetSourceRectangle(TcTileCoordinates tile_coordinates, GetSourceRectangleKernelArgs args, PerThreadData* ctx);
-}  // namespace terraincorrection
-}  // namespace alus
+}  // namespace alus::terraincorrection

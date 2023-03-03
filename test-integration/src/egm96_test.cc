@@ -96,7 +96,7 @@ TEST(EGM96, correctness) {
     data.max_lats = alus::snapengine::earthgravitationalmodel96computation::MAX_LATS;
     data.max_lons = alus::snapengine::earthgravitationalmodel96computation::MAX_LONS;
     data.size = static_cast<int>(tester.size);
-    data.egm = const_cast<float*>(egm96.GetDeviceValues());
+    data.egm = egm96.GetDeviceValues();
 
     CHECK_CUDA_ERR(
         LaunchEGM96(grid_size, block_size, tester.device_lats_, tester.device_lons_, tester.device_results_, data));

@@ -16,7 +16,6 @@
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
 
-#include <algorithm>
 #include <cmath>
 #include <memory>
 #include <thread>
@@ -32,7 +31,6 @@
 #include "raster_properties.h"
 #include "shapes_util.h"
 #include "snap-engine-utilities/engine-utilities//eo/constants.h"
-#include "srtm3_elevation_model_constants.h"
 #include "tc_tile.h"
 #include "terrain_correction_constants.h"
 #include "terrain_correction_kernel.h"
@@ -73,6 +71,7 @@ void FreeThreadContext(alus::terraincorrection::PerThreadData* ctx) {
 }
 
 namespace alus::terraincorrection {
+
 struct TerrainCorrection::SharedThreadData {
     // read-write access, must explictly synchronize between threads
     ThreadSafeTileQueue<TcTileCoordinates> tile_queue;
@@ -169,12 +168,17 @@ void TerrainCorrection::CreateGetPositionDeviceArrays(int y_size, double line_ti
 TerrainCorrection::TerrainCorrection(GDALDataset* input_dataset, const RangeDopplerTerrainMetadata& metadata,
                                      const snapengine::tiepointgrid::TiePointGrid& lat_tie_point_grid,
                                      const snapengine::tiepointgrid::TiePointGrid& lon_tie_point_grid,
-                                     const PointerHolder* srtm_3_tiles, size_t srtm_3_tiles_length,
-                                     int selected_band_id, bool use_average_scene_height)
+                                     const PointerHolder* dem_tiles, size_t dem_tiles_length,
+                                     const dem::Property* dem_property, const dem::Type dem_type,
+                                     const std::vector<dem::Property>& dem_property_value, int selected_band_id,
+                                     bool use_average_scene_height)
     : input_ds_{input_dataset},
       metadata_{metadata},
-      d_srtm_3_tiles_(srtm_3_tiles),
-      d_srtm_3_tiles_length_(srtm_3_tiles_length),
+      d_dem_tiles_(dem_tiles),
+      d_dem_tiles_length_(dem_tiles_length),
+      dem_property_{dem_property},
+      dem_type_{dem_type},
+      dem_property_value_{dem_property_value},
       selected_band_id_(selected_band_id),
       lat_tie_point_grid_{lat_tie_point_grid},
       lon_tie_point_grid_{lon_tie_point_grid},
@@ -225,7 +229,7 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
     LOGD << "TC tiles = " << tiles.size() << " threads = " << n_threads
          << " transfer mode = " << (use_pinned_memory ? "pinned" : "paged");
 
-    // setup data for use by threads, these must outlive threads themself
+    // setup data for use by threads, these must outlive threads themselves
     SharedThreadData shared_data = {};
     shared_data.terrain_correction = this;
     shared_data.output_dataset = target_product.dataset_.get();
@@ -448,14 +452,17 @@ void TerrainCorrection::CalculateTile(TcTileCoordinates tile_coordinates, Shared
     src_args.get_position_metadata = shared->terrain_correction->d_get_position_metadata_;
     src_args.use_avg_scene_height = shared->terrain_correction->use_average_scene_height_;
     src_args.avg_scene_height = shared->terrain_correction->metadata_.avg_scene_height;
-    // TODO: value should originate from DEM dataset (SNAPGPU-193)
-    src_args.dem_no_data_value = snapengine::srtm3elevationmodel::NO_DATA_VALUE;
+    src_args.dem_property = shared->terrain_correction->dem_property_;
+    src_args.dem_type = shared->terrain_correction->dem_type_;
+    if (!shared->terrain_correction->use_average_scene_height_) {
+        src_args.dem_no_data_value = shared->terrain_correction->dem_property_value_.front().no_data_value;
+    }
     src_args.source_image_width = band->GetXSize();
     src_args.source_image_height = band->GetYSize();
     src_args.diff_lat = shared->diff_lat;
     src_args.target_geo_transform = shared->target_geo_transform;
-    src_args.srtm_3_tiles = {const_cast<PointerHolder*>(shared->terrain_correction->d_srtm_3_tiles_),
-                             shared->terrain_correction->d_srtm_3_tiles_length_};
+    src_args.dem_tiles = {shared->terrain_correction->d_dem_tiles_,
+                          shared->terrain_correction->d_dem_tiles_length_};
 
     const size_t target_sz = tile_coordinates.target_height * tile_coordinates.target_width;
 

@@ -91,13 +91,13 @@ __global__ void BilinearInterpolation(double* x_pixels, double* y_pixels, double
         snapengine::bilinearinterpolation::ComputeIndex(x - params.rectangle_x + 0.5, y - params.rectangle_y + 0.5,
                                                         params.demod_width, params.demod_height, &index);
         p_holder.pointer = demod_phase;
-        sample_phase = snapengine::bilinearinterpolation::Resample(&p_array, &index, raster_width, params.no_data_value,
+        sample_phase = snapengine::bilinearinterpolation::ResampleNoDem(&p_array, &index, raster_width, params.no_data_value,
                                                                    use_no_data_phase, GetSamples);
         p_holder.pointer = demod_i;
-        sample_i = snapengine::bilinearinterpolation::Resample(&p_array, &index, raster_width, params.no_data_value,
+        sample_i = snapengine::bilinearinterpolation::ResampleNoDem(&p_array, &index, raster_width, params.no_data_value,
                                                                use_no_data_i, GetSamples);
         p_holder.pointer = demod_q;
-        sample_q = snapengine::bilinearinterpolation::Resample(&p_array, &index, raster_width, params.no_data_value,
+        sample_q = snapengine::bilinearinterpolation::ResampleNoDem(&p_array, &index, raster_width, params.no_data_value,
                                                                use_no_data_q, GetSamples);
 
         if (!params.disable_reramp) {

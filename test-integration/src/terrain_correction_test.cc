@@ -81,11 +81,11 @@ TEST_F(TerrainCorrectionIntegrationTest, Saaremaa1) {
     egm_96->HostToDevice();
 
     std::vector<std::string> files{"./goods/srtm_41_01.tif", "./goods/srtm_42_01.tif"};
-    auto srtm_3_model = std::make_unique<Srtm3ElevationModel>(files);
-    srtm_3_model->ReadSrtmTiles(egm_96);
-    srtm_3_model->HostToDevice();
+    auto srtm_3_model = std::make_unique<Srtm3ElevationModel>(files, egm_96);
+    srtm_3_model->LoadTiles();
+    srtm_3_model->TransferToDevice();
 
-    const auto* d_srtm_3_tiles = srtm_3_model->GetSrtmBuffersInfo();
+    const auto* d_srtm_3_tiles = srtm_3_model->GetBuffers();
     const size_t srtm_3_tiles_length{2};
 
     const std::string output_path{"/tmp/tc_saaremaa.tif"};
@@ -93,7 +93,9 @@ TEST_F(TerrainCorrectionIntegrationTest, Saaremaa1) {
     {
         const int tile_side_length{1000};
         TerrainCorrection tc(input.GetGdalDataset(), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
-                             metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length, selected_band);
+                             metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length,
+                             srtm_3_model->GetProperties(), alus::dem::Type::SRTM3, srtm_3_model->GetPropertiesValue(),
+                             selected_band);
         tc.ExecuteTerrainCorrection(output_path, tile_side_length, tile_side_length);
         const auto output = tc.GetOutputDataset();
     }
@@ -110,7 +112,7 @@ TEST_F(TerrainCorrectionIntegrationTest, Saaremaa1) {
         output_path);
 
     CHECK_CUDA_ERR(cudaGetLastError());
-    srtm_3_model->DeviceFree();
+    srtm_3_model->ReleaseFromDevice();
     egm_96->DeviceFree();
     cudaDeviceReset();  // for cuda-memcheck --leak-check full
 }
@@ -136,7 +138,8 @@ TEST_F(TerrainCorrectionIntegrationTest, SaaremaaAverageSceneHeight) {
     {
         const int tile_side_length{1000};
         TerrainCorrection tc(input.GetGdalDataset(), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
-                             metadata.GetLonTiePointGrid(), nullptr, 0, selected_band, use_avg_scene_height);
+                             metadata.GetLonTiePointGrid(), nullptr, 0, nullptr, alus::dem::Type::SRTM3, {},
+                             selected_band, use_avg_scene_height);
         tc.ExecuteTerrainCorrection(output_path, tile_side_length, tile_side_length);
     }
 
@@ -171,11 +174,11 @@ TEST_F(TerrainCorrectionIntegrationTest, BeirutExplosion) {
     egm_96->HostToDevice();
 
     std::vector<std::string> files{"./goods/srtm_43_06.tif", "./goods/srtm_44_06.tif"};
-    auto srtm_3_model = std::make_unique<Srtm3ElevationModel>(files);
-    srtm_3_model->ReadSrtmTiles(egm_96);
-    srtm_3_model->HostToDevice();
+    auto srtm_3_model = std::make_unique<Srtm3ElevationModel>(files, egm_96);
+    srtm_3_model->LoadTiles();
+    srtm_3_model->TransferToDevice();
 
-    const auto* d_srtm_3_tiles = srtm_3_model->GetSrtmBuffersInfo();
+    const auto* d_srtm_3_tiles = srtm_3_model->GetBuffers();
     const size_t srtm_3_tiles_length{2};
 
     const std::string output_path{"/tmp/tc_beirut_test.tif"};
@@ -183,7 +186,9 @@ TEST_F(TerrainCorrectionIntegrationTest, BeirutExplosion) {
     {
         const int tile_side_length{1000};
         TerrainCorrection tc(input.GetGdalDataset(), metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
-                             metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length, selected_band);
+                             metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length,
+                             srtm_3_model->GetProperties(), alus::dem::Type::SRTM3, srtm_3_model->GetPropertiesValue(),
+                             selected_band);
         tc.ExecuteTerrainCorrection(output_path, tile_side_length, tile_side_length);
     }
 
@@ -197,7 +202,7 @@ TEST_F(TerrainCorrectionIntegrationTest, BeirutExplosion) {
     ASSERT_THAT(alus::utils::test::HashFromBand(output_path), ::testing::Eq(expected_boost_hash));
 
     CHECK_CUDA_ERR(cudaGetLastError());
-    srtm_3_model->DeviceFree();
+    srtm_3_model->ReleaseFromDevice();
     egm_96->DeviceFree();
 
     cudaDeviceReset();  // for cuda-memcheck --leak-check full

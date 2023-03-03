@@ -57,6 +57,7 @@ add_custom_target(integration-test-prepare-data ALL
         COMMAND test -f ${INTEGRATION_TEST_DATA_FOLDER}/srtm_42_01.tif || unzip -qn ${ALUS_LFS_GOODS}/srtm_42_01.zip -d ${INTEGRATION_TEST_DATA_FOLDER}
         COMMAND test -f ${INTEGRATION_TEST_DATA_FOLDER}/srtm_43_06.tif || unzip -qn ${ALUS_LFS_GOODS}/srtm_43_06.zip -d ${INTEGRATION_TEST_DATA_FOLDER}
         COMMAND test -f ${INTEGRATION_TEST_DATA_FOLDER}/srtm_44_06.tif || unzip -qn ${ALUS_LFS_GOODS}/srtm_44_06.zip -d ${INTEGRATION_TEST_DATA_FOLDER}
+        COMMAND sh -c "cp ${ALUS_LFS_GOODS}/Copernicus*DEM.tif ${INTEGRATION_TEST_DATA_FOLDER}/"
 
         # Prepare Beirut SAFE files
         COMMAND mkdir -p ${INTEGRATION_TEST_DATA_FOLDER}/beirut_images
@@ -137,6 +138,7 @@ target_link_libraries(integration-test-coregistration
         backgeocoding-static
         apply-orbit-file-op-static
         coregistration-static
+        dem-util-static
         )
 
 add_dependencies(integration-test-coregistration integration-test-prepare-data)
@@ -214,7 +216,7 @@ target_link_libraries(integration-test-backgeocoding
         snap-engine-static
         gdal-util-static
         exotic-operations-static
-        app-util-static
+        dem-util-static
         )
 
 add_dependencies(integration-test-backgeocoding integration-test-prepare-data)
@@ -354,6 +356,7 @@ target_link_libraries(integration-test-tnr
 
 add_dependencies(integration-test-tnr integration-test-prepare-data)
 
+#----------------GDAL util integration test-------------------------------
 list(APPEND TEST_SOURCES_GDAL_UTIL
         src/gdal_util_test.cc
         )
@@ -366,3 +369,16 @@ target_link_libraries(integration-test-gdal-util
         alus-gmock-main
         )
 add_dependencies(integration-test-gdal-util integration-test-prepare-data)
+
+#--------------DEM util integration tests---------------------------
+list(APPEND TEST_SOURCES_DEM_UTIL
+        src/copdem_test.cc
+        src/copdem_test.cu)
+
+add_executable(integration-test-dem-util ${TEST_SOURCES_DEM_UTIL})
+
+target_link_libraries(integration-test-dem-util
+        PRIVATE
+        alus-gmock-main
+        dem-util-static)
+add_dependencies(integration-test-dem-util integration-test-prepare-data)

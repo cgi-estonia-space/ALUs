@@ -15,7 +15,6 @@
 
 #include <cmath>
 #include <condition_variable>
-#include <memory>
 #include <mutex>
 #include <thread>
 
@@ -26,7 +25,9 @@
 
 namespace alus::snapengine {
 
-Srtm3ElevationModel::Srtm3ElevationModel(std::vector<std::string> file_names) : file_names_(std::move(file_names)) {
+Srtm3ElevationModel::Srtm3ElevationModel(std::vector<std::string> file_names,
+                                         std::shared_ptr<EarthGravitationalModel96> egm)
+    : file_names_(std::move(file_names)), egm_96_{egm} {
     device_srtm3_tiles_count_ = 0;
 }
 
@@ -38,14 +39,13 @@ Srtm3ElevationModel::~Srtm3ElevationModel() {
         init_thread_.join();
     }
 
-    this->DeviceFree();
+    this->ReleaseFromDevice();
 }
 
 void Srtm3ElevationModel::ReadSrtmTilesThread() {
     try {
-        for (auto&& dem_file : file_names_) {
-            // TODO: Priority needed for keeping results as close as possible to SNAP.  // NOLINT is this todo or just a
-            // simple comment
+        for (const auto& dem_file : file_names_) {
+            // Priority needed for keeping results as close as possible to SNAP
             auto& ds = srtms_.emplace_back(dem_file, GeoTransformSourcePriority::WORLDFILE_PAM_INTERNAL_TABFILE_NONE);
             ds.LoadRasterBand(1);
             const auto* geo_transform = ds.GetTransform();
@@ -61,10 +61,33 @@ void Srtm3ElevationModel::ReadSrtmTilesThread() {
             srtm_data.no_data_value = srtm3elevationmodel::NO_DATA_VALUE;
             srtm_data.max_lats = alus::snapengine::earthgravitationalmodel96computation::MAX_LATS;
             srtm_data.max_lons = alus::snapengine::earthgravitationalmodel96computation::MAX_LONS;
-            srtm_data.egm = const_cast<float*>(egm_96_->GetDeviceValues());
+            srtm_data.egm = egm_96_->GetDeviceValues();
 
             this->srtm_format_info_.push_back(srtm_data);
+
+            dem::Property prop;
+            prop.tile_pixel_count_inverted_x = srtm3elevationmodel::NUM_PIXELS_PER_TILE_INVERTED;
+            prop.tile_pixel_count_inverted_y = srtm3elevationmodel::NUM_PIXELS_PER_TILE_INVERTED;
+            prop.tile_pixel_count_x = srtm3elevationmodel::NUM_PIXELS_PER_TILE;
+            prop.tile_pixel_count_y = srtm3elevationmodel::NUM_PIXELS_PER_TILE;
+            prop.grid_tile_count_x = srtm3elevationmodel::NUM_X_TILES;
+            prop.grid_tile_count_y = srtm3elevationmodel::NUM_Y_TILES;
+            prop.grid_total_width_pixels = srtm3elevationmodel::RASTER_WIDTH;
+            prop.grid_total_height_pixels = srtm3elevationmodel::RASTER_HEIGHT;
+            prop.no_data_value = srtm3elevationmodel::NO_DATA_VALUE;
+            prop.tile_pixel_size_deg_x = srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE;
+            prop.tile_pixel_size_deg_y = srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE;
+            prop.tile_pixel_size_deg_inverted_x = srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED;
+            prop.tile_pixel_size_deg_inverted_y = srtm3elevationmodel::DEGREE_RES_BY_NUM_PIXELS_PER_TILE_INVERTED;
+            prop.grid_max_lat = srtm3elevationmodel::MAX_LAT_COVERAGE;
+            prop.grid_max_lon = srtm3elevationmodel::MAX_LON_COVERAGE;
+            prop.tile_lat_origin = srtm_data.m12;
+            prop.tile_lat_extent = prop.tile_lat_origin + (ds.GetRasterSizeY() * ds.GetPixelSizeLat());
+            prop.tile_lon_origin = srtm_data.m02;
+            prop.tile_lon_extent = prop.tile_lon_origin + (ds.GetRasterSizeX() * ds.GetPixelSizeLon());
+            dem_property_host_.push_back(prop);
         }
+
     } catch (const std::exception&) {
         elevation_exception_ = std::current_exception();
     }
@@ -74,9 +97,8 @@ void Srtm3ElevationModel::ReadSrtmTilesThread() {
 }
 
 // use a preconfigured emg96 instance with the tiles already loaded onto the gpu.
-void Srtm3ElevationModel::ReadSrtmTiles(std::shared_ptr<EarthGravitationalModel96>& egm_96) {
+void Srtm3ElevationModel::LoadTiles() {
     if (!init_thread_.joinable()) {
-        egm_96_ = egm_96;
         init_thread_ = std::thread(&Srtm3ElevationModel::ReadSrtmTilesThread, this);
     }
 }
@@ -136,6 +158,13 @@ void Srtm3ElevationModel::HostToDeviceThread() {
             CHECK_CUDA_ERR(cudaMemcpy(this->device_formated_srtm_buffers_info_, temp_tiles.data(),
                                       nr_of_tiles * sizeof(PointerHolder), cudaMemcpyHostToDevice));
             device_srtm3_tiles_count_ = nr_of_tiles;
+
+            const auto dem_property_count = dem_property_host_.size();
+            CHECK_CUDA_ERR(cudaMalloc(&dem_property_, sizeof(dem::Property) * dem_property_count));
+            for (size_t i = 0; i < dem_property_count; i++) {
+                CHECK_CUDA_ERR(cudaMemcpy(dem_property_ + i, dem_property_host_.data() + i, sizeof(dem::Property),
+                                          cudaMemcpyHostToDevice));
+            }
         } catch (const std::exception&) {
             elevation_exception_ = std::current_exception();
         }
@@ -147,28 +176,31 @@ void Srtm3ElevationModel::HostToDeviceThread() {
     copy_var_.notify_all();
 }
 
-void Srtm3ElevationModel::HostToDevice() {
+void Srtm3ElevationModel::TransferToDevice() {
     if (!copy_thread_.joinable()) {
         copy_thread_ = std::thread(&Srtm3ElevationModel::HostToDeviceThread, this);
     }
 }
 
-void Srtm3ElevationModel::DeviceToHost() { CHECK_CUDA_ERR(cudaErrorNotYetImplemented); }
-
-void Srtm3ElevationModel::DeviceFree() {
+void Srtm3ElevationModel::ReleaseFromDevice() noexcept {
     if (device_formated_srtm_buffers_info_ != nullptr) {
         LOGI << "Unloading SRTM3 tiles from GPU";
         REPORT_WHEN_CUDA_ERR(cudaFree(this->device_formated_srtm_buffers_info_));
         device_formated_srtm_buffers_info_ = nullptr;
     }
 
-    for (auto&& buf : device_formated_srtm_buffers_) {
+    for (auto* buf : device_formated_srtm_buffers_) {
         REPORT_WHEN_CUDA_ERR(cudaFree(buf));
     }
     this->device_formated_srtm_buffers_.clear();
+
+    if (dem_property_ != nullptr) {
+        REPORT_WHEN_CUDA_ERR(cudaFree(dem_property_));
+        dem_property_ = nullptr;
+    }
 }
 
-PointerHolder* Srtm3ElevationModel::GetSrtmBuffersInfo() {
+PointerHolder* Srtm3ElevationModel::GetBuffers() {
     std::unique_lock info_lock(info_mutex_);
     copy_var_.wait(info_lock, [this]() { return is_on_device_; });
 
@@ -177,7 +209,7 @@ PointerHolder* Srtm3ElevationModel::GetSrtmBuffersInfo() {
     }
     return device_formated_srtm_buffers_info_;
 }
-size_t Srtm3ElevationModel::GetDeviceSrtm3TilesCount() {
+size_t Srtm3ElevationModel::GetTileCount() {
     std::unique_lock buffer_lock(buffer_mutex_);
     copy_var_.wait(buffer_lock, [this]() { return is_on_device_; });
 
@@ -185,6 +217,26 @@ size_t Srtm3ElevationModel::GetDeviceSrtm3TilesCount() {
         std::rethrow_exception(elevation_exception_);
     }
     return device_srtm3_tiles_count_;
+}
+
+const dem::Property* Srtm3ElevationModel::GetProperties() {
+    std::unique_lock info_lock(info_mutex_);
+    copy_var_.wait(info_lock, [this]() { return is_on_device_; });
+
+    if (elevation_exception_ != nullptr) {
+        std::rethrow_exception(elevation_exception_);
+    }
+    return dem_property_;
+}
+
+const std::vector<dem::Property>& Srtm3ElevationModel::GetPropertiesValue() {
+    std::unique_lock info_lock(info_mutex_);
+    copy_var_.wait(info_lock, [this]() { return is_on_device_; });
+
+    if (elevation_exception_ != nullptr) {
+        std::rethrow_exception(elevation_exception_);
+    }
+    return dem_property_host_;
 }
 
 }  // namespace alus::snapengine

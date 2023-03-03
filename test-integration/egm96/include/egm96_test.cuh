@@ -21,7 +21,7 @@ namespace tests {
 struct EGM96data {
     int max_lats;
     int max_lons;
-    float* egm;
+    const float* egm;
     int size;
 };
 

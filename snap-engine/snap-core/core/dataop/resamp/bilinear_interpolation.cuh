@@ -12,8 +12,10 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 #pragma once
+
 #include "pointer_holders.h"
 
+#include "dem_property.h"
 #include "resampling.cuh"
 
 namespace alus {
@@ -76,15 +78,35 @@ inline __device__ void ComputeIndex(const double x, const double y, const int wi
     }
 }
 
-inline __device__ double Resample(PointerArray* tiles, snapengine::resampling::ResamplingIndex* index, int width,
-                                  double no_value, int use_no_data,
-                                  int GetSamplesFunction(PointerArray*, int*, int*, double*, int, int, double, int)) {
+inline __device__ double ResampleNoDem(PointerArray* tiles, snapengine::resampling::ResamplingIndex* index, int width,
+                                       double no_value, int use_no_data,
+                                       int GetSamplesFunction(PointerArray*, int*, int*, double*, int, int, double,
+                                                              int)) {
     int x[2] = {(int)index->i[0], (int)index->i[1]};
     int y[2] = {(int)index->j[0], (int)index->j[1]};
     double samples[2][2];
     samples[0][0] = 0.0;
 
     if (GetSamplesFunction(tiles, x, y, samples[0], width, 2, no_value, use_no_data)) {
+        const double ki = index->ki[0];
+        const double kj = index->kj[0];
+        return samples[0][0] * (1.0 - ki) * (1.0 - kj) + samples[0][1] * ki * (1.0 - kj) +
+               samples[1][0] * (1.0 - ki) * kj + samples[1][1] * ki * kj;
+    } else {
+        return samples[0][0];
+    }
+}
+
+inline __device__ double Resample(PointerArray* tiles, snapengine::resampling::ResamplingIndex* index, int width,
+                                  double no_value, int use_no_data, const dem::Property* dem_prop,
+                                  int GetSamplesFunction(PointerArray*, int*, int*, double*, int, int, double, int,
+                                                         const dem::Property*)) {
+    int x[2] = {(int)index->i[0], (int)index->i[1]};
+    int y[2] = {(int)index->j[0], (int)index->j[1]};
+    double samples[2][2];
+    samples[0][0] = 0.0;
+
+    if (GetSamplesFunction(tiles, x, y, samples[0], width, 2, no_value, use_no_data, dem_prop)) {
         const double ki = index->ki[0];
         const double kj = index->kj[0];
         return samples[0][0] * (1.0 - ki) * (1.0 - kj) + samples[0][1] * ki * (1.0 - kj) +

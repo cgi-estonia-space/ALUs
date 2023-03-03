@@ -12,7 +12,6 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 
-#include <fstream>
 #include <memory>
 
 #include <gmock/gmock.h>
@@ -77,9 +76,8 @@ public:
 TEST(coregistration, full3) {
     {
         std::vector<std::string> srtm3_files{"./goods/srtm_43_06.tif", "./goods/srtm_44_06.tif"};
-        std::shared_ptr<alus::app::DemAssistant> dem_assistant =
-            alus::app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(std::move(srtm3_files));
-        dem_assistant->GetSrtm3Manager()->HostToDevice();
+        auto dem_assistant = alus::dem::Assistant::CreateFormattedDemTilesOnGpuFrom(std::move(srtm3_files));
+        dem_assistant->GetElevationManager()->TransferToDevice();
 
         const std::string_view output_file{"./goods/beirut_images/coregistration_test.tif"};
 
@@ -89,11 +87,11 @@ TEST(coregistration, full3) {
             "./goods/beirut_images/S1B_IW_SLC__1SDV_20200730T034254_20200730T034321_022695_02B131_E8DD.SAFE",
             "./goods/beirut_images/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.SAFE",
             output_file.data(), "IW1", "VV");
-        dem_assistant->GetSrtm3Manager()->HostToDevice();
         cor->DoWork(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
-                    {dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo(),
-                     dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()},
-                    true);
+                    {dem_assistant->GetElevationManager()->GetBuffers(),
+                     dem_assistant->GetElevationManager()->GetTileCount()},
+                    true, dem_assistant->GetElevationManager()->GetProperties(),
+                    dem_assistant->GetElevationManager()->GetPropertiesValue(), dem_assistant->GetType());
 
         auto target_datasets = cor->GetTargetDataset()->GetDataset();
 
@@ -132,9 +130,8 @@ TEST(coregistration, full3) {
 TEST(coregistration, splitCut) {
     {
         std::vector<std::string> srtm3_files{"./goods/srtm_43_06.tif", "./goods/srtm_44_06.tif"};
-        std::shared_ptr<alus::app::DemAssistant> dem_assistant =
-            alus::app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(std::move(srtm3_files));
-        dem_assistant->GetSrtm3Manager()->HostToDevice();
+        auto dem_assistant = alus::dem::Assistant::CreateFormattedDemTilesOnGpuFrom(std::move(srtm3_files));
+        dem_assistant->GetElevationManager()->TransferToDevice();
         const std::string_view output_file_cut{"./goods/beirut_images/coregistration_test_cut.tif"};
 
         std::unique_ptr<alus::coregistration::Coregistration> cor =
@@ -145,9 +142,10 @@ TEST(coregistration, splitCut) {
                         output_file_cut.data(), "IW1", "VV", 4, 6);  // NOLINT
 
         cor->DoWork(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
-                    {dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo(),
-                     dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()},
-                    true);
+                    {dem_assistant->GetElevationManager()->GetBuffers(),
+                     dem_assistant->GetElevationManager()->GetTileCount()},
+                    true, dem_assistant->GetElevationManager()->GetProperties(),
+                    dem_assistant->GetElevationManager()->GetPropertiesValue(), dem_assistant->GetType());
 
         auto target_datasets = cor->GetTargetDataset()->GetDataset();
         const std::string_view output_slave_i{"./goods/beirut_images/coregistration_test_slave_I_cut.tif"};

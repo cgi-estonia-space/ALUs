@@ -71,7 +71,7 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
                                   const std::vector<std::shared_ptr<alus::topsarsplit::TopsarSplit>>& secondary_splits,
                                   const std::vector<std::string>& reference_swath_selection,
                                   const std::vector<std::string>& secondary_swath_selection,
-                                  const std::string& reference_name, app::DemAssistant* dem_assistant) const {
+                                  const std::string& reference_name, dem::Assistant* dem_assistant) const {
     std::string result_stem{};
     std::string predefined_end_result_name{};
     std::string output_folder{};
@@ -120,9 +120,10 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
 
             const auto coreg_gpu_start = std::chrono::steady_clock::now();
             coreg.DoWork(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
-                         {dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo(),
-                          dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount()},
-                         params_.mask_out_area_without_elevation);
+                         {dem_assistant->GetElevationManager()->GetBuffers(),
+                          dem_assistant->GetElevationManager()->GetTileCount()},
+                         params_.mask_out_area_without_elevation, dem_assistant->GetElevationManager()->GetProperties(),
+                         dem_assistant->GetElevationManager()->GetPropertiesValue(), dem_assistant->GetType());
             main_product = coreg.GetReferenceProduct();
             secondary_product = coreg.GetSecondaryProduct();
             auto coreg_target_dataset = coreg.GetTargetDataset();
@@ -311,8 +312,8 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
     const auto tc_start = std::chrono::steady_clock::now();
     terraincorrection::Metadata metadata(tc_input);
 
-    const auto* d_srtm_3_tiles = dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo();
-    const size_t srtm_3_tiles_length = dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount();
+    const auto* d_srtm_3_tiles = dem_assistant->GetElevationManager()->GetBuffers();
+    const size_t srtm_3_tiles_length = dem_assistant->GetElevationManager()->GetTileCount();
     const int selected_band{1};
 
     // unfortunately have to assume this downcast is valid, because TC does not use the ImageWriter interface
@@ -331,9 +332,10 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
                          total_dimension_edge);
     const auto y_tile_size = total_dimension_edge - x_tile_size;
 
-    terraincorrection::TerrainCorrection tc(tc_in_dataset, metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
-                                            metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length,
-                                            selected_band);
+    terraincorrection::TerrainCorrection tc(
+        tc_in_dataset, metadata.GetMetadata(), metadata.GetLatTiePointGrid(), metadata.GetLonTiePointGrid(),
+        d_srtm_3_tiles, srtm_3_tiles_length, dem_assistant->GetElevationManager()->GetProperties(),
+        dem_assistant->GetType(), dem_assistant->GetElevationManager()->GetPropertiesValue(), selected_band);
     std::string tc_output_file = predefined_end_result_name.empty()
                                      ? boost::filesystem::change_extension(output_file, "").string() + "_tc.tif"
                                      : predefined_end_result_name;
@@ -346,11 +348,11 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
 
 void Execute::RunSinglePair(alus::cuda::CudaInit& cuda_init, size_t) const {
     alus::snapengine::SystemUtils::SetAuxDataPath(params_.orbit_dir + "/");
-    std::shared_ptr<app::DemAssistant> dem_assistant{nullptr};
+    std::shared_ptr<dem::Assistant> dem_assistant{nullptr};
     auto cuda_init_dem_load = std::async(std::launch::async, [&dem_assistant, &cuda_init, this]() {
         // Eagerly load DEM files in case there will be only single GPU - this will speed up things.
-        dem_assistant = app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(this->dem_files_);
-        dem_assistant->GetSrtm3Manager()->HostToDevice();
+        dem_assistant = dem::Assistant::CreateFormattedDemTilesOnGpuFrom(this->dem_files_);
+        dem_assistant->GetElevationManager()->TransferToDevice();
 
         while (!cuda_init.IsFinished())
             ;
@@ -386,18 +388,18 @@ void Execute::RunSinglePair(alus::cuda::CudaInit& cuda_init, size_t) const {
     const std::string reference_name = std::filesystem::path(params_.input_reference).filename().stem().string();
     CalcSingleCoherence(reference_splits, secondary_splits, reference_swath_selection, secondary_swath_selection,
                         reference_name, dem_assistant.get());
-    dem_assistant->GetSrtm3Manager()->DeviceFree();
+    dem_assistant->GetElevationManager()->ReleaseFromDevice();
 }
 
 void Execute::RunTimeline(alus::cuda::CudaInit& cuda_init, size_t) const {
     auto timeline_start = boost::posix_time::ptime(boost::gregorian::date_from_iso_string(params_.timeline_start));
     auto timeline_end = boost::posix_time::ptime(boost::gregorian::date_from_iso_string(params_.timeline_end));
     alus::snapengine::SystemUtils::SetAuxDataPath(params_.orbit_dir + "/");
-    std::shared_ptr<app::DemAssistant> dem_assistant{nullptr};
+    std::shared_ptr<dem::Assistant> dem_assistant{nullptr};
     auto cuda_init_dem_load = std::async(std::launch::async, [&dem_assistant, &cuda_init, this]() {
         // Eagerly load DEM files in case there will be only single GPU - this will speed up things.
-        dem_assistant = app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(this->dem_files_);
-        dem_assistant->GetSrtm3Manager()->HostToDevice();
+        dem_assistant = dem::Assistant::CreateFormattedDemTilesOnGpuFrom(this->dem_files_);
+        dem_assistant->GetElevationManager()->TransferToDevice();
 
         while (!cuda_init.IsFinished())
             ;
@@ -491,7 +493,7 @@ void Execute::RunTimeline(alus::cuda::CudaInit& cuda_init, size_t) const {
         load_cnt--;
     }
 
-    dem_assistant->GetSrtm3Manager()->DeviceFree();
+    dem_assistant->GetElevationManager()->ReleaseFromDevice();
 }
 
 void Execute::SplitApplyOrbit(const std::string& path, size_t burst_index_start, size_t burst_index_end,

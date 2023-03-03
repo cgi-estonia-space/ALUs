@@ -6,6 +6,7 @@ list(APPEND RANGE_DOPPLER_GEOCODING_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/include
         ${CMAKE_CURRENT_LIST_DIR}/../../algs/range-doppler-terrain-correction/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/cuda/include
+        ${CMAKE_CURRENT_LIST_DIR}/../../util/dem/include
         ${CMAKE_CURRENT_LIST_DIR}/../../snap-engine
         ${CMAKE_CURRENT_LIST_DIR}/../../util/common/include
         ${CMAKE_CURRENT_LIST_DIR}/../../util/exotic-operations/include

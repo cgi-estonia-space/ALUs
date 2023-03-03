@@ -28,7 +28,6 @@
 #include "position_data.h"
 #include "snap-engine-utilities/engine-utilities/eo/constants.h"
 #include "srtm3_elevation_model.h"
-#include "srtm3_elevation_model_constants.h"
 #include "tc_tile.h"
 #include "terrain_correction.h"
 #include "terrain_correction_kernel.h"
@@ -85,9 +84,9 @@ public:
         egm_96_->HostToDevice();
 
         std::vector<std::string> files{"./goods/srtm_41_01.tif", "./goods/srtm_42_01.tif"};
-        srtm_3_model_ = std::make_unique<Srtm3ElevationModel>(files);
-        srtm_3_model_->ReadSrtmTiles(egm_96_);
-        srtm_3_model_->HostToDevice();
+        srtm_3_model_ = std::make_unique<Srtm3ElevationModel>(files, egm_96_);
+        srtm_3_model_->LoadTiles();
+        srtm_3_model_->TransferToDevice();
     }
 
     std::optional<Dataset<double>> coh_ds_;
@@ -435,9 +434,10 @@ TEST_F(TerrainCorrectionTest, CreateTargetProduct) {
     TiePointGeocoding source_geocoding(lat_grid, lon_grid);
     auto coh_dataset = Dataset<double>(COH_1_TIF);
     coh_dataset.LoadRasterBand(1);
-    TerrainCorrection terrain_correction(coh_dataset.GetGdalDataset(), metadata_.value().GetMetadata(),
-                                         metadata_.value().GetLatTiePointGrid(), metadata_.value().GetLonTiePointGrid(),
-                                         srtm_3_model_->GetSrtmBuffersInfo(), srtm_3_tiles_length_);
+    TerrainCorrection terrain_correction(
+        coh_dataset.GetGdalDataset(), metadata_.value().GetMetadata(), metadata_.value().GetLatTiePointGrid(),
+        metadata_.value().GetLonTiePointGrid(), srtm_3_model_->GetBuffers(), srtm_3_tiles_length_,
+        srtm_3_model_->GetProperties(), alus::dem::Type::SRTM3, srtm_3_model_->GetPropertiesValue());
     auto target = terrain_correction.CreateTargetProduct(&source_geocoding, TC_OUTPUT);
     const int geo_transform_array_length{6};
     double target_geo_transform[geo_transform_array_length];

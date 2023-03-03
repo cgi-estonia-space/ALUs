@@ -14,11 +14,12 @@
 #include "burst_offset_computation.h"
 
 #include "backgeocoding_constants.h"
-#include "position_data.h"
-
-#include "../../../snap-engine/srtm3_elevation_calc.cuh"
 #include "backgeocoding_utils.cuh"
+#include "copdem_cog_30m_calc.cuh"
+#include "dem_calc.cuh"
+#include "dem_type.h"
 #include "math_utils.cuh"
+#include "position_data.h"
 #include "snap-engine-utilities/engine-utilities/eo/geo_utils.cuh"
 
 namespace alus {
@@ -34,13 +35,19 @@ __global__ void ComputeBurstOffsetKernel(BurstOffsetKernelArgs args) {
     const double latitude = args.latitudes[index_y * args.width + index_x];
     const double longitude = args.longitudes[index_x + index_y * args.width];
 
-    const double altitude = snapengine::srtm3elevationmodel::GetElevation(latitude, longitude, &args.srtm3_tiles);
-    if (altitude == snapengine::srtm3elevationmodel::NO_DATA_VALUE) {
+    double elevation{args.dem_property->no_data_value};
+    if (args.dem_type == dem::Type::COPDEM_COG30m) {
+        elevation = dem::CopDemCog30mGetElevation(latitude, longitude, &args.dem_tiles, args.dem_property);
+    } else if (args.dem_type == dem::Type::SRTM3) {
+        elevation = snapengine::dem::GetElevation(latitude, longitude, &args.dem_tiles, args.dem_property);
+    }
+
+    if (elevation == args.dem_property->no_data_value) {
         return;
     }
 
     s1tbx::PositionData position_data{};
-    snapengine::geoutils::Geo2xyzWgs84Impl(latitude, longitude, altitude, position_data.earth_point);
+    snapengine::geoutils::Geo2xyzWgs84Impl(latitude, longitude, elevation, position_data.earth_point);
     const BurstIndices master_burst_indices =
         GetBurstIndices(args.master_sentinel_utils, args.master_subswath_info, position_data.earth_point,
                         args.master_orbit, args.master_num_orbit_vec, args.master_dt);

@@ -40,8 +40,8 @@ Coherence estimation routine consists of:
   --sw arg                              Reference scene's subswath
   -a [ --aoi ] arg                      Area Of Interest WKT polygon, overrules
                                         first and last burst indexes
-  --dem arg                             DEM file(s). Only SRTM3 is currently 
-                                        supported.
+  --dem arg                             DEM file(s). SRTM3 and Copernicus DEM
+                                        30m COG are currently supported.
   --no_mask_cor                         Do not mask out areas without elevation
                                         in coregistration
   --orbit_dir arg                       Directory of orbit files (restituted 
@@ -154,6 +154,7 @@ Processing options:
 For more raw computing comparison, the IW2 subswath GeoTIFF file has been stored on ram disk - this way I/O influences
 results less. Also outputs are stored on ram disk.
 
+When using SRTM3 DEM
 ```
 ./gpt coherence_estimation_snap_graph.xml -Preference=S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7.SAFE/manifest.safe 
 -Psecondary=S1B_IW_SLC__1SDV_20210721T055001_20210721T055028_027888_0353E2_E1B5.SAFE/manifest.safe -Psw=IW2 -Ppol=VV 
@@ -200,3 +201,5 @@ Full scene</br>
 
 Orbit state vector related, [see cause](../../docs/GPU-GSTP-MPR-0008.pdf)
 ![spots](../../docs/coh_relative_error_spots.png)
+
+For Copernicus DEM such comparison is not done because of the pending issues found in the SNAP - https://forum.step.esa.int/t/copernicus-dem-complications-when-coregistering-s1/38659/2

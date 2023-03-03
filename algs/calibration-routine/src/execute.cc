@@ -82,6 +82,8 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
     // TC ouput = ~1GB
     alus::gdalmanagement::SetCacheMax(GDAL_CACHE_SIZE);
 
+    auto dem_assistant = dem::Assistant::CreateFormattedDemTilesOnGpuFrom(dem_files_);
+
     // split
     std::vector<std::shared_ptr<alus::topsarsplit::TopsarSplit>> splits;
     std::vector<std::string> swath_selection;
@@ -120,17 +122,16 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
     tnr_products.clear();
     tnr_datasets.clear();
 
-    auto dem_assistant = app::DemAssistant::CreateFormattedSrtm3TilesOnGpuFrom(dem_files_);
-    // start thread for srtm calculations parallel with CPU deburst
-    // rethink this part if we add support for larger GPUs with full chain on GPU processing
-    dem_assistant->GetSrtm3Manager()->HostToDevice();
-
     if (params_.wif) {
         for (size_t i = 0; i < output_names.size(); i++) {
             LOGI << "Calibration output @ " << output_names.at(i) << ".tif";
             GeoTiffWriteFile(calib_datasets.at(i).get(), output_names.at(i));
         }
     }
+
+    // start thread for DEM calculations parallel with deburst which does not use GPU
+    // rethink this part if we add support for larger GPUs with full chain on GPU processing
+    dem_assistant->GetElevationManager()->TransferToDevice();
 
     // deburst
     std::vector<std::shared_ptr<snapengine::Product>> deburst_products(tnr_products.size());
@@ -387,7 +388,7 @@ void Execute::Merge(const std::vector<std::shared_ptr<snapengine::Product>>& deb
         auto data_writer = std::make_shared<snapengine::custom::GdalImageWriter>();
         // TODO NB! merge not tile size independent - it has been decreased from 1024 since larger tile sizes introduce
         // a bug - https://github.com/cgi-estonia-space/ALUs/issues/18
-        const size_t merge_tile_size = 256; // Up until 256 merge operation processing time got smaller significantly.
+        const size_t merge_tile_size = 256;  // Up until 256 merge operation processing time got smaller significantly.
         topsarmerge::TopsarMergeOperator merge_op(deburst_products, merge_polarisations, merge_tile_size,
                                                   merge_tile_size, output_names.front());
 
@@ -411,14 +412,14 @@ void Execute::Merge(const std::vector<std::shared_ptr<snapengine::Product>>& deb
 }
 std::string Execute::TerrainCorrection(const std::shared_ptr<snapengine::Product>& merge_product,
                                        size_t deb_product_count, std::string_view output_name,
-                                       std::shared_ptr<app::DemAssistant> dem_assistant,
+                                       std::shared_ptr<dem::Assistant> dem_assistant,
                                        std::string_view predefined_output_name) const {
     const auto tc_start = std::chrono::steady_clock::now();
 
     terraincorrection::Metadata metadata(merge_product);
 
-    const auto* d_srtm_3_tiles = dem_assistant->GetSrtm3Manager()->GetSrtmBuffersInfo();
-    const size_t srtm_3_tiles_length = dem_assistant->GetSrtm3Manager()->GetDeviceSrtm3TilesCount();
+    const auto* d_dem_tiles = dem_assistant->GetElevationManager()->GetBuffers();
+    const size_t dem_tiles_length = dem_assistant->GetElevationManager()->GetTileCount();
     const int selected_band{1};
 
     // unfortunately have to assume this downcast is valid, because TC does not use the ImageWriter interface
@@ -438,9 +439,10 @@ std::string Execute::TerrainCorrection(const std::shared_ptr<snapengine::Product
                          total_dimension_edge);
     const auto y_tile_size = total_dimension_edge - x_tile_size;
 
-    terraincorrection::TerrainCorrection tc(tc_in_dataset, metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
-                                            metadata.GetLonTiePointGrid(), d_srtm_3_tiles, srtm_3_tiles_length,
-                                            selected_band);
+    terraincorrection::TerrainCorrection tc(
+        tc_in_dataset, metadata.GetMetadata(), metadata.GetLatTiePointGrid(), metadata.GetLonTiePointGrid(),
+        d_dem_tiles, dem_tiles_length, dem_assistant->GetElevationManager()->GetProperties(), dem_assistant->GetType(),
+        dem_assistant->GetElevationManager()->GetPropertiesValue(), selected_band);
     std::string tc_output_file = predefined_output_name.empty()
                                      ? boost::filesystem::change_extension(output_name.data(), "").string() + "_tc.tif"
                                      : std::string(predefined_output_name);

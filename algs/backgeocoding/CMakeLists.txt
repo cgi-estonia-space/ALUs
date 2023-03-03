@@ -39,6 +39,7 @@ set_target_properties(backgeocoding-static
 target_link_libraries(backgeocoding-static
         PUBLIC
         common-util-static
+        dem-util-static
         gdal-util-static
         exotic-operations-static
         sentinel1-util-static

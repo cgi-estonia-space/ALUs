@@ -13,18 +13,18 @@
  */
 #pragma once
 
+#include "dem_property.h"
 #include "pointer_holders.h"
 
-namespace alus {
-namespace tests {
+namespace alus::tests {
 
 struct SRTM3TestData {
     int size;
     PointerArray tiles;
+    const dem::Property* dem_property;
 };
 
 cudaError_t LaunchSRTM3AltitudeTester(dim3 grid_size, dim3 block_size, double* lats, double* lons, double* results,
                                       SRTM3TestData data);
 
-}  // namespace tests
-}  // namespace alus
+}  // namespace alus::tests

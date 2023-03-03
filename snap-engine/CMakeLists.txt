@@ -116,6 +116,7 @@ list(APPEND SNAP-ENGINE_INCLUDES
         #other
         ${CMAKE_CURRENT_LIST_DIR}/../util/cuda/include
         ${CMAKE_CURRENT_LIST_DIR}/../util/common/include
+        ${CMAKE_CURRENT_LIST_DIR}/../util/dem/include
         ${CMAKE_CURRENT_LIST_DIR}/../external/pugixml/include
         )
 
