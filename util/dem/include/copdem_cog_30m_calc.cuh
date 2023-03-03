@@ -67,7 +67,7 @@ inline __device__ int GetSamples(PointerArray* tiles, int* x, int* y, double* sa
     return all_valid;
 }
 
-inline __device__ __host__ size_t GetCopDemCog30mTileWidth(double lat) {
+inline __device__ __host__ int GetCopDemCog30mTileWidth(double lat) {
     const int abs_lat = (int)abs(lat);
     if (abs_lat < 50) {
         return 3600;

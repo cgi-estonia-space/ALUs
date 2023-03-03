@@ -18,6 +18,6 @@
 
 namespace alus::dem::copdemcog30m {
 
-size_t GetTileWidth(double lat) { return GetCopDemCog30mTileWidth(lat); }
+int GetTileWidth(double lat) { return GetCopDemCog30mTileWidth(lat); }
 
 }  // namespace alus::dem::copdemcog30m

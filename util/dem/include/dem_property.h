@@ -20,12 +20,12 @@ namespace alus::dem {
 struct Property {
     double tile_pixel_count_inverted_x;  // NUM_PIXELS_PER_TILE_INVERTED
     double tile_pixel_count_inverted_y;  // NUM_PIXELS_PER_TILE_INVERTED
-    size_t tile_pixel_count_x;           // NUM_PIXELS_PER_TILE
-    size_t tile_pixel_count_y;           // NUM_PIXELS_PER_TILE
-    size_t grid_tile_count_x;            // NUM_X_TILES
-    size_t grid_tile_count_y;            // NUM_Y_TILES
-    size_t grid_total_width_pixels;      // RASTER_WIDTH
-    size_t grid_total_height_pixels;     // RASTER_HEIGHT
+    int tile_pixel_count_x;           // NUM_PIXELS_PER_TILE
+    int tile_pixel_count_y;           // NUM_PIXELS_PER_TILE
+    int grid_tile_count_x;            // NUM_X_TILES
+    int grid_tile_count_y;            // NUM_Y_TILES
+    int grid_total_width_pixels;      // RASTER_WIDTH
+    int grid_total_height_pixels;     // RASTER_HEIGHT
     double no_data_value;
     double tile_pixel_size_deg_x;           // DEGREE_RES_BY_NUM_PIXELS_PER_TILE
     double tile_pixel_size_deg_y;           // DEGREE_RES_BY_NUM_PIXELS_PER_TILE

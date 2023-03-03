@@ -59,16 +59,16 @@ CopDemCog30m::CopDemCog30m(std::vector<std::string> filenames,
 
 void CopDemCog30m::VerifyProperties(const Property& prop, const Dataset<float>& ds, std::string_view filename) {
     std::string exception_message_header = "Given file '" + std::string(filename) + "'";
-    if (prop.tile_pixel_count_y != TILE_HEIGHT_PIXELS || ds.GetRasterSizeY() != TILE_HEIGHT_PIXELS) {
+    if (prop.tile_pixel_count_y != TILE_HEIGHT_PIXELS || ds.GetRasterSizeY() != static_cast<int>(TILE_HEIGHT_PIXELS)) {
         throw std::runtime_error(exception_message_header + " height '" + std::to_string(prop.tile_pixel_count_y) +
                                  "' is not COPDEM 30m COG height(" + std::to_string(TILE_HEIGHT_PIXELS) + ")");
     }
     if (!std::any_of(ALLOWED_WIDTHS.cbegin(), ALLOWED_WIDTHS.cend(),
-                     [&prop](size_t v) { return v == prop.tile_pixel_count_x; })) {
+                     [&prop](size_t v) { return static_cast<int>(v) == prop.tile_pixel_count_x; })) {
         throw std::runtime_error(exception_message_header + " width '" + std::to_string(prop.tile_pixel_count_x) +
                                  "' is not COPDEM 30m COG width");
     }
-    if (prop.tile_pixel_count_x != static_cast<size_t>(ds.GetRasterSizeX())) {
+    if (prop.tile_pixel_count_x != ds.GetRasterSizeX()) {
         throw std::logic_error("COPDEM property width does not equal real raster one.");
     }
     constexpr size_t dig_comp{12};

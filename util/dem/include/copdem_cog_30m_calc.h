@@ -15,5 +15,5 @@
 #pragma once
 
 namespace alus::dem::copdemcog30m {
-size_t GetTileWidth(double lat);
+int GetTileWidth(double lat);
 }
