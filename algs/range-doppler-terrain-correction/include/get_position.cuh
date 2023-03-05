@@ -22,7 +22,7 @@
 namespace alus {
 namespace terraincorrection {
 inline __device__ __host__ snapengine::PosVector GetPositionWithLut(
-    double time, cuda::KernelArray<snapengine::OrbitStateVectorComputation> vectors, double* osv_lut) {
+    double time, cuda::KernelArray<snapengine::OrbitStateVectorComputation> vectors, const double* osv_lut) {
     const int nv{8};
     const int vectorsSize = vectors.size;
     // TODO: This should be done once.

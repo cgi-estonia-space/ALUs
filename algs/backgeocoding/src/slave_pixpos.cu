@@ -27,10 +27,28 @@
  * They are from s1tbx module.
  */
 
+
+__constant__ double master_osv_lut[3000];
+__constant__ double slave_osv_lut[3000];
+
+
+void OSVLUTToConstantMem(const std::vector<double>& master, const std::vector<double>& slave)
+{
+    if(master.size() > 3000 || slave.size() > 3000)
+    {
+        throw std::runtime_error("OSV LUT error");
+    }
+    cudaMemcpyToSymbol(master_osv_lut, master.data(), master.size()*sizeof(double), 0, cudaMemcpyHostToDevice);
+    cudaMemcpyToSymbol(slave_osv_lut, slave.data(), slave.size() * sizeof(double), 0, cudaMemcpyHostToDevice);
+}
+
 namespace alus {
 namespace backgeocoding {
 
 // exclusively supports SRTM3 digital elevation map and none other
+
+
+
 __global__ void SlavePixPos(SlavePixPosData calc_data) {
     const int idx = threadIdx.x + (blockDim.x * blockIdx.x);
     const int idy = threadIdx.y + (blockDim.y * blockIdx.y);
@@ -74,21 +92,39 @@ __global__ void SlavePixPos(SlavePixPosData calc_data) {
     if (alt != calc_data.dem_no_data_value && valid_coord) {
         snapengine::geoutils::Geo2xyzWgs84Impl(geo_pos_lat, geo_pos_lon, alt, pos_data.earth_point);
 
-        if (GetPosition(calc_data.device_master_subswath, calc_data.device_master_utils, calc_data.m_burst_index,
+#if 1
+        if (GetPositionLUT(calc_data.device_master_subswath, calc_data.device_master_utils, calc_data.m_burst_index,
                         &pos_data, calc_data.device_master_orbit_state_vectors, calc_data.nr_of_master_vectors,
-                        calc_data.master_dt, idx, idy)) {
+                        calc_data.master_dt, idx, idy, master_osv_lut)) {
             calc_data.device_master_az[my_index] = pos_data.azimuth_index;
             calc_data.device_master_rg[my_index] = pos_data.range_index;
 
-            if (GetPosition(calc_data.device_slave_subswath, calc_data.device_slave_utils, calc_data.s_burst_index,
+            if (GetPositionLUT(calc_data.device_slave_subswath, calc_data.device_slave_utils, calc_data.s_burst_index,
                             &pos_data, calc_data.device_slave_orbit_state_vectors, calc_data.nr_of_slave_vectors,
-                            calc_data.slave_dt, idx, idy)) {
+                            calc_data.slave_dt, idx, idy, slave_osv_lut)) {
                 calc_data.device_slave_az[my_index] = pos_data.azimuth_index;
                 calc_data.device_slave_rg[my_index] = pos_data.range_index;
 
                 // race condition is not important. we need to know that we have atleast 1 valid index.
                 (*calc_data.device_valid_index_counter)++;
             }
+#else
+        if (GetPosition(calc_data.device_master_subswath, calc_data.device_master_utils, calc_data.m_burst_index,
+                           &pos_data, calc_data.device_master_orbit_state_vectors, calc_data.nr_of_master_vectors,
+                           calc_data.master_dt, idx, idy)) {
+            calc_data.device_master_az[my_index] = pos_data.azimuth_index;
+            calc_data.device_master_rg[my_index] = pos_data.range_index;
+
+            if (GetPosition(calc_data.device_slave_subswath, calc_data.device_slave_utils, calc_data.s_burst_index,
+                               &pos_data, calc_data.device_slave_orbit_state_vectors, calc_data.nr_of_slave_vectors,
+                               calc_data.slave_dt, idx, idy)) {
+                calc_data.device_slave_az[my_index] = pos_data.azimuth_index;
+                calc_data.device_slave_rg[my_index] = pos_data.range_index;
+
+                // race condition is not important. we need to know that we have atleast 1 valid index.
+                (*calc_data.device_valid_index_counter)++;
+            }
+#endif
         }
     } else {
         calc_data.device_master_az[calc_data.num_pixels * idx + idy] = INVALID_INDEX;

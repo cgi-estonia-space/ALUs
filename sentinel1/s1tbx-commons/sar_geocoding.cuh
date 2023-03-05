@@ -136,6 +136,73 @@ inline __device__ __host__ double GetEarthPointZeroDopplerTimeImpl(
  * @param orbit            The array of orbit state vectors.
  * @return The zero Doppler time in days if it is found, NonValidZeroDopplerTime otherwise.
  */
+
+inline __device__ double GetZeroDopplerTimeLUT(double line_time_interval,
+                                            double wavelength,
+                                            snapengine::PosVector earth_point,
+                                            snapengine::OrbitStateVectorComputation* orbit,
+                                            const int num_orbit_vec,
+                                            const double dt, const double* osv_lut) {
+    double first_vec_time = 0.0;
+    double second_vec_time = 0.0;
+    double first_vec_freq = 0.0;
+    double second_vec_freq = 0.0;
+
+    for (int i = 0; i < num_orbit_vec; i++) {
+        snapengine::OrbitStateVectorComputation orb = orbit[i];
+
+        double current_freq = getDopplerFrequency(earth_point, orb, wavelength);
+        if (i == 0 || first_vec_freq * current_freq > 0) {
+            first_vec_time = orb.timeMjd_;
+            first_vec_freq = current_freq;
+        } else {
+            second_vec_time = orb.timeMjd_;
+            second_vec_freq = current_freq;
+            break;
+        }
+    }
+
+    if (first_vec_freq * second_vec_freq >= 0.0) {
+        return NON_VALID_ZERO_DOPPLER_TIME;
+    }
+
+    // find the exact time using Doppler frequency and bisection method
+    double lower_bound_time = first_vec_time;
+    double upper_bound_time = second_vec_time;
+    double lower_bound_freq = first_vec_freq;
+    double upper_bound_freq = second_vec_freq;
+    double mid_time, mid_freq;
+    double diff_time = std::abs(upper_bound_time - lower_bound_time);
+    const double abs_line_time_interval = std::abs(line_time_interval);
+
+    const int total_iterations = (int)(diff_time / abs_line_time_interval) + 1;
+    int num_iterations = 0;
+    while (diff_time > abs_line_time_interval && num_iterations <= total_iterations) {
+        mid_time = (upper_bound_time + lower_bound_time) / 2.0;
+
+        orbitstatevectors::PositionVelocity posvel =
+            orbitstatevectors::GetPositionVelocityLUT(mid_time, orbit, num_orbit_vec, dt, osv_lut);
+        mid_freq = getDopplerFrequency(earth_point, posvel.position, posvel.velocity, wavelength);
+
+        if (mid_freq * lower_bound_freq > 0.0) {
+            lower_bound_time = mid_time;
+            lower_bound_freq = mid_freq;
+        } else if (mid_freq * upper_bound_freq > 0.0) {
+            upper_bound_time = mid_time;
+            upper_bound_freq = mid_freq;
+            // TODO: there might be an accuracy bug here because we are missing a compare delta, but what is the delta?
+        } else if (mid_freq == 0.0) {
+            return mid_time;
+        }
+
+        diff_time = std::abs(upper_bound_time - lower_bound_time);
+        num_iterations++;
+    }
+
+    return lower_bound_time - lower_bound_freq * (upper_bound_time - lower_bound_time) / (upper_bound_freq - lower_bound_freq);
+}
+
+
 inline __device__ double GetZeroDopplerTime(double line_time_interval,
                                             double wavelength,
                                             snapengine::PosVector earth_point,

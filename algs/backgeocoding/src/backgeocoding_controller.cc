@@ -29,6 +29,9 @@
 #include "snap-engine-utilities/engine-utilities/gpf/stack_utils.h"
 #include "tile_queue.h"
 
+
+void OSVLUTToConstantMem(const std::vector<double>& master, const std::vector<double>& slave);
+
 namespace alus::backgeocoding {
 
 BackgeocodingController::BackgeocodingController(std::shared_ptr<AlusFileReader<int16_t>> master_input_dataset,
@@ -118,6 +121,25 @@ void BackgeocodingController::WriteOutputs(Rectangle output_area, float* i_maste
     output_dataset_->WriteRectangle(q_slave_results, output_area, 4);
 }
 
+
+inline std::vector<double> CalculateOrbitStateVectorLUT(
+    const std::vector<alus::snapengine::OrbitStateVectorComputation>& comp_orbits) {
+    const auto& osv = comp_orbits;
+    std::vector<double> h_lut;
+    for (size_t i = 0; i < osv.size(); i++) {
+        for (size_t j = 0; j < osv.size(); j++) {
+            double timei = osv[i].timeMjd_;
+            double timej = osv[j].timeMjd_;
+            if (timei != timej) {
+                h_lut.push_back(1 / (timei - timej));
+            } else {
+                h_lut.push_back(0);
+            }
+        }
+    }
+    return h_lut;
+}
+
 void BackgeocodingController::DoWork() {
     WorkerParams params;
     exceptions_thrown_ = 0;
@@ -127,6 +149,24 @@ void BackgeocodingController::DoWork() {
     const int recommended_width = recommended_tile_area_ / lines_per_burst_;
     int worker_count = 0;
     params.index = 0;
+
+    auto b = std::chrono::steady_clock::now();
+    auto master_osv = backgeocoding_->GetMasterUtils()->GetOrbitStateVectors()->orbit_state_vectors_computation_;
+    auto slave_osv = backgeocoding_->GetMasterUtils()->GetOrbitStateVectors()->orbit_state_vectors_computation_;;
+    auto master_lut = CalculateOrbitStateVectorLUT(master_osv);
+    auto slave_lut = CalculateOrbitStateVectorLUT(slave_osv);
+
+    OSVLUTToConstantMem(master_lut, slave_lut);
+    auto e = std::chrono::steady_clock::now();
+
+    auto diff = std::chrono::duration_cast<std::chrono::microseconds>(e-b).count();
+
+    LOGI << "OSV time = " << diff << " ms";
+
+    LOGI << "OSV sizes = " << master_lut.size() << " " << slave_lut.size();
+
+
+
 
     for (int burst_index = 0; burst_index < num_of_bursts_; burst_index++) {
         const int first_line_idx = burst_index * lines_per_burst_;
