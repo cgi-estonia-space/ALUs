@@ -62,7 +62,7 @@ add_subdirectory(external/zipper)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -Wextra -pedantic -DBOOST_LOG_DYN_LINK")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -Wall -Werror -Wextra -pedantic -DBOOST_LOG_DYN_LINK")
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     message(STATUS "Setting GNU compiler specific flags")

@@ -16,6 +16,8 @@
 #include <map>
 #include <vector>
 
+#include "gdal_priv.h"
+
 #include "shapes.h"
 
 namespace alus {

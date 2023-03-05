@@ -57,6 +57,12 @@ public:
             elem_count_ = size;
         }
     }
+
+    T* EnsureBuffer(size_t size)
+    {
+        Resize(size);
+        return device_ptr_;
+    }
     T* Get() { return device_ptr_; }
 
     // basic STL interface, useful for moving from device_vector to this
@@ -74,5 +80,44 @@ private:
 // a better name is buffer as it contains size and capacity information as well, TODO refactor it later
 template <class T>
 using DeviceBuffer = CudaPtr<T>;
+
+
+class DeviceBuffer2
+{
+public:
+    DeviceBuffer2() = default;
+    ~DeviceBuffer2() { Free(); }
+    DeviceBuffer2(const DeviceBuffer2&) = delete;  // class does not support copying(and moving)
+    DeviceBuffer2& operator=(const DeviceBuffer2&) = delete;
+
+    void Free()
+    {
+        if(device_ptr_)
+        {
+            cudaFree(device_ptr_);
+            device_ptr_ = nullptr;
+            byte_size_ = 0;
+        }
+    }
+
+    template<class T>
+    T* EnsureBuffer(size_t size)
+    {
+        size_t new_size = sizeof(T) * size;
+        if(new_size > byte_size_)
+        {
+            Free();
+            CHECK_CUDA_ERR(cudaMalloc(&device_ptr_, new_size));
+            byte_size_ = new_size;
+        }
+        return static_cast<T*>(device_ptr_);
+    }
+
+    size_t GetByteSize() const { return byte_size_; }
+private:
+    void* device_ptr_ = nullptr;
+    size_t byte_size_ = 0;
+
+};
 
 }  // namespace alus::cuda

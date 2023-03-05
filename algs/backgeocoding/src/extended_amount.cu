@@ -144,7 +144,7 @@ cudaError_t LaunchComputeExtendedAmount(Rectangle bounds, AzimuthAndRangeBounds&
                                         double vectors_dt, const s1tbx::SubSwathInfo& subswath_info,
                                         s1tbx::DeviceSentinel1Utils* d_sentinel_1_utils,
                                         s1tbx::DeviceSubswathInfo* d_subswath_info, const PointerArray& tiles,
-                                        const float* egm, const dem::Property* dem_property, dem::Type dem_type) {
+                                        const float* egm, const dem::Property* dem_property, dem::Type dem_type, cudaStream_t stream) {
     ExtendedAmountKernelArgs args{};
 
     const int idx_max = std::numeric_limits<int>::max();
@@ -163,7 +163,7 @@ cudaError_t LaunchComputeExtendedAmount(Rectangle bounds, AzimuthAndRangeBounds&
     dim3 block_dim{20, 20};
     dim3 grid_dim(cuda::GetGridDim(block_dim.x, cuda::GetGridDim(index_step, bounds.width)),
                   cuda::GetGridDim(block_dim.y, cuda::GetGridDim(index_step, bounds.height)));
-    ComputeExtendedAmountKernel<<<grid_dim, block_dim>>>(args, d_az_rg_bounds.Get());
+    ComputeExtendedAmountKernel<<<grid_dim, block_dim, 0, stream>>>(args, d_az_rg_bounds.Get());
 
     cuda::CopyD2H(&h_az_rg_bounds, d_az_rg_bounds.Get());
     cudaError error = cudaGetLastError();

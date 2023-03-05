@@ -23,7 +23,7 @@ namespace backgeocoding {
 
 cudaError_t LaunchDerampDemod(Rectangle rectangle, int16_t* slave_i, int16_t* slave_q, double* demod_phase,
                               double* demod_i, double* demod_q, s1tbx::DeviceSubswathInfo* sub_swath,
-                              int s_burst_index);
+                              int s_burst_index, cudaStream_t stream);
 
 }  // namespace backgeocoding
 }  // namespace alus

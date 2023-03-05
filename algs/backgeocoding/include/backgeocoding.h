@@ -25,6 +25,7 @@
 #include "orbit_state_vector_computation.h"
 #include "pointer_holders.h"
 #include "s1tbx-commons/sentinel1_utils.h"
+#include "triangular_interpolation_computation.h"
 
 namespace alus::backgeocoding {
 
@@ -45,6 +46,7 @@ struct CoreComputeParams {
     // I phase and Q pahse
     float* device_i_results;
     float* device_q_results;
+    cudaStream_t stream;
 };
 
 /**
@@ -64,9 +66,9 @@ public:
 
     void CoreCompute(const CoreComputeParams& params) const;
     Rectangle PositionCompute(int m_burst_index, int s_burst_index, Rectangle master_area, double* device_x_points,
-                              double* device_y_points);
+                              double* device_y_points, ComputeCtx* ctx);
 
-    AzimuthAndRangeBounds ComputeExtendedAmount(int x_0, int y_0, int w, int h);
+    AzimuthAndRangeBounds ComputeExtendedAmount(int x_0, int y_0, int w, int h, cudaStream_t stream);
     int ComputeBurstOffset();
 
     [[nodiscard]] int GetNrOfBursts() const { return master_utils_->subswath_.at(0)->num_of_bursts_; }
@@ -117,7 +119,7 @@ private:
                                                 int y_min, int y_max);
     bool ComputeSlavePixPos(int m_burst_index, int s_burst_index, Rectangle master_area,
                             AzimuthAndRangeBounds az_rg_bounds, CoordMinMax* coord_min_max, double* device_x_points,
-                            double* device_y_points);
+                            double* device_y_points, ComputeCtx* ctx);
     void PrepareToComputeBody();
 };
 

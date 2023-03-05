@@ -68,8 +68,8 @@ struct SlavePixPosData {
     double master_dt, slave_dt;
 };
 
-cudaError_t LaunchSlavePixPos(SlavePixPosData calc_data);
+cudaError_t LaunchSlavePixPos(SlavePixPosData calc_data, cudaStream_t stream);
 cudaError_t LaunchFillXAndY(double* device_x_points, double* device_y_points, size_t points_size,
-                            double placeholder_value);
+                            double placeholder_value, cudaStream_t stream);
 
 }  // namespace alus::backgeocoding

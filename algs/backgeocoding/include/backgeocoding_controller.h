@@ -29,6 +29,8 @@
 #include "pointer_holders.h"
 #include "snap-core/core/datamodel/product.h"
 
+#include "target_dataset.h"
+
 namespace alus::backgeocoding {
 
 struct PositionComputeResults {
@@ -47,12 +49,12 @@ public:
 
     BackgeocodingController(std::shared_ptr<AlusFileReader<int16_t>> master_input_dataset,
                             std::shared_ptr<AlusFileReader<int16_t>> slave_input_dataset,
-                            std::shared_ptr<AlusFileWriter<float>> output_dataset,
+                            std::shared_ptr<TargetDataset<float>> output_dataset,
                             std::string_view master_metadata_file, std::string_view slave_metadata_file);
 
     BackgeocodingController(std::shared_ptr<AlusFileReader<int16_t>> master_input_dataset,
                             std::shared_ptr<AlusFileReader<int16_t>> slave_input_dataset,
-                            std::shared_ptr<AlusFileWriter<float>> output_dataset,
+                            std::shared_ptr<TargetDataset<float>> output_dataset,
                             std::shared_ptr<snapengine::Product> master_product,
                             std::shared_ptr<snapengine::Product> slave_product);
 
@@ -66,7 +68,7 @@ public:
     void RegisterException(std::exception_ptr e);
     void ReadMaster(Rectangle master_area, int16_t* i_tile, int16_t* q_tile) const;
     PositionComputeResults PositionCompute(int m_burst_index, int s_burst_index, Rectangle target_area,
-                                           double* device_x_points, double* device_y_points);
+                                           double* device_x_points, double* device_y_points, ComputeCtx* ctx);
     void ReadSlave(Rectangle slave_area, int16_t* i_tile, int16_t* q_tile) const;
     void CoreCompute(const CoreComputeParams& params) const;
     void WriteOutputs(Rectangle output_area, float* i_master_results, float* q_master_results, float* i_slave_results,
@@ -85,7 +87,7 @@ private:
 
     std::shared_ptr<AlusFileReader<int16_t>> master_input_dataset_;
     std::shared_ptr<AlusFileReader<int16_t>> slave_input_dataset_;
-    std::shared_ptr<AlusFileWriter<float>> output_dataset_;
+    std::shared_ptr<TargetDataset<float>> output_dataset_;
     std::shared_ptr<snapengine::Product> master_product_;
     std::shared_ptr<snapengine::Product> slave_product_;
     std::shared_ptr<snapengine::Product> target_product_;
@@ -116,7 +118,7 @@ private:
         }
         BackgeocodingWorker(const Backgeocoding&) = delete;
         BackgeocodingWorker& operator=(const Backgeocoding&) = delete;
-        void Work();
+        void Work(ComputeCtx* ctx);
 
     private:
         WorkerParams params_;

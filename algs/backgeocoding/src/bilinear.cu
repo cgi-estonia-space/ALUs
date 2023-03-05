@@ -114,12 +114,12 @@ __global__ void BilinearInterpolation(double* x_pixels, double* y_pixels, double
 }
 
 cudaError_t LaunchBilinearInterpolation(double* x_pixels, double* y_pixels, double* demod_phase, double* demod_i,
-                                        double* demod_q, BilinearParams params, float* results_i, float* results_q) {
+                                        double* demod_q, BilinearParams params, float* results_i, float* results_q, cudaStream_t stream) {
     dim3 block_size(24, 24);
     dim3 grid_size(cuda::GetGridDim(block_size.x, params.point_width),
                    cuda::GetGridDim(block_size.y, params.point_height));
 
-    BilinearInterpolation<<<grid_size, block_size>>>(x_pixels, y_pixels, demod_phase, demod_i, demod_q, params,
+    BilinearInterpolation<<<grid_size, block_size, 0, stream>>>(x_pixels, y_pixels, demod_phase, demod_i, demod_q, params,
                                                      results_i, results_q);
     return cudaGetLastError();
 }

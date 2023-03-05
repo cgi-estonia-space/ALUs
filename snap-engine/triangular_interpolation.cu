@@ -13,7 +13,11 @@
  */
 #include "triangular_interpolation_computation.h"
 
+
+
 #include "cuda_util.h"
+//#include "bcg_ctx.h"
+
 
 namespace alus {
 namespace snapengine {
@@ -193,7 +197,7 @@ __global__ void Interpolate(Zdata* zdata, Zdataabc* abc, TriangleDto* dtos, Inte
 }
 
 cudaError_t LaunchInterpolation(delaunay::DelaunayTriangle2D* triangles, Zdata* zdata,
-                                TriangleInterpolationParams params) {
+                                TriangleInterpolationParams params, alus::backgeocoding::ComputeCtx* ctx) {
     dim3 block_size(512);
     dim3 grid_size(cuda::GetGridDim(512, params.triangle_count));
     Zdataabc* device_abc;
@@ -202,14 +206,18 @@ cudaError_t LaunchInterpolation(delaunay::DelaunayTriangle2D* triangles, Zdata* 
     unsigned int* amount_of_triangles;
     unsigned int accepted_triangles;
 
-    CHECK_CUDA_ERR(cudaMalloc(&selected_triangles, params.triangle_count * sizeof(int)));
-    CHECK_CUDA_ERR(cudaMalloc(&amount_of_triangles, sizeof(unsigned int)));
-    CHECK_CUDA_ERR(cudaMalloc(&device_abc, params.triangle_count * params.z_data_count * sizeof(Zdataabc)));
-    CHECK_CUDA_ERR(cudaMalloc(&device_dtos, params.triangle_count * sizeof(TriangleDto)));
+    //CHECK_CUDA_ERR(cudaMalloc(&selected_triangles, params.triangle_count * sizeof(int)));
+    //CHECK_CUDA_ERR(cudaMalloc(&amount_of_triangles, sizeof(unsigned int)));
+    //CHECK_CUDA_ERR(cudaMalloc(&device_abc, params.triangle_count * params.z_data_count * sizeof(Zdataabc)));
+    //CHECK_CUDA_ERR(cudaMalloc(&device_dtos, params.triangle_count * sizeof(TriangleDto)));
 
+    selected_triangles = ctx->selected_triangles.EnsureBuffer<int>(params.triangle_count);
+    amount_of_triangles = ctx->amount_of_triangles.EnsureBuffer<unsigned int>(1);
+    device_abc = ctx->device_abc.EnsureBuffer<Zdataabc>(params.triangle_count * params.z_data_count);
+    device_dtos = ctx->device_dtos.EnsureBuffer<TriangleDto>(params.triangle_count);
     CHECK_CUDA_ERR(cudaMemset(amount_of_triangles, 0, sizeof(unsigned int)));
 
-    FindValidTriangles<<<grid_size, block_size>>>(triangles, params, zdata, device_abc, device_dtos, selected_triangles,
+    FindValidTriangles<<<grid_size, block_size, 0, ctx->stream>>>(triangles, params, zdata, device_abc, device_dtos, selected_triangles,
                                                   amount_of_triangles);
     cudaError_t result = cudaGetLastError();
 
@@ -231,12 +239,17 @@ cudaError_t LaunchInterpolation(delaunay::DelaunayTriangle2D* triangles, Zdata* 
     // TODO investigate further
     // block size dimension has major impact the kernel compute time on different GPUs
     dim3 interpolation_block_size(8, 8);
-    Interpolate<<<interpolation_grid_size, interpolation_block_size>>>(zdata, device_abc, device_dtos, params2);
+    Interpolate<<<interpolation_grid_size, interpolation_block_size, 0, ctx->stream>>>(zdata, device_abc, device_dtos, params2);
 
-    CHECK_CUDA_ERR(cudaFree(device_abc));
-    CHECK_CUDA_ERR(cudaFree(selected_triangles));
-    CHECK_CUDA_ERR(cudaFree(amount_of_triangles));
-    CHECK_CUDA_ERR(cudaFree(device_dtos));
+    //CHECK_CUDA_ERR(cudaFree(device_abc));
+    //CHECK_CUDA_ERR(cudaFree(selected_triangles));
+    //CHECK_CUDA_ERR(cudaFree(amount_of_triangles));
+    //CHECK_CUDA_ERR(cudaFree(device_dtos));
+
+    ctx->device_abc.Free();
+    ctx->selected_triangles.Free();
+    ctx->device_dtos.Free();
+
     return result;
 }
 

@@ -143,23 +143,24 @@ __global__ void FillXAndY(double* device_x_points, double* device_y_points, size
     device_y_points[idx] = placeholder_value;
 }
 
-cudaError_t LaunchSlavePixPos(SlavePixPosData calc_data) {
+cudaError_t LaunchSlavePixPos(SlavePixPosData calc_data, cudaStream_t stream) {
     // CC7.5 does not launch with 24x24
     // TODO use smarted launcher configuration, ie occupancy calculator
     dim3 block_size(16, 16);
     dim3 grid_size(cuda::GetGridDim(block_size.x, calc_data.num_lines),
                    cuda::GetGridDim(block_size.y, calc_data.num_pixels));
 
-    SlavePixPos<<<grid_size, block_size>>>(calc_data);
+    SlavePixPos<<<grid_size, block_size, 0, stream>>>(calc_data);
     return cudaGetLastError();
+
 }
 
 cudaError_t LaunchFillXAndY(double* device_x_points, double* device_y_points, size_t points_size,
-                            double placeholder_value) {
+                            double placeholder_value, cudaStream_t stream) {
     dim3 block_size(1024);
     dim3 grid_size(cuda::GetGridDim(block_size.x, points_size));
 
-    FillXAndY<<<grid_size, block_size>>>(device_x_points, device_y_points, points_size, placeholder_value);
+    FillXAndY<<<grid_size, block_size, 0, stream>>>(device_x_points, device_y_points, points_size, placeholder_value);
     return cudaGetLastError();
 }
 

@@ -34,6 +34,6 @@ struct ElevationMaskData {
     dem::Type dem_type;
 };
 
-cudaError_t LaunchElevationMask(ElevationMaskData data);
+cudaError_t LaunchElevationMask(ElevationMaskData data, cudaStream_t stream);
 
 }  // namespace alus::backgeocoding

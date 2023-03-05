@@ -18,7 +18,16 @@
 
 #include <driver_types.h>
 
+#include "cuda_ptr.h"
+
 #include "delaunay_triangle2D.h"
+
+
+namespace alus::backgeocoding
+{
+struct ComputeCtx;
+}
+
 
 namespace alus {        // NOLINT
 namespace snapengine {  // NOLINT
@@ -112,8 +121,47 @@ struct TriangleDto {
 };
 
 cudaError_t LaunchInterpolation(delaunay::DelaunayTriangle2D* triangles, Zdata* zdata,
-                                TriangleInterpolationParams params);
+                                TriangleInterpolationParams params, backgeocoding::ComputeCtx* ctx);
 
 }  // namespace triangularinterpolation
 }  // namespace snapengine
 }  // namespace alus
+
+
+
+
+namespace alus::backgeocoding {
+
+struct ComputeCtx {
+    cudaStream_t stream;
+
+    cuda::DeviceBuffer2 device_master_az;
+    cuda::DeviceBuffer2 device_master_rg;
+    cuda::DeviceBuffer2 device_slave_az;
+    cuda::DeviceBuffer2 device_slave_rg;
+    cuda::DeviceBuffer2 device_lats;
+    cuda::DeviceBuffer2 device_lons;
+    cuda::DeviceBuffer2 device_valid_index_counter;
+
+    cuda::DeviceBuffer2 device_lat_array;
+    cuda::DeviceBuffer2 device_lon_array;
+
+    cuda::DeviceBuffer2 device_x_points;
+    cuda::DeviceBuffer2 device_y_points;
+
+    cuda::DeviceBuffer2 device_dtos;
+    cuda::DeviceBuffer2 selected_triangles;
+    cuda::DeviceBuffer2 device_triangles;
+    cuda::DeviceBuffer2 device_abc;
+
+    cuda::DeviceBuffer2 device_zdata;
+
+
+    cuda::DeviceBuffer2 not_null_counter;
+
+    cuda::DeviceBuffer2 amount_of_triangles;
+    //Allocator mem;
+};
+
+}
+

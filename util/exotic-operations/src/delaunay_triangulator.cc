@@ -21,6 +21,11 @@
 
 #include "cuda_util.h"
 
+#include <chrono>
+
+#include "alus_log.h"
+
+
 namespace alus::delaunay {
 
 void DelaunayTriangulator::TriangulateCPU(const double* x_coords, double x_multiplier, const double* y_coords,

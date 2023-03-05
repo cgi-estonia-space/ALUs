@@ -13,6 +13,8 @@
  */
 #include "backgeocoding_controller.h"
 
+#include "c16_dataset.h"
+
 #include <chrono>
 #include <map>
 #include <memory>
@@ -29,6 +31,8 @@
 #include "snap-engine-utilities/engine-utilities/gpf/stack_utils.h"
 #include "tile_queue.h"
 
+#include "target_dataset.h"
+
 
 void OSVLUTToConstantMem(const std::vector<double>& master, const std::vector<double>& slave);
 
@@ -36,7 +40,7 @@ namespace alus::backgeocoding {
 
 BackgeocodingController::BackgeocodingController(std::shared_ptr<AlusFileReader<int16_t>> master_input_dataset,
                                                  std::shared_ptr<AlusFileReader<int16_t>> slave_input_dataset,
-                                                 std::shared_ptr<AlusFileWriter<float>> output_dataset,
+                                                 std::shared_ptr<TargetDataset<float>> output_dataset,
                                                  std::string_view master_metadata_file,
                                                  std::string_view slave_metadata_file)
     : beam_dimap_mode_(true),
@@ -48,7 +52,7 @@ BackgeocodingController::BackgeocodingController(std::shared_ptr<AlusFileReader<
 
 BackgeocodingController::BackgeocodingController(std::shared_ptr<AlusFileReader<int16_t>> master_input_dataset,
                                                  std::shared_ptr<AlusFileReader<int16_t>> slave_input_dataset,
-                                                 std::shared_ptr<AlusFileWriter<float>> output_dataset,
+                                                 std::shared_ptr<TargetDataset<float>> output_dataset,
                                                  std::shared_ptr<snapengine::Product> master_product,
                                                  std::shared_ptr<snapengine::Product> slave_product)
     : master_input_dataset_(std::move(master_input_dataset)),
@@ -92,10 +96,10 @@ void BackgeocodingController::ReadMaster(Rectangle master_area, int16_t* i_tile,
 
 PositionComputeResults BackgeocodingController::PositionCompute(int m_burst_index, int s_burst_index,
                                                                 Rectangle target_area, double* device_x_points,
-                                                                double* device_y_points) {
+                                                                double* device_y_points, ComputeCtx* ctx) {
     PositionComputeResults result;
     result.slave_area =
-        backgeocoding_->PositionCompute(m_burst_index, s_burst_index, target_area, device_x_points, device_y_points);
+        backgeocoding_->PositionCompute(m_burst_index, s_burst_index, target_area, device_x_points, device_y_points, ctx);
     result.demod_size = result.slave_area.width * result.slave_area.height;
 
     return result;
@@ -113,10 +117,10 @@ void BackgeocodingController::CoreCompute(const CoreComputeParams& params) const
     backgeocoding_->CoreCompute(params);
 }
 
-void BackgeocodingController::WriteOutputs(Rectangle output_area, float* i_master_results, float* q_master_results,
+void BackgeocodingController::WriteOutputs(Rectangle output_area, float* /*i_master_results*/, float* /*q_master_results*/,
                                            float* i_slave_results, float* q_slave_results) const {
-    output_dataset_->WriteRectangle(i_master_results, output_area, 1);
-    output_dataset_->WriteRectangle(q_master_results, output_area, 2);
+    //output_dataset_->WriteRectangle(i_master_results, output_area, 1);
+    //output_dataset_->WriteRectangle(q_master_results, output_area, 2);
     output_dataset_->WriteRectangle(i_slave_results, output_area, 3);
     output_dataset_->WriteRectangle(q_slave_results, output_area, 4);
 }
@@ -138,6 +142,37 @@ inline std::vector<double> CalculateOrbitStateVectorLUT(
         }
     }
     return h_lut;
+}
+
+void IQ16To2xFloatGdal(GDALDataset* in, GDALDataset* i_out, GDALDataset* q_out)
+{
+    auto b_in = in->GetRasterBand(1);
+    auto b_i = i_out->GetRasterBand(1);
+    auto b_q = q_out->GetRasterBand(1);
+
+    int y_size = b_in->GetYSize();
+    int x_size = b_in->GetXSize();
+
+    if(y_size != b_i->GetYSize() || y_size != b_q->GetYSize())
+    {
+        throw std::runtime_error("Experimental full swath code only!");
+    }
+
+
+    std::vector<Iq16> iq_in(x_size);
+    std::vector<float> i_conv(x_size);
+    std::vector<float> q_conv(x_size);
+    for(int i = 0; i < y_size; i++)
+    {
+        CHECK_GDAL_ERROR(b_in->ReadBlock(0, i, iq_in.data()));
+        for(int j = 0; j < x_size; j++)
+        {
+            i_conv[j] = iq_in[j].i;
+            q_conv[j] = iq_in[j].q;
+        }
+        CHECK_GDAL_ERROR(b_i->WriteBlock(0, i, i_conv.data()));
+        CHECK_GDAL_ERROR(b_q->WriteBlock(0, i, q_conv.data()));
+    }
 }
 
 void BackgeocodingController::DoWork() {
@@ -184,19 +219,43 @@ void BackgeocodingController::DoWork() {
         }
     }
 
+
+    std::shared_ptr<C16Dataset<int16_t>> master_rd = std::dynamic_pointer_cast<C16Dataset<int16_t>>(master_input_dataset_);
+
+    auto master_gdal = master_rd->GetDataset()->GetGdalDataset();
+
+    GDALDataset* i_master = output_dataset_->GetDataset()[0];
+    GDALDataset* q_master = output_dataset_->GetDataset()[1];
+
+
+    std::thread master_read_thread(IQ16To2xFloatGdal, master_gdal, i_master, q_master);
+
+    //master_read_thread.join();
+
     ThreadSafeTileQueue<BackgeocodingWorker> queue(std::move(workers));
     std::vector<std::thread> threads_vec;
 
     // Backgeocoding does a lot of things on cpu, 2 x input datasets, 4 x output datasets, partial CPU triangulation
     // this number should be double checked if further optimizations are made
-    const int n_worker_threads = 9;
+    const int n_worker_threads = 10;
+    LOGI << "n_worker_threads = " << n_worker_threads;
     threads_vec.reserve(n_worker_threads);
 
+    std::vector<ComputeCtx> ctx_vec(n_worker_threads);
+
+    for(auto& ctx : ctx_vec)
+    {
+        cudaStreamCreate(&ctx.stream);
+        //LOGI << "stream = " << ctx.stream;
+    }
+
+
     for (int i = 0; i < n_worker_threads; i++) {
-        threads_vec.emplace_back([&queue]() {
+        ComputeCtx* ctx = &ctx_vec[i];
+        threads_vec.emplace_back([&queue, ctx]() {
             BackgeocodingWorker worker;
             while (queue.PopFront(worker)) {
-                worker.Work();
+                worker.Work(ctx);
             }
         });
     }
@@ -204,6 +263,16 @@ void BackgeocodingController::DoWork() {
     for (auto& thread : threads_vec) {
         thread.join();
     }
+
+    master_read_thread.join();
+
+
+    for(auto& ctx : ctx_vec)
+    {
+        //LOGI<< "destroy " << ctx.stream;
+        cudaStreamDestroy(ctx.stream);
+    }
+
     LOGV << "Final block reached.";
     if (exceptions_thrown_) {
         LOGW << "Backgeocoding had " << exceptions_thrown_ << " exceptions thrown. Passing on the first one.";

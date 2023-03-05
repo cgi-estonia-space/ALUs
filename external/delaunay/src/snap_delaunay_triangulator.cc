@@ -18,6 +18,7 @@
 
 #include <ctgmath>
 
+#include <chrono>
 
 namespace external {
 namespace delaunay {
@@ -73,10 +74,11 @@ void SnapDelaunayTriangulator::InitTriangulation(alus::PointDouble c0, alus::Poi
 
 void SnapDelaunayTriangulator::AddExternalVertex(alus::PointDouble point){
     std::vector<SnapTriangle*>  newTriangles = BuildTrianglesBetweenNewVertexAndConvexHull(point);
+
     SnapTriangle * temp_triangle;
 
     for (size_t i=0; i<newTriangles.size(); i++) {
-        temp_triangle = newTriangles.at(i);
+        temp_triangle = newTriangles[i];
         if (temp_triangle->C.index != HORIZON.index) Delaunay(temp_triangle, 0);
         triangles_.push_back(temp_triangle);
     }

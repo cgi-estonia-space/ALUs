@@ -59,11 +59,11 @@ __global__ void DerampDemod(alus::Rectangle rectangle, int16_t* slave_i, int16_t
 
 cudaError_t LaunchDerampDemod(alus::Rectangle rectangle, int16_t* slave_i, int16_t* slave_q, double* demod_phase,
                               double* demod_i, double* demod_q, alus::s1tbx::DeviceSubswathInfo* sub_swath,
-                              int s_burst_index) {
+                              int s_burst_index, cudaStream_t stream) {
     dim3 block_size(24, 24);
     dim3 grid_size(cuda::GetGridDim(block_size.x, rectangle.width), cuda::GetGridDim(block_size.y, rectangle.height));
 
-    DerampDemod<<<grid_size, block_size>>>(rectangle, slave_i, slave_q, demod_phase, demod_i, demod_q, sub_swath,
+    DerampDemod<<<grid_size, block_size, 0, stream>>>(rectangle, slave_i, slave_q, demod_phase, demod_i, demod_q, sub_swath,
                                            s_burst_index);
     return cudaGetLastError();
 }

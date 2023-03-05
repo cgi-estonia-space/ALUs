@@ -53,11 +53,11 @@ __global__ void ElevationMask(ElevationMaskData data) {
     }
 }
 
-cudaError_t LaunchElevationMask(ElevationMaskData data) {
+cudaError_t LaunchElevationMask(ElevationMaskData data, cudaStream_t stream) {
     dim3 block_size(416);
     dim3 grid_size(cuda::GetGridDim(block_size.x, data.size));
 
-    ElevationMask<<<grid_size, block_size>>>(data);
+    ElevationMask<<<grid_size, block_size, 0, stream>>>(data);
     return cudaGetLastError();
 }
 
