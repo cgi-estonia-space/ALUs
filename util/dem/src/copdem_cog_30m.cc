@@ -26,6 +26,7 @@
 #include "alus_log.h"
 #include "cuda_util.h"
 #include "dem_egm96.h"
+#include "line_resample.h"
 #include "resample_method.h"
 #include "type_parameter.h"
 
@@ -49,7 +50,7 @@ namespace alus::resample {
 // Forward declaration from nppi_resample.cu
 int DoResampling(const void* input, RasterDimension input_dimension, void* output, RasterDimension output_dimension,
                  TypeParameters type_parameter, Method method);
-}
+}  // namespace alus::resample
 
 namespace alus::dem {
 
@@ -180,14 +181,19 @@ void CopDemCog30m::TransferToDeviceImpl() {
                                       cudaMemcpyHostToDevice));
             CHECK_CUDA_ERR(cudaMalloc((void**)&device_dem_values, resampled_size_bytes));
             LOGI << "Resampling " << datasets_.at(i).GetFilePath() << " to match width " << resample_width;
-            const auto res_status = resample::DoResampling(
+            //            const auto res_status = resample::DoResampling(
+            //                initial_tile_values, {static_cast<int>(current_tile_width),
+            //                static_cast<int>(current_tile_height)}, device_dem_values,
+            //                {static_cast<int>(resample_width), static_cast<int>(current_tile_height)},
+            //                TypeParameters::CreateFor<float>(), resample::Method::LINEAR);
+            lineresample::Process(
                 initial_tile_values, {static_cast<int>(current_tile_width), static_cast<int>(current_tile_height)},
-                device_dem_values, {static_cast<int>(resample_width), static_cast<int>(current_tile_height)},
-                TypeParameters::CreateFor<float>(), resample::Method::LINEAR);
+                device_dem_values, {static_cast<int>(resample_width), static_cast<int>(current_tile_height)});
             CHECK_CUDA_ERR(cudaFree(initial_tile_values));
-            if (res_status != 0) {
-                throw std::runtime_error("Failed to resample, NPP status - " + std::to_string(res_status));
-            }
+            //            if (res_status != 0) {
+            //                throw std::runtime_error("Failed to resample, NPP status - " +
+            //                std::to_string(res_status));
+            //            }
 
             const auto tile_prop_stash = tile_prop;
             tile_prop = resample_property;

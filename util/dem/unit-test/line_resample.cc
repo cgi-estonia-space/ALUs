@@ -18,6 +18,8 @@
 
 #include "gmock/gmock.h"
 
+#include "cuda_ptr.h"
+
 namespace {
 
 using ::testing::DoubleNear;
@@ -43,6 +45,22 @@ TEST(LineResample, FillLineFromCalculatesCorrectly) {
     std::array<float, 10> output{};
     alus::lineresample::FillLineFrom(input.data(), input.size(), output.data(), output.size());
     ASSERT_THAT(output, Pointwise(FloatNear(1e-3), expected_out));
+}
+
+TEST(LineResample, LaunchLineResampleReturnsCorrectResults) {
+    std::array<float, 12> input{10, 15, 15, 0, 0, 1, 10, 15, 15, 0, 0, 1};
+    std::array<float, 20> expected_out{10, 11.66666, 15, 15, 15, 0, 0, 0, 0.6666, 1,
+                                       10, 11.66666, 15, 15, 15, 0, 0, 0, 0.6666, 1};
+
+    alus::cuda::CudaPtr<float> dev_in(input.size());
+    CHECK_CUDA_ERR(cudaMemcpy(dev_in.Get(), input.data(), input.size() * sizeof(float), cudaMemcpyHostToDevice));
+    alus::cuda::CudaPtr<float> dev_out(expected_out.size());
+
+    alus::lineresample::Process(dev_in.Get(), {6, 2}, dev_out.Get(), {10, 2});
+    std::array<float, expected_out.size()> results;
+    CHECK_CUDA_ERR(cudaMemcpy(results.data(), dev_out.Get(), results.size() * sizeof(float), cudaMemcpyDeviceToHost));
+
+    ASSERT_THAT(results, Pointwise(FloatNear(1e-3), expected_out));
 }
 
 }  // namespace

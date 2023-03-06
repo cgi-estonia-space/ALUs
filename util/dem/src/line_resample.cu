@@ -1,61 +1,85 @@
 /**
-* This program is free software; you can redistribute it and/or modify it
-* under the terms of the GNU General Public License as published by the Free
-* Software Foundation; either version 3 of the License, or (at your option)
-* any later version.
-* This program is distributed in the hope that it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
-* more details.
-*
-* You should have received a copy of the GNU General Public License along
-* with this program; if not, see http://www.gnu.org/licenses/
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see http://www.gnu.org/licenses/
  */
 
 #include "line_resample.h"
 
 #include <cmath>
 
+#include "cuda_util.h"
+
 namespace {
 
-[[maybe_unused]] inline void CalculateValues(int x, float* in, int in_size, float* out, int out_size) {
-    (void)x;
-    (void)in;
-    (void)in_size;
-    (void)out;
-    (void)out_size;
+__host__ __device__ inline void InterpolatePixelValue(int x, const float* in, int in_size, float* out, int out_size,
+                                                      double pixel_ratio) {
+    float dummy;
+    const auto start_dist = (x * in_size) / static_cast<double>(out_size);
+    const auto end_dist = ((x + 1) * in_size) / static_cast<double>(out_size);
+    const auto in_index1 = static_cast<int>(start_dist);  // Floor it.
+    const auto in_index2 = static_cast<int>(end_dist);
+    double index1_factor;
+    double index2_factor;
+    if (in_index1 == in_index2) {
+        index1_factor = 1.0;
+        index2_factor = 0.0;
+    } else {
+        float fract1 = std::modf(start_dist, &dummy);
+        float fract2 = std::modf(end_dist, &dummy);
+        index1_factor = (1 - fract1) / pixel_ratio;
+        index2_factor = fract2 / pixel_ratio;
+    }
+
+    auto val1 = in[in_index1];
+    auto val2 = in[in_index2];
+
+    out[x] = val1 * index1_factor + val2 * index2_factor;
 }
 
+__global__ void LineResampleKernel(const float* in, alus::RasterDimension in_dim, float* out,
+                                   alus::RasterDimension out_dim, double pixel_ratio) {
+    const int idx = threadIdx.x + (blockDim.x * blockIdx.x);
+    const int idy = threadIdx.y + (blockDim.y * blockIdx.y);
+
+    if (idx >= out_dim.columnsX || idy >= out_dim.rowsY) {
+        return;
+    }
+
+    const auto buffer_out_offset = idy * out_dim.columnsX;
+    const auto buffer_in_offset = idy * in_dim.columnsX;
+    InterpolatePixelValue(idx, in + buffer_in_offset, in_dim.columnsX, out + buffer_out_offset, out_dim.columnsX,
+                          pixel_ratio);
 }
+
+}  // namespace
 
 namespace alus::lineresample {
 
 void FillLineFrom(float* in_line, size_t in_size, float* out_line, size_t out_size) {
-
-    float dummy;
     const auto ratio = GetRatio(in_size, out_size);
     for (size_t i = 0; i < out_size; i++) {
-        const auto start_dist = (i * in_size) / static_cast<double>(out_size);
-        const auto end_dist = ((i + 1) * in_size) / static_cast<double>(out_size);
-        const auto in_index1 = static_cast<int>(start_dist); // Floor it.
-        const auto in_index2 = static_cast<int>(end_dist);
-        double index1_factor;
-        double index2_factor;
-        if (in_index1 == in_index2) {
-            index1_factor = 1.0;
-            index2_factor = 0.0;
-        } else {
-            float fract1 = std::modf(start_dist, &dummy);
-            float fract2 = std::modf(end_dist, &dummy);
-            index1_factor = (1 - fract1) / ratio;
-            index2_factor = fract2 / ratio;
-        }
-
-        auto val1 = in_line[in_index1];
-        auto val2 = in_line[in_index2];
-
-        out_line[i] = val1 *  index1_factor + val2 * index2_factor;
+        InterpolatePixelValue(static_cast<int>(i), in_line, static_cast<int>(in_size), out_line,
+                              static_cast<int>(out_size), ratio);
     }
 }
 
+void Process(const float* input, RasterDimension input_dimension, float* output,
+                        RasterDimension output_dimension) {
+    const auto ratio = GetRatio(input_dimension.columnsX, output_dimension.columnsX);
+    dim3 blockdim(32, 32);
+    dim3 griddim((output_dimension.columnsX / blockdim.x) + 1, (output_dimension.rowsY / blockdim.y) + 1);
+    LineResampleKernel<<<griddim, blockdim>>>(input, input_dimension, output, output_dimension, ratio);
+    CHECK_CUDA_ERR(cudaDeviceSynchronize());
+    CHECK_CUDA_ERR(cudaGetLastError());
 }
+
+}  // namespace alus::lineresample
