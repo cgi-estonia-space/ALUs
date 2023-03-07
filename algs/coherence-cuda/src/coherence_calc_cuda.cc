@@ -18,6 +18,8 @@
 #include "coherence_computation.h"
 #include "jlinda/jlinda-core/constants.h"
 #include "snap-engine-utilities/engine-utilities/eo/constants.h"
+#include <cusolverDn.h>
+
 
 namespace alus {
 namespace coherence_cuda {
@@ -125,7 +127,32 @@ void CohCuda::CoherencePreTileCalc() {
     auto generate_y = GenerateY(position_lines_pixels, meta_master_, meta_slave_);
     auto x_pows = GetXPows(srp_polynomial_degree_);
     auto y_pows = GetYPows(srp_polynomial_degree_);
+
+#if 1
+    {
+        auto b = std::chrono::steady_clock::now();
+        cublasHandle_t cublas_handle;
+        cublasCreate(&cublas_handle);
+        auto e = std::chrono::steady_clock::now();
+        auto d = std::chrono::duration_cast<std::chrono::milliseconds>(e-b).count();
+        std::cout << __func__ <<  "cublas init = " << d << " ms\n";
+    }
+#endif
+#if 1
+    {
+        auto b = std::chrono::steady_clock::now();
+        cusolverDnHandle_t solver_handle;
+        cusolverDnCreate(&solver_handle);
+        auto e = std::chrono::steady_clock::now();
+        auto d = std::chrono::duration_cast<std::chrono::milliseconds>(e-b).count();
+        std::cout << __func__ <<  "cuSolver init = " << d << " ms\n";
+    }
+#endif
+    auto b = std::chrono::steady_clock::now();
     coherence_computation_.LaunchCoherencePreTileCalc(x_pows, y_pows, position_lines_pixels, generate_y, band_params_);
+    auto e = std::chrono::steady_clock::now();
+    auto d = std::chrono::duration_cast<std::chrono::milliseconds>(e-b).count();
+    std::cout << "PreTileCalc = " << d << " ms\n";
 }
 
 void CohCuda::TileCalc(const CohTile& tile, ThreadContext& buffers) {
