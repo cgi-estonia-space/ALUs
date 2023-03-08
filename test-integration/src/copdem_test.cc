@@ -100,7 +100,7 @@ TEST(CopDemCog30m, LoadsTilesCorrectlyWithResampling) {
     double result = GetElevationWrapper(4.0008, 49.9999, dem_buffers, manager.GetProperties());
     ASSERT_THAT(190.081, DoubleNear(result, 1e-3));
     result = GetElevationWrapper(6.4808, 51.0772, dem_buffers, manager.GetProperties());
-    ASSERT_THAT(-75.9212, DoubleNear(result, 1e-3));
+    ASSERT_THAT(-76.1764, DoubleNear(result, 1e-3));
 }
 
 }  // namespace

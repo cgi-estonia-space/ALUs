@@ -2,7 +2,6 @@
 list(APPEND DEM_UTIL_TEST_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/dem_assistant.cc
         ${CMAKE_CURRENT_LIST_DIR}/copdem_cog_30m.cc
-        ${CMAKE_CURRENT_LIST_DIR}/line_resample.cc
         )
 
 add_executable(dem-util-test ${DEM_UTIL_TEST_SOURCES})

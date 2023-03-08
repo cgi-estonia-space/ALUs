@@ -18,7 +18,7 @@
 
 #include "raster_properties.h"
 
-namespace alus::lineresample {
+namespace alus::rowresample {
 
 inline double GetRatio(size_t in_line_len, size_t out_line_len) {
     return static_cast<double>(in_line_len) / static_cast<double>(out_line_len);
@@ -26,6 +26,9 @@ inline double GetRatio(size_t in_line_len, size_t out_line_len) {
 
 void FillLineFrom(float* in_line, size_t in_size, float* out_line, size_t out_size);
 
+void ProcessAndTransferHost(const float* input, RasterDimension input_dimensions, float* output,
+                            RasterDimension output_dimension);
+
 void Process(const float* input, RasterDimension input_dimension, float* output, RasterDimension output_dimension);
 
-}  // namespace alus::lineresample
+}  // namespace alus::rowresample

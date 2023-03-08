@@ -12,10 +12,11 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 
-#include "line_resample.h"
+#include "row_resample.h"
 
 #include <cmath>
 
+#include "cuda_ptr.h"
 #include "cuda_util.h"
 
 namespace {
@@ -45,8 +46,8 @@ __host__ __device__ inline void InterpolatePixelValue(int x, const float* in, in
     out[x] = val1 * index1_factor + val2 * index2_factor;
 }
 
-__global__ void LineResampleKernel(const float* in, alus::RasterDimension in_dim, float* out,
-                                   alus::RasterDimension out_dim, double pixel_ratio) {
+__global__ void ResampleKernel(const float* in, alus::RasterDimension in_dim, float* out, alus::RasterDimension out_dim,
+                               double pixel_ratio) {
     const int idx = threadIdx.x + (blockDim.x * blockIdx.x);
     const int idy = threadIdx.y + (blockDim.y * blockIdx.y);
 
@@ -62,7 +63,7 @@ __global__ void LineResampleKernel(const float* in, alus::RasterDimension in_dim
 
 }  // namespace
 
-namespace alus::lineresample {
+namespace alus::rowresample {
 
 void FillLineFrom(float* in_line, size_t in_size, float* out_line, size_t out_size) {
     const auto ratio = GetRatio(in_size, out_size);
@@ -72,14 +73,24 @@ void FillLineFrom(float* in_line, size_t in_size, float* out_line, size_t out_si
     }
 }
 
-void Process(const float* input, RasterDimension input_dimension, float* output,
-                        RasterDimension output_dimension) {
+void ProcessAndTransferHost(const float* input, RasterDimension input_dimensions, float* output,
+                            RasterDimension output_dimension) {
+    cuda::DeviceBuffer<float> device_in_buf(input_dimensions.columnsX * input_dimensions.rowsY);
+    CHECK_CUDA_ERR(
+        cudaMemcpy(device_in_buf.Get(), input, device_in_buf.size() * sizeof(float), cudaMemcpyHostToDevice));
+    cuda::DeviceBuffer<float> device_out_buf(output_dimension.columnsX * output_dimension.rowsY);
+    Process(device_in_buf.Get(), input_dimensions, device_out_buf.Get(), output_dimension);
+    CHECK_CUDA_ERR(
+        cudaMemcpy(output, device_out_buf.Get(), device_out_buf.size() * sizeof(float), cudaMemcpyDeviceToHost));
+}
+
+void Process(const float* input, RasterDimension input_dimension, float* output, RasterDimension output_dimension) {
     const auto ratio = GetRatio(input_dimension.columnsX, output_dimension.columnsX);
     dim3 blockdim(32, 32);
     dim3 griddim((output_dimension.columnsX / blockdim.x) + 1, (output_dimension.rowsY / blockdim.y) + 1);
-    LineResampleKernel<<<griddim, blockdim>>>(input, input_dimension, output, output_dimension, ratio);
+    ResampleKernel<<<griddim, blockdim>>>(input, input_dimension, output, output_dimension, ratio);
     CHECK_CUDA_ERR(cudaDeviceSynchronize());
     CHECK_CUDA_ERR(cudaGetLastError());
 }
 
-}  // namespace alus::lineresample
+}  // namespace alus::rowresample
