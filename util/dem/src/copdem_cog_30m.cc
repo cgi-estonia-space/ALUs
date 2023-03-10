@@ -18,6 +18,7 @@
 #include <array>
 #include <chrono>
 #include <cmath>
+#include <filesystem>
 #include <future>
 #include <stdexcept>
 
@@ -135,6 +136,7 @@ void CopDemCog30m::TransferToDeviceImpl() {
             "An implementation error has occured, where DEM formating datasets do not equal the saved properties "
             "information.");
     }
+
     std::vector<PointerHolder> temp_tiles;
     temp_tiles.resize(nr_of_tiles);
     device_formated_buffers_.resize(nr_of_tiles);
@@ -164,7 +166,7 @@ void CopDemCog30m::TransferToDeviceImpl() {
         }
     }
 
-    constexpr dim3 device_block_size(20, 20);
+    constexpr dim3 device_block_size(16, 16);
     for (size_t i = 0; i < nr_of_tiles; i++) {
         auto& tile_prop = host_dem_properties_.at(i);
         auto current_tile_width = static_cast<size_t>(tile_prop.tile_pixel_count_x);
@@ -180,7 +182,8 @@ void CopDemCog30m::TransferToDeviceImpl() {
             CHECK_CUDA_ERR(cudaMemcpy(initial_tile_values, datasets_.at(i).GetHostDataBuffer().data(), dem_size_bytes,
                                       cudaMemcpyHostToDevice));
             CHECK_CUDA_ERR(cudaMalloc((void**)&device_dem_values, resampled_size_bytes));
-            LOGI << "Resampling " << datasets_.at(i).GetFilePath() << " to match width " << resample_width;
+            LOGI << "Resampling " << std::filesystem::path(datasets_.at(i).GetFilePath()).filename().string()
+                 << " to match width " << resample_width;
             rowresample::Process(
                 initial_tile_values, {static_cast<int>(current_tile_width), static_cast<int>(current_tile_height)},
                 device_dem_values, {static_cast<int>(resample_width), static_cast<int>(current_tile_height)});
@@ -246,6 +249,8 @@ void CopDemCog30m::TransferToDeviceImpl() {
         CHECK_CUDA_ERR(cudaMemcpy(device_dem_properties_ + i, host_dem_properties_.data() + i, sizeof(dem::Property),
                                   cudaMemcpyHostToDevice));
     }
+
+    datasets_.clear();
 }
 
 void CopDemCog30m::LoadTiles() {

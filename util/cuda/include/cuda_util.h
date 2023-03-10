@@ -30,7 +30,7 @@
 namespace alus {
 namespace cuda {
 
-int GetGridDim(int blockDim, int dataDim);
+inline int GetGridDim(int block_dim, int data_dim) { return (data_dim + block_dim - 1) / block_dim; }
 
 // An overload for calling "cudaSetDevice()" from CUDA API in host code.
 cudaError_t CudaSetDevice(int device_nr);

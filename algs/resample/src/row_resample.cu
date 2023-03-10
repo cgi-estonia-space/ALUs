@@ -24,6 +24,7 @@ namespace {
 __host__ __device__ inline void InterpolatePixelValue(int x, const float* in, int in_size, float* out, int out_size,
                                                       double pixel_ratio) {
     float dummy;
+    // Division could be optimized, but not a showstopper now. Trying to preserve maximum amount of float precision.
     const auto start_dist = (x * in_size) / static_cast<double>(out_size);
     const auto end_dist = ((x + 1) * in_size) / static_cast<double>(out_size);
     const auto in_index1 = static_cast<int>(start_dist);  // Floor it.
@@ -86,8 +87,8 @@ void ProcessAndTransferHost(const float* input, RasterDimension input_dimensions
 
 void Process(const float* input, RasterDimension input_dimension, float* output, RasterDimension output_dimension) {
     const auto ratio = GetRatio(input_dimension.columnsX, output_dimension.columnsX);
-    dim3 blockdim(32, 32);
-    dim3 griddim((output_dimension.columnsX / blockdim.x) + 1, (output_dimension.rowsY / blockdim.y) + 1);
+    dim3 blockdim(16, 16);
+    dim3 griddim((output_dimension.columnsX + blockdim.x - 1) / blockdim.x, (output_dimension.rowsY + blockdim.y - 1) / blockdim.y);
     ResampleKernel<<<griddim, blockdim>>>(input, input_dimension, output, output_dimension, ratio);
     CHECK_CUDA_ERR(cudaDeviceSynchronize());
     CHECK_CUDA_ERR(cudaGetLastError());
