@@ -275,56 +275,82 @@ void CoherenceComputation::GenerateA(cublasHandle_t handle, thrust::device_vecto
                       thrust::make_zip_iterator(thrust::make_tuple(d_out.begin())), GetA());
 }
 
+template<class T>
+void print_vec(const std::vector<T>& vec, const char* name)
+{
+    std::cout << name << " = sz = " << vec.size() << "\n";
+    for(auto e : vec)
+    {
+        std::cout << e << " ";
+    }
+    std::cout << "\n";
+}
+
+
 void CoherenceComputation::LaunchCoherencePreTileCalc(
     std::vector<int>& x_pows, std::vector<int>& y_pows,
     std::tuple<std::vector<int>, std::vector<int>>& position_lines_pixels, std::vector<double>& generate_y,
     const BandParams& band_params) {
+
+    (void)band_params;
     d_x_pows_ = x_pows;
     d_y_pows_ = y_pows;
-    thrust::device_vector<double> d_lines = std::get<0>(position_lines_pixels);
-    thrust::device_vector<double> d_pixels = std::get<1>(position_lines_pixels);
-    thrust::device_vector<double> d_generate_y_vector = generate_y;
+    //thrust::device_vector<double> d_lines = std::get<0>(position_lines_pixels);
+    //thrust::device_vector<double> d_pixels = std::get<1>(position_lines_pixels);
+    //thrust::device_vector<double> d_generate_y_vector = generate_y;
     // device vector to be re-used for size matching
     d_ones_ = thrust::device_vector<double>(x_pows.size(), 1.0);
     d_ones_size_ = d_ones_.size();
     subtract_flat_earth_ = true;
 
+    return;
+
     cublasHandle_t handle;
     CHECK_CUDA_ERRORS(cublasCreate(&handle));  // NB! multiple threads should not share the same CUBLAS handle
 
-    //    todo: measure times between here and without refactored to see if something changed
-    thrust::device_vector<double> d_a(d_ones_.size() * d_lines.size());
+    print_vec(x_pows, "x pows");
+    print_vec(y_pows, "y pows");
+    print_vec(generate_y, "generate y");
 
-    GenerateA(handle, d_pixels, d_lines, d_a, band_params.band_x_min, band_params.band_x_size - 1,
-              band_params.band_y_min, band_params.band_y_size - 1);
+    print_vec(std::get<0>(position_lines_pixels), "d_lines");
+    print_vec(std::get<1>(position_lines_pixels), "d_pixels");
+
+    printf("\n\n\n");
+
+    //    todo: measure times between here and without refactored to see if something changed
+    //thrust::device_vector<double> d_a(d_ones_.size() * d_lines.size());
+
+    //GenerateA(handle, d_pixels, d_lines, d_a, band_params.band_x_min, band_params.band_x_size - 1,
+//              band_params.band_y_min, band_params.band_y_size - 1);
     // todo: use transform iterators where possible to avoid storing into memory
 
     // now calcualte coeficents
 
     // input 21*501  -> result is 21*21
-    thrust::device_vector<double> d_n(d_ones_.size() * d_ones_.size());
+    //thrust::device_vector<double> d_n(d_ones_.size() * d_ones_.size());
 
-    auto a = thrust::raw_pointer_cast(d_a.data());
-    auto n = thrust::raw_pointer_cast(d_n.data());
-    thrust::device_vector<double> transposed_a(d_a.size());
+    //auto a = thrust::raw_pointer_cast(d_a.data());
+    //auto n = thrust::raw_pointer_cast(d_n.data());
+    //thrust::device_vector<double> transposed_a(d_a.size());
 
-    TransposeA(handle, a, thrust::raw_pointer_cast(transposed_a.data()), d_ones_.size(), d_pixels.size());
-    MatMulATransposeA(handle, thrust::raw_pointer_cast(transposed_a.data()), n, d_ones_.size(), d_pixels.size());
+    //TransposeA(handle, a, thrust::raw_pointer_cast(transposed_a.data()), d_ones_.size(), d_pixels.size());
+    //MatMulATransposeA(handle, thrust::raw_pointer_cast(transposed_a.data()), n, d_ones_.size(), d_pixels.size());
 
-    auto y = thrust::raw_pointer_cast(d_generate_y_vector.data());
-    thrust::device_vector<double> d_rhs(x_pows.size());
-    auto rhs = thrust::raw_pointer_cast(d_rhs.data());
-    MatMulAB(handle, thrust::raw_pointer_cast(transposed_a.data()), y, rhs, d_ones_.size(), d_pixels.size(), 1);
+    //auto y = thrust::raw_pointer_cast(d_generate_y_vector.data());
+    //thrust::device_vector<double> d_rhs(x_pows.size());
+    //auto rhs = thrust::raw_pointer_cast(d_rhs.data());
+    //MatMulAB(handle, thrust::raw_pointer_cast(transposed_a.data()), y, rhs, d_ones_.size(), d_pixels.size(), 1);
 
-    cusolverDnHandle_t solver_handle;
-    CHECK_CUDA_ERRORS(cusolverDnCreate(&solver_handle));
+    //cusolverDnHandle_t solver_handle;
+    //CHECK_CUDA_ERRORS(cusolverDnCreate(&solver_handle));
 
-    d_coefs_.resize(d_ones_.size());
+    //d_coefs_.resize(d_ones_.size());
 
-    auto coefs = thrust::raw_pointer_cast(d_coefs_.data());  // duplicate size matrix from rhs
-    size_t lwork_bytes;
+    //auto coefs = thrust::raw_pointer_cast(d_coefs_.data());  // duplicate size matrix from rhs
+    //size_t lwork_bytes;
 
-    thrust::device_vector<int> d_info(1);
+    //thrust::device_vector<int> d_info(1);
+#if 0
     auto info = thrust::raw_pointer_cast(d_info.data());
     int niters;
     thrust::device_vector<int> d_dipiv(x_pows.size());  // rhs rows
@@ -340,11 +366,33 @@ void CoherenceComputation::LaunchCoherencePreTileCalc(
     //    works without, but this might be luck...
     CHECK_CUDA_ERRORS(cudaMalloc((void**)&d_workspace, lwork_bytes /** sizeof(double)*/));
 
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    cudaEventRecord(start);
     CHECK_CUDA_ERRORS(cusolverDnDDgesv(solver_handle, d_ones_.size(), 1, n, d_ones_.size(), dipiv, rhs, d_ones_.size(),
                                        coefs, d_ones_.size(), d_workspace, lwork_bytes, &niters, info));
+
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    float milliseconds = 0;
+    cudaEventElapsedTime(&milliseconds, start, stop);
+
+
+    thrust::host_vector<double> hv = d_coefs_;
+
+    for(auto e : hv)
+    {
+        printf("%f , ", e);
+    }
+    printf("\n\n\n");
+
+    printf("CUSOLVE = %f\n", milliseconds);
     // todo: make optional logging for extra info available?
     //    std::cout << "niters: " << niters << std::endl;
     //    std::cout << "info: " << info << std::endl;
+
+    std::cout << d_ones_.size() << " D_ONES...\n";
 
     if (d_workspace) {
         CHECK_CUDA_ERRORS(cudaFree(d_workspace));
@@ -358,6 +406,7 @@ void CoherenceComputation::LaunchCoherencePreTileCalc(
     //    if(true){
     //        cudaDeviceReset();
     //    }
+#endif
 }
 
 void CoherenceComputation::LaunchCoherence(const CohTile& tile, ThreadContext& ctx, const CohWindow& coh_window,
@@ -438,12 +487,13 @@ void CoherenceComputation::LaunchCoherence(const CohTile& tile, ThreadContext& c
         thrust::transform(thrust_stream, ctx.d_y_ypows_ones_t.begin(), ctx.d_y_ypows_ones_t.end(),
                           ctx.d_y_ones_ypows_t.begin(), ctx.d_y_ypows_ones_t.begin(), Power());
 
-        ctx.d_y_ones_coefs_t.Resize(d_coefs_.size() * ctx.d_y_ones.size());
+        auto& d_coefs = ctx.vec_of_coeffs_->at(tile.burst_index_);
+        ctx.d_y_ones_coefs_t.Resize(d_coefs.size() * ctx.d_y_ones.size());
 
         // Y SIDE COEFS MULTIPLY Y_SIDE_POWERS
         // make coefs same shape
-        MatMulATransposeB(handle, ctx.d_y_ones.data(), thrust::raw_pointer_cast(d_coefs_.data()),
-                          ctx.d_y_ones_coefs_t.data(), ctx.d_y_ones.size(), 1, d_coefs_.size());
+        MatMulATransposeB(handle, ctx.d_y_ones.data(), d_coefs.data(),
+                          ctx.d_y_ones_coefs_t.data(), ctx.d_y_ones.size(), 1, d_coefs.size());
 
         // multiply y side by coefs
         thrust::transform(thrust_stream, ctx.d_y_ypows_ones_t.begin(), ctx.d_y_ypows_ones_t.end(),

@@ -15,10 +15,14 @@
 
 #include <cmath>
 
+#include <Eigen/Dense>
+#include "alus_log.h"
+
 #include "coherence_computation.h"
 #include "jlinda/jlinda-core/constants.h"
 #include "snap-engine-utilities/engine-utilities/eo/constants.h"
-#include <cusolverDn.h>
+
+#include "cuda_copies.h"
 
 
 namespace alus {
@@ -87,7 +91,7 @@ std::vector<int> CohCuda::GetYPows(int srp_polynomial_degree) {
     return y_pows;
 }
 
-std::vector<double> CohCuda::GenerateY(std::tuple<std::vector<int>, std::vector<int>> lines_pixels,
+std::vector<double> CohCuda::GenerateY(int burst_index, std::tuple<std::vector<int>, std::vector<int>> lines_pixels,
                                        MetaData& meta_master, MetaData& meta_slave) const {
     double master_min_pi_4_div_lam =
         static_cast<double>(-4.0L * jlinda::SNAP_PI * snapengine::eo::constants::LIGHT_SPEED) /
@@ -98,64 +102,176 @@ std::vector<double> CohCuda::GenerateY(std::tuple<std::vector<int>, std::vector<
 
     std::vector<int> lines = std::get<0>(lines_pixels);
     std::vector<int> pixels = std::get<1>(lines_pixels);
-    std::vector<double> y;
-    y.reserve(srp_number_points_);
+    //std::vector<double> y;
+    //y.reserve(srp_number_points_);
+    int nr_coeffs =  (int) (0.5 * (pow(srp_polynomial_degree_ + 1, 2) + srp_polynomial_degree_ + 1));
+
+    LOGI << "NR COEFFS = " << nr_coeffs;
+#if 1
+    Eigen::VectorXd y(srp_number_points_);
+    Eigen::MatrixXd A(nr_coeffs, srp_number_points_);
 
     for (int i = 0; i < srp_number_points_; i++) {
         double master_time_range = meta_master.PixelToTimeRange(pixels.at(static_cast<unsigned long>(i)) + 1);
 
         const auto rows = lines.at(static_cast<unsigned long>(i)) + 1;
         const auto columns = pixels.at(static_cast<unsigned long>(i)) + 1;
-        const auto az_time = meta_master.Line2Ta(rows);
+        const auto az_time = meta_master.Line2Ta(burst_index, rows);
         const auto rg_time = meta_master.PixelToTimeRange(columns);
-        auto ellipsoid_position = meta_master.GetApproxXyzCentreOriginal();
+        auto ellipsoid_position = meta_master.burst_meta.at(burst_index).approx_xyz_centre;
         s1tbx::Point xyz_master =
             meta_master.GetOrbit()->RowsColumns2Xyz(rows, columns, az_time, rg_time, ellipsoid_position);
         const auto line_2_a =
-            meta_slave.Line2Ta(static_cast<int>(0.5 * meta_slave.GetApproxRadarCentreOriginal().GetY()));
+            meta_slave.Line2Ta(burst_index, static_cast<int>(0.5 * meta_master.lines_per_burst));
         s1tbx::Point slave_time_vector = meta_slave.GetOrbit()->Xyz2T(xyz_master, line_2_a);
         double slave_time_range = slave_time_vector.GetX();
-        y.push_back((master_min_pi_4_div_lam * master_time_range) - (slave_min_pi_4_div_lam * slave_time_range));
-    }
+        y(i) =  (master_min_pi_4_div_lam * master_time_range) - (slave_min_pi_4_div_lam * slave_time_range);
 
-    return y;
+    }
+#endif
+    //LOGI << "y = " << y;
+
+    return {};
 }
 
-void CohCuda::CoherencePreTileCalc() {
-    std::tuple<std::vector<int>, std::vector<int>> position_lines_pixels =
-        DistributePoints(srp_number_points_, meta_master_.GetBandXSize(), 0, meta_master_.GetBandYSize(), 0);
-    auto generate_y = GenerateY(position_lines_pixels, meta_master_, meta_slave_);
-    auto x_pows = GetXPows(srp_polynomial_degree_);
-    auto y_pows = GetYPows(srp_polynomial_degree_);
+std::vector<cuda::DeviceBuffer<double>> g_coeffs;
 
-#if 1
+void CohCuda::CoherencePreTileCalc() {
+
+    int nr_of_bursts = meta_master_.burst_meta.size();
+    g_coeffs = std::vector<cuda::DeviceBuffer<double>>(nr_of_bursts);
+    for(int burst_i = 0; burst_i < nr_of_bursts; burst_i++)
     {
-        auto b = std::chrono::steady_clock::now();
-        cublasHandle_t cublas_handle;
-        cublasCreate(&cublas_handle);
-        auto e = std::chrono::steady_clock::now();
-        auto d = std::chrono::duration_cast<std::chrono::milliseconds>(e-b).count();
-        std::cout << __func__ <<  "cublas init = " << d << " ms\n";
+        std::tuple<std::vector<int>, std::vector<int>> position_lines_pixels =
+            DistributePoints(srp_number_points_, meta_master_.GetBandXSize(), 0, meta_master_.GetBandYSize(), 0);
+
+
+        double master_min_pi_4_div_lam =
+            static_cast<double>(-4.0L * jlinda::SNAP_PI * snapengine::eo::constants::LIGHT_SPEED) /
+            meta_master_.GetRadarWaveLength();
+        double slave_min_pi_4_div_lam =
+            static_cast<double>(-4.0L * jlinda::SNAP_PI * snapengine::eo::constants::LIGHT_SPEED) /
+            meta_slave_.GetRadarWaveLength();
+
+        std::vector<int> lines = std::get<0>(position_lines_pixels);
+        std::vector<int> pixels = std::get<1>(position_lines_pixels);
+
+
+        int nr_coeffs =  (int) (0.5 * (pow(srp_polynomial_degree_ + 1, 2) + srp_polynomial_degree_ + 1));
+
+        LOGI << "NR COEFFS = " << nr_coeffs;
+
+        Eigen::MatrixXd y(srp_number_points_, 1);
+        Eigen::MatrixXd A(srp_number_points_, nr_coeffs);
+
+        int minLine = 0;
+        int maxLine = meta_master_.lines_per_burst - 1;
+        int minPixel = 0;
+        int maxPixel = meta_master_.GetBandXSize() - 1;
+
+        for (int i = 0; i < srp_number_points_; i++) {
+            double master_time_range = meta_master_.PixelToTimeRange(pixels.at(static_cast<unsigned long>(i)) + 1);
+
+            const auto rows = lines.at(static_cast<unsigned long>(i)) + 1;
+            const auto columns = pixels.at(static_cast<unsigned long>(i)) + 1;
+            const auto mst_az_time = meta_master_.Line2Ta(burst_i, rows);
+            const auto rg_time = meta_master_.PixelToTimeRange(columns);
+            auto ellipsoid_position = meta_master_.burst_meta.at(burst_i).approx_xyz_centre;
+            s1tbx::Point xyz_master =
+                meta_master_.GetOrbit()->RowsColumns2Xyz(rows, columns, mst_az_time, rg_time, ellipsoid_position);
+            const auto slave_az_time =
+                meta_slave_.central_avg_az_time;
+            s1tbx::Point slave_time_vector = meta_slave_.GetOrbit()->Xyz2T(xyz_master, slave_az_time);
+            double slave_time_range = slave_time_vector.GetX();
+            y(i) = (master_min_pi_4_div_lam * master_time_range) - (slave_min_pi_4_div_lam * slave_time_range);
+
+
+            printf("i = %d MASTER TIME RG = %.16f SLV RG TIME = %.16f\n", i, mst_az_time, slave_az_time);
+
+            //data -= (0.5 * (min + max));
+            //data /= (0.25 * (max - min));
+            //double posL = PolyUtils.normalize2(line, minLine, maxLine);
+            //double posP = PolyUtils.normalize2(pixel, minPixel, maxPixel);
+
+            double line = rows;
+            line -= (0.5 * (minLine + maxLine));
+            line /= (0.25 * (maxLine - minLine));
+
+            double pixel = columns;
+            pixel -= (0.5 * (minPixel + maxPixel));
+            pixel /= (0.25 * (maxPixel - minPixel));
+            double posL = line;
+            double posP = pixel;
+
+            int index = 0;
+
+            for (int j = 0; j <= srp_polynomial_degree_; j++) {
+                for (int k = 0; k <= j; k++) {
+                    A(i, index) =  std::pow(posL, j-k) * std::pow(posP, k);//(FastMath.pow(posL, (double) (j - k)) * FastMath.pow(posP, (double) k)));
+                    index++;
+                }
+            }
+        }
+
+        LOGI << "y  = " << y;
+
+
+        LOGI << "a sz = " << A.rows() << " : " << A.cols();
+        Eigen::MatrixXd At = A.transpose();
+        LOGI << "A transpose";
+        Eigen::MatrixXd N = At * A;
+        LOGI << " At * A done";
+
+        LOGI << "At = ( " << At.rows() << " : " << At.cols() << " )";
+
+        LOGI << "AT = " << At;
+
+        LOGI << "N.rows() = " << N.rows() << " rhs.cols() = " << N.cols();
+        LOGI << "N = " << N;
+        LOGI << "y = " << y.rows() << " : " << y.cols();
+        Eigen::MatrixXd rhs = At * y;
+
+        LOGI << "rhs = ( " << rhs.rows() << " : " << rhs.cols() << ")";
+
+
+        LOGI << "rhs = " << rhs;
+        LOGI << "rhs done";
+
+        LOGI << "N.rows() = " << N.rows() << " rhs.rows = " << rhs.rows();
+        LOGI << "N.cols = " << N.cols() << " rhs.cols = " << rhs.cols();
+
+        Eigen::MatrixXd r = N.colPivHouseholderQr().solve(rhs);
+
+        r.eval();
+
+
+
+
+
+        //DoubleMatrix Atranspose = A.transpose();
+        //DoubleMatrix N = Atranspose.mmul(A);
+        //DoubleMatrix rhs = Atranspose.mmul(y);
+
+        LOGI << "burst = " << burst_i << " y= \n" << y;
+        LOGI << "A = \n" << A;
+
+
+        LOGI << "burst nr = " << burst_i << " polynomial = \n" << r;
+
+        auto& b = g_coeffs[burst_i];
+
+        b.Resize(r.size());
+        cuda::CopyArrayH2D(b.data(), r.data(), r.size());
+
     }
-#endif
-#if 1
-    {
-        auto b = std::chrono::steady_clock::now();
-        cusolverDnHandle_t solver_handle;
-        cusolverDnCreate(&solver_handle);
-        auto e = std::chrono::steady_clock::now();
-        auto d = std::chrono::duration_cast<std::chrono::milliseconds>(e-b).count();
-        std::cout << __func__ <<  "cuSolver init = " << d << " ms\n";
-    }
-#endif
-    auto b = std::chrono::steady_clock::now();
-    coherence_computation_.LaunchCoherencePreTileCalc(x_pows, y_pows, position_lines_pixels, generate_y, band_params_);
-    auto e = std::chrono::steady_clock::now();
-    auto d = std::chrono::duration_cast<std::chrono::milliseconds>(e-b).count();
-    std::cout << "PreTileCalc = " << d << " ms\n";
+
+
+
+
 }
 
 void CohCuda::TileCalc(const CohTile& tile, ThreadContext& buffers) {
+    buffers.vec_of_coeffs_ = &g_coeffs;
     coherence_computation_.LaunchCoherence(tile, buffers, coh_win_, band_params_);
 }
 

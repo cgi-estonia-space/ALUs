@@ -26,6 +26,7 @@ namespace coherence_cuda {
 class CohTilesGenerator : public ITileProvider {
 private:
     int band_x_size_, band_y_size_, tile_x_size_, tile_y_size_, coh_win_rg_, coh_win_az_;
+    int lines_per_burst_;
 
     [[nodiscard]] static int GetNumberOfTilesDim(int band_size_dim, int tile_size_dim);
     [[nodiscard]] static short GetCohWinDim(int coh_win_dim);
@@ -33,7 +34,7 @@ private:
 
 public:
     CohTilesGenerator(int band_x_size, int band_y_size, int tile_x_size, int tile_y_size, int coh_win_rg,
-                      int coh_win_az);
+                      int coh_win_az, int lines_per_burst);
     [[nodiscard]] std::vector<CohTile> GetTiles() const override;
 };
 }  // namespace coherence_cuda

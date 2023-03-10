@@ -52,6 +52,7 @@ void GdalTileReader::ReadTile(const Tile& tile, float* data, int band_nr) {
     }
 
     std::unique_lock lock(*mutex);
+    printf("band = %d %d -> read = (%d %d %d %d)\n", band->GetXSize(), band->GetYSize(),tile.GetXMin(), tile.GetYMin(), tile.GetXSize(), tile.GetYSize());
     CHECK_GDAL_ERROR(band->RasterIO(GF_Read, tile.GetXMin(), tile.GetYMin(), tile.GetXSize(), tile.GetYSize(), data,
                                     tile.GetXSize(), tile.GetYSize(), GDALDataType::GDT_Float32, 0, 0));
 }

@@ -45,7 +45,9 @@ void GdalTileWriter::WriteTile(const Tile& tile, float* tile_data, std::size_t t
     }
     //    todo: remove
     //    std::cout << "tile.GetXMin(), tile.GetYMin(): " << tile.GetXMin() << " " << tile.GetYMin()<<std::endl;
-    //    std::cout << "tile.GetXsize(), tile.GetYsize(): " << tile.GetXSize() << " " << tile.GetYSize()<<std::endl;
+
+    printf("Tile write = (%d %d %d %d)\n", tile.GetXMin(), tile.GetYMin(), tile.GetXSize(), tile.GetYSize());
+        //std::cout << "tile.GetXsize(), tile.GetYsize(): " << tile.GetXSize() << " " << tile.GetYSize()<<std::endl;
     CHECK_GDAL_ERROR(output_dataset_->RasterIO(GF_Write, tile.GetXMin(), tile.GetYMin(), tile.GetXSize(),
                                                tile.GetYSize(), tile_data, tile.GetXSize(), tile.GetYSize(),
                                                GDALDataType::GDT_Float32, GetBandCount(), GetBandMap(), 0, 0, 0));

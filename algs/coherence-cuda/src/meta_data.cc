@@ -13,11 +13,14 @@
  */
 #include "meta_data.h"
 
+#include "alus_log.h"
+
 #include "jlinda/jlinda-core/ellipsoid.h"
 #include "jlinda/jlinda-core/geopoint.h"
 #include "jlinda/jlinda-core/utils/date_utils.h"
 #include "snap-engine-utilities/engine-utilities/datamodel/metadata/abstract_metadata.h"
 #include "snap-engine-utilities/engine-utilities/eo/constants.h"
+
 
 namespace alus {
 namespace coherence_cuda {
@@ -30,10 +33,10 @@ MetaData::MetaData(bool is_near_range_on_left, std::shared_ptr<snapengine::Metad
     band_y_size_ = element->GetAttributeInt(snapengine::AbstractMetadata::NUM_OUTPUT_LINES);
 
     //  todo:not sure if we still need these 4 below
-    band_x_min_ = 0;
-    band_y_min_ = 0;
+    //band_x_min_ = 0;
+    //band_y_min_ = 0;
     band_x_max_ = band_x_size_ - 1;
-    band_y_max_ = band_y_size_ - 1;
+    //band_y_max_ = band_y_size_ - 1;
 
     line_time_interval_ = element->GetAttributeDouble(snapengine::AbstractMetadata::LINE_TIME_INTERVAL);
 
@@ -45,6 +48,20 @@ MetaData::MetaData(bool is_near_range_on_left, std::shared_ptr<snapengine::Metad
     t_range_1_ = element->GetAttributeDouble(alus::snapengine::AbstractMetadata::SLANT_RANGE_TO_FIRST_PIXEL) /
                  snapengine::eo::constants::LIGHT_SPEED;
     rsr_2_x_ = element->GetAttributeDouble(alus::snapengine::AbstractMetadata::RANGE_SAMPLING_RATE) * MEGA * 2;
+
+
+    auto last_line_time = s1tbx::DateUtils::DateTimeToSecOfDay(
+        element->GetAttributeUtc(alus::snapengine::AbstractMetadata::LAST_LINE_TIME)->ToString());
+
+    LOGI << "first line = " << element->GetAttributeUtc(alus::snapengine::AbstractMetadata::FIRST_LINE_TIME)->ToString();
+
+    printf("band y sz = %d\n", band_y_size_);
+    printf("taz = central = %.16f first = %.16f  last = %.16f\n", t_azi_1_ + 0.5*band_y_size_ * line_time_interval_, t_azi_1_, last_line_time);
+    printf("avg = %.16f\n", (t_azi_1_ + last_line_time) / 2);
+
+    central_avg_az_time = (t_azi_1_ + last_line_time) * 0.5;
+
+    //LOGI << "tazi =  " << t_azi_1_;
 
     approx_radar_centre_original_.SetX(
         element->GetAttributeDouble(alus::snapengine::AbstractMetadata::NUM_SAMPLES_PER_LINE) /
@@ -84,6 +101,40 @@ MetaData::MetaData(bool is_near_range_on_left, std::shared_ptr<snapengine::Metad
         range_spacing / element->GetAttributeDouble(alus::snapengine::AbstractMetadata::AZIMUTH_SPACING);
 }
 
+std::vector<BurstData> FillBurstInfo(s1tbx::Sentinel1Utils* su)
+{
+    auto* swath = su->subswath_[0].get();
+    std::vector<BurstData> vec;
+
+    for(int i = 0; i < swath->num_of_bursts_; i++)
+    {
+
+        BurstData bd = {};
+        bd.first_line_time = swath->burst_first_line_time_.at(i);
+        bd.last_line_time = swath->burst_last_line_time_.at(i);
+        auto slr_time_first_pixel = swath->slr_time_to_first_pixel_;
+        auto slr_time_last_pixel = swath->slr_time_to_last_pixel_;
+        const double latUL = su->GetLatitude(bd.first_line_time, slr_time_first_pixel, swath);
+        const double latUR = su->GetLatitude(bd.first_line_time, slr_time_last_pixel, swath);
+        const double latLL = su->GetLatitude(bd.last_line_time, slr_time_first_pixel, swath);
+        const double latLR = su->GetLatitude(bd.last_line_time, slr_time_first_pixel, swath);
+
+        const double lonUL = su->GetLongitude(bd.first_line_time, slr_time_first_pixel, swath);
+        const double lonUR = su->GetLongitude(bd.first_line_time, slr_time_last_pixel, swath);
+        const double lonLL = su->GetLongitude(bd.last_line_time, slr_time_first_pixel, swath);
+        const double lonLR = su->GetLongitude(bd.last_line_time, slr_time_last_pixel, swath);
+
+        jlinda::GeoPoint approx_geo_centre{};
+        approx_geo_centre.lat_ = (latUL + latUR + latLL + latLR)/4.0;
+        approx_geo_centre.lon_ = (lonUL + lonUR + lonLL + lonLR)/4.0;
+        std::vector<double> xyz(3);
+        alus::jlinda::Ellipsoid::Ell2Xyz(approx_geo_centre, xyz);
+        bd.approx_xyz_centre = s1tbx::Point(xyz.at(0), xyz.at(1), xyz.at(2));
+        vec.push_back(bd);
+    }
+    return vec;
+}
+
 // pix2tr
 // https://github.com/senbox-org/s1tbx/blob/master/jlinda/jlinda-core/src/main/java/org/jlinda/core/SLCImage.java
 double MetaData::PixelToTimeRange(double pixel) const {
@@ -94,14 +145,15 @@ double MetaData::PixelToTimeRange(double pixel) const {
     }
 }
 
-s1tbx::Point MetaData::GetApproxXyzCentreOriginal() { return s1tbx::Point(approx_xyz_centre_original_); }
+//s1tbx::Point MetaData::GetApproxXyzCentreOriginal() { return s1tbx::Point(approx_xyz_centre_original_); }
 
 // original input was double...
-double MetaData::Line2Ta(int line) {
-    return this->t_azi_1_ + (line - 1) * line_time_interval_;
-    //        return t_azi_1_ + ((line - 1.0) / PRF);
+double MetaData::Line2Ta(int burst_index, int line) {
+    double first_line_in_days = burst_meta.at(burst_index).first_line_time / 86400;
+    double first_line_time = (first_line_in_days - (int) first_line_in_days) * 86400;
+    return first_line_time + line * line_time_interval_;
 }
 
-s1tbx::Point MetaData::GetApproxRadarCentreOriginal() { return approx_radar_centre_original_; }
+//s1tbx::Point MetaData::GetApproxRadarCentreOriginal() { return approx_radar_centre_original_; }
 }  // namespace coherence-cuda
 }  // namespace alus

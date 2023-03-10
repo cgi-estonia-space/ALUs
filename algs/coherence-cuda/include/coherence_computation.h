@@ -69,6 +69,8 @@ struct ThreadContext {
     // cuda handles
     cudaStream_t stream = nullptr;
     cublasHandle_t handle = nullptr;
+
+    std::vector<cuda::DeviceBuffer<double>>* vec_of_coeffs_;
 };
 
 class CoherenceComputation {
@@ -76,7 +78,7 @@ public:
     //  flat earth phase substraction
     thrust::device_vector<double> d_x_pows_;
     thrust::device_vector<double> d_y_pows_;
-    thrust::device_vector<double> d_coefs_;
+    //thrust::device_vector<double> d_coefs_;
     thrust::device_vector<double> d_ones_;
     size_t d_ones_size_ = 0;
     bool subtract_flat_earth_ = false;

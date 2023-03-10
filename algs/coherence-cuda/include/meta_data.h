@@ -19,26 +19,43 @@
 #include "point.h"
 #include "s1tbx-commons/orbit.h"
 #include "snap-core/core/datamodel/metadata_element.h"
+#include "s1tbx-commons/sentinel1_utils.h"
 
 namespace alus {
 namespace coherence_cuda {
 
+
+struct BurstData
+{
+    double first_line_time;
+    double last_line_time;
+    s1tbx::Point approx_xyz_centre;
+};
+
+
+std::vector<BurstData> FillBurstInfo(s1tbx::Sentinel1Utils* su);
+
 class MetaData {
-private:
+
+public:
+    std::vector<BurstData> burst_meta;
+    int lines_per_burst;
+public:
     s1tbx::Point approx_xyz_centre_original_;
     s1tbx::Point approx_radar_centre_original_;
     int band_x_size_;
-    int band_x_min_;
+    //int band_x_min_;
     int band_x_max_;
     int band_y_size_;
-    int band_y_min_;
-    int band_y_max_;
+    //int band_y_min_;
+    //int band_y_max_;
     double t_range_1_;
     double rsr_2_x_;
     double t_azi_1_;
     double line_time_interval_;
     double radar_wavelength_;
     double ground_range_azimuth_spacing_ratio_;
+    double central_avg_az_time;
     bool near_range_on_left_;
     std::shared_ptr<s1tbx::Orbit> orbit_;
 
@@ -47,9 +64,9 @@ public:
              double avg_incidence_angle);
     // Convert pixel number to range time (1 is first pixel)
     [[nodiscard]] double PixelToTimeRange(double pixel) const;
-    double Line2Ta(int line);
-    [[nodiscard]] s1tbx::Point GetApproxXyzCentreOriginal();
-    [[nodiscard]] s1tbx::Point GetApproxRadarCentreOriginal();
+    double Line2Ta(int burst_index, int line);
+    //[[nodiscard]] s1tbx::Point GetApproxXyzCentreOriginal();
+    //[[nodiscard]] s1tbx::Point GetApproxRadarCentreOriginal();
     [[nodiscard]] std::shared_ptr<s1tbx::Orbit> GetOrbit() { return orbit_; }
     [[nodiscard]] int GetBandXSize() const { return band_x_size_; }
     [[nodiscard]] int GetBandYSize() const { return band_y_size_; }

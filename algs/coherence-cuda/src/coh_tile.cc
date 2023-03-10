@@ -17,12 +17,14 @@ namespace alus {
 namespace coherence_cuda {
 
 CohTile::CohTile(int tile_x, int tile_y, const Tile& tile_in, const Tile& tile_out, int y_min_pad, int y_max_pad,
-                 int x_min_pad, int x_max_pad)
+                 int x_min_pad, int x_max_pad, int burst_index)
     : IoTile(tile_x, tile_y, tile_in, tile_out),
       y_min_pad_{y_min_pad},
       y_max_pad_{y_max_pad},
       x_min_pad_{x_min_pad},
-      x_max_pad_{x_max_pad} {}
+      x_max_pad_{x_max_pad},
+      burst_index_{burst_index}
+{}
 
 int CohTile::GetYMinPad() const { return y_min_pad_; }
 int CohTile::GetYMaxPad() const { return y_max_pad_; }

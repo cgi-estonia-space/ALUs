@@ -16,6 +16,8 @@
 #include "io_tile.h"
 #include "tile.h"
 
+#include <string>
+
 namespace alus {
 namespace coherence_cuda {
 
@@ -23,11 +25,13 @@ class CohTile : public IoTile {
 private:
     // padding is added for the edge tiles, and also helps to calculate overlapping data regions
     int y_min_pad_{}, y_max_pad_{}, x_min_pad_{}, x_max_pad_{};
+public:
+    int burst_index_;
 
 public:
     CohTile() = default;
     CohTile(int tile_x, int tile_y, const Tile& tile_in, const Tile& tile_out, int y_min_pad, int y_max_pad,
-            int x_min_pad, int x_max_pad);
+            int x_min_pad, int x_max_pad, int burst_index);
     [[nodiscard]] int GetYMinPad() const;
     [[nodiscard]] int GetYMaxPad() const;
     [[nodiscard]] int GetXMinPad() const;
@@ -39,6 +43,16 @@ public:
     [[nodiscard]] int GetCalcYMin() const;
     [[nodiscard]] int GetCalcYMax() const;
     ~CohTile() = default;
+
+    std::string str()
+    {
+        char buf[1000];
+        sprintf(buf, "tile in = %d %d %d %d, n br = %d\n", tile_in_.GetXMin(), tile_in_.GetXMax(), tile_in_.GetYMin(), tile_in_.GetYMax(), burst_index_);
+
+        char buf2[1000];
+        sprintf(buf2, "tile out = %d %d %d %d\n", tile_out_.GetXMin(), tile_out_.GetXMax(), tile_out_.GetYMin(), tile_out_.GetYMax());
+        return std::string(buf) + buf2;
+    }
 };
 }  // namespace coherence-cuda
 }  // namespace alus
