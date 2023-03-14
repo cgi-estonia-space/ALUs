@@ -20,6 +20,7 @@
 #include "delaunay_triangle2D.h"
 #include "shapes.h"
 #include "snap_triangle.h"
+#include <memory>
 
 namespace external {
 namespace delaunay {
@@ -35,8 +36,10 @@ private:
      */
     alus::PointDouble HORIZON;
     SnapTriangle* current_external_triangle_;
-    std::vector<SnapTriangle*> triangles;
-    std::unordered_set<SnapTriangle*> free_set_;
+    std::vector<SnapTriangle*> triangles_;
+
+    std::unique_ptr<SnapTriangle[]> triangle_memory_;
+    size_t alloc_n_;
 
     void InitTriangulation(alus::PointDouble c0, alus::PointDouble c1);
     void AddExternalVertex(alus::PointDouble point);
@@ -52,9 +55,8 @@ private:
 
 public:
     SnapDelaunayTriangulator();
-    ~SnapDelaunayTriangulator();
     void Triangulate(alus::PointDouble* p, int size);
-    size_t TrianglesSize() { return triangles.size(); }
+    size_t TrianglesSize() { return triangles_.size(); }
     std::vector<alus::delaunay::DelaunayTriangle2D> Get2dTriangles();
 };
 

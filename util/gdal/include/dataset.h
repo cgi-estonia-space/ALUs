@@ -70,6 +70,7 @@ public:
         this->gdal_data_type_ = other.gdal_data_type_;
         this->reading_area_ = other.reading_area_;
         this->data_buffer_ = std::move(other.data_buffer_);
+        this->file_path_ = std::move(other.file_path_);
         return *this;
     }
 
@@ -113,7 +114,7 @@ public:
     size_t GetBufferElemCount() override { return data_buffer_.size(); };
     BufferType* GetDeviceDataBuffer() override;
     void ReadRectangle(Rectangle rectangle, int band_nr, BufferType* data_buffer) override;
-    [[nodiscard]] std::string_view GetFilePath();
+    [[nodiscard]] std::string_view GetFilePath() const;
     void ReadRectangle(Rectangle rectangle, std::map<int, BufferType*>& bands) override;
     void TryToCacheImage() override;
     void SetReadingArea(Rectangle new_area) override { reading_area_ = new_area; };

@@ -6,6 +6,7 @@ list(APPEND RESAMPLE_SOURCES
         src/nppi_resample.cu
         src/output_factory.cc
         src/projection.cc
+        src/row_resample.cu
         src/sentinel2_dataset.cc
         src/sentinel2_tools.cc
         src/tyler_the_creator.cc)

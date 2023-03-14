@@ -162,6 +162,7 @@ void Arguments::ConstructResampleMethodList() {
     resample_arg_to_method_map_.try_emplace(std::string(METHOD_STRINGS.at(7)), Method::LANCZOS);
     resample_arg_to_method_map_.try_emplace(std::string(METHOD_STRINGS.at(8)), Method::LANCZOS3);
     resample_arg_to_method_map_.try_emplace(std::string(METHOD_STRINGS.at(9)), Method::SMOOTH_EDGE);
+    resample_arg_to_method_map_.try_emplace(std::string(METHOD_STRINGS.at(10)), Method::ROW_NEIGHBOUR);
     // NOLINTEND
 }
 

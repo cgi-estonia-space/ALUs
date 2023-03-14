@@ -30,12 +30,13 @@ enum class Method {
     SUPER,
     LANCZOS,
     LANCZOS3,
-    SMOOTH_EDGE
+    SMOOTH_EDGE,
+    ROW_NEIGHBOUR
 };
 
-constexpr std::array<std::string_view, 10> METHOD_STRINGS{
+constexpr std::array<std::string_view, 11> METHOD_STRINGS{
     "nearest-neighbour", "linear", "cubic",   "cubic2p-bspline", "cubic2p-catmullrom",
-    "cubic2p-c05c03",    "super",  "lanczos", "lanczos3",        "smooth-edge",
+    "cubic2p-c05c03",    "super",  "lanczos", "lanczos3", "smooth-edge", "row-neighbour"
 };
 
 }  // namespace alus::resample

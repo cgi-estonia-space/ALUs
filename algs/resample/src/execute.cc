@@ -29,6 +29,7 @@
 #include "nppi_resample.h"
 #include "output_factory.h"
 #include "projection.h"
+#include "row_resample.h"
 #include "tyler_the_creator.h"
 #include "type_parameter.h"
 
@@ -72,15 +73,34 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t gpu_mem_percentage) {
 
             const auto gdal_data_type = ds_register.GetDataType(band_index);
             const auto data_type_parameters = CreateTypeParametersFrom(gdal_data_type);
-            NppiResampleArguments args{raster_data.get(),
-                                       input_buffer_bytes_size,
-                                       band_dim,
-                                       output_buffer.get(),
-                                       resample_output_buffer_size_bytes,
-                                       resample_dim_,
-                                       params_.resample_method,
-                                       data_type_parameters};
-            NppiResample(args);
+            if (params_.resample_method != Method::ROW_NEIGHBOUR) {
+                NppiResampleArguments args{raster_data.get(),
+                                           input_buffer_bytes_size,
+                                           band_dim,
+                                           output_buffer.get(),
+                                           resample_output_buffer_size_bytes,
+                                           resample_dim_,
+                                           params_.resample_method,
+                                           data_type_parameters};
+                NppiResample(args);
+            } else {
+                if (resample_dim_.rowsY != band_dim.rowsY) {
+                    THROW_ALGORITHM_EXCEPTION(
+                        APP_NAME,
+                        "For row resampling the input and output dimensions must match for row count(height).");
+                }
+
+                if (resample_dim_.columnsX < band_dim.columnsX) {
+                    THROW_ALGORITHM_EXCEPTION(APP_NAME, "Row resampling does not support under sampling.");
+                }
+
+                if (gdal_data_type != GDALDataType::GDT_Float32) {
+                    THROW_ALGORITHM_EXCEPTION(APP_NAME, "Row resampling supports 32 bit floats only.");
+                }
+
+                rowresample::ProcessAndTransferHost(reinterpret_cast<float*>(raster_data.get()), band_dim,
+                                                    reinterpret_cast<float*>(output_buffer.get()), resample_dim_);
+            }
 
             alus::GeoTransformParameters resampled_gt = ds_register.GetGeoTransform(band_index);
             resampled_gt.pixelSizeLon =

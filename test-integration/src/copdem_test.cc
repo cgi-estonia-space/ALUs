@@ -30,12 +30,13 @@ using ::testing::Eq;
 using ::testing::Ne;
 using ::testing::SizeIs;
 
-TEST(CopDemCog30m, LoadsTilesCorrectly) {
+TEST(CopDemCog30m, LoadsTilesCorrectlyWithResampling) {
     const std::vector<std::string> input_files{"./goods/Copernicus_DSM_COG_10_N49_00_E004_00_DEM.tif",
                                                "./goods/Copernicus_DSM_COG_10_N51_00_E006_00_DEM.tif"};
 
     auto manager = alus::dem::CopDemCog30m(std::move(input_files));
     manager.LoadTiles();
+    manager.TransferToDevice();
     const auto& dem_properties = manager.GetPropertiesValue();
     ASSERT_THAT(dem_properties, SizeIs(2));
 
@@ -53,13 +54,13 @@ TEST(CopDemCog30m, LoadsTilesCorrectly) {
     n49_e004_prop.tile_lon_extent = 4.9998611;
 
     alus::dem::Property n51_e006_prop{};
-    n51_e006_prop.tile_pixel_count_inverted_x = 1 / 2400.0;
-    n51_e006_prop.tile_pixel_count_inverted_y = 1 / 3600.0;
-    n51_e006_prop.tile_pixel_count_x = 2400;
-    n51_e006_prop.tile_pixel_count_y = 3600;
-    n51_e006_prop.grid_total_width_pixels = 2400 * 360;
-    n51_e006_prop.tile_pixel_size_deg_x = 0.000416666666667;
-    n51_e006_prop.tile_pixel_size_deg_inverted_x = 2400;
+    n51_e006_prop.tile_pixel_count_inverted_x = n49_e004_prop.tile_pixel_count_inverted_x;
+    n51_e006_prop.tile_pixel_count_inverted_y = n49_e004_prop.tile_pixel_count_inverted_y;
+    n51_e006_prop.tile_pixel_count_x = n49_e004_prop.tile_pixel_count_x;
+    n51_e006_prop.tile_pixel_count_y = n49_e004_prop.tile_pixel_count_y;
+    n51_e006_prop.grid_total_width_pixels = n49_e004_prop.grid_total_width_pixels;
+    n51_e006_prop.tile_pixel_size_deg_x = n49_e004_prop.tile_pixel_size_deg_x;
+    n51_e006_prop.tile_pixel_size_deg_inverted_x = n49_e004_prop.tile_pixel_size_deg_inverted_x;
     n51_e006_prop.tile_lat_origin = 52.000138888888891;
     n51_e006_prop.tile_lon_origin = 5.999791666666667;
     n51_e006_prop.tile_lat_extent = 51.0001389;
@@ -90,17 +91,16 @@ TEST(CopDemCog30m, LoadsTilesCorrectly) {
         ASSERT_THAT(p.tile_lon_extent, DoubleNear(ep.tile_lon_extent, 1e-7));
     }
 
-    manager.TransferToDevice();
     const auto count = manager.GetTileCount();
     ASSERT_THAT(count, Eq(2));
     ASSERT_THAT(manager.GetProperties(), Ne(nullptr));
     ASSERT_THAT(manager.GetBuffers(), Ne(nullptr));
 
-    alus::PointerArray dem_buffers{manager.GetBuffers(), manager.GetTileCount()};
+    alus::PointerArray dem_buffers{const_cast<alus::PointerHolder*>(manager.GetBuffers()), manager.GetTileCount()};
     double result = GetElevationWrapper(4.0008, 49.9999, dem_buffers, manager.GetProperties());
     ASSERT_THAT(190.081, DoubleNear(result, 1e-3));
     result = GetElevationWrapper(6.4808, 51.0772, dem_buffers, manager.GetProperties());
-    ASSERT_THAT(-76.41619, DoubleNear(result, 0.3));
+    ASSERT_THAT(-76.1764, DoubleNear(result, 1e-3));
 }
 
 }  // namespace

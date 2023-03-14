@@ -12,24 +12,23 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 
-#include "cuda_util.h"
+#pragma once
 
-namespace alus {  // NOLINT TODO: concatenate namespace and remove nolint after migrating to cuda 11+
-namespace cuda {
+#include <cstddef>
 
-// DO NOT USE math::ceil here. it was removed because of its inaccuracy.
-int GetGridDim(int blockDim, int dataDim) {
-    double temp = dataDim / blockDim;  // NOLINT
-    int temp_int;
-    if (temp < 1) {
-        return 1;
-    }
-    temp_int = static_cast<int>(temp);
-    if (temp_int * blockDim < dataDim) {
-        temp_int++;
-    }
-    return temp_int;
+#include "raster_properties.h"
+
+namespace alus::rowresample {
+
+inline double GetRatio(size_t in_line_len, size_t out_line_len) {
+    return static_cast<double>(in_line_len) / static_cast<double>(out_line_len);
 }
 
-}  // namespace cuda
-}  // namespace alus
+void FillLineFrom(float* in_line, size_t in_size, float* out_line, size_t out_size);
+
+void ProcessAndTransferHost(const float* input, RasterDimension input_dimensions, float* output,
+                            RasterDimension output_dimension);
+
+void Process(const float* input, RasterDimension input_dimension, float* output, RasterDimension output_dimension);
+
+}  // namespace alus::rowresample

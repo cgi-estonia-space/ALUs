@@ -24,7 +24,6 @@
 #include "backgeocoding_constants.h"
 #include "bilinear_computation.h"
 #include "burst_offset_computation.h"
-#include "copdem_cog_30m_calc.h"
 #include "cuda_util.h"
 #include "delaunay_triangulator.h"
 #include "deramp_demod_computation.h"
@@ -217,22 +216,8 @@ bool Backgeocoding::ComputeSlavePixPos(int m_burst_index, int s_burst_index, Rec
     } else if (dem_type_ == dem::Type::COPDEM_COG30m) {
         dem_grid_lat_max = dem_properties_.front().grid_max_lat;
         dem_grid_lon_max = dem_properties_.front().grid_max_lon;
-        auto get_dem_property = [&](double lat) -> const dem::Property* {
-            const auto target_tile_width = dem::copdemcog30m::GetTileWidth(lat);
-            for (size_t i = 0; i < dem_properties_.size(); i++) {
-                if (target_tile_width == dem_properties_.at(i).tile_pixel_count_x) {
-                    return dem_properties_.data() + i;
-                }
-            };
-            return nullptr;
-        };
-        const auto lat_max_dem_prop = get_dem_property(lat_max);
-        const auto lat_min_dem_prop = get_dem_property(lat_min);
-        if (lat_max_dem_prop == nullptr || lat_min_dem_prop == nullptr || lat_max_dem_prop != lat_min_dem_prop) {
-            return false;
-        }
-        pixel_degree_res_inverted_x = lat_max_dem_prop->tile_pixel_size_deg_inverted_x;
-        pixel_degree_res_inverted_y = lat_max_dem_prop->tile_pixel_size_deg_inverted_y;
+        pixel_degree_res_inverted_x = dem_properties_.front().tile_pixel_size_deg_inverted_x;
+        pixel_degree_res_inverted_y = dem_properties_.front().tile_pixel_size_deg_inverted_y;
     } else {
         throw std::invalid_argument("Unsupported DEM type for " + std::string(__FUNCTION__) + " supplied");
     }

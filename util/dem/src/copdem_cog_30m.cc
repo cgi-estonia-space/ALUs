@@ -18,6 +18,7 @@
 #include <array>
 #include <chrono>
 #include <cmath>
+#include <filesystem>
 #include <future>
 #include <stdexcept>
 
@@ -26,6 +27,9 @@
 #include "alus_log.h"
 #include "cuda_util.h"
 #include "dem_egm96.h"
+#include "resample_method.h"
+#include "row_resample.h"
+#include "type_parameter.h"
 
 namespace {
 constexpr size_t RASTER_DEG_RES_X{1};
@@ -42,6 +46,12 @@ constexpr size_t TIMEOUT_SEC_PER_TILE{10};
 int DoubleForCompare(double value, size_t digits) { return value * std::pow(10, digits); }
 
 }  // namespace
+
+namespace alus::resample {
+// Forward declaration from nppi_resample.cu
+int DoResampling(const void* input, RasterDimension input_dimension, void* output, RasterDimension output_dimension,
+                 TypeParameters type_parameter, Method method);
+}  // namespace alus::resample
 
 namespace alus::dem {
 
@@ -120,54 +130,111 @@ void CopDemCog30m::LoadTilesImpl() {
 }
 
 void CopDemCog30m::TransferToDeviceImpl() {
-    std::vector<PointerHolder> temp_tiles;
     const auto nr_of_tiles = datasets_.size();
+    if (nr_of_tiles != host_dem_properties_.size()) {
+        throw std::logic_error(
+            "An implementation error has occured, where DEM formating datasets do not equal the saved properties "
+            "information.");
+    }
+
+    std::vector<PointerHolder> temp_tiles;
     temp_tiles.resize(nr_of_tiles);
     device_formated_buffers_.resize(nr_of_tiles);
-    constexpr dim3 device_block_size(20, 20);
-    for (size_t i = 0; i < nr_of_tiles; i++) {
-        const auto& tile_prop = host_dem_properties_.at(i);
-        const auto x_size = tile_prop.tile_pixel_count_x;
-        const auto y_size = tile_prop.tile_pixel_count_y;
-        const auto dem_size_bytes = x_size * y_size * sizeof(float);
-        CHECK_CUDA_ERR(cudaMalloc((void**)&device_formated_buffers_.at(i), dem_size_bytes));
 
-        if (egm96_) {
-            float* device_dem_values;
+    constexpr size_t NO_RESAMPLING_REQUIRED{0};
+    size_t resample_width{NO_RESAMPLING_REQUIRED};
+    Property resample_property{};
+    if (resample_to_identical_width && nr_of_tiles != 1) {
+        size_t min_width{ALLOWED_WIDTHS.front()};
+        size_t max_width{ALLOWED_WIDTHS.back()};
+        for (auto&& dem_prop : host_dem_properties_) {
+            min_width = std::min(static_cast<size_t>(dem_prop.tile_pixel_count_x), min_width);
+            max_width = std::max(static_cast<size_t>(dem_prop.tile_pixel_count_x), max_width);
+        }
+        if (max_width < min_width) {
+            throw std::logic_error("Determing resampling size where max is smaller than min.");
+        }
+        if (min_width != max_width) {
+            resample_width = max_width;
+            // Stash the representative tile info. To be used to update the resample tile properties.
+            for (auto&& dem_prop : host_dem_properties_) {
+                if (static_cast<size_t>(dem_prop.tile_pixel_count_x) == resample_width) {
+                    resample_property = dem_prop;
+                    break;
+                }
+            }
+        }
+    }
+
+    constexpr dim3 device_block_size(16, 16);
+    for (size_t i = 0; i < nr_of_tiles; i++) {
+        auto& tile_prop = host_dem_properties_.at(i);
+        auto current_tile_width = static_cast<size_t>(tile_prop.tile_pixel_count_x);
+        const auto current_tile_height = tile_prop.tile_pixel_count_y;
+        auto dem_size_bytes = current_tile_width * current_tile_height * sizeof(float);
+
+        float* device_dem_values{};
+        if (resample_to_identical_width && resample_width != NO_RESAMPLING_REQUIRED &&
+            current_tile_width != resample_width) {
+            const auto resampled_size_bytes = resample_width * current_tile_height * sizeof(float);
+            float* initial_tile_values{};
+            CHECK_CUDA_ERR(cudaMalloc((void**)&initial_tile_values, dem_size_bytes));
+            CHECK_CUDA_ERR(cudaMemcpy(initial_tile_values, datasets_.at(i).GetHostDataBuffer().data(), dem_size_bytes,
+                                      cudaMemcpyHostToDevice));
+            CHECK_CUDA_ERR(cudaMalloc((void**)&device_dem_values, resampled_size_bytes));
+            LOGI << "Resampling " << std::filesystem::path(datasets_.at(i).GetFilePath()).filename().string()
+                 << " to match width " << resample_width;
+            rowresample::Process(
+                initial_tile_values, {static_cast<int>(current_tile_width), static_cast<int>(current_tile_height)},
+                device_dem_values, {static_cast<int>(resample_width), static_cast<int>(current_tile_height)});
+            CHECK_CUDA_ERR(cudaFree(initial_tile_values));
+
+            const auto tile_prop_stash = tile_prop;
+            tile_prop = resample_property;
+            tile_prop.tile_lat_origin = tile_prop_stash.tile_lat_origin;
+            tile_prop.tile_lon_origin = tile_prop_stash.tile_lon_origin;
+            tile_prop.tile_lat_extent = tile_prop_stash.tile_lat_extent;
+            tile_prop.tile_lon_extent = tile_prop_stash.tile_lon_extent;
+            current_tile_width = resample_width;
+            dem_size_bytes = resampled_size_bytes;
+        } else {
             CHECK_CUDA_ERR(cudaMalloc((void**)&device_dem_values, dem_size_bytes));
             CHECK_CUDA_ERR(cudaMemcpy(device_dem_values, datasets_.at(i).GetHostDataBuffer().data(), dem_size_bytes,
                                       cudaMemcpyHostToDevice));
-            double gt[transform::GEOTRANSFORM_ARRAY_LENGTH];
-            datasets_.at(i).GetGdalDataset()->GetGeoTransform(gt);
+        }
+
+        CHECK_CUDA_ERR(cudaMalloc((void**)&device_formated_buffers_.at(i), dem_size_bytes));
+        if (egm96_) {
             EgmFormatProperties prop{};
-            prop.tile_size_x = x_size;
-            prop.tile_size_y = y_size;
-            prop.m00 = gt[transform::TRANSFORM_PIXEL_X_SIZE_INDEX];
-            prop.m10 = gt[transform::TRANSFORM_ROTATION_1];
-            prop.m01 = gt[transform::TRANSFORM_ROTATION_2];
-            prop.m11 = gt[transform::TRANSFORM_PIXEL_Y_SIZE_INDEX];
-            prop.m02 = gt[transform::TRANSFORM_LON_ORIGIN_INDEX];
-            prop.m12 = gt[transform::TRANSFORM_LAT_ORIGIN_INDEX];
+            prop.tile_size_x = current_tile_width;
+            prop.tile_size_y = current_tile_height;
+            prop.m00 = tile_prop.tile_pixel_size_deg_x;
+            prop.m10 = 0;
+            prop.m01 = 0;
+            prop.m11 = -1 * tile_prop.tile_pixel_size_deg_y;
+            prop.m02 = tile_prop.tile_lon_origin;
+            prop.m12 = tile_prop.tile_lat_origin;
             prop.no_data_value = tile_prop.no_data_value;
             prop.device_egm_array = egm96_->GetDeviceValues();
-            const dim3 grid_size(cuda::GetGridDim(device_block_size.x, x_size),
-                                 cuda::GetGridDim(device_block_size.y, y_size));
+            const dim3 grid_size(cuda::GetGridDim(device_block_size.x, current_tile_width),
+                                 cuda::GetGridDim(device_block_size.y, current_tile_height));
             ConditionWithEgm96(grid_size, device_block_size, device_formated_buffers_.at(i), device_dem_values, prop);
-            CHECK_CUDA_ERR(cudaFree(device_dem_values));
         } else {
-            CHECK_CUDA_ERR(cudaMemcpy(device_formated_buffers_.at(i), datasets_.at(i).GetHostDataBuffer().data(),
-                                      dem_size_bytes, cudaMemcpyHostToDevice));
+            CHECK_CUDA_ERR(cudaMemcpy(device_formated_buffers_.at(i), device_dem_values, dem_size_bytes,
+                                      cudaMemcpyDeviceToDevice));
         }
+
+        CHECK_CUDA_ERR(cudaFree(device_dem_values));
 
         // When converting to integer C++ rules cast down positive float numbers and towards zero for negative
         // float numbers. Since values are slightly below whole, for example 34.999567 a whole number 35 is desired
         // for index calculations. Without std::round() first the result would be 34.
-        const auto lon = static_cast<int>(std::round(host_dem_properties_.at(i).tile_lon_origin));
-        const auto lat = static_cast<int>(std::round(host_dem_properties_.at(i).tile_lat_origin - 1.0));
+        const auto lon = static_cast<int>(std::round(tile_prop.tile_lon_origin));
+        const auto lat = static_cast<int>(std::round(tile_prop.tile_lat_origin - 1.0));
         // ID according to the bottom left point. E.g W01 + S90 = 0 or E179 + N89 = 359 * 1000 + 179.
         temp_tiles.at(i).id = ComputeId(lon, lat);
-        temp_tiles.at(i).x = x_size;
-        temp_tiles.at(i).y = y_size;
+        temp_tiles.at(i).x = current_tile_width;
+        temp_tiles.at(i).y = current_tile_height;
         temp_tiles.at(i).z = 1;
         temp_tiles.at(i).pointer = device_formated_buffers_.at(i);
         LOGI << "COPDEM COG 30m tile ID " << temp_tiles.at(i).id << " loaded to GPU";
@@ -182,6 +249,8 @@ void CopDemCog30m::TransferToDeviceImpl() {
         CHECK_CUDA_ERR(cudaMemcpy(device_dem_properties_ + i, host_dem_properties_.data() + i, sizeof(dem::Property),
                                   cudaMemcpyHostToDevice));
     }
+
+    datasets_.clear();
 }
 
 void CopDemCog30m::LoadTiles() {
@@ -189,7 +258,7 @@ void CopDemCog30m::LoadTiles() {
         throw std::runtime_error("Tile loading have already been commenced. Invalid state for load");
     }
 
-    load_tiles_future_ = std::async([this]() { this->LoadTilesImpl(); });
+    load_tiles_future_ = std::async(std::launch::async, [this]() { this->LoadTilesImpl(); });
 }
 
 size_t CopDemCog30m::GetTileCount() {
@@ -211,7 +280,7 @@ const Property* CopDemCog30m::GetProperties() {
 }
 
 const std::vector<Property>& CopDemCog30m::GetPropertiesValue() {
-    WaitLoadTilesAndCheckErrors();
+    WaitTransferDeviceAndCheckErrors();
 
     return host_dem_properties_;
 }
@@ -223,7 +292,7 @@ void CopDemCog30m::TransferToDevice() {
         throw std::runtime_error("A call to 'LoadTiles()' is needed first in order to transfer DEM files");
     }
 
-    transfer_to_device_future_ = std::async([this]() { this->TransferToDeviceImpl(); });
+    transfer_to_device_future_ = std::async(std::launch::async, [this]() { this->TransferToDeviceImpl(); });
 }
 
 void CopDemCog30m::ReleaseFromDevice() noexcept {
@@ -274,7 +343,7 @@ void CopDemCog30m::WaitLoadTilesAndCheckErrors() {
 }
 
 void CopDemCog30m::WaitTransferDeviceAndCheckErrors() {
-    if (GetPropertiesValue().size() == 0) {
+    if (host_dem_properties_.size() == 0) {
         throw std::runtime_error("A call to 'LoadTiles()' is required first");
     }
 

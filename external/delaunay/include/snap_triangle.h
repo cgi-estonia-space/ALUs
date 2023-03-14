@@ -39,6 +39,8 @@ class SnapTriangle{
         return i==0?BAO:i==1?CBO:ACO;
     }
 
+    SnapTriangle() = default;
+
     SnapTriangle(alus::PointDouble a, alus::PointDouble b, alus::PointDouble c){
         A = a;
         B = b;

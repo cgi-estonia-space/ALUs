@@ -1,4 +1,5 @@
 list(APPEND RESAMPLE_UNIT_TEST_SOURCES
+        ${CMAKE_CURRENT_LIST_DIR}/row_resample.cc
         ${CMAKE_CURRENT_LIST_DIR}/sentinel2_tools.cc
         ${CMAKE_CURRENT_LIST_DIR}/tyler_the_creator.cc
         )

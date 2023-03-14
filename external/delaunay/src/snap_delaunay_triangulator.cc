@@ -14,6 +14,8 @@
 
 #include "../include/snap_delaunay_triangulator.h"
 
+#include <alus_log.h>
+
 #include <ctgmath>
 
 
@@ -26,32 +28,20 @@ SnapDelaunayTriangulator::SnapDelaunayTriangulator() {
     this->HORIZON.index = -1;
 }
 
-SnapDelaunayTriangulator::~SnapDelaunayTriangulator(){
-    size_t size = this->triangles.size();
-    SnapTriangle *triangle;
-
-    for(size_t i =0; i < size; i++) {
-        triangle = this->triangles.at(i);
-        auto it = free_set_.find(triangle);
-        if(it != free_set_.end())
-        {
-            free_set_.erase(it);
-        }
-        delete triangle;
-    }
-    this->triangles.clear();
-
-    for(auto* e : free_set_) {
-        delete e;
-    }
-}
-
 /**
  * Points coming in are already unique, sorted and all valid.
  * @param p
  * @param size
  */
 void SnapDelaunayTriangulator::Triangulate(alus::PointDouble *p, int size) {
+
+    size_t memory_size = size* 2 + 3;
+    triangles_.reserve(memory_size);
+
+    // preallocate array to avoid having to call new for each triangle(linear allocator)
+    // unique_ptr via new to avoid zero init of memory
+    triangle_memory_ = std::unique_ptr<SnapTriangle[]>(new SnapTriangle[memory_size]);
+    alloc_n_ = 0;
 
     if(size < 3){
         throw std::runtime_error("Triangulation needs atleast 3 points to work");
@@ -65,11 +55,16 @@ void SnapDelaunayTriangulator::Triangulate(alus::PointDouble *p, int size) {
 }
 
 void SnapDelaunayTriangulator::InitTriangulation(alus::PointDouble c0, alus::PointDouble c1){
-    SnapTriangle *t0 = new SnapTriangle(c0, c1, HORIZON); //TODO: should those be class members? You know, for deletion.
-    SnapTriangle *t1 = new SnapTriangle(c1, c0, HORIZON);
 
-    free_set_.insert(t0);
-    free_set_.insert(t1);
+    //SnapTriangle *t0 = new SnapTriangle(c0, c1, HORIZON); //TODO: should those be class members? You know, for deletion.
+    //SnapTriangle *t1 = new SnapTriangle(c1, c0, HORIZON);
+
+    // direct new replacement
+    SnapTriangle* t0 = &triangle_memory_[alloc_n_++];
+    *t0 = SnapTriangle(c0, c1, HORIZON);
+    SnapTriangle* t1 = &triangle_memory_[alloc_n_++];
+    *t1 = SnapTriangle(c1, c0, HORIZON);
+
 
     t0->SetNeighbours(t1, t1, t1);
     t1->SetNeighbours(t0, t0, t0);
@@ -83,7 +78,7 @@ void SnapDelaunayTriangulator::AddExternalVertex(alus::PointDouble point){
     for (size_t i=0; i<newTriangles.size(); i++) {
         temp_triangle = newTriangles.at(i);
         if (temp_triangle->C.index != HORIZON.index) Delaunay(temp_triangle, 0);
-        triangles.push_back(temp_triangle);
+        triangles_.push_back(temp_triangle);
     }
     //if (debugLevel>=SHORT) {
     //    for (Triangle t : newTriangles) debug(1,"add triangle " + t);
@@ -130,11 +125,15 @@ std::vector<SnapTriangle*> SnapDelaunayTriangulator::BuildTrianglesBetweenNewVer
         if (oneCycleCompleted && firstVisibleT == nullptr && lastVisibleT == nullptr) break;
         if (currentT == this->current_external_triangle_ ) oneCycleCompleted = true; //TODO: should this be equals?
     }
-    this->current_external_triangle_ = new SnapTriangle(point, beforeFirstVisibleT->A, HORIZON);
-    nextExternalTriangle = new SnapTriangle(afterLastVisibleT->B, point, HORIZON);
+    //this->current_external_triangle_ = new SnapTriangle(point, beforeFirstVisibleT->A, HORIZON);
+    current_external_triangle_ = &triangle_memory_[alloc_n_++];
+    *current_external_triangle_ = SnapTriangle(point, beforeFirstVisibleT->A, HORIZON);
 
-    free_set_.insert(current_external_triangle_);
-    free_set_.insert(nextExternalTriangle);
+
+    //nextExternalTriangle = new SnapTriangle(afterLastVisibleT->B, point, HORIZON);
+    nextExternalTriangle = &triangle_memory_[alloc_n_++];
+    *nextExternalTriangle = SnapTriangle(afterLastVisibleT->B, point, HORIZON);
+
 
     LinkExteriorTriangles(beforeFirstVisibleT, this->current_external_triangle_);
     if (firstVisibleT != nullptr || lastVisibleT != nullptr) {
@@ -261,13 +260,15 @@ void SnapDelaunayTriangulator::Flip(SnapTriangle *t0, int side0, SnapTriangle *t
 
 std::vector<alus::delaunay::DelaunayTriangle2D> SnapDelaunayTriangulator::Get2dTriangles(){
     alus::delaunay::DelaunayTriangle2D temp_triangle;
-    std::vector<alus::delaunay::DelaunayTriangle2D> results;
+    //std::vector<alus::delaunay::DelaunayTriangle2D> results;
     SnapTriangle *snap_triangle;
-    const size_t size = this->triangles.size();
+    const size_t size = this->triangles_.size();
 
 
+    std::vector<alus::delaunay::DelaunayTriangle2D> results(size);
+    //std::vector<alus::delaunay::DelaunayTriangle2D> results;
     for(size_t i=0; i<size; i++){
-        snap_triangle = this->triangles.at(i);
+        snap_triangle = this->triangles_[i];
         temp_triangle.ax = snap_triangle->A.x;
         temp_triangle.ay = snap_triangle->A.y;
         temp_triangle.a_index = snap_triangle->A.index;
@@ -280,7 +281,8 @@ std::vector<alus::delaunay::DelaunayTriangle2D> SnapDelaunayTriangulator::Get2dT
         temp_triangle.cy = snap_triangle->C.y;
         temp_triangle.c_index = snap_triangle->C.index;
 
-        results.push_back(temp_triangle);
+        results[i] = temp_triangle;
+        //results.push_back(temp_triangle);
     }
     return results;
 }

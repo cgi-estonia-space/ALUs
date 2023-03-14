@@ -89,6 +89,12 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
     }
 
     std::vector<std::shared_ptr<snapengine::Product>> deb_products;
+    const auto* d_elevation_tiles = dem_assistant->GetElevationManager()->GetBuffers();
+    const size_t elevation_tiles_length = dem_assistant->GetElevationManager()->GetTileCount();
+    const auto* d_elevation_tiles_prop = dem_assistant->GetElevationManager()->GetProperties();
+    const auto& elevation_tiles_host_prop = dem_assistant->GetElevationManager()->GetPropertiesValue();
+    const auto elevation_tile_type = dem_assistant->GetType();
+    const auto* d_egm96_values = dem_assistant->GetEgm96Manager()->GetDeviceValues();
 
     size_t secondary_index = 0;
     for (size_t reference_index = 0; reference_index < reference_splits.size(); reference_index++) {
@@ -116,14 +122,10 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
 
             coreg.Initialize(reference_splits.at(reference_index), secondary_splits.at(secondary_index));
             secondary_index++;
-            const auto coreg_middle = std::chrono::steady_clock::now();
 
-            const auto coreg_gpu_start = std::chrono::steady_clock::now();
-            coreg.DoWork(dem_assistant->GetEgm96Manager()->GetDeviceValues(),
-                         {dem_assistant->GetElevationManager()->GetBuffers(),
-                          dem_assistant->GetElevationManager()->GetTileCount()},
-                         params_.mask_out_area_without_elevation, dem_assistant->GetElevationManager()->GetProperties(),
-                         dem_assistant->GetElevationManager()->GetPropertiesValue(), dem_assistant->GetType());
+            coreg.DoWork(d_egm96_values, {d_elevation_tiles, elevation_tiles_length},
+                         params_.mask_out_area_without_elevation, d_elevation_tiles_prop, elevation_tiles_host_prop,
+                         elevation_tile_type);
             main_product = coreg.GetReferenceProduct();
             secondary_product = coreg.GetSecondaryProduct();
             auto coreg_target_dataset = coreg.GetTargetDataset();
@@ -131,9 +133,7 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
             coreg_target_dataset->ReleaseDataset();
             LOGI << "S-1 TOPS Coregistration done - "
                  << std::chrono::duration_cast<std::chrono::milliseconds>(
-                        (std::chrono::steady_clock::now() - coreg_gpu_start) + (coreg_middle - coreg_start))
-                        .count()
-                 << "ms";
+                        (std::chrono::steady_clock::now() - coreg_start)).count() << "ms";
             if (params_.wif) {
                 LOGI << "Coregstration output base @ " << cor_output_file;
                 GeoTiffWriteFile(coreg_output_datasets.at(0), cor_output_file + "_mst_I");
@@ -282,7 +282,9 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
 
         auto data_writer = std::make_shared<snapengine::custom::GdalImageWriter>();
 
-        const size_t merge_tile_size = 1024;  // NB! merge not tile size independent
+        // TODO NB! merge not tile size independent - it has been decreased from 1024 since larger tile sizes introduce
+        // a bug - https://github.com/cgi-estonia-space/ALUs/issues/18
+        const size_t merge_tile_size = 256;  // Up until 256 merge operation processing time got smaller significantly.
         topsarmerge::TopsarMergeOperator merge(deb_products, merge_polarisations, merge_tile_size, merge_tile_size,
                                                output_file);
 
@@ -312,8 +314,6 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
     const auto tc_start = std::chrono::steady_clock::now();
     terraincorrection::Metadata metadata(tc_input);
 
-    const auto* d_srtm_3_tiles = dem_assistant->GetElevationManager()->GetBuffers();
-    const size_t srtm_3_tiles_length = dem_assistant->GetElevationManager()->GetTileCount();
     const int selected_band{1};
 
     // unfortunately have to assume this downcast is valid, because TC does not use the ImageWriter interface
@@ -332,10 +332,10 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
                          total_dimension_edge);
     const auto y_tile_size = total_dimension_edge - x_tile_size;
 
-    terraincorrection::TerrainCorrection tc(
-        tc_in_dataset, metadata.GetMetadata(), metadata.GetLatTiePointGrid(), metadata.GetLonTiePointGrid(),
-        d_srtm_3_tiles, srtm_3_tiles_length, dem_assistant->GetElevationManager()->GetProperties(),
-        dem_assistant->GetType(), dem_assistant->GetElevationManager()->GetPropertiesValue(), selected_band);
+    terraincorrection::TerrainCorrection tc(tc_in_dataset, metadata.GetMetadata(), metadata.GetLatTiePointGrid(),
+                                            metadata.GetLonTiePointGrid(), d_elevation_tiles, elevation_tiles_length,
+                                            d_elevation_tiles_prop, elevation_tile_type, elevation_tiles_host_prop,
+                                            selected_band);
     std::string tc_output_file = predefined_end_result_name.empty()
                                      ? boost::filesystem::change_extension(output_file, "").string() + "_tc.tif"
                                      : predefined_end_result_name;

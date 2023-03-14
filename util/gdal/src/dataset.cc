@@ -221,7 +221,7 @@ Dataset<BufferType>::Dataset(std::string_view filename, GDALAccess access) : fil
     LoadDataset(filename, access);
 }
 template <typename BufferType>
-std::string_view Dataset<BufferType>::GetFilePath() {
+std::string_view Dataset<BufferType>::GetFilePath() const {
     return file_path_;
 }
 
