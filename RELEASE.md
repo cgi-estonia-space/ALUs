@@ -1,3 +1,31 @@
+# Release 1.5.0
+
+## Breaking changes
+* All the references and build automation functionality linked to Bitbucket is removed. Everything is now migrated to Github, hence
+  Github actions are supported only.
+
+## Known Caveats
+* Coherence estimation results can have missing pixels(or coherence 0 values) on north and east direction on coastlines when compared to SNAP.
+  Currently it is unresolved what is the correct way. See examples [A](docs/coh_missing_pixels.png) and [B](docs/beirut_iw1_b6_coastal.png).
+  See posts about the issues/bugs - [tile size affecting results](https://forum.step.esa.int/t/tile-size-is-affecting-coregistration-results/32193/4)
+  and [no-data value interpretation](https://forum.step.esa.int/t/coregistration-no-data-value/35304/2).
+* Due to the nature of floating point arithmetic there are some discrepancies when compared to SNAP, see [slideshow](docs/GPU-GSTP-MPR-0008.pdf)
+* Processing scenes with Copernicus DEM 30m COG has not well defined behavior for some specific cases.
+  See workaround in ALUs - https://github.com/cgi-estonia-space/ALUs/wiki/DEM-handling-functionality-for-Sentinel-1-processors#copernicus-dem-cog-30m
+  SNAP processing discrepancies - https://forum.step.esa.int/t/copernicus-dem-complications-when-coregistering-s1/38659/3
+
+## Major Features and Improvements
+* Shapefiles(.shp) are supported for specifying AOI - [PR item](https://github.com/cgi-estonia-space/ALUs/pull/17)
+* Copernicus DEM 30m COG support - [PR1 item](https://github.com/cgi-estonia-space/ALUs/pull/19) [PR2 item](https://github.com/cgi-estonia-space/ALUs/pull/22)
+
+## Bug Fixes and Other Changes
+* 'Secret' log format can be invoked with `--log_format_creodias`. This enables JSON log output with 3 levels - DEBUG, INFO, ERROR - [PR item](https://github.com/cgi-estonia-space/ALUs/pull/14)
+* 'alus-coh' will process scenes without orbit files now, before supplying orbit files was compulsory - [PR item](https://github.com/cgi-estonia-space/ALUs/pull/15)
+* Some scenes had incorrect merge overlap for IW2 and IW3 for all S1 routines, this is now fixed and made faster - [PR item](https://github.com/cgi-estonia-space/ALUs/pull/20)
+
+## Thanks to our Contributors
+
+
 # Release 1.4.0
 
 ## Breaking changes
