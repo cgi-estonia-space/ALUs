@@ -12,7 +12,7 @@ It is best to run the notebook from its own python virtual environment. Environm
 command  `python3 -m venv env` and it can be activated by the following command `source env/bin/activate`. In order to
 deactivate the virtual environment use `deactivate`.
 
-It may or may not be needed, but before installing `requirements.txt`, run:
+It may or may not be needed (depending on if one gets errors during installation of some requirement), but before installing `requirements.txt`, run:
 - `pip install --upgrade setuptools`
 - `pip install wheel`
 - `pip install validators`
