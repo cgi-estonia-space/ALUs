@@ -75,8 +75,7 @@ class Coherence(AlgorithmInterface):
             CoherenceOptions.SECONDARY_INPUT,
             configuration.GeneralOptions.OUTPUT,
             configuration.GeneralOptions.SUBSWATH,
-            configuration.GeneralOptions.POLARISATION,
-            configuration.GeneralOptions.ORBIT_FILES_DIR}
+            configuration.GeneralOptions.POLARISATION}
         self._default_values = self.DefaultValues()
 
         self._alg_name: str = configuration.AlgorithmName.COHERENCE_ROUTINE
@@ -352,27 +351,25 @@ class Coherence(AlgorithmInterface):
             f'{configuration.SupportedDem.SRTM3.value} '
             f'files: {downloaded_dem_files}')
 
-    def _download_orbit_files(self) -> None:
-        orbit_file_dir: str = self._parameters[
-            configuration.GeneralOptions.ORBIT_FILES_DIR]
-        if orbit_file_dir == '':
-            helper.print_error('Orbit file directory is not selected.')
-            return
-
+    def _download_orbit_files(self, dest_dir: str) -> None:
         self._reference_orbit_file: str = eof.download.download_eofs(
             sentinel_file=self._parameters[CoherenceOptions.REFERENCE_INPUT],
-            save_dir=orbit_file_dir)[0]
+            save_dir=dest_dir)[0]
 
         self._secondary_orbit_file: str = eof.download.download_eofs(
             sentinel_file=self._parameters[CoherenceOptions.SECONDARY_INPUT],
-            save_dir=orbit_file_dir)[0]
+            save_dir=dest_dir)[0]
 
     def launch_algorithm(self) -> int:
         if not self.check_necessary_input():
             return 1
 
         self._download_dem_files()
-        self._download_orbit_files()
+        if str(self._parameters[configuration.GeneralOptions.ORBIT_FILES_DIR]) == '':
+            self._parameters[configuration.GeneralOptions.ORBIT_FILES_DIR] = "/tmp/"
+
+        self._download_orbit_files(self._parameters[configuration.GeneralOptions.ORBIT_FILES_DIR])
+
         launch_command: List[str] = self._build_execution_command()
 
         process: subprocess.CompletedProcess = subprocess.run(launch_command,
@@ -459,7 +456,9 @@ class Coherence(AlgorithmInterface):
                  self._parameters[CoherenceOptions.SRP_POLYNOMIAL_DEGREE]])
 
         if self._parameters[CoherenceOptions.FLAT_EARTH_PHASE]:
-            launch_command.append('--subtract_flat_earth_phase')
+            launch_command.extend(['--subtract_flat_earth_phase', 'true'])
+        else:
+            launch_command.extend(['--subtract_flat_earth_phase', 'false'])
 
         if self._parameters[configuration.GeneralOptions.WIF]:
             launch_command.append('-w')

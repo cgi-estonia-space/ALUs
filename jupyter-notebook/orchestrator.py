@@ -115,7 +115,9 @@ def check_necessary_input() -> None:
     if algorithm is None:
         helper.print_error('No algorithm selected.')
         return
-    algorithm.check_necessary_input()
+    if not algorithm.check_necessary_input():
+        config.parameters[
+            config.ParameterNames.ALGORITHM_CLASS].display_options()
 
 
 def show_first_input_map() -> Union[folium.Map, None]:
