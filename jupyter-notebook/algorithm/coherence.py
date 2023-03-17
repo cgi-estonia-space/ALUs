@@ -60,7 +60,7 @@ class Coherence(AlgorithmInterface):
     class DefaultValues:
         srp_points: int = 501
         srp_polynomial_degree: int = 5
-        subtract_flat_earth_phase: bool = False
+        subtract_flat_earth_phase: bool = True
         range_window: int = 15
         azimuth_window: int = 0
         reference_first_burst: int = 1
