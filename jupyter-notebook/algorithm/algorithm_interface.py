@@ -73,7 +73,7 @@ class AlgorithmInterface(metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def _download_orbit_files(self) -> None:
+    def _download_orbit_files(self, dest_dir: str) -> None:
         """Downloads orbit files if applicable for the given algorithm.
 
         Returns:

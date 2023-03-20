@@ -131,7 +131,7 @@ class GaborExtraction(AlgorithmInterface):
 
         return process.returncode
 
-    def _download_orbit_files(self) -> None:
+    def _download_orbit_files(self, dest_dir: str) -> None:
         print('Not implemented for this algorithm as it is not necessary.')
 
     def _build_execution_command(self) -> List[str]:
