@@ -76,10 +76,11 @@ public:
     //  flat earth phase substraction
     thrust::device_vector<double> d_x_pows_;
     thrust::device_vector<double> d_y_pows_;
-    thrust::device_vector<double> d_coefs_;
+    // thrust::device_vector<double> d_coefs_;
     thrust::device_vector<double> d_ones_;
     size_t d_ones_size_ = 0;
     bool subtract_flat_earth_ = false;
+    std::vector<cuda::DeviceBuffer<double>> d_burst_coeffs_; // flath earth burst polynomials
 
     /**
      * Generates A (Ax = b). Specific function for internal use.
@@ -149,15 +150,14 @@ public:
      * @param max end value of the sequence
      * @param d_vector device vector to hold results
      */
-    static void Linspance(double min, double max, cuda::CudaPtr<double>& d_vector, cudaStream_t stream);
+    static void Linspace(double min, double max, cuda::CudaPtr<double>& d_vector, cudaStream_t stream);
 
     /**
      * Calculations of dependencies which are later needed by tiles
      * for coherence chain these are mostly related to calculating coefficients
      */
     void LaunchCoherencePreTileCalc(std::vector<int>& x_pows, std::vector<int>& y_pows,
-                                    std::tuple<std::vector<int>, std::vector<int>>& position_lines_pixels,
-                                    std::vector<double>& generate_y, const BandParams& band_params);
+                                    std::vector<cuda::DeviceBuffer<double>>&& d_burst_coeffs);
 
     /**
      * Calculate coherence for tile
@@ -170,5 +170,5 @@ public:
     void LaunchCoherence(const CohTile& tile, ThreadContext& buffers, const CohWindow& coh_window,
                          const BandParams& band_params);
 };
-}  // namespace coherence-cuda
+}  // namespace coherence_cuda
 }  // namespace alus

@@ -45,7 +45,7 @@ private:
                                                                            int band_y_min);
     static std::vector<int> GetXPows(int srp_polynomial_degree);
     static std::vector<int> GetYPows(int srp_polynomial_degree);
-    std::vector<double> GenerateY(std::tuple<std::vector<int>, std::vector<int>> lines_pixels, MetaData& meta_master,
+    std::vector<double> GenerateY(int burst_index, std::tuple<std::vector<int>, std::vector<int>> lines_pixels, MetaData& meta_master,
                                   MetaData& meta_slave) const;
 
 public:

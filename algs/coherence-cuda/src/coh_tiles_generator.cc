@@ -14,17 +14,19 @@
 #include "coh_tiles_generator.h"
 
 #include <cmath>
+#include <iostream>
 
 namespace alus {
 namespace coherence_cuda {
 CohTilesGenerator::CohTilesGenerator(int band_x_size, int band_y_size, int tile_x_size, int tile_y_size, int coh_win_rg,
-                                     int coh_win_az)
+                                     int coh_win_az, int lines_per_burst)
     : band_x_size_{band_x_size},
       band_y_size_{band_y_size},
       tile_x_size_{tile_x_size},
       tile_y_size_{tile_y_size},
       coh_win_rg_{coh_win_rg},
-      coh_win_az_{coh_win_az} {}
+      coh_win_az_{coh_win_az},
+      lines_per_burst_{lines_per_burst} {}
 
 // pre-generate tile attributes
 std::vector<CohTile> CohTilesGenerator::GenerateTiles() const {
@@ -33,24 +35,19 @@ std::vector<CohTile> CohTilesGenerator::GenerateTiles() const {
 
     // quick fix to use asymmetric coherence window (adding asymetry to right and bottom side)
     auto x_asymmetry = static_cast<int>(coh_win_rg_ % 2 == 0);
-    auto y_asymmetry = static_cast<int>(coh_win_az_ % 2 == 0);
+    // auto y_asymmetry = static_cast<int>(coh_win_az_ % 2 == 0);
 
     if (2 * coh_y > tile_y_size_ || 2 * coh_x > tile_x_size_) {
         throw std::invalid_argument("GenerateTiles: coherence window proportions to tile proportions are not logical");
     }
 
     int x_tiles = GetNumberOfTilesDim(band_x_size_, tile_x_size_);
-    int y_tiles = GetNumberOfTilesDim(band_y_size_, tile_y_size_);
+    int y_tiles = band_y_size_ / lines_per_burst_;
 
     // skip border tiles, if they are smaller than the window
     const int x_last_tile = band_x_size_ % tile_x_size_;
     if (x_last_tile != 0 && x_last_tile <= coh_x * 2) {
         x_tiles--;
-    }
-
-    const int y_last_tile = band_y_size_ % tile_y_size_;
-    if (y_last_tile != 0 && y_last_tile <= coh_y * 2) {
-        y_tiles--;
     }
 
     std::vector<CohTile> tiles;
@@ -59,35 +56,16 @@ std::vector<CohTile> CohTilesGenerator::GenerateTiles() const {
 
     int y_min_pad, y_max_pad, x_min_pad, x_max_pad;
     int data_y_max, data_x_max, data_x_min, data_y_min;
-    int tile_x_size_out, tile_y_size_out;
+    int tile_x_size_out;
+    [[maybe_unused]] int tile_y_size_out;
 
     for (auto tile_y = 0; tile_y < y_tiles; tile_y++) {
-        if (tile_y_size_ >= band_y_size_) {
-            y_min_pad = coh_y;
-            y_max_pad = coh_y + y_asymmetry;
-            data_y_min = 0;
-            data_y_max = band_y_size_ - 1;
-        } else {
-            if (tile_y == 0) {
-                y_min_pad = coh_y;
-                data_y_min = 0;
-                // we just need to know size for data from gdal
-            } else {
-                y_min_pad = 0;
-                data_y_min = tile_y_size_ * tile_y - coh_y;
-            }
+        y_min_pad = coh_y;
+        y_max_pad = coh_y;
+        data_y_min = tile_y * lines_per_burst_;
+        data_y_max = data_y_min + lines_per_burst_ - 1;
+        tile_y_size_out = lines_per_burst_;
 
-            if (tile_y == y_tiles - 1) {
-                y_max_pad = coh_y + y_asymmetry;
-                data_y_max = band_y_size_ - 1;
-            } else if (tile_y == 0) {
-                data_y_max = ((data_y_min + tile_y_size_) - 1) + coh_y + y_asymmetry;
-                y_max_pad = 0;
-            } else {
-                y_max_pad = 0;
-                data_y_max = ((data_y_min + tile_y_size_) - 1) + 2 * coh_y + y_asymmetry;
-            }
-        }
         for (auto tile_x = 0; tile_x < x_tiles; tile_x++) {
             if (tile_x_size_ >= band_x_size_) {
                 x_min_pad = coh_x;
@@ -121,17 +99,11 @@ std::vector<CohTile> CohTilesGenerator::GenerateTiles() const {
             } else {
                 tile_x_size_out = tile_x_size_;
             }
-            if (tile_y == y_tiles - 1) {
-                tile_y_size_out = band_y_size_ - tile_y_size_ * tile_y;
-            } else {
-                tile_y_size_out = tile_y_size_;
-            }
 
             tiles.emplace_back(
                 tile_x, tile_y, Tile{data_x_max, data_y_max, data_x_min, data_y_min},
-                Tile{tile_x_size_out - 1 + (tile_x_size_ * tile_x), tile_y_size_out - 1 + (tile_y_size_ * tile_y),
-                     tile_x_size_ * tile_x, tile_y_size_ * tile_y},
-                y_min_pad, y_max_pad, x_min_pad, x_max_pad);
+                Tile{tile_x_size_out - 1 + (tile_x_size_ * tile_x), data_y_max, tile_x_size_ * tile_x, data_y_min},
+                y_min_pad, y_max_pad, x_min_pad, x_max_pad, data_y_min / lines_per_burst_, lines_per_burst_);
         }
     }
 
