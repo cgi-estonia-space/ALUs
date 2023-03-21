@@ -98,7 +98,7 @@ void CohCuda::CoherencePreTileCalc() {
 
     for (int burst_i = 0; burst_i < nr_of_bursts; burst_i++) {
         std::tuple<std::vector<int>, std::vector<int>> position_lines_pixels =
-            DistributePoints(srp_number_points_, meta_master_.GetBandXSize(), 0, meta_master_.GetBandYSize(), 0);
+            DistributePoints(srp_number_points_, meta_master_.GetBandXSize(), 0, meta_master_.lines_per_burst - 1, 0);
 
         double master_min_pi_4_div_lam =
             static_cast<double>(-4.0L * jlinda::SNAP_PI * snapengine::eo::constants::LIGHT_SPEED) /
