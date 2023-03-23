@@ -43,17 +43,6 @@ struct Power {
     __host__ __device__ double operator()(const double x, const double power) { return pow(x, power); }
 };
 
-struct GetA {
-    __host__ __device__ thrust::tuple<double> operator()(const thrust::tuple<double, double, double, double>& t) {
-        //        todo: check if we can use shorts as input here
-        double x = thrust::get<0>(t);
-        double x_pow = thrust::get<1>(t);
-        double y = thrust::get<2>(t);
-        double y_pow = thrust::get<3>(t);
-        return thrust::make_tuple(pow(x, x_pow) * pow(y, y_pow));
-    }
-};
-
 struct NormalizeDouble {
     static constexpr double hf = 0.5;
     static constexpr double qt = 0.25;
@@ -202,15 +191,6 @@ void CoherenceComputation::Linspace(double min, double max, cuda::DeviceBuffer<d
                       d_vector.begin(), thrust::multiplies<double>());
 }
 
-void CoherenceComputation::MatMulAB(cublasHandle_t handle, const double* A, const double* B, double* C, const int m,
-                                    const int k, const int n) {
-    const double alf = 1;
-    const double bet = 0;
-    const double* alpha = &alf;
-    const double* beta = &bet;
-
-    CHECK_CUDA_ERRORS(cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, alpha, A, m, B, k, beta, C, m));
-}
 
 void CoherenceComputation::MatMulATransposeB(cublasHandle_t handle, const double* A, const double* B, double* C,
                                              const int m, const int k, const int n) {
@@ -219,70 +199,6 @@ void CoherenceComputation::MatMulATransposeB(cublasHandle_t handle, const double
     const double* alpha = &alf;
     const double* beta = &bet;
     CHECK_CUDA_ERRORS(cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_T, m, n, k, alpha, A, m, B, n, beta, C, m));
-}
-
-void CoherenceComputation::MatMulATransposeA(cublasHandle_t handle, const double* A, double* C, const int m,
-                                             const int n) {
-    const double alf = 1;
-    const double bet = 0;
-    const double* alpha = &alf;
-    const double* beta = &bet;
-    CHECK_CUDA_ERRORS(cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_T, m, m, n, alpha, A, m, A, m, beta, C, m));
-}
-
-void CoherenceComputation::TransposeA(cublasHandle_t handle, const double* A, double* C, const int m, const int n) {
-    const double alf = 1;
-    const double bet = 0;
-    const double* alpha = &alf;
-    const double* beta = &bet;
-    CHECK_CUDA_ERRORS(cublasDgeam(handle, CUBLAS_OP_T, CUBLAS_OP_T, m, n, alpha, A, n, beta, A, n, C, m));
-}
-
-void CoherenceComputation::GenerateA(cublasHandle_t handle, thrust::device_vector<double>& d_x,
-                                     thrust::device_vector<double>& d_y, thrust::device_vector<double>& d_out,
-                                     double x_norm_min, double x_norm_max, double y_norm_min, double y_norm_max) {
-    // normalize vectors
-    thrust::transform(d_x.begin(), d_x.end(), d_x.begin(), NormalizeDouble(x_norm_min, x_norm_max));
-    thrust::transform(d_y.begin(), d_y.end(), d_y.begin(), NormalizeDouble(y_norm_min, y_norm_max));
-    thrust::device_vector<double> d_x_xpows_ones_t(d_ones_.size() * d_x.size());
-
-    // pixels to correct shape using outer product of two vectors
-    // reusing d_out for y side
-    MatMulATransposeB(handle, thrust::raw_pointer_cast(d_x.data()), thrust::raw_pointer_cast(d_ones_.data()),
-                      thrust::raw_pointer_cast(d_out.data()), d_x.size(), 1, d_ones_.size());
-
-    MatMulATransposeB(handle, thrust::raw_pointer_cast(d_y.data()), thrust::raw_pointer_cast(d_ones_.data()),
-                      thrust::raw_pointer_cast(d_x_xpows_ones_t.data()), d_y.size(), 1, d_ones_.size());
-
-    //    todo: check if dimension matching would be better when we use ones with less precision
-    thrust::device_vector<double> d_y_ones_ypows_t(d_y_pows_.size() * d_x.size());
-    thrust::device_vector<double> d_x_ones_xpows_t(d_x_pows_.size() * d_y.size());
-    // since x and y are same size we can use single ones vector
-    thrust::device_vector<double> d_xy_ones(d_x.size());
-    thrust::fill(d_xy_ones.begin(), d_xy_ones.end(), 1.0);
-
-    // x and y powers to correct shape using outer product of two vectors,  k = 1 because we have vectors
-    MatMulATransposeB(handle, thrust::raw_pointer_cast(d_xy_ones.data()), thrust::raw_pointer_cast(d_y_pows_.data()),
-                      thrust::raw_pointer_cast(d_y_ones_ypows_t.data()), d_xy_ones.size(), 1, d_y_pows_.size());
-    MatMulATransposeB(handle, thrust::raw_pointer_cast(d_xy_ones.data()), thrust::raw_pointer_cast(d_x_pows_.data()),
-                      thrust::raw_pointer_cast(d_x_ones_xpows_t.data()), d_xy_ones.size(), 1, d_x_pows_.size());
-
-    //    todo: check if single output needs to make tuple here
-    // element-wise powers for x and y and multiply these to get A
-    thrust::transform(thrust::make_zip_iterator(thrust::make_tuple(d_x_xpows_ones_t.begin(), d_x_ones_xpows_t.begin(),
-                                                                   d_out.begin(), d_y_ones_ypows_t.begin())),
-                      thrust::make_zip_iterator(thrust::make_tuple(d_x_xpows_ones_t.end(), d_x_ones_xpows_t.end(),
-                                                                   d_out.end(), d_y_ones_ypows_t.end())),
-                      thrust::make_zip_iterator(thrust::make_tuple(d_out.begin())), GetA());
-}
-
-template <class T>
-void print_vec(const std::vector<T>& vec, const char* name) {
-    std::cout << name << " = sz = " << vec.size() << "\n";
-    for (auto e : vec) {
-        std::cout << e << " ";
-    }
-    std::cout << "\n";
 }
 
 void CoherenceComputation::LaunchCoherencePreTileCalc(std::vector<int>& x_pows, std::vector<int>& y_pows,

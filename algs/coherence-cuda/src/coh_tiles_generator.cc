@@ -14,7 +14,6 @@
 #include "coh_tiles_generator.h"
 
 #include <cmath>
-#include <iostream>
 
 namespace alus {
 namespace coherence_cuda {

@@ -158,16 +158,8 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
                 near_range_on_left, snapengine::AbstractMetadata::GetAbstractedMetadata(secondary_product),
                 static_cast<int>(params_.orbit_degree), avg_incidence_angle};
 
-            LOGI << "PARSE BURST META";
+            meta_master.FillBurstInfo(&su);
 
-            meta_master.burst_meta = coherence_cuda::FillBurstInfo(&su);
-            meta_master.lines_per_burst = su.subswath_.at(0)->lines_per_burst_;
-
-            s1tbx::Sentinel1Utils su_slave(secondary_product);
-
-            meta_slave.burst_meta = coherence_cuda::FillBurstInfo(&su_slave);
-            meta_slave.lines_per_burst = su_slave.subswath_.at(0)->lines_per_burst_;
-            LOGI << "PARSE META DONE";
             std::vector<int> band_map_out{1};
             int band_count_out = 1;
 

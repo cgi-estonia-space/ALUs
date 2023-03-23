@@ -16,13 +16,12 @@
 #include <cmath>
 
 #include <Eigen/Dense>
-#include "alus_log.h"
 
+#include "alus_log.h"
 #include "coherence_computation.h"
+#include "cuda_copies.h"
 #include "jlinda/jlinda-core/constants.h"
 #include "snap-engine-utilities/engine-utilities/eo/constants.h"
-
-#include "cuda_copies.h"
 
 namespace alus {
 namespace coherence_cuda {
@@ -91,14 +90,16 @@ std::vector<int> CohCuda::GetYPows(int srp_polynomial_degree) {
 }
 
 void CohCuda::CoherencePreTileCalc() {
-    int nr_of_bursts = meta_master_.burst_meta.size();
+    const auto& master_burst_meta = meta_master_.GetBurstData();
+    const int nr_of_bursts = master_burst_meta.size();
+    const int lines_per_burst = meta_master_.GetLinesPerBurst();
     std::vector<cuda::DeviceBuffer<double>> burst_coeffs(nr_of_bursts);
 
-    auto b = std::chrono::steady_clock::now();
+    auto time_start = std::chrono::steady_clock::now();
 
     for (int burst_i = 0; burst_i < nr_of_bursts; burst_i++) {
         std::tuple<std::vector<int>, std::vector<int>> position_lines_pixels =
-            DistributePoints(srp_number_points_, meta_master_.GetBandXSize(), 0, meta_master_.lines_per_burst - 1, 0);
+            DistributePoints(srp_number_points_, meta_master_.GetBandXSize(), 0, lines_per_burst - 1, 0);
 
         double master_min_pi_4_div_lam =
             static_cast<double>(-4.0L * jlinda::SNAP_PI * snapengine::eo::constants::LIGHT_SPEED) /
@@ -116,7 +117,7 @@ void CohCuda::CoherencePreTileCalc() {
         Eigen::MatrixXd A(srp_number_points_, nr_coeffs);
 
         int minLine = 0;
-        int maxLine = meta_master_.lines_per_burst - 1;
+        int maxLine = lines_per_burst - 1;
         int minPixel = 0;
         int maxPixel = meta_master_.GetBandXSize() - 1;
 
@@ -127,10 +128,10 @@ void CohCuda::CoherencePreTileCalc() {
             const auto columns = pixels.at(static_cast<unsigned long>(i)) + 1;
             const auto mst_az_time = meta_master_.Line2Ta(burst_i, rows);
             const auto rg_time = meta_master_.PixelToTimeRange(columns);
-            auto ellipsoid_position = meta_master_.burst_meta.at(burst_i).approx_xyz_centre;
+            auto ellipsoid_position = master_burst_meta.at(burst_i).approx_xyz_centre;
             s1tbx::Point xyz_master =
                 meta_master_.GetOrbit()->RowsColumns2Xyz(rows, columns, mst_az_time, rg_time, ellipsoid_position);
-            const auto slave_az_time = meta_slave_.central_avg_az_time;
+            const auto slave_az_time = meta_slave_.GetCentralAvgAzTime();
             s1tbx::Point slave_time_vector = meta_slave_.GetOrbit()->Xyz2T(xyz_master, slave_az_time);
             double slave_time_range = slave_time_vector.GetX();
             y(i) = (master_min_pi_4_div_lam * master_time_range) - (slave_min_pi_4_div_lam * slave_time_range);
@@ -161,7 +162,7 @@ void CohCuda::CoherencePreTileCalc() {
 
         Eigen::MatrixXd rhs = At * y;
 
-        Eigen::MatrixXd r = N.completeOrthogonalDecomposition().solve(rhs);
+        Eigen::MatrixXd r = N.householderQr().solve(rhs);
 
         auto& d_buf = burst_coeffs.at(burst_i);
 
@@ -174,9 +175,9 @@ void CohCuda::CoherencePreTileCalc() {
     auto y_pows = GetYPows(srp_polynomial_degree_);
     coherence_computation_.LaunchCoherencePreTileCalc(x_pows, y_pows, std::move(burst_coeffs));
 
-    auto e = std::chrono::steady_clock::now();
-    auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(e-b).count();
-    LOGI << nr_of_bursts << " burst flat earth phase polynomial estimation = " << diff << " ms";
+    auto time_end = std::chrono::steady_clock::now();
+    auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_start).count();
+    LOGV << nr_of_bursts << " burst flat earth phase polynomial estimation = " << diff << " ms";
 }
 
 void CohCuda::TileCalc(const CohTile& tile, ThreadContext& buffers) {
