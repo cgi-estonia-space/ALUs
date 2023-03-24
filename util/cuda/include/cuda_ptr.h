@@ -56,7 +56,7 @@ public:
 
     void free() {  // NOLINT
         if (device_ptr_ != nullptr) {
-            cudaFree(device_ptr_);
+            REPORT_WHEN_CUDA_ERR(cudaFree(device_ptr_));
             device_ptr_ = nullptr;
             elem_count_ = 0;
             capacity_ = 0;

@@ -191,7 +191,6 @@ void CoherenceComputation::Linspace(double min, double max, cuda::DeviceBuffer<d
                       d_vector.begin(), thrust::multiplies<double>());
 }
 
-
 void CoherenceComputation::MatMulATransposeB(cublasHandle_t handle, const double* A, const double* B, double* C,
                                              const int m, const int k, const int n) {
     const double alf = 1;
@@ -231,7 +230,6 @@ void CoherenceComputation::LaunchCoherence(const CohTile& tile, ThreadContext& c
 
     ctx.d_tile_out_slave_real_bool.Resize(output_tile_width * output_tile_height);
 
-
     BoolImageForCoherenceProductFiltering<<<num_blocks, threads_per_block, 0, ctx.stream>>>(
         ctx.d_band_slave_real.Get(), ctx.d_tile_out_slave_real_bool.Get(), input_tile_width, input_tile_height,
         output_tile_width, output_tile_height, coh_window.rg, coh_window.az, tile.GetXMinPad(), tile.GetXMaxPad(),
@@ -247,12 +245,10 @@ void CoherenceComputation::LaunchCoherence(const CohTile& tile, ThreadContext& c
         Linspace(tile_in.GetXMin(), tile_in.GetXMax(), ctx.d_range_axis, ctx.stream);
         Linspace(0, tile.GetBurstSize() - 1, ctx.d_azimuth_axis, ctx.stream);
 
-
         thrust::transform(thrust_stream, ctx.d_range_axis.begin(), ctx.d_range_axis.end(), ctx.d_range_axis.begin(),
                           NormalizeDouble(band_params.band_x_min, band_params.band_x_size - 1));
         thrust::transform(thrust_stream, ctx.d_azimuth_axis.begin(), ctx.d_azimuth_axis.end(),
-                          ctx.d_azimuth_axis.begin(),
-                          NormalizeDouble(band_params.band_y_min, /*band_params.band_y_size - 1 */ tile.GetBurstSize() - 1));
+                          ctx.d_azimuth_axis.begin(), NormalizeDouble(band_params.band_y_min, tile.GetBurstSize() - 1));
 
         cublasHandle_t handle = ctx.handle;
 

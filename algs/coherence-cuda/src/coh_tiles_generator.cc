@@ -15,6 +15,8 @@
 
 #include <cmath>
 
+#include "alus_log.h"
+
 namespace alus {
 namespace coherence_cuda {
 CohTilesGenerator::CohTilesGenerator(int band_x_size, int band_y_size, int tile_x_size, int tile_y_size, int coh_win_rg,
@@ -28,19 +30,25 @@ CohTilesGenerator::CohTilesGenerator(int band_x_size, int band_y_size, int tile_
       lines_per_burst_{lines_per_burst} {}
 
 // pre-generate tile attributes
+// 2023/03/24
+// Due to addition of per burst flat earth polynomials, the tile height is now always the size of the burst, the y
+// direction padding code however was not removed to avoid having to change already working coherence calculation code
 std::vector<CohTile> CohTilesGenerator::GenerateTiles() const {
     int coh_x = GetCohWinDim(coh_win_rg_);
     int coh_y = GetCohWinDim(coh_win_az_);
 
-    // quick fix to use asymmetric coherence window (adding asymetry to right and bottom side)
+    // quick fix to use asymmetric coherence window (adding asymmetry to right)
     auto x_asymmetry = static_cast<int>(coh_win_rg_ % 2 == 0);
-    // auto y_asymmetry = static_cast<int>(coh_win_az_ % 2 == 0);
 
     if (2 * coh_y > tile_y_size_ || 2 * coh_x > tile_x_size_) {
         throw std::invalid_argument("GenerateTiles: coherence window proportions to tile proportions are not logical");
     }
 
     int x_tiles = GetNumberOfTilesDim(band_x_size_, tile_x_size_);
+    if (band_y_size_ % lines_per_burst_ != 0) {
+        LOGW << "Subswath height divided by lines per burst count is not exactly divisible - probably an invalid "
+                "metadata or product.";
+    }
     int y_tiles = band_y_size_ / lines_per_burst_;
 
     // skip border tiles, if they are smaller than the window

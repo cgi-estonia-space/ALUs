@@ -66,6 +66,5 @@ target_link_libraries(coherence-cuda-static
         sentinel1-util-static
         pugixml-static
         cuda-util-static
-        CUDA::cublasLt
-        CUDA::cusolver
+        CUDA::cublas
         )

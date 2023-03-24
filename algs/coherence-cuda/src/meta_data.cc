@@ -13,8 +13,6 @@
  */
 #include "meta_data.h"
 
-#include "alus_log.h"
-
 #include "jlinda/jlinda-core/ellipsoid.h"
 #include "jlinda/jlinda-core/geopoint.h"
 #include "jlinda/jlinda-core/utils/date_utils.h"
@@ -132,15 +130,11 @@ double MetaData::PixelToTimeRange(double pixel) const {
     }
 }
 
-// s1tbx::Point MetaData::GetApproxXyzCentreOriginal() { return s1tbx::Point(approx_xyz_centre_original_); }
-
 // original input was double...
 double MetaData::Line2Ta(int burst_index, int line) {
     double first_line_in_days = burst_meta_.at(burst_index).first_line_time / 86400;
     double first_line_time = (first_line_in_days - (int)first_line_in_days) * 86400;
     return first_line_time + line * line_time_interval_;
 }
-
-// s1tbx::Point MetaData::GetApproxRadarCentreOriginal() { return approx_radar_centre_original_; }
 }  // namespace coherence_cuda
 }  // namespace alus
