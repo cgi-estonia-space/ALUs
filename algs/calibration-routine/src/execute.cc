@@ -382,7 +382,23 @@ void Execute::Merge(const std::vector<std::shared_ptr<snapengine::Product>>& deb
         output_names.resize(1);
     } else {
         output_names.resize(1);
-        output_names.front() = boost::filesystem::change_extension(output_names.front(), "").string() + "_mrg.tif";
+        std::string sw_names{};
+        for (size_t i{}; i < deburst_products.size(); i++) {
+            const auto sw = s1tbx::Sentinel1Utils(deburst_products.at(i)).GetSubSwathNames().front();
+            sw_names += sw;
+            if (i + 1 < deburst_products.size()) {
+                sw_names += "_";
+            }
+        }
+
+        auto product_name_stem = boost::filesystem::change_extension(output_names.front(), "").string();
+        {
+            const auto find_it = product_name_stem.find("Cal_IW");
+            if (find_it != std::string::npos) {
+                product_name_stem = product_name_stem.erase(find_it + 3, 4); // Plus subswath no.
+            }
+        }
+        output_names.front() = product_name_stem + "_mrg_" + sw_names + ".tif";
         std::vector<std::string> merge_polarisations(deburst_products.size(), params_.polarisation);
 
         auto data_writer = std::make_shared<snapengine::custom::GdalImageWriter>();

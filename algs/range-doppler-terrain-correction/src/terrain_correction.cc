@@ -203,6 +203,8 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
     target_product.dataset_->GetGeoTransform(target_geo_transform_array);
     GeoTransformParameters const target_geo_transform{GeoTransformConstruct::BuildFromGdal(target_geo_transform_array)};
 
+    target_product.dataset_->GetRasterBand(1)->SetDescription(metadata_.band_info.front().band_name.c_str());
+
     const auto line_time_interval_in_days{(metadata_.last_line_time->GetMjd() - metadata_.first_line_time->GetMjd()) /
                                           static_cast<double>(ds_y_size - 1)};
 
@@ -346,7 +348,7 @@ std::vector<TcTileCoordinates> TerrainCorrection::CalculateTiles(const snapengin
 
 snapengine::old::Product TerrainCorrection::CreateTargetProduct(
     const snapengine::geocoding::Geocoding* source_geocoding, const std::string_view output_filename) {
-    double pixel_spacing_in_meter = std::trunc(metadata_.azimuth_spacing * 100 + 0.5) / 100.0;
+    double pixel_spacing_in_meter = metadata_.azimuth_spacing;
     double pixel_spacing_in_degree =
         pixel_spacing_in_meter / snapengine::eo::constants::SEMI_MAJOR_AXIS * snapengine::eo::constants::RTOD;
 

@@ -280,7 +280,16 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
         tc_input = deb_products.front();
         output_file += "Orb_Stack_coh_deb";
     } else {
-        output_file += "Orb_Stack_coh_deb_mrg";
+
+        std::string sw_names{};
+        for (size_t i{}; i < deb_products.size(); i++) {
+            const auto sw = s1tbx::Sentinel1Utils(deb_products.at(i)).GetSubSwathNames().front();
+            sw_names += sw;
+            if (i + 1 < deb_products.size()) {
+                sw_names += "_";
+            }
+        }
+        output_file += "Orb_Stack_coh_deb_mrg_" + sw_names;
         // Merge
         auto merge_start = std::chrono::steady_clock::now();
         std::vector<std::string> merge_polarisations(deb_products.size(), polarisation_upper);
