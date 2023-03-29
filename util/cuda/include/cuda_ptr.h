@@ -32,12 +32,31 @@ public:
     }
     CudaPtr() = default;
     ~CudaPtr() { free(); }
-    CudaPtr(const CudaPtr&) = delete;  // class does not support copying(and moving)
+    CudaPtr(const CudaPtr&) = delete;  // class does not support copying
     CudaPtr& operator=(const CudaPtr&) = delete;
+    CudaPtr(CudaPtr<T>&& oth) noexcept
+        : device_ptr_(oth.device_ptr_), elem_count_(oth.elem_count_), capacity_(oth.capacity_) {
+        oth.device_ptr_ = nullptr;
+        oth.elem_count_ = oth.capacity_ = 0;
+    }
+
+    CudaPtr& operator=(CudaPtr<T>&& rhs) noexcept {
+        if (&rhs != this) {
+            if (device_ptr_) {
+                free();
+            }
+            device_ptr_ = rhs.device_ptr_;
+            elem_count_ = rhs.elem_count_;
+            capacity_ = rhs.capacity_;
+            rhs.device_ptr_ = nullptr;
+            rhs.elem_count_ = rhs.capacity_ = 0;
+        }
+        return *this;
+    }
 
     void free() {  // NOLINT
         if (device_ptr_ != nullptr) {
-            cudaFree(device_ptr_);
+            REPORT_WHEN_CUDA_ERR(cudaFree(device_ptr_));
             device_ptr_ = nullptr;
             elem_count_ = 0;
             capacity_ = 0;

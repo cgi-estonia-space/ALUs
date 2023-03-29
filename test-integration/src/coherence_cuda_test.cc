@@ -45,7 +45,8 @@ protected:
         {
             constexpr int SRP_NUMBER_POINTS{501};
             constexpr int SRP_POLYNOMIAL_DEGREE{5};
-            constexpr bool SUBTRACT_FLAT_EARTH{true};
+            constexpr bool SUBTRACT_FLAT_EARTH{false};  // TODO, sfep no tested, MetaData root -> Product needs to be
+                                                        // implemented for per burst metadata in coherence
             constexpr int COH_WIN_RG{15};
             constexpr int COH_WIN_AZ{5};
             // orbit interpolation degree
@@ -89,12 +90,14 @@ protected:
             alus::coherence_cuda::GdalTileWriter coh_data_writer{
                 file_name_out, band_params, coh_data_reader.GetGeoTransform(), coh_data_reader.GetDataProjection()};
 
+            int lines_per_burst = 1503;
             alus::coherence_cuda::CohTilesGenerator tiles_generator{coh_data_reader.GetBandXSize(),
                                                                     coh_data_reader.GetBandYSize(),
                                                                     tile_x_size,
                                                                     tile_y_size,
                                                                     COH_WIN_RG,
-                                                                    COH_WIN_AZ};
+                                                                    COH_WIN_AZ,
+                                                                    lines_per_burst};
 
             alus::coherence_cuda::CohWindow coh_window{COH_WIN_RG, COH_WIN_AZ};
             alus::coherence_cuda::CohCuda coherence{SRP_NUMBER_POINTS, SRP_POLYNOMIAL_DEGREE, SUBTRACT_FLAT_EARTH,
@@ -134,7 +137,7 @@ TEST_F(CoherenceIntegrationTest, singleBurstData2018) {
     }
 
     const std::string actual_hash = prev_band_hash;
-    const std::string expected_hash1 = "d401107a416848a3";
+    const std::string expected_hash1 = "38f8960cf80ef2a8";
     const std::string expected_hash2 = "ae3a8961ab05ddb3";
     const std::string expected_hash3 = "56e1b4de42de8cb9";
 

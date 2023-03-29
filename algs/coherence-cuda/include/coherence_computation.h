@@ -76,46 +76,11 @@ public:
     //  flat earth phase substraction
     thrust::device_vector<double> d_x_pows_;
     thrust::device_vector<double> d_y_pows_;
-    thrust::device_vector<double> d_coefs_;
     thrust::device_vector<double> d_ones_;
     size_t d_ones_size_ = 0;
     bool subtract_flat_earth_ = false;
+    std::vector<cuda::DeviceBuffer<double>> d_burst_coeffs_; // flath earth burst polynomials
 
-    /**
-     * Generates A (Ax = b). Specific function for internal use.
-     * Normalizes input vectors x and y and generates element-wise powers.
-     * @param cuBLAS library handle
-     * @param d_x x side device vector of size n
-     * @param d_y y side device vector of size n
-     * @param d_out device vector into which results will be saved
-     * @param x_norm_min normalization minimum for x
-     * @param x_norm_max normalization maximum for x
-     * @param y_norm_min normalization minimum for y
-     * @param y_norm_max normalization maximum for y
-     */
-    void GenerateA(cublasHandle_t handle, thrust::device_vector<double>& d_x, thrust::device_vector<double>& d_y,
-                   thrust::device_vector<double>& d_out, double x_norm_min, double x_norm_max, double y_norm_min,
-                   double y_norm_max);
-
-    /**
-     * Transpose matrix A, wrapper for cuBLAS cublasDgeam
-     * @param cuBLAS library handle
-     * @param A input matrix
-     * @param C result matrix
-     * @param m number of rows of matrix op(A) and C (op(A) == CUBLAS_OP_T)
-     * @param n number of columns of C.
-     */
-    static void TransposeA(cublasHandle_t handle, const double* A, double* C, const int m, const int n);
-
-    /**
-     * Multiplies matrix A by transposed matrix A, wrapper for cuBLAS cublasDgemm
-     * @param cuBLAS library handle
-     * @param A input matrix
-     * @param C result matrix
-     * @param m number of rows of matrix op(A) and C (op(A) == CUBLAS_OP_N)
-     * @param n number of columns of matrix op(A) and C (op(A) == CUBLAS_OP_T)
-     */
-    static void MatMulATransposeA(cublasHandle_t handle, const double* A, double* C, const int m, const int n);
 
     /**
      * Multiplies matrix A by transposed matrix B, wrapper for cuBLAS cublasDgemm
@@ -131,33 +96,19 @@ public:
                                   const int k, const int n);
 
     /**
-     * Multiplies matrix A by matrix B, wrapper for cuBLAS cublasDgemm
-     * @param cuBLAS library handle
-     * @param A input matrix
-     * @param B input matrix
-     * @param C result matrix
-     * @param m number of rows of matrix op(A) and C (op(A) == CUBLAS_OP_N)
-     * @param k number of columns of op(A) and rows of op(B) (op(B) == CUBLAS_OP_N)
-     * @param n number of columns of matrix op(B) and C
-     */
-    static void MatMulAB(cublasHandle_t handle, const double* A, const double* B, double* C, const int m, const int k,
-                         const int n);
-
-    /**
      * fills d_vector with generated values (check numpy linspace)
      * @param min start value of the sequence
      * @param max end value of the sequence
      * @param d_vector device vector to hold results
      */
-    static void Linspance(double min, double max, cuda::CudaPtr<double>& d_vector, cudaStream_t stream);
+    static void Linspace(double min, double max, cuda::CudaPtr<double>& d_vector, cudaStream_t stream);
 
     /**
      * Calculations of dependencies which are later needed by tiles
      * for coherence chain these are mostly related to calculating coefficients
      */
     void LaunchCoherencePreTileCalc(std::vector<int>& x_pows, std::vector<int>& y_pows,
-                                    std::tuple<std::vector<int>, std::vector<int>>& position_lines_pixels,
-                                    std::vector<double>& generate_y, const BandParams& band_params);
+                                    std::vector<cuda::DeviceBuffer<double>>&& d_burst_coeffs);
 
     /**
      * Calculate coherence for tile
@@ -170,5 +121,5 @@ public:
     void LaunchCoherence(const CohTile& tile, ThreadContext& buffers, const CohWindow& coh_window,
                          const BandParams& band_params);
 };
-}  // namespace coherence-cuda
+}  // namespace coherence_cuda
 }  // namespace alus

@@ -158,6 +158,8 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
                 near_range_on_left, snapengine::AbstractMetadata::GetAbstractedMetadata(secondary_product),
                 static_cast<int>(params_.orbit_degree), avg_incidence_angle};
 
+            meta_master.FillBurstInfo(&su);
+
             std::vector<int> band_map_out{1};
             int band_count_out = 1;
 
@@ -173,6 +175,7 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
                 LOGI << "substract flat earth phase: " << params_.srp_polynomial_degree << ", "
                      << params_.srp_number_points << ", " << params_.orbit_degree;
             }
+
 
             alus::coherence_cuda::GdalTileReader coh_data_reader{coreg_output_datasets};
 
@@ -190,13 +193,15 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
             const auto x_range_tile_size = static_cast<int>(
                 (static_cast<double>(params_.rg_window) / static_cast<double>(params_.rg_window + coh_az_win)) *
                 total_dimension_edge);
-            const auto y_az_tile_size = total_dimension_edge - x_range_tile_size;
+            const int lines_per_burst = su.subswath_.at(0)->lines_per_burst_;
+            const auto y_az_tile_size = lines_per_burst;
             alus::coherence_cuda::CohTilesGenerator tiles_generator{coh_data_reader.GetBandXSize(),
                                                                     coh_data_reader.GetBandYSize(),
                                                                     x_range_tile_size,
                                                                     y_az_tile_size,
                                                                     static_cast<int>(params_.rg_window),
-                                                                    coh_az_win};
+                                                                    coh_az_win,
+                                                                    lines_per_burst};
 
             alus::coherence_cuda::CohWindow coh_window{static_cast<int>(params_.rg_window), coh_az_win};
             alus::coherence_cuda::CohCuda coherence{static_cast<int>(params_.srp_number_points),

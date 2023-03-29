@@ -15,6 +15,7 @@
 #pragma once
 
 #include <string>
+#include <optional>
 #include <vector>
 
 #include <boost/program_options.hpp>

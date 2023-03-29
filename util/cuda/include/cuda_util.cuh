@@ -13,8 +13,6 @@
  */
 #pragma once
 
-#include <thrust/detail/raw_pointer_cast.h>
-#include <thrust/device_vector.h>
 #include <vector>
 #include <cuda_runtime.h>
 
@@ -23,16 +21,6 @@
 
 namespace alus {
 namespace cuda {
-
-template <typename T>
-KernelArray<T> GetKernelArray(thrust::device_vector<T> device_vector) {
-    return {thrust::raw_pointer_cast(device_vector.data()), device_vector.size()};
-}
-
-template <typename T>
-KernelArray<T> GetKernelArray(std::vector<T> &data_vector) {
-    return {data_vector.data(), data_vector.size()};
-}
 
 /**
  * Copies KernelArray from host to device.

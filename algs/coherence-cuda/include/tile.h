@@ -13,6 +13,9 @@
  */
 #pragma once
 
+#include <string>
+#include <cstdio>
+
 namespace alus {
 class Tile final {
     int x_max_{}, y_max_{}, x_min_{}, y_min_{};
@@ -26,5 +29,14 @@ public:
     [[nodiscard]] int GetYMax() const { return y_max_; }
     [[nodiscard]] int GetXSize() const { return x_max_ - x_min_ + 1; }
     [[nodiscard]] int GetYSize() const { return y_max_ - y_min_ + 1; }
+
+
+    std::string Str() const
+    {
+        char format_buf[100];
+        snprintf(format_buf, std::size(format_buf), "tile = %d %d %d %d\n", x_max_, y_max_, x_min_, y_min_);
+        return format_buf;
+    }
+
 };
 }  // namespace alus
