@@ -25,6 +25,7 @@
 #include "dem_property.h"
 #include "dem_type.h"
 #include "get_position.h"
+#include "metadata_record.h"
 #include "pointer_holders.h"
 #include "product_old.h"
 #include "resampling.h"
@@ -48,6 +49,7 @@ public:
     snapengine::old::Product CreateTargetProduct(const snapengine::geocoding::Geocoding* geocoding,
                                                  std::string_view output_filename);
 
+    void RegisterMetadata(common::metadata::Container md) { metadata_output_ = md; }
     void ExecuteTerrainCorrection(std::string_view output_file_name, size_t tile_width, size_t tile_height);
 
     TerrainCorrection(const TerrainCorrection&) = delete;
@@ -76,6 +78,7 @@ private:
     GetPositionMetadata d_get_position_metadata_;
     std::vector<snapengine::OrbitStateVectorComputation> h_orbit_state_vectors_;
     std::pair<std::string, std::shared_ptr<GDALDataset>> output_;
+    common::metadata::Container metadata_output_;
 
     /**
      * Computes target image boundary by creating a rectangle around the source image. The source image should be

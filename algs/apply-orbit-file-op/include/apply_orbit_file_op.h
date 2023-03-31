@@ -95,6 +95,8 @@ public:
 
     // added to get output (snap has this attached to parent class Operator
     std::shared_ptr<snapengine::Product> GetTargetProduct() { return target_product_; };
+
+    std::string GetFilename() { return orbit_provider_->GetOrbitFile().leaf().string(); }
 };
 
 }  // namespace s1tbx

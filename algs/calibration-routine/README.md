@@ -6,6 +6,7 @@ Calibration routine consists of:
 * Thermal noise removal
 * Calibration
 * Deburst
+* Merge - optional when multiple subswaths selected
 * Range doppler terrain correction
 
 ## Arguments

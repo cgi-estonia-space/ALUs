@@ -205,6 +205,8 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
 
     target_product.dataset_->GetRasterBand(1)->SetDescription(metadata_.band_info.front().band_name.c_str());
 
+    AddMetadataTo(target_product.dataset_.get(), metadata_output_);
+
     const auto line_time_interval_in_days{(metadata_.last_line_time->GetMjd() - metadata_.first_line_time->GetMjd()) /
                                           static_cast<double>(ds_y_size - 1)};
 
