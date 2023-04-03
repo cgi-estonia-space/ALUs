@@ -119,7 +119,7 @@ echo "Validating $test_6_prod_path"
 ./alus_result_check.py -I $test_6_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_Orb_Stack_coh_deb_tc_mrg_no_orb.tif
 res6=$?
 echo "Validating $test_7_prod_path"
-./alus_result_check.py -I $test_7_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_Orb_Stack_coh_deb_mrg_IW2_IW3_tc.tif
+./alus_result_check.py -I $test_7_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_Orb_Stack_coh_deb_mrg_IW2_IW3_tc_shp.tif
 res7=$?
 echo "Validating $test_8_prod_path"
 ./alus_result_check.py -I $test_8_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1B_IW_SLC__1SDV_20210615T054959_20210615T055026_027363_0344A0_83FE_Orb_IW3_b18_Stack_coh_deb_tc_copdem.tif

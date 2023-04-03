@@ -361,10 +361,10 @@ TEST_F(TerrainCorrectionTest, getPositionTrueScenarioKernel) {
 }
 
 TEST_F(TerrainCorrectionTest, CreateTargetProduct) {
-    const double expected_geotransform[] = {21.908443888855807,     0.00012495565602102545, 0, 58.576428503903578, 0,
-                                            -0.00012495565602102545};
-    const int expected_width{13860};
-    const int expected_height{2906};
+    const double expected_geotransform[] = {21.908443881804033, 0.00012496975957098611, 0, 58.576428510955353, 0,
+                                            -0.00012496975957098611};
+    const int expected_width{13859};
+    const int expected_height{2905};
     const double error_margin{1e-9};
 
     const std::vector<float> lat_tie_points{
