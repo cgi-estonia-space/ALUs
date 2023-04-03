@@ -23,6 +23,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
+#include "abstract_metadata.h"
 #include "algorithm_exception.h"
 #include "alus_log.h"
 #include "aoi_burst_extract.h"
@@ -113,6 +114,15 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
     LOGI << "Thermal noise removal done - "
          << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - tnr_start).count()
          << "ms";
+
+    metadata_.Add(common::metadata::sentinel1::SENSING_START,
+                  snapengine::AbstractMetadata::GetAbstractedMetadata(splits.front()->GetTargetProduct())
+                      ->GetAttributeUtc(alus::snapengine::AbstractMetadata::FIRST_LINE_TIME)
+                      ->ToString());
+    metadata_.Add(common::metadata::sentinel1::SENSING_END,
+                  snapengine::AbstractMetadata::GetAbstractedMetadata(splits.back()->GetTargetProduct())
+                      ->GetAttributeUtc(alus::snapengine::AbstractMetadata::LAST_LINE_TIME)
+                      ->ToString());
 
     // calibration
     std::vector<std::shared_ptr<snapengine::Product>> calib_products(tnr_products.size());

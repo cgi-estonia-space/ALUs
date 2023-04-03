@@ -30,6 +30,8 @@ constexpr std::string_view SRP_POLYNOMIAL_DEGREE{"SRP_POLYNOMIAL_DEGREE"};
 constexpr std::string_view SRP_NUMBER_POINTS{"SRP_NUMBER_POINTS"};
 constexpr std::string_view ORBIT_DEGREE{"ORBIT_DEGREE"};
 constexpr std::string_view SUBTRACT_FLAT_EARTH_PHASE{"SUBTRACT_FLAT_EARTH_PHASE"};
+constexpr std::string_view SENSING_START{"SENSING_START"};
+constexpr std::string_view SENSING_END{"SENSING_END"};
 }  // namespace sentinel1
 
 inline std::string CreateBooleanValue(bool value) {

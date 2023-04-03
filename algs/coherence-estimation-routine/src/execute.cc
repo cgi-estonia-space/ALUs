@@ -163,6 +163,14 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
                 near_range_on_left, snapengine::AbstractMetadata::GetAbstractedMetadata(secondary_product),
                 static_cast<int>(params_.orbit_degree), avg_incidence_angle};
 
+            metadata_.Add(common::metadata::sentinel1::SENSING_START,
+                          snapengine::AbstractMetadata::GetAbstractedMetadata(main_product)
+                              ->GetAttributeUtc(alus::snapengine::AbstractMetadata::FIRST_LINE_TIME)
+                              ->ToString());
+            metadata_.Add(common::metadata::sentinel1::SENSING_END,
+                          snapengine::AbstractMetadata::GetAbstractedMetadata(secondary_product)
+                              ->GetAttributeUtc(alus::snapengine::AbstractMetadata::LAST_LINE_TIME)
+                              ->ToString());
             meta_master.FillBurstInfo(&su);
 
             std::vector<int> band_map_out{1};
