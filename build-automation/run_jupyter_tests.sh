@@ -63,7 +63,7 @@ res2=$?
 
 coherence_output_file="$output_dir/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_IW1_coh_deb_tc.tif"
 echo "Validating $coherence_output_file"
-"$original_folder"/alus_result_check.py -I "$coherence_output_file" -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_coh_deb_TC_jupyter.tif
+"$original_folder"/alus_result_check.py -I "$coherence_output_file" -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_IW1_coh_deb_tc_jupyter.tif
 res3=$?
 
 exit $((res1 | res2 | res3))
