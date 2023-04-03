@@ -137,6 +137,8 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
                         (std::chrono::steady_clock::now() - coreg_start))
                         .count()
                  << "ms";
+            metadata_.AddWhenMissing(common::metadata::sentinel1::BACKGEOCODING_NO_ELEVATION_MASK,
+                                     common::metadata::CreateBooleanValue(params_.mask_out_area_without_elevation));
             if (params_.wif) {
                 LOGI << "Coregstration output base @ " << cor_output_file;
                 GeoTiffWriteFile(coreg_output_datasets.at(0), cor_output_file + "_mst_I");
@@ -223,6 +225,15 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
                  << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - coh_start)
                         .count()
                  << "ms";
+            metadata_.AddOrAppend(common::metadata::sentinel1::COH_WIN_RG, std::to_string(params_.rg_window));
+            metadata_.AddOrAppend(common::metadata::sentinel1::COH_WIN_AZ, std::to_string(coh_az_win));
+            metadata_.AddWhenMissing(common::metadata::sentinel1::SRP_NUMBER_POINTS,
+                                     std::to_string(params_.srp_number_points));
+            metadata_.AddWhenMissing(common::metadata::sentinel1::SRP_POLYNOMIAL_DEGREE,
+                                     std::to_string(params_.srp_polynomial_degree));
+            metadata_.AddWhenMissing(common::metadata::sentinel1::ORBIT_DEGREE, std::to_string(params_.orbit_degree));
+            metadata_.AddWhenMissing(common::metadata::sentinel1::SUBTRACT_FLAT_EARTH_PHASE,
+                                     common::metadata::CreateBooleanValue(params_.subtract_flat_earth));
 
             if (params_.wif) {
                 LOGI << "Coherence output @ " << coh_output_file;
@@ -523,11 +534,11 @@ void Execute::SplitApplyOrbit(const std::string& path, size_t burst_index_start,
 
     if (!params_.subswath.empty()) {
         swath_selection = {params_.subswath};
-        metadata_.AddWhenMissing(common::metadata::sentinel1::AREA_SELECTION, params_.subswath);
         std::unique_ptr<topsarsplit::TopsarSplit> split;
         if (!params_.aoi.empty()) {
             split = std::make_unique<topsarsplit::TopsarSplit>(product, params_.subswath, params_.polarisation,
                                                                params_.aoi);
+            metadata_.AddWhenMissing(common::metadata::sentinel1::AREA_SELECTION, params_.aoi);
         } else {
             if (burst_index_start == burst_index_end && burst_index_start < FULL_SUBSWATH_BURST_INDEX_START) {
                 burst_index_start = FULL_SUBSWATH_BURST_INDEX_START;
@@ -535,6 +546,7 @@ void Execute::SplitApplyOrbit(const std::string& path, size_t burst_index_start,
             }
             split = std::make_unique<topsarsplit::TopsarSplit>(product, params_.subswath, params_.polarisation,
                                                                burst_index_start, burst_index_end);
+            metadata_.AddWhenMissing(common::metadata::sentinel1::AREA_SELECTION, params_.subswath);
         }
         split->Initialize();
         splits.push_back(std::move(split));

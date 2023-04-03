@@ -32,6 +32,7 @@
 #include "gdal_image_writer.h"
 #include "gdal_management.h"
 #include "gdal_util.h"
+#include "metadata_record.h"
 #include "sentinel1_calibrate.h"
 #include "sentinel1_product_reader_plug_in.h"
 #include "terrain_correction.h"
@@ -198,7 +199,7 @@ Execute::~Execute() { alus::gdalmanagement::Deinitialize(); }
 
 void Execute::Split(const std::string& path, size_t burst_index_start, size_t burst_index_end,
                     std::vector<std::shared_ptr<topsarsplit::TopsarSplit>>& splits,
-                    std::vector<std::string>& swath_selection) const {
+                    std::vector<std::string>& swath_selection) {
     auto reader_plug_in = std::make_shared<s1tbx::Sentinel1ProductReaderPlugIn>();
     auto reader = reader_plug_in->CreateReaderInstance();
     auto product = reader->ReadProductNodes(boost::filesystem::canonical(path), nullptr);
@@ -209,6 +210,7 @@ void Execute::Split(const std::string& path, size_t burst_index_start, size_t bu
         if (!params_.aoi.empty()) {
             split_op = std::make_unique<topsarsplit::TopsarSplit>(product, params_.subswath, params_.polarisation,
                                                                   params_.aoi);
+            metadata_.AddWhenMissing(common::metadata::sentinel1::AREA_SELECTION, params_.aoi);
         } else {
             if (burst_index_start == burst_index_end && burst_index_start < FULL_SUBSWATH_BURST_INDEX_START) {
                 burst_index_start = FULL_SUBSWATH_BURST_INDEX_START;
@@ -216,11 +218,13 @@ void Execute::Split(const std::string& path, size_t burst_index_start, size_t bu
             }
             split_op = std::make_unique<topsarsplit::TopsarSplit>(product, params_.subswath, params_.polarisation,
                                                                   burst_index_start, burst_index_end);
+            metadata_.AddWhenMissing(common::metadata::sentinel1::AREA_SELECTION, params_.subswath);
         }
         split_op->Initialize();
         splits.push_back(std::move(split_op));
     } else if (params_.aoi.empty()) {
         swath_selection = {"IW1", "IW2", "IW3"};
+        metadata_.AddWhenMissing(common::metadata::sentinel1::AREA_SELECTION, "IW1 IW2 IW3");
         for (const auto& swath : swath_selection) {
             splits.push_back(std::make_unique<topsarsplit::TopsarSplit>(product, swath, params_.polarisation));
             splits.back()->Initialize();
@@ -229,6 +233,7 @@ void Execute::Split(const std::string& path, size_t burst_index_start, size_t bu
         // search for valid swaths with AOI
         topsarsplit::Aoi aoi_poly;
         boost::geometry::read_wkt(params_.aoi, aoi_poly);
+        metadata_.AddWhenMissing(common::metadata::sentinel1::AREA_SELECTION, params_.aoi);
         for (const auto& swath : {"IW1", "IW2", "IW3"}) {
             auto swath_split = std::make_unique<topsarsplit::TopsarSplit>(product, swath, params_.polarisation);
             swath_split->Initialize();
@@ -462,6 +467,7 @@ std::string Execute::TerrainCorrection(const std::shared_ptr<snapengine::Product
     std::string tc_output_file = predefined_output_name.empty()
                                      ? boost::filesystem::change_extension(output_name.data(), "").string() + "_tc.tif"
                                      : std::string(predefined_output_name);
+    tc.RegisterMetadata(metadata_);
     tc.ExecuteTerrainCorrection(tc_output_file, x_tile_size, y_tile_size);
     LOGI << "Terrain correction done - "
          << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - tc_start).count()

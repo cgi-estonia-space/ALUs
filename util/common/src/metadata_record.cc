@@ -14,7 +14,14 @@
 
 #include "metadata_record.h"
 
+#include "../../VERSION"
+
 namespace alus::common::metadata {
+
+Container::Container() {
+    Add("ALUs_VERSION",
+        std::to_string(VERSION_MAJOR) + "." + std::to_string(VERSION_MINOR) + "." + std::to_string(VERSION_PATCH));
+}
 
 void Container::Add(std::string_view key, std::string value) {
     metadata_.insert(std::make_pair(key, std::move(value)));

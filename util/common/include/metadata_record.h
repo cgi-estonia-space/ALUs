@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <string>
 #include <string_view>
 #include <unordered_map>
 
@@ -22,11 +23,22 @@ namespace alus::common::metadata {
 namespace sentinel1 {
 constexpr std::string_view AREA_SELECTION{"AREA_SELECTION"};
 constexpr std::string_view ORBIT_SOURCE{"ORBIT_SOURCE"};
+constexpr std::string_view BACKGEOCODING_NO_ELEVATION_MASK{"BACKGEOCODING_NO_ELEVATION_MASK"};
+constexpr std::string_view COH_WIN_AZ{"COH_WIN_AZ"};
+constexpr std::string_view COH_WIN_RG{"COH_WIN_RG"};
+constexpr std::string_view SRP_POLYNOMIAL_DEGREE{"SRP_POLYNOMIAL_DEGREE"};
+constexpr std::string_view SRP_NUMBER_POINTS{"SRP_NUMBER_POINTS"};
+constexpr std::string_view ORBIT_DEGREE{"ORBIT_DEGREE"};
+constexpr std::string_view SUBTRACT_FLAT_EARTH_PHASE{"SUBTRACT_FLAT_EARTH_PHASE"};
 }  // namespace sentinel1
+
+inline std::string CreateBooleanValue(bool value) {
+    return value ? "YES" : "NO";
+}
 
 class Container final {
 public:
-    Container() = default;
+    Container();
 
     void Add(std::string_view key, std::string value);
     void AddOrAppend(std::string_view key, std::string value);
@@ -37,6 +49,7 @@ public:
     ~Container() = default;
 
 private:
+
     std::unordered_map<std::string, std::string> metadata_;
 };
 

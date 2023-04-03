@@ -9,6 +9,11 @@ Calibration routine consists of:
 * Merge - optional when multiple subswaths selected
 * Range doppler terrain correction
 
+## Requirements
+
+* ~13 GB RAM for full scene (3 subswaths)
+* ~1.3 GB GPU memory for full scene (depending on DEM tiles)
+
 ## Arguments
 
 ### alus-cal

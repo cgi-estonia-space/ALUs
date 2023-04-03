@@ -21,6 +21,7 @@
 #include "cuda_device_init.h"
 #include "dem_assistant.h"
 #include "gdal_image_writer.h"
+#include "metadata_record.h"
 #include "sentinel1_calibrate.h"
 #include "topsar_split.h"
 
@@ -58,7 +59,7 @@ private:
     void ValidateParameters() const;
     void Split(const std::string& path, size_t burst_index_start, size_t burst_index_end,
                std::vector<std::shared_ptr<topsarsplit::TopsarSplit>>& splits,
-               std::vector<std::string>& swath_selection) const;
+               std::vector<std::string>& swath_selection);
     void ThermalNoiseRemoval(const std::vector<std::shared_ptr<topsarsplit::TopsarSplit>>& splits,
                              const std::vector<std::string>& subswaths, std::string_view output_dir,
                              std::vector<std::shared_ptr<snapengine::Product>>& tnr_products,
@@ -87,5 +88,6 @@ private:
     Parameters params_;
     sentinel1calibrate::SelectedCalibrationBands calibration_types_selected_{};
     const std::vector<std::string>& dem_files_;
+    common::metadata::Container metadata_;
 };
 }  // namespace alus::calibrationroutine
