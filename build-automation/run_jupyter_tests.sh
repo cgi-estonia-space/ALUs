@@ -43,11 +43,12 @@ python -m pip install wheel
 python -m pip install -r "$jupyter_folder"/requirements.txt
 original_folder=$(pwd)
 cd "$jupyter_folder" || exit 1
+coherence_output_file="$output_dir/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_IW1_coh_deb_tc_jupyter.tif"
 python -m pytest -v -s --junitxml=$jupyter_folder/build/test-reports/pytest-report.xml regression-tests --exec_dir "$exec_dir" \
   --cal_output_file "$output_dir" --calib_input "$test_dataset_dir/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58.zip" \
   --orbit_dir "$orbit_files_dir" --coh_reference "$test_dataset_dir/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA.zip" \
   --coh_secondary "$test_dataset_dir/S1A_IW_SLC__1SDV_20200805T034334_20200805T034401_033766_03E9F9_52F6.zip" \
-  --coh_output_file "$output_dir"
+  --coh_output_file "$coherence_output_file"
 res1=$?
 
 if [[ -z "${NIGHTLY_GOLDEN_DIR}" ]]; then
@@ -61,9 +62,8 @@ ls -lah ..
 "$original_folder"/alus_result_check.py -I "$calibration_output_file" -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_tnr_Cal_IW2_deb_tc_jupyter.tif
 res2=$?
 
-coherence_output_file="$output_dir/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_coh_deb_tc.tif"
 echo "Validating $coherence_output_file"
-"$original_folder"/alus_result_check.py -I "$coherence_output_file" -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_coh_deb_TC_jupyter.tif
+"$original_folder"/alus_result_check.py -I "$coherence_output_file" -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_IW1_coh_deb_tc_jupyter.tif
 res3=$?
 
 exit $((res1 | res2 | res3))

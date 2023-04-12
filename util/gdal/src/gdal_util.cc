@@ -105,4 +105,11 @@ std::string ConvertToWkt(std::string_view shp_file_path) {
 
     return std::string(wkt_shp);
 }
+
+void AddMetadataTo(GDALDataset* ds, const common::metadata::Container& md) {
+    for (const auto& m : md.GetValues()) {
+        CHECK_GDAL_ERROR(ds->SetMetadataItem(m.first.data(), m.second.data()));
+    }
+}
+
 }  // namespace alus

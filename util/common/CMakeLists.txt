@@ -4,7 +4,8 @@ list(APPEND COMMON_UTIL_INCLUDE_DIRS
         )
 
 list(APPEND COMMON_UTIL_SOURCES
-    ${CMAKE_CURRENT_LIST_DIR}/src/alus_log.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/alus_log.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/metadata_record.cc
     )
 
 add_library(common-util-static

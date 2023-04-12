@@ -21,6 +21,7 @@
 #include "constants.h"
 #include "cuda_device_init.h"
 #include "dem_assistant.h"
+#include "metadata_record.h"
 #include "topsar_split.h"
 
 namespace alus::coherenceestimationroutine {
@@ -60,8 +61,8 @@ public:
     Execute() = delete;
     Execute(Parameters params, const std::vector<std::string>& dem_files);
 
-    void RunSinglePair(alus::cuda::CudaInit& cuda_init, size_t gpu_mem_percentage) const;
-    void RunTimeline(alus::cuda::CudaInit& cuda_init, size_t gpu_mem_percentage) const;
+    void RunSinglePair(alus::cuda::CudaInit& cuda_init, size_t gpu_mem_percentage);
+    void RunTimeline(alus::cuda::CudaInit& cuda_init, size_t gpu_mem_percentage);
 
     Execute(const Execute& other) = delete;
     Execute& operator=(const Execute& other) = delete;
@@ -73,15 +74,16 @@ private:
                              const std::vector<std::shared_ptr<alus::topsarsplit::TopsarSplit>>& secondary_splits,
                              const std::vector<std::string>& reference_swath_selection,
                              const std::vector<std::string>& secondary_swath_selection,
-                             const std::string& reference_name, dem::Assistant* dem_assistant) const;
+                             const std::string& reference_name, dem::Assistant* dem_assistant);
 
     void SplitApplyOrbit(const std::string& path, size_t burst_index_start, size_t burst_index_stop,
                          std::vector<std::shared_ptr<alus::topsarsplit::TopsarSplit>>& slave_splits,
-                         std::vector<std::string>& swath_selection) const;
+                         std::vector<std::string>& swath_selection);
     std::string ConditionAoi(const std::string& aoi) const;
 
     Parameters params_;
     const std::vector<std::string>& dem_files_;
+    common::metadata::Container metadata_;
 };
 
 }  // namespace alus::coherenceestimationroutine

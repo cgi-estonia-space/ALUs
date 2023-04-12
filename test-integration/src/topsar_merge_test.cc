@@ -225,7 +225,7 @@ TEST_F(TopsarMergeTest, OverlappingSubSwathsMergeWithTC) {
     }
 
     ASSERT_THAT(boost::filesystem::exists(OUTPUT_FILE_TC.data()), ::testing::IsTrue());
-    const std::string expected_md5{"10e4f5caf320fa15"};
+    const std::string expected_md5{"5e924006d1e3adc3"};
     ASSERT_THAT(alus::utils::test::HashFromBand(OUTPUT_FILE_TC), ::testing::Eq(expected_md5));
 }
 

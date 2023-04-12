@@ -34,6 +34,7 @@
 #include "gdal_tile_writer.h"
 #include "gdal_util.h"
 #include "meta_data.h"
+#include "metadata_record.h"
 #include "product.h"
 #include "s1tbx-io/sentinel1/sentinel1_product_reader_plug_in.h"
 #include "snap-core/core/util/alus_utils.h"
@@ -71,7 +72,7 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
                                   const std::vector<std::shared_ptr<alus::topsarsplit::TopsarSplit>>& secondary_splits,
                                   const std::vector<std::string>& reference_swath_selection,
                                   const std::vector<std::string>& secondary_swath_selection,
-                                  const std::string& reference_name, dem::Assistant* dem_assistant) const {
+                                  const std::string& reference_name, dem::Assistant* dem_assistant) {
     std::string result_stem{};
     std::string predefined_end_result_name{};
     std::string output_folder{};
@@ -133,7 +134,11 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
             coreg_target_dataset->ReleaseDataset();
             LOGI << "S-1 TOPS Coregistration done - "
                  << std::chrono::duration_cast<std::chrono::milliseconds>(
-                        (std::chrono::steady_clock::now() - coreg_start)).count() << "ms";
+                        (std::chrono::steady_clock::now() - coreg_start))
+                        .count()
+                 << "ms";
+            metadata_.AddWhenMissing(common::metadata::sentinel1::BACKGEOCODING_NO_ELEVATION_MASK,
+                                     common::metadata::CreateBooleanValue(params_.mask_out_area_without_elevation));
             if (params_.wif) {
                 LOGI << "Coregstration output base @ " << cor_output_file;
                 GeoTiffWriteFile(coreg_output_datasets.at(0), cor_output_file + "_mst_I");
@@ -158,6 +163,14 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
                 near_range_on_left, snapengine::AbstractMetadata::GetAbstractedMetadata(secondary_product),
                 static_cast<int>(params_.orbit_degree), avg_incidence_angle};
 
+            metadata_.Add(common::metadata::sentinel1::SENSING_START,
+                          snapengine::AbstractMetadata::GetAbstractedMetadata(main_product)
+                              ->GetAttributeUtc(alus::snapengine::AbstractMetadata::FIRST_LINE_TIME)
+                              ->ToString());
+            metadata_.Add(common::metadata::sentinel1::SENSING_END,
+                          snapengine::AbstractMetadata::GetAbstractedMetadata(secondary_product)
+                              ->GetAttributeUtc(alus::snapengine::AbstractMetadata::LAST_LINE_TIME)
+                              ->ToString());
             meta_master.FillBurstInfo(&su);
 
             std::vector<int> band_map_out{1};
@@ -175,7 +188,6 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
                 LOGI << "substract flat earth phase: " << params_.srp_polynomial_degree << ", "
                      << params_.srp_number_points << ", " << params_.orbit_degree;
             }
-
 
             alus::coherence_cuda::GdalTileReader coh_data_reader{coreg_output_datasets};
 
@@ -221,6 +233,15 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
                  << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - coh_start)
                         .count()
                  << "ms";
+            metadata_.AddOrAppend(common::metadata::sentinel1::COH_WIN_RG, std::to_string(params_.rg_window));
+            metadata_.AddOrAppend(common::metadata::sentinel1::COH_WIN_AZ, std::to_string(coh_az_win));
+            metadata_.AddWhenMissing(common::metadata::sentinel1::SRP_NUMBER_POINTS,
+                                     std::to_string(params_.srp_number_points));
+            metadata_.AddWhenMissing(common::metadata::sentinel1::SRP_POLYNOMIAL_DEGREE,
+                                     std::to_string(params_.srp_polynomial_degree));
+            metadata_.AddWhenMissing(common::metadata::sentinel1::ORBIT_DEGREE, std::to_string(params_.orbit_degree));
+            metadata_.AddWhenMissing(common::metadata::sentinel1::SUBTRACT_FLAT_EARTH_PHASE,
+                                     common::metadata::CreateBooleanValue(params_.subtract_flat_earth));
 
             if (params_.wif) {
                 LOGI << "Coherence output @ " << coh_output_file;
@@ -278,9 +299,18 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
     std::string output_file = output_folder + result_stem + "_";
     if (deb_products.size() == 1) {
         tc_input = deb_products.front();
-        output_file += "Orb_Stack_coh_deb";
+        output_file +=
+            "Orb_Stack_" + s1tbx::Sentinel1Utils(deb_products.front()).GetSubSwathNames().front() + "_coh_deb";
     } else {
-        output_file += "Orb_Stack_coh_deb_mrg";
+        std::string sw_names{};
+        for (size_t i{}; i < deb_products.size(); i++) {
+            const auto sw = s1tbx::Sentinel1Utils(deb_products.at(i)).GetSubSwathNames().front();
+            sw_names += sw;
+            if (i + 1 < deb_products.size()) {
+                sw_names += "_";
+            }
+        }
+        output_file += "Orb_Stack_coh_deb_mrg_" + sw_names;
         // Merge
         auto merge_start = std::chrono::steady_clock::now();
         std::vector<std::string> merge_polarisations(deb_products.size(), polarisation_upper);
@@ -344,6 +374,7 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
     std::string tc_output_file = predefined_end_result_name.empty()
                                      ? boost::filesystem::change_extension(output_file, "").string() + "_tc.tif"
                                      : predefined_end_result_name;
+    tc.RegisterMetadata(metadata_);
     tc.ExecuteTerrainCorrection(tc_output_file, x_tile_size, y_tile_size);
     LOGI << "Terrain correction done - "
          << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - tc_start).count()
@@ -351,7 +382,7 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
     LOGI << "Algorithm completed, output file @ " << tc_output_file;
 }
 
-void Execute::RunSinglePair(alus::cuda::CudaInit& cuda_init, size_t) const {
+void Execute::RunSinglePair(alus::cuda::CudaInit& cuda_init, size_t) {
     alus::snapengine::SystemUtils::SetAuxDataPath(params_.orbit_dir + "/");
     std::shared_ptr<dem::Assistant> dem_assistant{nullptr};
     auto cuda_init_dem_load = std::async(std::launch::async, [&dem_assistant, &cuda_init, this]() {
@@ -396,7 +427,7 @@ void Execute::RunSinglePair(alus::cuda::CudaInit& cuda_init, size_t) const {
     dem_assistant->GetElevationManager()->ReleaseFromDevice();
 }
 
-void Execute::RunTimeline(alus::cuda::CudaInit& cuda_init, size_t) const {
+void Execute::RunTimeline(alus::cuda::CudaInit& cuda_init, size_t) {
     auto timeline_start = boost::posix_time::ptime(boost::gregorian::date_from_iso_string(params_.timeline_start));
     auto timeline_end = boost::posix_time::ptime(boost::gregorian::date_from_iso_string(params_.timeline_end));
     alus::snapengine::SystemUtils::SetAuxDataPath(params_.orbit_dir + "/");
@@ -496,6 +527,7 @@ void Execute::RunTimeline(alus::cuda::CudaInit& cuda_init, size_t) const {
         LOGD << "Freeing " << free.path.filename();
         free.splits.clear();
         load_cnt--;
+        metadata_ = common::metadata::Container();
     }
 
     dem_assistant->GetElevationManager()->ReleaseFromDevice();
@@ -503,7 +535,7 @@ void Execute::RunTimeline(alus::cuda::CudaInit& cuda_init, size_t) const {
 
 void Execute::SplitApplyOrbit(const std::string& path, size_t burst_index_start, size_t burst_index_end,
                               std::vector<std::shared_ptr<alus::topsarsplit::TopsarSplit>>& splits,
-                              std::vector<std::string>& swath_selection) const {
+                              std::vector<std::string>& swath_selection) {
     auto reader_plug_in = std::make_shared<alus::s1tbx::Sentinel1ProductReaderPlugIn>();
     auto reader = reader_plug_in->CreateReaderInstance();
     auto product = reader->ReadProductNodes(boost::filesystem::canonical(path), nullptr);
@@ -514,6 +546,7 @@ void Execute::SplitApplyOrbit(const std::string& path, size_t burst_index_start,
         if (!params_.aoi.empty()) {
             split = std::make_unique<topsarsplit::TopsarSplit>(product, params_.subswath, params_.polarisation,
                                                                params_.aoi);
+            metadata_.AddWhenMissing(common::metadata::sentinel1::AREA_SELECTION, params_.aoi);
         } else {
             if (burst_index_start == burst_index_end && burst_index_start < FULL_SUBSWATH_BURST_INDEX_START) {
                 burst_index_start = FULL_SUBSWATH_BURST_INDEX_START;
@@ -521,11 +554,13 @@ void Execute::SplitApplyOrbit(const std::string& path, size_t burst_index_start,
             }
             split = std::make_unique<topsarsplit::TopsarSplit>(product, params_.subswath, params_.polarisation,
                                                                burst_index_start, burst_index_end);
+            metadata_.AddWhenMissing(common::metadata::sentinel1::AREA_SELECTION, params_.subswath);
         }
         split->Initialize();
         splits.push_back(std::move(split));
     } else if (params_.aoi.empty()) {
         swath_selection = {"IW1", "IW2", "IW3"};
+        metadata_.AddWhenMissing(common::metadata::sentinel1::AREA_SELECTION, "IW1 IW2 IW3");
         for (std::string_view swath : swath_selection) {
             splits.push_back(std::make_unique<topsarsplit::TopsarSplit>(product, swath, params_.polarisation));
             splits.back()->Initialize();
@@ -534,6 +569,7 @@ void Execute::SplitApplyOrbit(const std::string& path, size_t burst_index_start,
         // search for valid swaths with AOI
         topsarsplit::Aoi aoi_poly;
         boost::geometry::read_wkt(params_.aoi, aoi_poly);
+        metadata_.AddWhenMissing(common::metadata::sentinel1::AREA_SELECTION, params_.aoi);
         for (std::string_view swath : {"IW1", "IW2", "IW3"}) {
             auto swath_split = std::make_unique<topsarsplit::TopsarSplit>(product, swath, params_.polarisation);
             swath_split->Initialize();
@@ -559,7 +595,7 @@ void Execute::SplitApplyOrbit(const std::string& path, size_t burst_index_start,
         LOGI << product->GetName() << " swath selection = " << boost::algorithm::join(swath_selection, " ");
     }
 
-    //
+    bool orbit_file_used_recorded{false};
     for (const auto& split : splits) {
         split->OpenPixelReader(path);
         auto orbit_op = std::make_unique<s1tbx::ApplyOrbitFileOp>(split->GetTargetProduct(), true);
@@ -567,9 +603,16 @@ void Execute::SplitApplyOrbit(const std::string& path, size_t burst_index_start,
             LOGI << "No orbital information update for " << split->GetTargetProduct()->GetName() << " "
                  << split->GetSubswath();
             orbit_op->InitializeWithoutUpdate();
+            if (!orbit_file_used_recorded) {
+                metadata_.AddOrAppend(common::metadata::sentinel1::ORBIT_SOURCE, "SAFE");
+            }
         } else {
             orbit_op->Initialize();
+            if (!orbit_file_used_recorded) {
+                metadata_.AddOrAppend(common::metadata::sentinel1::ORBIT_SOURCE, orbit_op->GetFilename());
+            }
         }
+        orbit_file_used_recorded = true;
     }
 }
 

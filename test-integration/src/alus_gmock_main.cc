@@ -18,6 +18,7 @@
 
 GTEST_API_ int main(int argc, char** argv) {
     alus::common::log::Initialize();
+    alus::common::log::SetLevel(alus::common::log::Level::DEBUG);
     alus::gdalmanagement::Initialize();
     // Since Google Mock depends on Google Test, InitGoogleMock() is
     // also responsible for initializing Google Test.  Therefore there's

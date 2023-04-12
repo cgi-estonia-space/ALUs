@@ -6,7 +6,12 @@ Coherence estimation routine consists of:
 * Coherence estimation
 * Deburst
 * Merge (when multiple subswaths selected)
-* Range doppler terrain correction  
+* Range doppler terrain correction
+
+## Requirements
+
+* ~22 GB RAM for full scene (3 subswaths)
+* ~2 GB GPU memory for full scene (depending on DEM tiles)
 
 ## Arguments
 

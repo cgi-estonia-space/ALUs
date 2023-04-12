@@ -102,7 +102,7 @@ TEST_F(TerrainCorrectionIntegrationTest, Saaremaa1) {
 
     ASSERT_THAT(boost::filesystem::exists(output_path), IsTrue());
 
-    const std::string expected_hash{"f85d9adb013ba1a3"};
+    const std::string expected_hash{"3b92490fa52744b9"};
     ASSERT_THAT(alus::utils::test::HashFromBand(output_path), ::testing::Eq(expected_hash));
 
     CompareGeocoding(
@@ -144,7 +144,7 @@ TEST_F(TerrainCorrectionIntegrationTest, SaaremaaAverageSceneHeight) {
     }
 
     ASSERT_THAT(boost::filesystem::exists(output_path), IsTrue());
-    const std::string expected_hash{"88c9ce152a75bde"};
+    const std::string expected_hash{"69ca1a5153bf3f8f"};
     ASSERT_THAT(alus::utils::test::HashFromBand(output_path), ::testing::Eq(expected_hash));
 
     CompareGeocoding(
@@ -198,7 +198,7 @@ TEST_F(TerrainCorrectionIntegrationTest, BeirutExplosion) {
         "Beirut_IW1_6_VH_orb_stack_cor_deb_coh_TC.tif",
         output_path);
 
-    const std::string expected_boost_hash{"ac15c62a7e5f6fe9"};
+    const std::string expected_boost_hash{"cbb4839b9aef8c0e"};
     ASSERT_THAT(alus::utils::test::HashFromBand(output_path), ::testing::Eq(expected_boost_hash));
 
     CHECK_CUDA_ERR(cudaGetLastError());
