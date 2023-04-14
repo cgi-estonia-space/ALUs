@@ -206,6 +206,29 @@ __global__ void ComputeComplexTileKernel(Rectangle tile, double no_data_value, d
     }
 }
 
+__global__ void ComputeAmplitudeTileKernel(Rectangle tile, double no_data_value, double target_floor_data,
+                                         device::Matrix<double> noise_matrix,
+                                         cuda::KernelArray<AmplitudeData> pixel_data,
+                                         cuda::LaunchConfig2D launch_config) {
+    for (const auto y : cuda::GpuGridRangeY(launch_config.virtual_thread_count.y)) {
+        for (const auto x : cuda::GpuGridRangeX(launch_config.virtual_thread_count.x)) {
+            const auto pixel_index = y * tile.width + x;
+            const double i = pixel_data.array[pixel_index].input;
+            const auto dn_2 = i * i + i * i;
+            double pixel_value;
+            if (dn_2 == no_data_value) {
+                pixel_value = no_data_value;
+            } else {
+                pixel_value = dn_2 - noise_matrix.array[y].array[x];
+            }
+            if (pixel_value < 0) {
+                pixel_value = target_floor_data;
+            }
+            pixel_data.array[pixel_index].output = static_cast<float>(pixel_value);
+        }
+    }
+}
+
 }  // namespace alus::tnr
 
 alus::cuda::KernelArray<double> alus::tnr::LaunchInterpolateNoiseAzimuthVectorKernel(

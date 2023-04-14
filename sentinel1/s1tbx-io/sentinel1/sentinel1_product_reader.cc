@@ -108,6 +108,8 @@ void Sentinel1ProductReader::ReadBandRasterDataImpl(
             ReadSLCRasterBand(source_offset_x, source_offset_y, source_step_x, source_step_y, dest_buffer,
                               dest_offset_x, dest_offset_y, dest_width, dest_height, band_info);
         } else {
+            ReadSLCRasterBand(source_offset_x, source_offset_y, source_step_x, source_step_y, dest_buffer,
+                              dest_offset_x, dest_offset_y, dest_width, dest_height, band_info);
             //            currently only slc
             //            band_info->img_->ReadImageIORasterBand(source_offset_x, source_offset_y, source_step_x,
             //            source_step_y,

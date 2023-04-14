@@ -95,7 +95,7 @@ private:
     const double target_floor_value_{1e-5};
 
     static constexpr std::array<std::string_view, 1> SUPPORTED_ACQUISITION_MODES{"IW" /*, "EW", "SM"*/};
-    static constexpr std::array<std::string_view, 1> SUPPORTED_PRODUCT_TYPES{"SLC" /*, "GRD"*/};
+    static constexpr std::array<std::string_view, 2> SUPPORTED_PRODUCT_TYPES{"SLC", "GRD"};
     static constexpr std::string_view ALG_NAME{"Thermal Noise Removal"};
     static constexpr std::string_view PRODUCT_SUFFIX{"_tnr"};
 

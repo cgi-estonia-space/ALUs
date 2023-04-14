@@ -57,7 +57,7 @@ private:
     void ValidateSubSwath() const;
     void ValidatePolarisation() const;
     void ValidateParameters() const;
-    void Split(const std::string& path, size_t burst_index_start, size_t burst_index_end,
+    void Split(std::shared_ptr<snapengine::Product> product, size_t burst_index_start, size_t burst_index_end,
                std::vector<std::shared_ptr<topsarsplit::TopsarSplit>>& splits,
                std::vector<std::string>& swath_selection);
     void ThermalNoiseRemoval(const std::vector<std::shared_ptr<topsarsplit::TopsarSplit>>& splits,

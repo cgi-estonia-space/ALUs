@@ -86,16 +86,30 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
 
     auto dem_assistant = dem::Assistant::CreateFormattedDemTilesOnGpuFrom(dem_files_);
 
+    auto reader_plug_in = std::make_shared<s1tbx::Sentinel1ProductReaderPlugIn>();
+    auto reader = reader_plug_in->CreateReaderInstance();
+    auto product = reader->ReadProductNodes(boost::filesystem::canonical(params_.input), nullptr);
+    const auto pt = product->GetProductType();
+    (void)pt;  // "GRD" or "SLC"
+
     // split
     std::vector<std::shared_ptr<alus::topsarsplit::TopsarSplit>> splits;
     std::vector<std::string> swath_selection;
-    const auto split_start = std::chrono::steady_clock::now();
-    Split(params_.input, params_.burst_first_index, params_.burst_last_index, splits, swath_selection);
 
-    LOGI
-        << "Sentinel 1 split done - "
-        << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - split_start).count()
-        << "ms";
+    if (pt == "SLC") {
+        const auto split_start = std::chrono::steady_clock::now();
+        Split(product, params_.burst_first_index, params_.burst_last_index, splits, swath_selection);
+
+        LOGI << "Sentinel 1 split done - "
+             << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - split_start)
+                    .count()
+             << "ms";
+    } else if (pt == "GRD") {
+        swath_selection.emplace_back("IW");
+    } else {
+        throw std::invalid_argument("Expected 'GRD' or 'SLC' product type - '" + pt +
+                                    "' not supported. Please check the input dataset.");
+    }
 
     while (!cuda_init.IsFinished())
         ;
@@ -207,13 +221,9 @@ void Execute::ValidatePolarisation() const {
 
 Execute::~Execute() { alus::gdalmanagement::Deinitialize(); }
 
-void Execute::Split(const std::string& path, size_t burst_index_start, size_t burst_index_end,
+void Execute::Split(std::shared_ptr<snapengine::Product> product, size_t burst_index_start, size_t burst_index_end,
                     std::vector<std::shared_ptr<topsarsplit::TopsarSplit>>& splits,
                     std::vector<std::string>& swath_selection) {
-    auto reader_plug_in = std::make_shared<s1tbx::Sentinel1ProductReaderPlugIn>();
-    auto reader = reader_plug_in->CreateReaderInstance();
-    auto product = reader->ReadProductNodes(boost::filesystem::canonical(path), nullptr);
-
     if (!params_.subswath.empty()) {
         swath_selection = {params_.subswath};
         std::unique_ptr<topsarsplit::TopsarSplit> split_op{};
@@ -270,7 +280,13 @@ void Execute::Split(const std::string& path, size_t burst_index_start, size_t bu
     }
 
     for (const auto& split : splits) {
-        split->OpenPixelReader(path);
+        auto product_path = std::filesystem::path(product->GetFileLocation().string());
+        // Remove manifest.safe
+        if (product_path.has_filename()) {
+            split->OpenPixelReader(product_path.remove_filename().string());
+        } else {
+            split->OpenPixelReader(product_path.string());
+        }
     }
 }
 void Execute::ThermalNoiseRemoval(const std::vector<std::shared_ptr<topsarsplit::TopsarSplit>>& splits,
@@ -410,7 +426,7 @@ void Execute::Merge(const std::vector<std::shared_ptr<snapengine::Product>>& deb
         {
             const auto find_it = product_name_stem.find("Cal_IW");
             if (find_it != std::string::npos) {
-                product_name_stem = product_name_stem.erase(find_it + 3, 4); // Plus subswath no.
+                product_name_stem = product_name_stem.erase(find_it + 3, 4);  // Plus subswath no.
             }
         }
         output_names.front() = product_name_stem + "_mrg_" + sw_names + ".tif";

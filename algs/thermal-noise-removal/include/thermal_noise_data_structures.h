@@ -37,6 +37,11 @@ union ComplexIntensityData {
     float output;
 };
 
+union AmplitudeData {
+    int16_t input;
+    float output;
+};
+
 // per thread stream + host memory buffer + device memory buffer
 struct ThreadData {
     alus::PagedOrPinnedHostPtr<ComplexIntensityData> h_tile_buffer;
