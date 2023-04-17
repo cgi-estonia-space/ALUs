@@ -282,7 +282,7 @@ void Execute::Split(std::shared_ptr<snapengine::Product> product, size_t burst_i
     for (const auto& split : splits) {
         auto product_path = std::filesystem::path(product->GetFileLocation().string());
         // Remove manifest.safe
-        if (product_path.has_filename()) {
+        if (product_path.has_filename() && product_path.extension() != ".zip") {
             split->OpenPixelReader(product_path.remove_filename().string());
         } else {
             split->OpenPixelReader(product_path.string());
