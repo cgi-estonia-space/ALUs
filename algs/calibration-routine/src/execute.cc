@@ -176,7 +176,6 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
         TerrainCorrection(merge_output, deburst_products.size(), output_names.front(), dem_assistant, final_path);
 
     LOGI << "Algorithm completed, output file @ " << output_file;
-    LOGI << "Another test";
 }
 
 void Execute::PrintProcessingParameters() const {

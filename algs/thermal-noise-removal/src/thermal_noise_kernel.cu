@@ -214,7 +214,7 @@ __global__ void ComputeAmplitudeTileKernel(Rectangle tile, double no_data_value,
         for (const auto x : cuda::GpuGridRangeX(launch_config.virtual_thread_count.x)) {
             const auto pixel_index = y * tile.width + x;
             const double i = pixel_data.array[pixel_index].input;
-            const auto dn_2 = i * i + i * i;
+            const auto dn_2 = i * i;
             double pixel_value;
             if (dn_2 == no_data_value) {
                 pixel_value = no_data_value;

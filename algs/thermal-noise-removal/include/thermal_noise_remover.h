@@ -37,7 +37,7 @@ namespace alus::tnr {
 struct SharedData {
     // synchronised internally
     ThreadSafeTileQueue<Rectangle> tile_queue;
-    Dataset<Iq16>* src_dataset;
+    GDALDataset* src_dataset;
 
     // explicit mutex
     std::mutex dst_mutex;

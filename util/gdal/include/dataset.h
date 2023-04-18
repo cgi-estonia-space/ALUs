@@ -56,7 +56,7 @@ public:
     void LoadRasterBand(int band_nr) override;
     explicit Dataset(GDALDataset& dataset);
 
-    GDALDataset* GetGdalDataset() { return dataset_; }
+    GDALDataset* GetGdalDataset();
 
     Dataset(Dataset<BufferType>&& other) noexcept { *this = std::move(other); }
 

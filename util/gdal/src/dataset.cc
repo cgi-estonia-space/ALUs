@@ -116,6 +116,21 @@ void Dataset<BufferType>::LoadRasterBand(int band_nr) {
 }
 
 template <typename BufferType>
+GDALDataset* Dataset<BufferType>::GetGdalDataset() {
+    if (cacher_.joinable()) {
+        is_allowed_to_cache_ = false;
+        cacher_.join();
+
+        if (cacher_exception_ != nullptr) {
+            LOGE << "Rethrowing cacher exception" << std::endl;
+            std::rethrow_exception(cacher_exception_);
+        }
+    }
+
+    return dataset_;
+}
+
+template <typename BufferType>
 Dataset<BufferType>::Dataset(GDALDataset& dataset) {
     this->dataset_ = &dataset;
 

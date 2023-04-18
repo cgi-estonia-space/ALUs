@@ -96,7 +96,12 @@ void ThermalNoiseRemover::ComputeComplexTile(alus::Rectangle target_tile, Thread
     static_assert(sizeof(alus::Iq16) == sizeof(*context->h_tile_buffer.Get()));
     auto* buffer_ptr = reinterpret_cast<alus::Iq16*>(context->h_tile_buffer.Get());
 
-    tnr_data->src_dataset->ReadRectangle(target_tile, 1, buffer_ptr);
+    {
+        std::unique_lock l(tnr_data->dataset_mutex);
+        CHECK_GDAL_ERROR(tnr_data->src_dataset->GetRasterBand(1)->RasterIO(
+            GF_Read, target_tile.x, target_tile.y, target_tile.width, target_tile.height, buffer_ptr, target_tile.width,
+            target_tile.height, GDT_CInt16, 0, 0));
+    }
 
     const auto tile_size = static_cast<size_t>(target_tile.width) * static_cast<size_t>(target_tile.height);
     cuda::KernelArray<ComplexIntensityData> d_pixel_buffer{nullptr, tile_size};
@@ -264,7 +269,8 @@ void ThermalNoiseRemover::SetTargetImages() {
             auto source_band_name = target_band_name_to_source_band_names_.at(band_name).at(0);
 
             tnr_data.dst_band = target_dataset_->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND);
-            tnr_data.src_dataset = pixel_reader_;
+            tnr_data.src_dataset = pixel_reader_->GetGdalDataset();
+
             std::vector<Rectangle> tiles = CalculateTiles(*band);
 
             // If bound by GPU, then more than 2 give almost no gains
