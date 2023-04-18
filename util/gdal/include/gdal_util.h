@@ -185,4 +185,5 @@ std::string AdjustFilePath(std::string_view file_path);
 std::string ConvertToWkt(std::string_view shp_file_path);
 
 void AddMetadataTo(GDALDataset* ds, const common::metadata::Container& md);
+
 }  // namespace alus

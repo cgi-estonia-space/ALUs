@@ -28,6 +28,7 @@
 #include "alus_log.h"
 #include "aoi_burst_extract.h"
 #include "constants.h"
+#include "dataset_util.h"
 #include "dem_assistant.h"
 #include "gdal_image_reader.h"
 #include "gdal_image_writer.h"
@@ -42,6 +43,7 @@
 #include "topsar_deburst_op.h"
 #include "topsar_merge.h"
 #include "topsar_split.h"
+#include "zip_util.h"
 
 namespace {
 template <typename T>
@@ -98,6 +100,7 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
     std::vector<Rectangle> tnr_in_ds_areas;
     std::vector<std::string> swath_selection;
     std::vector<std::shared_ptr<alus::topsarsplit::TopsarSplit>> splits;
+    std::shared_ptr<Dataset<uint16_t>> grd_ds;
 
     if (pt == "SLC") {
         const auto split_start = std::chrono::steady_clock::now();
@@ -114,7 +117,9 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
         }
     } else if (pt == "GRD") {
         swath_selection.emplace_back("IW");
-
+        grd_ds = dataset::OpenSentinel1SafeRaster<Dataset<uint16_t>>(params_.input, swath_selection.front(),
+                                                                     params_.polarisation);
+        grd_ds->TryToCacheImage();
     } else {
         throw std::invalid_argument("Expected 'GRD' or 'SLC' product type - '" + pt +
                                     "' not supported. Please check the input dataset.");
@@ -133,7 +138,8 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
 
     std::vector<std::shared_ptr<snapengine::Product>> tnr_products(splits.size());
     std::vector<std::shared_ptr<GDALDataset>> tnr_datasets(splits.size());
-    ThermalNoiseRemoval(tnr_in_products, tnr_in_ds, tnr_in_ds_areas, swath_selection, output_dir, tnr_products, tnr_datasets);
+    ThermalNoiseRemoval(tnr_in_products, tnr_in_ds, tnr_in_ds_areas, swath_selection, output_dir, tnr_products,
+                        tnr_datasets);
     LOGI << "Thermal noise removal done - "
          << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - tnr_start).count()
          << "ms";
@@ -290,7 +296,7 @@ void Execute::Split(std::shared_ptr<snapengine::Product> product, size_t burst_i
     for (const auto& split : splits) {
         auto product_path = std::filesystem::path(product->GetFileLocation().string());
         // Remove manifest.safe
-        if (product_path.has_filename() && product_path.extension() != ".zip") {
+        if (product_path.has_filename() && !common::zip::IsFileAnArchive(product_path.string())) {
             split->OpenPixelReader(product_path.remove_filename().string());
         } else {
             split->OpenPixelReader(product_path.string());
@@ -313,14 +319,9 @@ void Execute::ThermalNoiseRemoval(const std::vector<std::shared_ptr<snapengine::
         THROW_ALGORITHM_EXCEPTION(ALG_NAME, "Split and TNR product count mismatch!.");
     }
     for (size_t i = 0; i < prods.size(); i++) {
-        tnr::ThermalNoiseRemover thermal_noise_remover{prods.at(i),
-                                                       datasets.at(i),
-                                                       ds_areas.at(i),
-                                                       subswaths.at(i),
-                                                       params_.polarisation,
-                                                       output_dir,
-                                                       TILE_SIZE_DIMENSION,
-                                                       TILE_SIZE_DIMENSION};
+        tnr::ThermalNoiseRemover thermal_noise_remover{prods.at(i),         datasets.at(i),       ds_areas.at(i),
+                                                       subswaths.at(i),     params_.polarisation, output_dir,
+                                                       TILE_SIZE_DIMENSION, TILE_SIZE_DIMENSION};
         thermal_noise_remover.Execute();
         tnr_products.at(i) = thermal_noise_remover.GetTargetProduct();
         tnr_datasets.at(i) = thermal_noise_remover.GetOutputDataset().first;
