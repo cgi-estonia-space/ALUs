@@ -60,7 +60,8 @@ private:
     void Split(std::shared_ptr<snapengine::Product> product, size_t burst_index_start, size_t burst_index_end,
                std::vector<std::shared_ptr<topsarsplit::TopsarSplit>>& splits,
                std::vector<std::string>& swath_selection);
-    void ThermalNoiseRemoval(const std::vector<std::shared_ptr<topsarsplit::TopsarSplit>>& splits,
+    void ThermalNoiseRemoval(const std::vector<std::shared_ptr<snapengine::Product>>& prods,
+                             const std::vector<GDALDataset*>& datasets, const std::vector<Rectangle>& ds_areas,
                              const std::vector<std::string>& subswaths, std::string_view output_dir,
                              std::vector<std::shared_ptr<snapengine::Product>>& tnr_products,
                              std::vector<std::shared_ptr<GDALDataset>>& tnr_datasets) const;

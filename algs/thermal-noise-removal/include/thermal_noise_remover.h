@@ -54,9 +54,9 @@ struct SharedData {
 
 class ThermalNoiseRemover {
 public:
-    ThermalNoiseRemover(std::shared_ptr<snapengine::Product> source_product, Dataset<Iq16>* pixel_reader,
-                        std::string_view subswath, std::string_view polarisation, std::string_view output_path,
-                        int tile_width = 2000, int tile_height = 2000);
+    ThermalNoiseRemover(std::shared_ptr<snapengine::Product> source_product, GDALDataset* source_dataset,
+                        Rectangle source_ds_area, std::string_view subswath, std::string_view polarisation,
+                        std::string_view output_path, int tile_width = 2000, int tile_height = 2000);
 
     ThermalNoiseRemover(const ThermalNoiseRemover&) = delete;
     ThermalNoiseRemover(ThermalNoiseRemover&&) = delete;
@@ -72,7 +72,8 @@ public:
 
 private:
     std::shared_ptr<snapengine::Product> source_product_;
-    Dataset<Iq16>* pixel_reader_;
+    GDALDataset* source_ds_;
+    Rectangle source_ds_area_;
     std::string subswath_;
     std::string polarisation_;
     std::string output_path_;

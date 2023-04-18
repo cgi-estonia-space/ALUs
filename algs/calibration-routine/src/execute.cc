@@ -93,8 +93,11 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
     (void)pt;  // "GRD" or "SLC"
 
     // split
-    std::vector<std::shared_ptr<alus::topsarsplit::TopsarSplit>> splits;
+    std::vector<std::shared_ptr<snapengine::Product>> tnr_in_products;
+    std::vector<GDALDataset*> tnr_in_ds;
+    std::vector<Rectangle> tnr_in_ds_areas;
     std::vector<std::string> swath_selection;
+    std::vector<std::shared_ptr<alus::topsarsplit::TopsarSplit>> splits;
 
     if (pt == "SLC") {
         const auto split_start = std::chrono::steady_clock::now();
@@ -104,8 +107,14 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
              << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - split_start)
                     .count()
              << "ms";
+        for (auto& s : splits) {
+            tnr_in_products.push_back(s->GetTargetProduct());
+            tnr_in_ds.push_back(s->GetPixelReader()->GetDataset()->GetGdalDataset());
+            tnr_in_ds_areas.push_back(s->GetPixelReader()->GetDataset()->GetReadingArea());
+        }
     } else if (pt == "GRD") {
         swath_selection.emplace_back("IW");
+
     } else {
         throw std::invalid_argument("Expected 'GRD' or 'SLC' product type - '" + pt +
                                     "' not supported. Please check the input dataset.");
@@ -124,7 +133,7 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
 
     std::vector<std::shared_ptr<snapengine::Product>> tnr_products(splits.size());
     std::vector<std::shared_ptr<GDALDataset>> tnr_datasets(splits.size());
-    ThermalNoiseRemoval(splits, swath_selection, output_dir, tnr_products, tnr_datasets);
+    ThermalNoiseRemoval(tnr_in_products, tnr_in_ds, tnr_in_ds_areas, swath_selection, output_dir, tnr_products, tnr_datasets);
     LOGI << "Thermal noise removal done - "
          << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - tnr_start).count()
          << "ms";
@@ -288,25 +297,26 @@ void Execute::Split(std::shared_ptr<snapengine::Product> product, size_t burst_i
         }
     }
 }
-void Execute::ThermalNoiseRemoval(const std::vector<std::shared_ptr<topsarsplit::TopsarSplit>>& splits,
+
+void Execute::ThermalNoiseRemoval(const std::vector<std::shared_ptr<snapengine::Product>>& prods,
+                                  const std::vector<GDALDataset*>& datasets, const std::vector<Rectangle>& ds_areas,
                                   const std::vector<std::string>& subswaths, std::string_view output_dir,
                                   std::vector<std::shared_ptr<snapengine::Product>>& tnr_products,
                                   std::vector<std::shared_ptr<GDALDataset>>& tnr_datasets) const {
     if (tnr_products.empty()) {
-        tnr_products.resize(splits.size());
+        tnr_products.resize(prods.size());
     }
     if (tnr_datasets.empty()) {
-        tnr_datasets.resize(splits.size());
+        tnr_datasets.resize(prods.size());
     }
-    if (tnr_datasets.size() != splits.size() || tnr_products.size() != splits.size()) {
+    if (tnr_datasets.size() != prods.size() || tnr_products.size() != prods.size()) {
         THROW_ALGORITHM_EXCEPTION(ALG_NAME, "Split and TNR product count mismatch!.");
     }
-    for (size_t i = 0; i < splits.size(); i++) {
-        const auto split = splits.at(i);
-        const auto swath = subswaths.at(i);
-        tnr::ThermalNoiseRemover thermal_noise_remover{split->GetTargetProduct(),
-                                                       split->GetPixelReader()->GetDataset(),
-                                                       swath,
+    for (size_t i = 0; i < prods.size(); i++) {
+        tnr::ThermalNoiseRemover thermal_noise_remover{prods.at(i),
+                                                       datasets.at(i),
+                                                       ds_areas.at(i),
+                                                       subswaths.at(i),
                                                        params_.polarisation,
                                                        output_dir,
                                                        TILE_SIZE_DIMENSION,

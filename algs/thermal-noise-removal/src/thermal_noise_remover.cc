@@ -269,10 +269,10 @@ void ThermalNoiseRemover::SetTargetImages() {
             auto source_band_name = target_band_name_to_source_band_names_.at(band_name).at(0);
 
             tnr_data.dst_band = target_dataset_->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND);
-            tnr_data.src_dataset = pixel_reader_->GetGdalDataset();
-            tnr_data.src_area = pixel_reader_->GetReadingArea();
+            tnr_data.src_dataset = source_ds_;
+            tnr_data.src_area = source_ds_area_;
 
-            std::vector<Rectangle> tiles = CalculateTiles(pixel_reader_->GetReadingArea());
+            std::vector<Rectangle> tiles = CalculateTiles(source_ds_area_);
 
             // If bound by GPU, then more than 2 give almost no gains
             // If bound by gdal, then locking for both input and output means more than 3 should give almost no benefit
@@ -353,16 +353,14 @@ void ThermalNoiseRemover::CreateTargetDatasetFromProduct() {
             // Create dataset
             const auto output_file = output_path_ + target_product_->GetName() + "_" + sub_swath;
 
-            auto* const source_sub_dataset = pixel_reader_->GetGdalDataset();
-
             const int band_count{1};
 
             GDALDataset* gdal_dataset =
-                driver->Create(output_file.data(), pixel_reader_->GetRasterSizeX(), pixel_reader_->GetRasterSizeY(),
+                driver->Create(output_file.data(), source_ds_area_.width, source_ds_area_.height,
                                band_count, GDT_Float32, dataset_options);
 
             std::array<double, gdal::constants::GDAL_GEOTRANSFORM_PARAMETER_COUNT> geo_transform;
-            source_sub_dataset->GetGeoTransform(geo_transform.data());
+            source_ds_->GetGeoTransform(geo_transform.data());
             gdal_dataset->SetGeoTransform(geo_transform.data());
 
             std::shared_ptr<GDALDataset> dataset(gdal_dataset, [](auto dataset_arg) { GDALClose(dataset_arg); });
@@ -372,12 +370,14 @@ void ThermalNoiseRemover::CreateTargetDatasetFromProduct() {
         }
     }
 }
+
 ThermalNoiseRemover::ThermalNoiseRemover(std::shared_ptr<snapengine::Product> source_product,
-                                         Dataset<Iq16>* pixel_reader, std::string_view subswath,
-                                         std::string_view polarisation, std::string_view output_path, int tile_width,
-                                         int tile_height)
+                                         GDALDataset* source_dataset, Rectangle source_ds_area,
+                                         std::string_view subswath, std::string_view polarisation,
+                                         std::string_view output_path, int tile_width, int tile_height)
     : source_product_(source_product),
-      pixel_reader_(pixel_reader),
+      source_ds_{source_dataset},
+      source_ds_area_{source_ds_area},
       subswath_(subswath),
       polarisation_(polarisation),
       output_path_(output_path),
