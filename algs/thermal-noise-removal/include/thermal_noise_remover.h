@@ -38,6 +38,7 @@ struct SharedData {
     // synchronised internally
     ThreadSafeTileQueue<Rectangle> tile_queue;
     GDALDataset* src_dataset;
+    Rectangle src_area;
 
     // explicit mutex
     std::mutex dst_mutex;
@@ -151,7 +152,7 @@ private:
      * @param target_band Band for which the tiles will be calculated.
      * @return Vector of tiles.
      */
-    [[nodiscard]] std::vector<Rectangle> CalculateTiles(snapengine::Band& target_band) const;
+    [[nodiscard]] std::vector<Rectangle> CalculateTiles(Rectangle in_raster_area) const;
 
     /**
      * Creates a GDALDataset from the product.

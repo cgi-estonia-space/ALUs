@@ -118,6 +118,7 @@ public:
     void ReadRectangle(Rectangle rectangle, std::map<int, BufferType*>& bands) override;
     void TryToCacheImage() override;
     void SetReadingArea(Rectangle new_area) override { reading_area_ = new_area; };
+    Rectangle GetReadingArea() const { return reading_area_; }
 
     virtual ~Dataset();
 

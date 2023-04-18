@@ -99,8 +99,8 @@ void ThermalNoiseRemover::ComputeComplexTile(alus::Rectangle target_tile, Thread
     {
         std::unique_lock l(tnr_data->dataset_mutex);
         CHECK_GDAL_ERROR(tnr_data->src_dataset->GetRasterBand(1)->RasterIO(
-            GF_Read, target_tile.x, target_tile.y, target_tile.width, target_tile.height, buffer_ptr, target_tile.width,
-            target_tile.height, GDT_CInt16, 0, 0));
+            GF_Read, target_tile.x + tnr_data->src_area.x, target_tile.y + tnr_data->src_area.y, target_tile.width,
+            target_tile.height, buffer_ptr, target_tile.width, target_tile.height, GDT_CInt16, 0, 0));
     }
 
     const auto tile_size = static_cast<size_t>(target_tile.width) * static_cast<size_t>(target_tile.height);
@@ -270,8 +270,9 @@ void ThermalNoiseRemover::SetTargetImages() {
 
             tnr_data.dst_band = target_dataset_->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND);
             tnr_data.src_dataset = pixel_reader_->GetGdalDataset();
+            tnr_data.src_area = pixel_reader_->GetReadingArea();
 
-            std::vector<Rectangle> tiles = CalculateTiles(*band);
+            std::vector<Rectangle> tiles = CalculateTiles(pixel_reader_->GetReadingArea());
 
             // If bound by GPU, then more than 2 give almost no gains
             // If bound by gdal, then locking for both input and output means more than 3 should give almost no benefit
@@ -301,10 +302,10 @@ void ThermalNoiseRemover::SetTargetImages() {
         }
     }
 }
-std::vector<Rectangle> ThermalNoiseRemover::CalculateTiles(snapengine::Band& target_band) const {
+std::vector<Rectangle> ThermalNoiseRemover::CalculateTiles(Rectangle in_raster_area) const {
     std::vector<Rectangle> output_tiles;
-    int x_max = target_band.GetRasterWidth();
-    int y_max = target_band.GetRasterHeight();
+    int x_max = in_raster_area.width;
+    int y_max = in_raster_area.height;
     int x_count = x_max / tile_width_ + 1;
     int y_count = y_max / tile_height_ + 1;
 
