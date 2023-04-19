@@ -184,13 +184,13 @@ __global__ void CalculateNoiseMatrixKernel(Rectangle tile, int lines_per_burst,
 
 __global__ void ComputeComplexTileKernel(Rectangle tile, double no_data_value, double target_floor_data,
                                          device::Matrix<double> noise_matrix,
-                                         cuda::KernelArray<ComplexIntensityData> pixel_data,
+                                         cuda::KernelArray<IntensityData> pixel_data,
                                          cuda::LaunchConfig2D launch_config) {
     for (const auto y : cuda::GpuGridRangeY(launch_config.virtual_thread_count.y)) {
         for (const auto x : cuda::GpuGridRangeX(launch_config.virtual_thread_count.x)) {
             const auto pixel_index = y * tile.width + x;
-            const double i = pixel_data.array[pixel_index].input.i;
-            const double q = pixel_data.array[pixel_index].input.q;
+            const double i = pixel_data.array[pixel_index].input_complex.i;
+            const double q = pixel_data.array[pixel_index].input_complex.q;
             const auto dn_2 = i * i + q * q;
             double pixel_value;
             if (dn_2 == no_data_value) {
@@ -208,12 +208,12 @@ __global__ void ComputeComplexTileKernel(Rectangle tile, double no_data_value, d
 
 __global__ void ComputeAmplitudeTileKernel(Rectangle tile, double no_data_value, double target_floor_data,
                                          device::Matrix<double> noise_matrix,
-                                         cuda::KernelArray<AmplitudeData> pixel_data,
+                                         cuda::KernelArray<IntensityData> pixel_data,
                                          cuda::LaunchConfig2D launch_config) {
     for (const auto y : cuda::GpuGridRangeY(launch_config.virtual_thread_count.y)) {
         for (const auto x : cuda::GpuGridRangeX(launch_config.virtual_thread_count.x)) {
             const auto pixel_index = y * tile.width + x;
-            const double i = pixel_data.array[pixel_index].input;
+            const double i = pixel_data.array[pixel_index].input_amplitude;
             const auto dn_2 = i * i;
             double pixel_value;
             if (dn_2 == no_data_value) {
@@ -305,9 +305,18 @@ alus::tnr::device::Matrix<double> alus::tnr::CalculateNoiseMatrix(
 
 void alus::tnr::LaunchComputeComplexTileKernel(alus::Rectangle tile, double no_data_value,
                                                         double target_floor_value,
-                                                        cuda::KernelArray<ComplexIntensityData> pixel_data,
+                                                        cuda::KernelArray<IntensityData> pixel_data,
                                                         device::Matrix<double> noise_matrix, cudaStream_t stream) {
     const auto launch_config = cuda::GetLaunchConfig2D(tile.width, tile.height, ComputeComplexTileKernel);
     ComputeComplexTileKernel<<<launch_config.grid_size, launch_config.block_size, 0, stream>>>(
         tile, no_data_value, target_floor_value, noise_matrix, pixel_data, launch_config);
+}
+
+void alus::tnr::LaunchComputeAmplitudeTileKernel(alus::Rectangle tile, double no_data_value, double target_floor_value,
+                                                 cuda::KernelArray<IntensityData> pixel_data,
+                                                 device::Matrix<double> noise_matrix, cudaStream_t stream) {
+    const auto launch_config = cuda::GetLaunchConfig2D(tile.width, tile.height, ComputeAmplitudeTileKernel);
+    ComputeAmplitudeTileKernel<<<launch_config.grid_size, launch_config.block_size, 0, stream>>>(
+        tile, no_data_value, target_floor_value, noise_matrix, pixel_data, launch_config);
+
 }

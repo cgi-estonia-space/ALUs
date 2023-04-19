@@ -90,8 +90,7 @@ private:
     int tile_width_{};
     int tile_height_{};
 
-    bool is_complex_data_{
-        true};  // TNR is intended to be the first operator in chain, but that might not always be the case.
+    bool is_complex_data_;
 
     double target_no_data_value_{0.0};
     const double target_floor_value_{1e-5};
@@ -103,6 +102,7 @@ private:
 
     void ComputeTileImage(ThreadData* context, SharedData* tnr_data);
     void ComputeComplexTile(Rectangle target_tile, ThreadData* context, SharedData* tnr_data);
+    void ComputeAmplitudeTile(alus::Rectangle target_tile, ThreadData* context, SharedData* tnr_data);
 
     /**
      * Initialises the TNR operator.

@@ -14,8 +14,9 @@
 #pragma once
 
 #include <cassert>
-#include <cuda_runtime.h>
 #include <vector>
+
+#include <cuda_runtime.h>
 
 #include "cuda_mem_arena.h"
 #include "cuda_util.h"
@@ -32,27 +33,22 @@ struct alignas(4) CInt16 {
 static_assert(sizeof(CInt16) == 4);
 static_assert(alignof(CInt16) == 4);
 
-union ComplexIntensityData {
-    CInt16 input;
-    float output;
-};
-
-union AmplitudeData {
-    int16_t input;
+union IntensityData {
+    CInt16 input_complex;
+    uint32_t input_amplitude; // Real values are uint16_t.
     float output;
 };
 
 // per thread stream + host memory buffer + device memory buffer
 struct ThreadData {
-    alus::PagedOrPinnedHostPtr<ComplexIntensityData> h_tile_buffer;
+    alus::PagedOrPinnedHostPtr<IntensityData> h_tile_buffer;
     cuda::MemArena dev_mem_arena;
     cudaStream_t stream = nullptr;
 };
 namespace device {
 
 // Array index is intended to be used as a key.
-using BurstIndexToRangeVectorMap =
-    cuda::KernelArray<s1tbx::DeviceNoiseVector>;
+using BurstIndexToRangeVectorMap = cuda::KernelArray<s1tbx::DeviceNoiseVector>;
 
 using BurstIndexToInterpolatedRangeVectorMap = cuda::KernelArray<cuda::KernelArray<double>>;
 

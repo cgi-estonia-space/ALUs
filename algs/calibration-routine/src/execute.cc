@@ -116,10 +116,12 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
             tnr_in_ds_areas.push_back(s->GetPixelReader()->GetDataset()->GetReadingArea());
         }
     } else if (pt == "GRD") {
+        tnr_in_products.push_back(product);
         swath_selection.emplace_back("IW");
         grd_ds = dataset::OpenSentinel1SafeRaster<Dataset<uint16_t>>(params_.input, swath_selection.front(),
                                                                      params_.polarisation);
-        grd_ds->TryToCacheImage();
+        tnr_in_ds.push_back(grd_ds->GetGdalDataset());
+        tnr_in_ds_areas.push_back(grd_ds->GetReadingArea());
     } else {
         throw std::invalid_argument("Expected 'GRD' or 'SLC' product type - '" + pt +
                                     "' not supported. Please check the input dataset.");
@@ -145,11 +147,11 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
          << "ms";
 
     metadata_.Add(common::metadata::sentinel1::SENSING_START,
-                  snapengine::AbstractMetadata::GetAbstractedMetadata(splits.front()->GetTargetProduct())
+                  snapengine::AbstractMetadata::GetAbstractedMetadata(tnr_in_products.front())
                       ->GetAttributeUtc(alus::snapengine::AbstractMetadata::FIRST_LINE_TIME)
                       ->ToString());
     metadata_.Add(common::metadata::sentinel1::SENSING_END,
-                  snapengine::AbstractMetadata::GetAbstractedMetadata(splits.back()->GetTargetProduct())
+                  snapengine::AbstractMetadata::GetAbstractedMetadata(tnr_in_products.back())
                       ->GetAttributeUtc(alus::snapengine::AbstractMetadata::LAST_LINE_TIME)
                       ->ToString());
 
