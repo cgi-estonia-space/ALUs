@@ -300,7 +300,7 @@ void Sentinel1Calibrator::Validate() {
     validator.CheckIfSentinel1Product();
     validator.CheckAcquisitionMode({"IW", "EW", "SM"});
 
-    validator.CheckProductType({"SLC"});
+    validator.CheckProductType({"SLC", "GRD"});
 
     auto src_type = pixel_reader_->GetRasterBand(1)->GetRasterDataType();
     if (src_type != GDT_CInt16 && src_type != GDT_Float32) {

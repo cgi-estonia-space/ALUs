@@ -36,8 +36,9 @@ namespace alus::tnr {
  * @return Interpolated value.
  */
 __device__ inline double Interpolate(int x_1, int x_2, double y_1, double y_2, int x) {
-    if (x_1 == x_2) {  // SNAP developers claim that this should never happen. // TODO: Consider removing this in order to
-                       //        avoid unnecessary branching
+    if (x_1 ==
+        x_2) {  // SNAP developers claim that this should never happen. // TODO: Consider removing this in order to
+                //        avoid unnecessary branching
         return 0;
     }
     return y_1 + (static_cast<double>(x - x_1) / static_cast<double>(x_2 - x_1)) * (y_2 - y_1);
@@ -169,10 +170,11 @@ __global__ void InterpolateNoiseRangeVectorKernel(
  * @param noise_matrix Target noise matrix into which the data will be saved.
  * @param launch_config Kernel launch parameters.
  */
-__global__ void CalculateNoiseMatrixKernel(Rectangle tile, int lines_per_burst,
-                                           cuda::KernelArray<double> interpolated_azimuth_vector,
-                                           device::BurstIndexToInterpolatedRangeVectorMap range_vector_map,
-                                           device::Matrix<double> noise_matrix, cuda::LaunchConfig2D launch_config) {
+__global__ void CalculateNoiseMatrixKernelByBurst(Rectangle tile, int lines_per_burst,
+                                                  cuda::KernelArray<double> interpolated_azimuth_vector,
+                                                  device::BurstIndexToInterpolatedRangeVectorMap range_vector_map,
+                                                  device::Matrix<double> noise_matrix,
+                                                  cuda::LaunchConfig2D launch_config) {
     for (const auto y : cuda::GpuGridRangeY(launch_config.virtual_thread_count.y)) {
         const auto burst_index = (y + tile.y) / lines_per_burst;
         const auto& interpolated_range_vector = range_vector_map.array[burst_index];
@@ -207,9 +209,9 @@ __global__ void ComputeComplexTileKernel(Rectangle tile, double no_data_value, d
 }
 
 __global__ void ComputeAmplitudeTileKernel(Rectangle tile, double no_data_value, double target_floor_data,
-                                         device::Matrix<double> noise_matrix,
-                                         cuda::KernelArray<IntensityData> pixel_data,
-                                         cuda::LaunchConfig2D launch_config) {
+                                           device::Matrix<double> noise_matrix,
+                                           cuda::KernelArray<IntensityData> pixel_data,
+                                           cuda::LaunchConfig2D launch_config) {
     for (const auto y : cuda::GpuGridRangeY(launch_config.virtual_thread_count.y)) {
         for (const auto x : cuda::GpuGridRangeX(launch_config.virtual_thread_count.x)) {
             const auto pixel_index = y * tile.width + x;
@@ -258,8 +260,7 @@ alus::cuda::KernelArray<double> alus::tnr::LaunchInterpolateNoiseAzimuthVectorKe
     return interpolated_vector;
 }
 
-alus::tnr::device::BurstIndexToInterpolatedRangeVectorMap
-alus::tnr::LaunchInterpolateNoiseRangeVectorsKernel(
+alus::tnr::device::BurstIndexToInterpolatedRangeVectorMap alus::tnr::LaunchInterpolateNoiseRangeVectorsKernel(
     alus::Rectangle tile, cuda::KernelArray<int> d_burst_indices, cuda::KernelArray<size_t> d_sample_indices,
     device::BurstIndexToRangeVectorMap burst_index_to_range_vector_map, cudaStream_t stream) {
     auto burst_index_to_interpolated_range_vector_map =
@@ -295,18 +296,17 @@ alus::tnr::device::Matrix<double> alus::tnr::CalculateNoiseMatrix(
     alus::tnr::device::BurstIndexToInterpolatedRangeVectorMap range_vector_map, cudaStream_t stream) {
     auto d_matrix = device::CreateKernelMatrix<double>(tile.width, tile.height);
 
-    const auto launch_config = cuda::GetLaunchConfig2D(tile.width, tile.height, CalculateNoiseMatrixKernel);
+    const auto launch_config = cuda::GetLaunchConfig2D(tile.width, tile.height, CalculateNoiseMatrixKernelByBurst);
 
-    CalculateNoiseMatrixKernel<<<launch_config.grid_size, launch_config.block_size, 0, stream>>>(
+    CalculateNoiseMatrixKernelByBurst<<<launch_config.grid_size, launch_config.block_size, 0, stream>>>(
         tile, lines_per_burst, interpolated_azimuth_vector, range_vector_map, d_matrix, launch_config);
 
     return d_matrix;
 }
 
-void alus::tnr::LaunchComputeComplexTileKernel(alus::Rectangle tile, double no_data_value,
-                                                        double target_floor_value,
-                                                        cuda::KernelArray<IntensityData> pixel_data,
-                                                        device::Matrix<double> noise_matrix, cudaStream_t stream) {
+void alus::tnr::LaunchComputeComplexTileKernel(alus::Rectangle tile, double no_data_value, double target_floor_value,
+                                               cuda::KernelArray<IntensityData> pixel_data,
+                                               device::Matrix<double> noise_matrix, cudaStream_t stream) {
     const auto launch_config = cuda::GetLaunchConfig2D(tile.width, tile.height, ComputeComplexTileKernel);
     ComputeComplexTileKernel<<<launch_config.grid_size, launch_config.block_size, 0, stream>>>(
         tile, no_data_value, target_floor_value, noise_matrix, pixel_data, launch_config);
@@ -318,5 +318,4 @@ void alus::tnr::LaunchComputeAmplitudeTileKernel(alus::Rectangle tile, double no
     const auto launch_config = cuda::GetLaunchConfig2D(tile.width, tile.height, ComputeAmplitudeTileKernel);
     ComputeAmplitudeTileKernel<<<launch_config.grid_size, launch_config.block_size, 0, stream>>>(
         tile, no_data_value, target_floor_value, noise_matrix, pixel_data, launch_config);
-
 }

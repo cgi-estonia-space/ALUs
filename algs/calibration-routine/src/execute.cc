@@ -117,7 +117,8 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
         }
     } else if (pt == "GRD") {
         tnr_in_products.push_back(product);
-        swath_selection.emplace_back("IW");
+        // For GRD the current product implementation uses polarization for the subswath.
+        swath_selection.emplace_back(params_.polarisation);
         grd_ds = dataset::OpenSentinel1SafeRaster<Dataset<uint16_t>>(params_.input, swath_selection.front(),
                                                                      params_.polarisation);
         tnr_in_ds.push_back(grd_ds->GetGdalDataset());

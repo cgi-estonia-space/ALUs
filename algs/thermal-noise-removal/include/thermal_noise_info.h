@@ -22,10 +22,10 @@
 
 namespace alus::tnr {
 struct ThermalNoiseInfo {
-    int lines_per_burst{0};
+    int lines_per_burst{0}; // Used only for SLC
     std::vector<s1tbx::NoiseAzimuthVector> noise_azimuth_vectors;
     std::vector<s1tbx::NoiseVector> noise_range_vectors;
-    std::vector<s1tbx::NoiseVector> burst_to_range_vector_map;
-    TimeMaps time_maps;
+    std::vector<s1tbx::NoiseVector> burst_to_range_vector_map; // Used only for SLC
+    TimeMaps time_maps; // Used only for GRD
 };
 }  // namespace alus::tnr

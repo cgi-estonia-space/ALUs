@@ -15,6 +15,7 @@
 
 #include <array>
 #include <cstddef>
+#include <filesystem>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -49,7 +50,7 @@ void InitThreadContext(ThreadData* context, const SharedData* tnr_data) {
     context->h_tile_buffer.Allocate(tnr_data->use_pinned_memory, tile_size);
     size_t dev_mem_bytes{0};
     dev_mem_bytes += sizeof(double) * tile_size;                              // Noise matrix
-    dev_mem_bytes += sizeof(IntensityData) * tile_size;                // Pixel buffer
+    dev_mem_bytes += sizeof(IntensityData) * tile_size;                       // Pixel buffer
     dev_mem_bytes += sizeof(s1tbx::DeviceNoiseVector) * average_burst_count;  // Maximum number of bursts
     dev_mem_bytes += dev_mem_bytes / padding_coefficient;
     context->dev_mem_arena.ReserveMemory(dev_mem_bytes);
@@ -93,6 +94,8 @@ void ThermalNoiseRemover::ComputeTileImage(ThreadData* context, SharedData* tnr_
 }
 void ThermalNoiseRemover::ComputeComplexTile(alus::Rectangle target_tile, ThreadData* context, SharedData* tnr_data) {
     const auto d_noise_block = BuildNoiseLutForTOPSSLC(target_tile, thermal_noise_info_, context);
+//    LOGI << "Tile size " << target_tile.width << "x" << target_tile.height << " "
+//         << target_tile.height * target_tile.width << " matrix size " << d_noise_block.size;
     static_assert(sizeof(alus::Iq16) == sizeof(*context->h_tile_buffer.Get()));
     auto* buffer_ptr = reinterpret_cast<alus::Iq16*>(context->h_tile_buffer.Get());
 
@@ -132,10 +135,9 @@ void ThermalNoiseRemover::ComputeComplexTile(alus::Rectangle target_tile, Thread
 }
 
 void ThermalNoiseRemover::ComputeAmplitudeTile(alus::Rectangle target_tile, ThreadData* context, SharedData* tnr_data) {
-    const auto d_noise_block = BuildNoiseLutForTOPSSLC(target_tile, thermal_noise_info_, context);
+    const auto d_noise_block = BuildNoiseLutForTOPSGRD(target_tile, thermal_noise_info_, context);
     static_assert(sizeof(IntensityData::input_amplitude) == sizeof(*context->h_tile_buffer.Get()));
     auto* buffer_ptr = reinterpret_cast<uint32_t*>(context->h_tile_buffer.Get());
-
     {
         std::unique_lock l(tnr_data->dataset_mutex);
         CHECK_GDAL_ERROR(tnr_data->src_dataset->GetRasterBand(1)->RasterIO(
@@ -154,7 +156,7 @@ void ThermalNoiseRemover::ComputeAmplitudeTile(alus::Rectangle target_tile, Thre
     // use case so this check was omitted.
 
     LaunchComputeAmplitudeTileKernel(target_tile, target_no_data_value_, target_floor_value_, d_pixel_buffer,
-                                   d_noise_block, context->stream);
+                                     d_noise_block, context->stream);
     CHECK_CUDA_ERR(cudaMemcpyAsync(context->h_tile_buffer.Get(), d_pixel_buffer.array, d_pixel_buffer.ByteSize(),
                                    cudaMemcpyDeviceToHost, context->stream));
     CHECK_CUDA_ERR(cudaStreamSynchronize(context->stream));
@@ -170,7 +172,6 @@ void ThermalNoiseRemover::ComputeAmplitudeTile(alus::Rectangle target_tile, Thre
                                                       target_tile.width, target_tile.height, GDT_Float32, 0, 0));
     }
 }
-
 
 void ThermalNoiseRemover::Initialise() {
     // CHECK INPUT PRODUCT
@@ -194,9 +195,19 @@ void ThermalNoiseRemover::Initialise() {
 
     CreateTargetDatasetFromProduct();
 
-    thermal_noise_info_ = GetThermalNoiseInfo(
-        polarisation_, subswath_,
-        source_product_->GetMetadataRoot()->GetElement(snapengine::AbstractMetadata::ORIGINAL_PRODUCT_METADATA));
+    if (is_complex_data_) {
+        thermal_noise_info_ = GetThermalNoiseInfoForBursts(
+            polarisation_, subswath_,
+            source_product_->GetMetadataRoot()->GetElement(snapengine::AbstractMetadata::ORIGINAL_PRODUCT_METADATA));
+    } else {
+        thermal_noise_info_ = GetThermalNoiseInfoForGrd(
+            polarisation_,
+            source_product_->GetMetadataRoot()->GetElement(snapengine::AbstractMetadata::ORIGINAL_PRODUCT_METADATA));
+        FillTimeMapsWithT0AndDeltaTS(
+            std::filesystem::path(source_ds_->GetDescription()).stem().string(),
+            source_product_->GetMetadataRoot()->GetElement(snapengine::AbstractMetadata::ORIGINAL_PRODUCT_METADATA),
+            thermal_noise_info_.time_maps);
+    }
 }
 
 void ThermalNoiseRemover::GetSubsetOffset() {
@@ -328,6 +339,8 @@ void ThermalNoiseRemover::SetTargetImages() {
             std::vector<ThreadData> thread_contexts(n_threads);
             std::vector<std::thread> threads;
             for (size_t i = 0; i < n_threads; ++i) {
+                //                auto t = std::thread(&ThermalNoiseRemover::ComputeTileImage, this,
+                //                &thread_contexts.at(i), &tnr_data); t.join();
                 threads.emplace_back(&ThermalNoiseRemover::ComputeTileImage, this, &thread_contexts.at(i), &tnr_data);
             }
 
