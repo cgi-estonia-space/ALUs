@@ -135,4 +135,10 @@ inline int GetSampleIndex(int sample, const std::vector<int>& pixels) {
 void FillAzimuthNoiseVectorWithInterpolatedValues(const s1tbx::NoiseAzimuthVector& v, int first_azimuth_line,
                                                   int last_azimuth_line, std::vector<double> to_compute);
 
+void ComputeNoiseMatrix(int tile_offset_x, int tile_offset_y, int nx0, int nx_max, int ny0, int ny_max,
+                        const std::vector<int>& noise_range_vector_line,
+                        const std::vector<std::vector<double>>& interpolated_range_vectors,
+                        const std::vector<double>& interpolated_azimuth_vector,
+                        std::vector<std::vector<double>>& values);
+
 }  // namespace alus::tnr

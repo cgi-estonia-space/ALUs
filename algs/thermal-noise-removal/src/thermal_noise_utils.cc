@@ -272,12 +272,16 @@ device::Matrix<double> BuildNoiseLutForTOPSSLC(Rectangle tile, const ThermalNois
 }
 
 device::Matrix<double> BuildNoiseLutForTOPSGRD(Rectangle tile, const ThermalNoiseInfo& thermal_noise_info,
-                                               ThreadData* thread_data) {
+                                               ThreadData*) {
     const auto x_max = tile.x + tile.width - 1;
     const auto y_max = tile.y + tile.height - 1;
     bool has_data{false};
     // Although it is GRD, the noise azimuth vectors are segregated by the originating swath in the metadata.
     // Hence 3 vectors, each for a subswath.
+    std::vector<std::vector<double>> noise_matrix(tile.height);
+    for (auto& v : noise_matrix) {
+        v.resize(tile.width);
+    }
     for (auto& nav : thermal_noise_info.noise_azimuth_vectors) {
         const auto nx0 = std::max(tile.x, nav.first_range_sample);
         const auto nx_max = std::min(x_max, nav.last_range_sample);
@@ -316,10 +320,13 @@ device::Matrix<double> BuildNoiseLutForTOPSGRD(Rectangle tile, const ThermalNois
 
         std::vector<double> interpolated_azimuth_vector(ny_max - ny0 + 1);
         FillAzimuthNoiseVectorWithInterpolatedValues(nav, ny0, ny_max, interpolated_azimuth_vector);
-//        std::cout << "Tile size " << tile.width << "x" << tile.height << " for range and azimuth interpolated sizes "
-//                  << interpolated_range_value_count << "x" << interpolated_azimuth_vector.size()
-//                  << " with interpolated range vector having elements - " << noise_vector_indices.size() << std::endl;
-
+        //        std::cout << "Tile size " << tile.width << "x" << tile.height << " for range and azimuth interpolated
+        //        sizes "
+        //                  << interpolated_range_value_count << "x" << interpolated_azimuth_vector.size()
+        //                  << " with interpolated range vector having elements - " << noise_vector_indices.size() <<
+        //                  std::endl;
+        ComputeNoiseMatrix(tile.x, tile.y, nx0, nx_max, ny0, ny_max, noise_range_vector_line,
+                           interpolated_range_vectors, interpolated_azimuth_vector, noise_matrix);
     }
 
     if (!has_data) {
@@ -330,10 +337,8 @@ device::Matrix<double> BuildNoiseLutForTOPSGRD(Rectangle tile, const ThermalNois
             " h:" + std::to_string(tile.height));
     }
 
-    (void)thread_data;
-
-    const auto noise_matrix = device::CreateKernelMatrix<double>(tile.width, tile.height);
-    return noise_matrix;
+    const auto noise_matrix_dev = device::CreateKernelMatrix<double>(tile.width, tile.height, noise_matrix);
+    return noise_matrix_dev;
 }
 
 cuda::KernelArray<int> CalculateBurstIndices(Rectangle tile, int lines_per_burst, ThreadData* thread_data) {
@@ -415,6 +420,43 @@ void FillAzimuthNoiseVectorWithInterpolatedValues(const s1tbx::NoiseAzimuthVecto
             to_compute.at(line - first_azimuth_line) =
                 InterpolateNoise(v.lines.at(line_index), v.lines.at(line_index + 1), v.noise_azimuth_lut.at(line_index),
                                  v.noise_azimuth_lut.at(line_index + 1), line);
+        }
+    }
+}
+
+void ComputeNoiseMatrix(int tile_offset_x, int tile_offset_y, int nx0, int nx_max, int ny0, int ny_max,
+                        const std::vector<int>& noise_range_vector_line,
+                        const std::vector<std::vector<double>>& interpolated_range_vectors,
+                        const std::vector<double>& interpolated_azimuth_vector,
+                        std::vector<std::vector<double>>& values) {
+    if (noise_range_vector_line.size() == 1) {
+        for (int x = nx0; x <= nx_max; x++) {
+            const int xx = x - nx0;
+            for (int y = ny0; y <= ny_max; y++) {
+                values.at(y - tile_offset_y).at(x - tile_offset_x) =
+                    interpolated_azimuth_vector.at(y - ny0) * interpolated_range_vectors.front().at(xx);
+            }
+        }
+
+    } else {
+        const int line0_index = GetSampleIndex(ny0, noise_range_vector_line);
+
+        for (int x = nx0; x <= nx_max; x++) {
+            const int xx = x - nx0;
+            int line_index = line0_index;
+
+            for (int y = ny0; y <= ny_max; y++) {
+                if (y > noise_range_vector_line.at(line_index + 1) &&
+                    line_index < static_cast<int>(noise_range_vector_line.size()) - 2) {
+                    line_index++;
+                }
+
+                values.at(y - tile_offset_y).at(x - tile_offset_x) =
+                    interpolated_azimuth_vector.at(y - ny0) *
+                    InterpolateNoise(noise_range_vector_line.at(line_index), noise_range_vector_line.at(line_index + 1),
+                                     interpolated_range_vectors.at(line_index).at(xx),
+                                     interpolated_range_vectors.at(line_index + 1).at(xx), y);
+            }
         }
     }
 }

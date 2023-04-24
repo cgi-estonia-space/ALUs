@@ -35,7 +35,7 @@ static_assert(alignof(CInt16) == 4);
 
 union IntensityData {
     CInt16 input_complex;
-    uint32_t input_amplitude; // Real values are uint16_t.
+    uint32_t input_amplitude;  // Real values are uint16_t.
     float output;
 };
 
@@ -74,7 +74,25 @@ inline Matrix<T> CreateKernelMatrix(size_t row_width, size_t row_count) {
         CHECK_CUDA_ERR(cudaMalloc(&row.array, row.ByteSize()));
     }
 
-    BurstIndexToInterpolatedRangeVectorMap d_map{nullptr, row_count};
+    Matrix<T> d_map{nullptr, row_count};
+    CHECK_CUDA_ERR(cudaMalloc(&d_map.array, d_map.ByteSize()));
+    CHECK_CUDA_ERR(cudaMemcpy(d_map.array, h_map.data(), d_map.ByteSize(), cudaMemcpyHostToDevice));
+
+    return d_map;
+}
+
+template <typename T>
+inline Matrix<T> CreateKernelMatrix(size_t row_width, size_t row_count, const std::vector<std::vector<T>>& data) {
+    std::vector<cuda::KernelArray<T>> h_map(row_count);
+    int row_i{0};
+    for (auto& row : h_map) {
+        row.size = row_width;
+        CHECK_CUDA_ERR(cudaMalloc(&row.array, row.ByteSize()));
+        CHECK_CUDA_ERR(
+            cudaMemcpy(row.array, data.at(row_i).data(), data.at(row_i).size() * sizeof(T), cudaMemcpyHostToDevice));
+    }
+
+    Matrix<T> d_map{nullptr, row_count};
     CHECK_CUDA_ERR(cudaMalloc(&d_map.array, d_map.ByteSize()));
     CHECK_CUDA_ERR(cudaMemcpy(d_map.array, h_map.data(), d_map.ByteSize(), cudaMemcpyHostToDevice));
 
