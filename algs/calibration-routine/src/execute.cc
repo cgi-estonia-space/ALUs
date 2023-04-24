@@ -92,7 +92,6 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
     auto reader = reader_plug_in->CreateReaderInstance();
     auto product = reader->ReadProductNodes(boost::filesystem::canonical(params_.input), nullptr);
     const auto pt = product->GetProductType();
-    (void)pt;  // "GRD" or "SLC"
 
     // split
     std::vector<std::shared_ptr<snapengine::Product>> tnr_in_products;
@@ -176,22 +175,44 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t) {
     // rethink this part if we add support for larger GPUs with full chain on GPU processing
     dem_assistant->GetElevationManager()->TransferToDevice();
 
-    // deburst
-    std::vector<std::shared_ptr<snapengine::Product>> deburst_products(tnr_products.size());
+    std::shared_ptr<snapengine::Product> tc_in_product;
+    GDALDataset* tc_in_dataset = nullptr;
+    if (pt == "SLC") {
+        // deburst
+        const size_t tc_product_count{calib_products.size()};
+        std::vector<std::shared_ptr<snapengine::Product>> deburst_products(tc_product_count);
 
-    Deburst(calib_products, calib_datasets, output_names, deburst_products);
-    for (auto& ds : calib_datasets) {
-        ds.reset();
+        Deburst(calib_products, calib_datasets, output_names, deburst_products);
+        for (auto& ds : calib_datasets) {
+            ds.reset();
+        }
+        calib_datasets.clear();
+
+        // Merge
+        std::shared_ptr<snapengine::Product> merge_output;
+        Merge(deburst_products, output_names, merge_output);
+
+        tc_in_product = merge_output;
+        // unfortunately have to assume this downcast is valid, because TC does not use the ImageWriter interface
+        if (tc_product_count > 1U) {
+            tc_in_dataset =
+                std::dynamic_pointer_cast<snapengine::custom::GdalImageWriter>(tc_in_product->GetImageWriter())
+                    ->GetDataset();
+        } else {
+            tc_in_dataset =
+                std::dynamic_pointer_cast<snapengine::custom::GdalImageReader>(tc_in_product->GetImageReader())
+                    ->GetDataset();
+        }
+    } else {
+        // Calibration and thermal noise does not copy tie point grids from input. For SLC it is done by other
+        // operators.
+        tc_in_product = product;
+        tc_in_dataset = calib_datasets.front().get();
     }
-    calib_datasets.clear();
-
-    // Merge
-    std::shared_ptr<snapengine::Product> merge_output;
-    Merge(deburst_products, output_names, merge_output);
 
     // TC
     const auto output_file =
-        TerrainCorrection(merge_output, deburst_products.size(), output_names.front(), dem_assistant, final_path);
+        TerrainCorrection(tc_in_product, tc_in_dataset, output_names.front(), dem_assistant, final_path);
 
     LOGI << "Algorithm completed, output file @ " << output_file;
 }
@@ -470,9 +491,8 @@ void Execute::Merge(const std::vector<std::shared_ptr<snapengine::Product>>& deb
         << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - merge_start).count()
         << "ms";
 }
-std::string Execute::TerrainCorrection(const std::shared_ptr<snapengine::Product>& merge_product,
-                                       size_t deb_product_count, std::string_view output_name,
-                                       std::shared_ptr<dem::Assistant> dem_assistant,
+std::string Execute::TerrainCorrection(const std::shared_ptr<snapengine::Product>& merge_product, GDALDataset* in_ds,
+                                       std::string_view output_name, std::shared_ptr<dem::Assistant> dem_assistant,
                                        std::string_view predefined_output_name) const {
     const auto tc_start = std::chrono::steady_clock::now();
 
@@ -482,26 +502,15 @@ std::string Execute::TerrainCorrection(const std::shared_ptr<snapengine::Product
     const size_t dem_tiles_length = dem_assistant->GetElevationManager()->GetTileCount();
     const int selected_band{1};
 
-    // unfortunately have to assume this downcast is valid, because TC does not use the ImageWriter interface
-    GDALDataset* tc_in_dataset = nullptr;
-    if (deb_product_count > 1U) {
-        tc_in_dataset = std::dynamic_pointer_cast<snapengine::custom::GdalImageWriter>(merge_product->GetImageWriter())
-                            ->GetDataset();
-    } else {
-        tc_in_dataset = std::dynamic_pointer_cast<snapengine::custom::GdalImageReader>(merge_product->GetImageReader())
-                            ->GetDataset();
-    }
-
     const auto total_dimension_edge = 4096;
-    const auto x_tile_size =
-        static_cast<int>((tc_in_dataset->GetRasterXSize() /
-                          static_cast<double>(tc_in_dataset->GetRasterXSize() + tc_in_dataset->GetRasterYSize())) *
-                         total_dimension_edge);
+    const auto x_tile_size = static_cast<int>(
+        (in_ds->GetRasterXSize() / static_cast<double>(in_ds->GetRasterXSize() + in_ds->GetRasterYSize())) *
+        total_dimension_edge);
     const auto y_tile_size = total_dimension_edge - x_tile_size;
 
     terraincorrection::TerrainCorrection tc(
-        tc_in_dataset, metadata.GetMetadata(), metadata.GetLatTiePointGrid(), metadata.GetLonTiePointGrid(),
-        d_dem_tiles, dem_tiles_length, dem_assistant->GetElevationManager()->GetProperties(), dem_assistant->GetType(),
+        in_ds, metadata.GetMetadata(), metadata.GetLatTiePointGrid(), metadata.GetLonTiePointGrid(), d_dem_tiles,
+        dem_tiles_length, dem_assistant->GetElevationManager()->GetProperties(), dem_assistant->GetType(),
         dem_assistant->GetElevationManager()->GetPropertiesValue(), selected_band);
     std::string tc_output_file = predefined_output_name.empty()
                                      ? boost::filesystem::change_extension(output_name.data(), "").string() + "_tc.tif"

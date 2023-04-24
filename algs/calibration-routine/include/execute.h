@@ -81,7 +81,7 @@ private:
     void Merge(const std::vector<std::shared_ptr<snapengine::Product>>& deburst_products,
                std::vector<std::string>& output_names, std::shared_ptr<snapengine::Product>& merge_output) const;
 
-    std::string TerrainCorrection(const std::shared_ptr<snapengine::Product>& merge_product, size_t deb_product_count,
+    std::string TerrainCorrection(const std::shared_ptr<snapengine::Product>& merge_product, GDALDataset* in_ds,
                                   std::string_view output_name, std::shared_ptr<dem::Assistant> dem_assistant,
                                   std::string_view predefined_output_name) const;
     std::string ConditionAoi(const std::string& aoi) const;

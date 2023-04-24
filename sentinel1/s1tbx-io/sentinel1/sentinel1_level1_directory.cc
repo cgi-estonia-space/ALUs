@@ -29,10 +29,8 @@
 
 #include "alus_log.h"
 #include "general_constants.h"
-#include "s1tbx-commons/io/image_i_o_file.h"
 #include "s1tbx-commons/io/sar_reader.h"
 #include "s1tbx-io/geotiffxml/geo_tiff_utils.h"
-#include "s1tbx-io/sentinel1/i_sentinel1_directory.h"
 #include "s1tbx-io/sentinel1/sentinel1_constants.h"
 #include "snap-core/core/datamodel/band.h"
 #include "snap-core/core/datamodel/i_geo_coding.h"

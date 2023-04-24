@@ -64,8 +64,10 @@ std::shared_ptr<T> OpenSentinel1SafeRaster(std::string_view safe_path, std::stri
         for (std::filesystem::directory_iterator itr(measurement); itr != end_itr; itr++) {
             if (std::filesystem::is_regular_file(itr->path())) {
                 std::string current_file = itr->path().string();
+                // Also check that file ends with .tif, since gdalinfo etc. could produce a metadata file ending aux.xml
                 if (current_file.find(low_subswath) != std::string::npos &&
-                    current_file.find(low_polarisation) != std::string::npos) {
+                    current_file.find(low_polarisation) != std::string::npos &&
+                    current_file.find(".tif", current_file.length() - 5) != std::string::npos) {
                     LOGV << "Selecting tif for reading: " << current_file;
                     return std::make_shared<T>(current_file);
                 }

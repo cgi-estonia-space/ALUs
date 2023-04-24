@@ -43,6 +43,10 @@ Metadata::Metadata(std::string_view dim_metadata_file, std::string_view lat_tie_
 Metadata::Metadata(std::shared_ptr<snapengine::Product> product) {
     auto root = snapengine::AbstractMetadata::GetAbstractedMetadata(product);
     FillMetadataFrom(root);
+    if (!product->ContainsTiePointGrid(LATITUDE_TIE_POINT_GRID) ||
+        !product->ContainsTiePointGrid(LONGITUDE_TIE_POINT_GRID)) {
+        throw std::runtime_error("Terrain correction metadata requires tie point grid information from the product.");
+    }
     auto& lat_grid = *product->GetTiePointGrid(LATITUDE_TIE_POINT_GRID);
     auto& lon_grid = *product->GetTiePointGrid(LONGITUDE_TIE_POINT_GRID);
     lat_tie_point_grid_ = GetTiePointGrid(lat_grid);

@@ -136,39 +136,42 @@ void ThermalNoiseRemover::ComputeComplexTile(alus::Rectangle target_tile, Thread
 
 void ThermalNoiseRemover::ComputeAmplitudeTile(alus::Rectangle target_tile, ThreadData* context, SharedData* tnr_data) {
     const auto d_noise_block = BuildNoiseLutForTOPSGRD(target_tile, thermal_noise_info_, context);
+    (void)d_noise_block;
     static_assert(sizeof(IntensityData::input_amplitude) == sizeof(*context->h_tile_buffer.Get()));
     auto* buffer_ptr = reinterpret_cast<uint32_t*>(context->h_tile_buffer.Get());
+    (void)buffer_ptr;
+    std::vector<uint32_t> data_buf(target_tile.width * target_tile.height);
     {
         std::unique_lock l(tnr_data->dataset_mutex);
         CHECK_GDAL_ERROR(tnr_data->src_dataset->GetRasterBand(1)->RasterIO(
             GF_Read, target_tile.x + tnr_data->src_area.x, target_tile.y + tnr_data->src_area.y, target_tile.width,
-            target_tile.height, buffer_ptr, target_tile.width, target_tile.height, GDT_UInt32, 0, 0));
+            target_tile.height, data_buf.data(), target_tile.width, target_tile.height, GDT_UInt32, 0, 0));
     }
 
-    const auto tile_size = static_cast<size_t>(target_tile.width) * static_cast<size_t>(target_tile.height);
-    cuda::KernelArray<IntensityData> d_pixel_buffer{nullptr, tile_size};
-    d_pixel_buffer.array = context->dev_mem_arena.AllocArray<IntensityData>(tile_size);
-
-    CHECK_CUDA_ERR(cudaMemcpyAsync(d_pixel_buffer.array, context->h_tile_buffer.Get(), d_pixel_buffer.ByteSize(),
-                                   cudaMemcpyHostToDevice, context->stream));
-
-    // There is a check in SNAP for a case when TNR is performed after calibration. However, ALUs does not allow such
-    // use case so this check was omitted.
-
-    LaunchComputeAmplitudeTileKernel(target_tile, target_no_data_value_, target_floor_value_, d_pixel_buffer,
-                                     d_noise_block, context->stream);
-    CHECK_CUDA_ERR(cudaMemcpyAsync(context->h_tile_buffer.Get(), d_pixel_buffer.array, d_pixel_buffer.ByteSize(),
-                                   cudaMemcpyDeviceToHost, context->stream));
-    CHECK_CUDA_ERR(cudaStreamSynchronize(context->stream));
-    CHECK_CUDA_ERR(cudaGetLastError());
-
-    device::DestroyKernelMatrix(d_noise_block);
-    context->dev_mem_arena.Reset();
+//    const auto tile_size = static_cast<size_t>(target_tile.width) * static_cast<size_t>(target_tile.height);
+//    cuda::KernelArray<IntensityData> d_pixel_buffer{nullptr, tile_size};
+//    d_pixel_buffer.array = context->dev_mem_arena.AllocArray<IntensityData>(tile_size);
+//
+//    CHECK_CUDA_ERR(cudaMemcpyAsync(d_pixel_buffer.array, context->h_tile_buffer.Get(), d_pixel_buffer.ByteSize(),
+//                                   cudaMemcpyHostToDevice, context->stream));
+//
+//    // There is a check in SNAP for a case when TNR is performed after calibration. However, ALUs does not allow such
+//    // use case so this check was omitted.
+//
+//    LaunchComputeAmplitudeTileKernel(target_tile, target_no_data_value_, target_floor_value_, d_pixel_buffer,
+//                                     d_noise_block, context->stream);
+//    CHECK_CUDA_ERR(cudaMemcpyAsync(context->h_tile_buffer.Get(), d_pixel_buffer.array, d_pixel_buffer.ByteSize(),
+//                                   cudaMemcpyDeviceToHost, context->stream));
+//    CHECK_CUDA_ERR(cudaStreamSynchronize(context->stream));
+//    CHECK_CUDA_ERR(cudaGetLastError());
+//
+//    device::DestroyKernelMatrix(d_noise_block);
+//    context->dev_mem_arena.Reset();
 
     {
         std::unique_lock lock(tnr_data->dst_mutex);
         CHECK_GDAL_ERROR(tnr_data->dst_band->RasterIO(GF_Write, target_tile.x, target_tile.y, target_tile.width,
-                                                      target_tile.height, context->h_tile_buffer.Get(),
+                                                      target_tile.height, data_buf.data(),
                                                       target_tile.width, target_tile.height, GDT_Float32, 0, 0));
     }
 }
