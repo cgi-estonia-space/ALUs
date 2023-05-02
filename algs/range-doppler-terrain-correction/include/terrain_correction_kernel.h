@@ -26,6 +26,7 @@
 #include "pointer_holders.h"
 #include "raster_properties.h"
 #include "resampling.h"
+#include "srgr_coefficients.h"
 
 namespace alus::terraincorrection {
 
@@ -43,6 +44,8 @@ struct GetSourceRectangleKernelArgs {
     dem::Type dem_type;
     double* d_azimuth_index;
     double* d_range_index;
+    cuda::KernelArray<SrgrCoefficientsDevice> d_srgr_coefficients;
+    cuda::KernelArray<double> d_srgr_polynomial_calc_buf;
 };
 
 struct TerrainCorrectionKernelArgs {
@@ -73,6 +76,7 @@ struct PerThreadData {
 
     alus::cuda::MemArena device_memory_arena;
     cuda::CudaPtr<float> d_source_buffer;
+    cuda::CudaPtr<double> d_srgr_coefficient_polynomial_buffer;
     cudaStream_t stream;
 };
 

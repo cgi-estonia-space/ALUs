@@ -30,6 +30,12 @@
 namespace alus {
 namespace terraincorrection {
 
+struct SrgrCoefficients {
+    double time_mjd;
+    double ground_range_origin = 0.0;
+    std::vector<double> coefficient;
+};
+
 struct RangeDopplerTerrainMetadata {
     std::string product;
     metadata::ProductType product_type;
@@ -68,9 +74,9 @@ struct RangeDopplerTerrainMetadata {
     std::vector<snapengine::OrbitStateVector> orbit_state_vectors2;
     double wavelength{0.0};
     std::vector<snapengine::SpectralBandInfo> band_info;
+    std::vector<SrgrCoefficients> srgr_coefficients;
 };
 
-// TODO: rewrite implementing SNAP internal model
 class Metadata final {
 public:
     struct TiePoints {
@@ -107,6 +113,7 @@ private:
                                    snapengine::tiepointgrid::TiePointGrid& lat_tie_point_grid,
                                    snapengine::tiepointgrid::TiePointGrid& lon_tie_point_grid);
     [[nodiscard]] static snapengine::tiepointgrid::TiePointGrid GetTiePointGrid(snapengine::TiePointGrid& grid);
+    static std::vector<SrgrCoefficients> ParseSrgrCoefficients(std::shared_ptr<snapengine::MetadataElement> root);
 
     snapengine::tiepointgrid::TiePointGrid lat_tie_point_grid_;
     snapengine::tiepointgrid::TiePointGrid lon_tie_point_grid_;

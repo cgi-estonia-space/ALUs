@@ -29,6 +29,7 @@
 #include "pointer_holders.h"
 #include "product_old.h"
 #include "resampling.h"
+#include "srgr_coefficients.h"
 #include "tc_tile.h"
 #include "terrain_correction_kernel.h"
 #include "terrain_correction_metadata.h"
@@ -79,6 +80,7 @@ private:
     std::vector<snapengine::OrbitStateVectorComputation> h_orbit_state_vectors_;
     std::pair<std::string, std::shared_ptr<GDALDataset>> output_;
     common::metadata::Container metadata_output_;
+    cuda::KernelArray<SrgrCoefficientsDevice> d_srgr_coefficients_{nullptr, 0};
 
     /**
      * Computes target image boundary by creating a rectangle around the source image. The source image should be
@@ -116,5 +118,7 @@ private:
     struct SharedThreadData;
     static void CalculateTile(TcTileCoordinates tile, SharedThreadData* tc_data, PerThreadData* c);
     static void TileLoop(SharedThreadData* tc_data, PerThreadData* ctx);
+
+    void CreateSrgrCoefficientsOnDevice();
 };
 }  // namespace alus::terraincorrection

@@ -41,6 +41,16 @@ Metadata::Metadata(std::string_view dim_metadata_file, std::string_view lat_tie_
 }
 
 Metadata::Metadata(std::shared_ptr<snapengine::Product> product) {
+    metadata_fields_.product = product->GetProductType();
+    if (metadata_fields_.product == "SLC") {
+        metadata_fields_.product_type = metadata::ProductType::SLC;
+    } else if (metadata_fields_.product == "GRD") {
+        metadata_fields_.product_type = metadata::ProductType::GRD;
+    } else {
+        throw std::invalid_argument("Expected 'GRD' or 'SLC' product type - '" + metadata_fields_.product +
+                                    "' not supported. Please check the input dataset.");
+    }
+
     auto root = snapengine::AbstractMetadata::GetAbstractedMetadata(product);
     FillMetadataFrom(root);
     if (!product->ContainsTiePointGrid(LATITUDE_TIE_POINT_GRID) ||
@@ -71,6 +81,10 @@ Metadata::Metadata(std::shared_ptr<snapengine::Product> product) {
         // todo add optional values?
 
         metadata_fields_.band_info.push_back(std::move(band_info));
+    }
+
+    if (metadata_fields_.product_type == metadata::ProductType::GRD) {
+        metadata_fields_.srgr_coefficients = ParseSrgrCoefficients(root);
     }
 }
 
@@ -128,7 +142,7 @@ void Metadata::FillMetadataFrom(std::shared_ptr<snapengine::MetadataElement> mas
 
     metadata_fields_.orbit_state_vectors2 = snapengine::AbstractMetadata::GetOrbitStateVectors(master_root);
     if (metadata_fields_.orbit_state_vectors2.empty()) {
-        throw std::runtime_error("Invalid Obit State Vectors");
+        throw std::runtime_error("Invalid Orbit State Vectors");
     }
 
     metadata_fields_.slant_range_to_first_pixel = snapengine::AbstractMetadata::GetAttributeDouble(
@@ -157,6 +171,51 @@ snapengine::tiepointgrid::TiePointGrid Metadata::GetTiePointGrid(snapengine::Tie
             static_cast<size_t>(grid.GetGridWidth()),
             static_cast<size_t>(grid.GetGridHeight()),
             nullptr};
+}
+
+std::vector<SrgrCoefficients> Metadata::ParseSrgrCoefficients(std::shared_ptr<snapengine::MetadataElement> root) {
+    auto elem_root = root->GetElement(snapengine::AbstractMetadata::SRGR_COEFFICIENTS);
+    if (elem_root == nullptr) {
+        throw std::runtime_error("The element '" + std::string(snapengine::AbstractMetadata::SRGR_COEFFICIENTS) +
+                                 "' is missing from metadata. Needed for GRD dataset terrain correction.");
+    }
+
+    auto srgr_coef_list_elements = elem_root->GetElements();
+    const auto srgr_coef_list_length = srgr_coef_list_elements.size();
+    if (srgr_coef_list_length == 0) {
+        throw std::runtime_error("The metadata section '" +
+                                 std::string(snapengine::AbstractMetadata::SRGR_COEFFICIENTS) +
+                                 "' does not consist of any elements. Needed for GRD dataset terrain correction.");
+    }
+
+    std::vector<SrgrCoefficients> srgr_entries(srgr_coef_list_length);
+    for (size_t list_index{0}; list_index < srgr_coef_list_length; list_index++) {
+        const auto& input_element = srgr_coef_list_elements.at(list_index);
+        auto& output_entry = srgr_entries.at(list_index);
+        output_entry.time_mjd = input_element->GetAttributeUtc(snapengine::AbstractMetadata::SRGR_COEF_TIME)->GetMjd();
+        output_entry.ground_range_origin =
+            input_element->GetAttributeDouble(snapengine::AbstractMetadata::GROUND_RANGE_ORIGIN);
+        const auto coef_value_count = input_element->GetNumElements();
+        if (coef_value_count == 0) {
+            throw std::runtime_error("The metadata section '" +
+                                     std::string(snapengine::AbstractMetadata::SRGR_COEFFICIENTS) + "' element no " +
+                                     std::to_string(list_index + 1) + " does not have any coefficient values.");
+        }
+        output_entry.coefficient.resize(coef_value_count);
+        for (int i{0}; i < coef_value_count; i++) {
+            const auto& elem = input_element->GetElementAt(i);
+            if (elem == nullptr) {
+                throw std::runtime_error(
+                    "Implementation error detected while parsing elements of the metadata section '" +
+                    std::string(snapengine::AbstractMetadata::SRGR_COEFFICIENTS) + "' - there is reported " +
+                    std::to_string(coef_value_count) + " coefficient elements present, but querying element no. " +
+                    std::to_string(i) + " resulted in 'nullptr'");
+            }
+            output_entry.coefficient.at(i) = elem->GetAttributeDouble(snapengine::AbstractMetadata::SRGR_COEF, 0.0);
+        }
+    }
+
+    return srgr_entries;
 }
 
 }  // namespace alus::terraincorrection

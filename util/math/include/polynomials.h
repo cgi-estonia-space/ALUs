@@ -11,22 +11,30 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
+
 #pragma once
 
-namespace alus::metadata {
-enum class ProductType { SLC, GRD };
+#include <cstddef>
 
-enum class AcquisitionMode { IW };
+#ifdef __CUDACC__
+#define DEVICE_STUB __device__
+#define HOST_STUB __host__
+#else
+#define DEVICE_STUB
+#define HOST_STUB
+#endif
 
-enum class AntennaDirection { RIGHT, LEFT };
+namespace alus::math::polynomials {
 
-enum class Swath { IW1 };
+inline DEVICE_STUB HOST_STUB double CalculateValue(double x, double* coefficients, size_t coefficients_length) {
+    double val = 0.0;
 
-enum class Pass { ASCENDING, DESCENDING };
+    for (size_t i = coefficients_length - 1; i > 0; i--) {
+        val += coefficients[i];
+        val *= x;
+    }
 
-enum class SampleType { COMPLEX, DETECTED };
+    return val + coefficients[0];
+}
 
-enum class Polarisation { VH, VV };
-
-enum class Algorithm { RANGE_DOPPLER };
-}  // namespace alus::metadata
+}  // namespace alus::math::polynomials

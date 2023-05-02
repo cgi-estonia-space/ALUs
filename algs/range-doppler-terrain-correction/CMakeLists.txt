@@ -1,5 +1,4 @@
 list(APPEND TERRAIN_CORRECTION_SOURCES
-        ${CMAKE_CURRENT_LIST_DIR}/src/get_position.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction_kernel.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction_metadata.cc
@@ -23,6 +22,7 @@ set_target_properties(terrain-correction-static
         )
 target_link_libraries(terrain-correction-static
         PUBLIC
+        alus-math-static
         cuda-util-static
         common-util-static
         dem-util-static

@@ -211,6 +211,8 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
                                           static_cast<double>(ds_y_size - 1)};
 
     CreateHostMetadata(line_time_interval_in_days);
+    d_get_position_metadata_.source_image_width =
+        input_ds_->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)->GetXSize();
     CreateGetPositionDeviceArrays(static_cast<int>(ds_y_size), line_time_interval_in_days);
 
     // Target tile
@@ -245,7 +247,20 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
     shared_data.max_tile_size = tile_height * tile_width;
     shared_data.tile_queue.InsertData(std::move(tiles));
 
+    CreateSrgrCoefficientsOnDevice();
+
     std::vector<PerThreadData> context_vec(n_threads);
+    if (!metadata_.srgr_coefficients.empty()) {
+        auto max_it = std::max_element(metadata_.srgr_coefficients.cbegin(), metadata_.srgr_coefficients.cend(),
+                                       [](const SrgrCoefficients& a, const SrgrCoefficients& b) {
+                                           return a.coefficient.size() < b.coefficient.size();
+                                       });
+        const auto max_coefficient_count = max_it->coefficient.size();
+        LOGD << "Creating SRGR coefficients' polynomial calculation area for " << max_coefficient_count << " items";
+        for (auto& c : context_vec) {
+            c.d_srgr_coefficient_polynomial_buffer.Resize(max_coefficient_count);
+        }
+    }
     std::vector<std::thread> threads_vec;
 
     for (size_t i = 0; i < n_threads; i++) {
@@ -371,9 +386,7 @@ snapengine::old::Product TerrainCorrection::CreateTargetProduct(
                                       std::abs(image_boundary[3] - image_boundary[2]),
                                       std::abs(image_boundary[1] - image_boundary[0])};
 
-    if (OGRErr error = target_crs.Validate() != OGRERR_NONE) {
-        LOGE << "OGR ERROR: " << error;  // TODO: implement some real error (SNAPGPU-163)
-    }
+    CHECK_OGR_ERROR(target_crs.Validate());
 
     GDALDriver* output_driver = GetGdalGeoTiffDriver();
 
@@ -465,13 +478,15 @@ void TerrainCorrection::CalculateTile(TcTileCoordinates tile_coordinates, Shared
     src_args.source_image_height = band->GetYSize();
     src_args.diff_lat = shared->diff_lat;
     src_args.target_geo_transform = shared->target_geo_transform;
-    src_args.dem_tiles = {shared->terrain_correction->d_dem_tiles_,
-                          shared->terrain_correction->d_dem_tiles_length_};
+    src_args.dem_tiles = {shared->terrain_correction->d_dem_tiles_, shared->terrain_correction->d_dem_tiles_length_};
+    src_args.d_srgr_coefficients = shared->terrain_correction->d_srgr_coefficients_;
 
     const size_t target_sz = tile_coordinates.target_height * tile_coordinates.target_width;
 
     src_args.d_azimuth_index = ctx->device_memory_arena.AllocArray<double>(target_sz);
     src_args.d_range_index = ctx->device_memory_arena.AllocArray<double>(target_sz);
+    src_args.d_srgr_polynomial_calc_buf.array = ctx->d_srgr_coefficient_polynomial_buffer.data();
+    src_args.d_srgr_polynomial_calc_buf.size = ctx->d_srgr_coefficient_polynomial_buffer.GetElemCount();
 
     snapengine::resampling::ResamplingRaster resampling_raster{0, 0, INVALID_SUB_SWATH_INDEX, {}, nullptr, false};
     resampling_raster.source_rectangle = GetSourceRectangle(tile_coordinates, src_args, ctx);
@@ -577,5 +592,33 @@ void TerrainCorrection::TileLoop(SharedThreadData* shared, PerThreadData* ctx) {
             LOGE << e.what();
         }
     }
+}
+
+void TerrainCorrection::CreateSrgrCoefficientsOnDevice() {
+    const auto srgr_coefficients_count = metadata_.srgr_coefficients.size();
+    if (srgr_coefficients_count == 0) {
+        return;
+    }
+
+    CHECK_CUDA_ERR(cudaMalloc(&d_srgr_coefficients_.array, srgr_coefficients_count * sizeof(SrgrCoefficientsDevice)));
+    d_srgr_coefficients_.size = srgr_coefficients_count;
+    for (size_t i{0}; i < srgr_coefficients_count; i++) {
+        auto& h_srgr = metadata_.srgr_coefficients.at(i);
+        auto& d_srgr_entry = d_srgr_coefficients_.array[i];
+        CHECK_CUDA_ERR(cudaMemcpy(&d_srgr_entry.time_mjd, &h_srgr.time_mjd, sizeof(double), cudaMemcpyHostToDevice));
+        CHECK_CUDA_ERR(cudaMemcpy(&d_srgr_entry.ground_range_origin, &h_srgr.ground_range_origin, sizeof(double),
+                                  cudaMemcpyHostToDevice));
+        const auto coefficient_count = h_srgr.coefficient.size();
+        double* pointer_tmp;
+        CHECK_CUDA_ERR(cudaMalloc(&pointer_tmp, coefficient_count * sizeof(double)));
+        CHECK_CUDA_ERR(
+            cudaMemcpy(&d_srgr_entry.coefficients.array, pointer_tmp, sizeof(double*), cudaMemcpyHostToDevice));
+        CHECK_CUDA_ERR(
+            cudaMemcpy(&d_srgr_entry.coefficients.size, &coefficient_count, sizeof(size_t), cudaMemcpyHostToDevice));
+        CHECK_CUDA_ERR(cudaMemcpy(d_srgr_entry.coefficients.array, h_srgr.coefficient.data(),
+                                  coefficient_count * sizeof(double), cudaMemcpyHostToDevice));
+        cuda_arrays_to_clean_.push_back(d_srgr_entry.coefficients.array);
+    }
+    cuda_arrays_to_clean_.push_back(d_srgr_coefficients_.array);
 }
 }  // namespace alus::terraincorrection

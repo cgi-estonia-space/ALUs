@@ -90,6 +90,7 @@ inline Matrix<T> CreateKernelMatrix(size_t row_width, size_t row_count, const st
         CHECK_CUDA_ERR(cudaMalloc(&row.array, row.ByteSize()));
         CHECK_CUDA_ERR(
             cudaMemcpy(row.array, data.at(row_i).data(), data.at(row_i).size() * sizeof(T), cudaMemcpyHostToDevice));
+        row_i++;
     }
 
     Matrix<T> d_map{nullptr, row_count};

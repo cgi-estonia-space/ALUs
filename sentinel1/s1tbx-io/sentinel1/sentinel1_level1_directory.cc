@@ -942,6 +942,8 @@ void Sentinel1Level1Directory::AddBandAbstractedMetadata(
         if (!common_metadata_retrieved) {
             // these should be the same for all swaths
             // set to absRoot
+            // This was the initial assumption. Actually they are NOT! Everything related to noise and biases differ.
+            // But atm do not influence results.
 
             const std::shared_ptr<snapengine::MetadataElement> general_annotation =
                 prod_elem->GetElement("generalAnnotation");
@@ -1096,7 +1098,7 @@ void Sentinel1Level1Directory::AddSRGRCoefficients(
         snapengine::AbstractMetadata::SetAttribute(srgr_list_elem, snapengine::AbstractMetadata::GROUND_RANGE_ORIGIN,
                                                    gr_origin);
 
-        const std::string coeff_str = elem->GetElement("grsrCoefficients")->GetAttributeString("grsrCoefficients", "");
+        const std::string coeff_str = elem->GetElement("srgrCoefficients")->GetAttributeString("srgrCoefficients", "");
         if (!coeff_str.empty()) {
             boost::char_separator<char> sep{" \t\n\r\f"};
             boost::tokenizer<boost::char_separator<char>> st{coeff_str, sep};
@@ -1111,6 +1113,7 @@ void Sentinel1Level1Directory::AddSRGRCoefficients(
                                                                      "SRGR Coefficient");
                 snapengine::AbstractMetadata::SetAttribute(coef_elem, snapengine::AbstractMetadata::SRGR_COEF,
                                                            coef_value);
+                srgr_list_elem->AddElement(coef_elem);
             }
         }
     }

@@ -989,7 +989,7 @@ void Sentinel1Utils::GetAbstractedMetadata() {
 
     if (srgr_flag_) {
         //        todo: implement if used
-        //        srgr_conv_params_ = snapengine::AbstractMetadata::GetSRGRCoefficients(abs_root);
+        // srgr_conv_params_ = snapengine::AbstractMetadata::GetSRGRCoefficients(abs_root);
     } else {
         near_edge_slant_range_ = snapengine::AbstractMetadata::GetAttributeDouble(
             abs_root, snapengine::AbstractMetadata::SLANT_RANGE_TO_FIRST_PIXEL);

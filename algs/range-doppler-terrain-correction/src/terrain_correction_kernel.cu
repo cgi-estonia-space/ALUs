@@ -82,7 +82,8 @@ __device__ Coordinates GetPixelCoordinates(TcTileCoordinates tile_coordinates,
 
 __device__ bool CheckPositionAndCellValidity(s1tbx::PositionData& position_data, Coordinates coordinates,
                                              double altitude, GetSourceRectangleKernelArgs args) {
-    if (!GetPositionImpl(coordinates.lat, coordinates.lon, altitude, position_data, args.get_position_metadata)) {
+    if (!GetPositionImpl(coordinates.lat, coordinates.lon, altitude, position_data, args.get_position_metadata,
+                         args.d_srgr_coefficients, args.d_srgr_polynomial_calc_buf)) {
         return false;
     }
 
@@ -160,15 +161,13 @@ __global__ void GetSourceRectangleKernel(TcTileCoordinates tile_coordinates, Get
     if (args.use_avg_scene_height) {
         altitude = args.avg_scene_height;
     } else if (args.dem_type == dem::Type::COPDEM_COG30m) {
-        altitude = dem::CopDemCog30mGetElevation(coordinates.lat, coordinates.lon,
-                                                 &args.dem_tiles, args.dem_property);
+        altitude = dem::CopDemCog30mGetElevation(coordinates.lat, coordinates.lon, &args.dem_tiles, args.dem_property);
         if (altitude == args.dem_no_data_value) {
             args.d_azimuth_index[index] = CUDART_NAN;
             return;
         }
     } else if (args.dem_type == dem::Type::SRTM3) {
-        altitude = snapengine::dem::GetElevation(coordinates.lat, coordinates.lon,
-                                                 &args.dem_tiles, args.dem_property);
+        altitude = snapengine::dem::GetElevation(coordinates.lat, coordinates.lon, &args.dem_tiles, args.dem_property);
         if (altitude == args.dem_no_data_value) {
             args.d_azimuth_index[index] = CUDART_NAN;
             return;
