@@ -603,21 +603,23 @@ void TerrainCorrection::CreateSrgrCoefficientsOnDevice() {
     CHECK_CUDA_ERR(cudaMalloc(&d_srgr_coefficients_.array, srgr_coefficients_count * sizeof(SrgrCoefficientsDevice)));
     d_srgr_coefficients_.size = srgr_coefficients_count;
     for (size_t i{0}; i < srgr_coefficients_count; i++) {
-        auto& h_srgr = metadata_.srgr_coefficients.at(i);
-        auto& d_srgr_entry = d_srgr_coefficients_.array[i];
-        CHECK_CUDA_ERR(cudaMemcpy(&d_srgr_entry.time_mjd, &h_srgr.time_mjd, sizeof(double), cudaMemcpyHostToDevice));
-        CHECK_CUDA_ERR(cudaMemcpy(&d_srgr_entry.ground_range_origin, &h_srgr.ground_range_origin, sizeof(double),
-                                  cudaMemcpyHostToDevice));
+        const auto& h_srgr = metadata_.srgr_coefficients.at(i);
+        auto* d_srgr_entry = &d_srgr_coefficients_.array[i];
         const auto coefficient_count = h_srgr.coefficient.size();
-        double* pointer_tmp;
-        CHECK_CUDA_ERR(cudaMalloc(&pointer_tmp, coefficient_count * sizeof(double)));
-        CHECK_CUDA_ERR(
-            cudaMemcpy(&d_srgr_entry.coefficients.array, pointer_tmp, sizeof(double*), cudaMemcpyHostToDevice));
-        CHECK_CUDA_ERR(
-            cudaMemcpy(&d_srgr_entry.coefficients.size, &coefficient_count, sizeof(size_t), cudaMemcpyHostToDevice));
-        CHECK_CUDA_ERR(cudaMemcpy(d_srgr_entry.coefficients.array, h_srgr.coefficient.data(),
+
+        SrgrCoefficientsDevice h_tmp = {};
+        h_tmp.ground_range_origin = h_srgr.ground_range_origin;
+        h_tmp.time_mjd = h_srgr.time_mjd;
+        h_tmp.coefficients.size = coefficient_count;
+
+        CHECK_CUDA_ERR(cudaMalloc(&h_tmp.coefficients.array, coefficient_count * sizeof(double)));
+        CHECK_CUDA_ERR(cudaMemcpy(h_tmp.coefficients.array, h_srgr.coefficient.data(),
                                   coefficient_count * sizeof(double), cudaMemcpyHostToDevice));
-        cuda_arrays_to_clean_.push_back(d_srgr_entry.coefficients.array);
+
+
+        CHECK_CUDA_ERR(cudaMemcpy(d_srgr_entry, &h_tmp, sizeof(SrgrCoefficientsDevice), cudaMemcpyHostToDevice));
+
+        cuda_arrays_to_clean_.push_back(h_tmp.coefficients.array);
     }
     cuda_arrays_to_clean_.push_back(d_srgr_coefficients_.array);
 }
