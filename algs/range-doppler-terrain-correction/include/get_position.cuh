@@ -89,19 +89,19 @@ inline __device__ __host__ double ComputeSlantRangeWithLut(
  * @return The ground range in meters.
  */
 inline __device__ __host__ double ComputeGroundRange(int source_image_width, double ground_range_spacing,
-                                                     double slant_range, cuda::KernelArray<double> srgr_coefficients,
-                                                     double ground_range_origin) {
+                                                     double slant_range, double* srgr_coefficients,
+                                                     int srgr_coefficients_length, double ground_range_origin) {
     // binary search is used in finding the ground range for given slant range
     double lower_bound = ground_range_origin;
     const double lower_bound_slant_range =
-        math::polynomials::CalculateValue(lower_bound, srgr_coefficients.array, srgr_coefficients.size);
+        math::polynomials::CalculateValue(lower_bound, srgr_coefficients, srgr_coefficients_length);
     if (slant_range < lower_bound_slant_range) {
         return -1.0;
     }
 
     double upper_bound = ground_range_origin + source_image_width * ground_range_spacing;
     const double upper_bound_slant_range =
-        math::polynomials::CalculateValue(upper_bound, srgr_coefficients.array, srgr_coefficients.size);
+        math::polynomials::CalculateValue(upper_bound, srgr_coefficients, srgr_coefficients_length);
     if (slant_range > upper_bound_slant_range) {
         return -1.0;
     }
@@ -110,7 +110,7 @@ inline __device__ __host__ double ComputeGroundRange(int source_image_width, dou
     double mid_slant_range;
     while (upper_bound - lower_bound > 0.0) {
         const double mid = (lower_bound + upper_bound) / 2.0;
-        mid_slant_range = math::polynomials::CalculateValue(mid, srgr_coefficients.array, srgr_coefficients.size);
+        mid_slant_range = math::polynomials::CalculateValue(mid, srgr_coefficients, srgr_coefficients_length);
         if (mid_slant_range < slant_range) {
             lower_bound = mid;
         } else if (mid_slant_range > slant_range) {
@@ -135,19 +135,19 @@ inline __device__ __host__ double ComputeGroundRange(int source_image_width, dou
  * @return The range index.
  */
 inline __device__ __host__ double ComputeRangeIndexGrdImpl(cuda::KernelArray<SrgrCoefficientsDevice>& srgr_coefficients,
-                                                           cuda::KernelArray<double> srgr_polynomial_calc_buf,
                                                            double zero_doppler_time, int source_image_width,
                                                            double range_spacing, double slant_range) {
     constexpr auto NO_RESULT{-1.0};
+    constexpr auto POLYNOMIAL_BUFFER_LENGTH{21};  // Arbitrary count, at the time of implementation there are 9 max.
 
     if (srgr_coefficients.size == 0 || srgr_coefficients.array == nullptr) {
         return NO_RESULT;
     }
 
     if (srgr_coefficients.size == 1) {
-        const auto ground_range =
-            ComputeGroundRange(source_image_width, range_spacing, slant_range, srgr_coefficients.array[0].coefficients,
-                               srgr_coefficients.array[0].ground_range_origin);
+        const auto ground_range = ComputeGroundRange(
+            source_image_width, range_spacing, slant_range, srgr_coefficients.array[0].coefficients.array,
+            srgr_coefficients.array[0].coefficients.size, srgr_coefficients.array[0].ground_range_origin);
         if (ground_range < 0.0) {
             return -1.0;
         } else {
@@ -161,7 +161,7 @@ inline __device__ __host__ double ComputeRangeIndexGrdImpl(cuda::KernelArray<Srg
     }
 
     const auto interpolation_length = srgr_coefficients.array[target_index].coefficients.size;
-    if (interpolation_length > srgr_polynomial_calc_buf.size) {
+    if (interpolation_length > POLYNOMIAL_BUFFER_LENGTH) {
         return NO_RESULT;
     }
     //    final double[] srgrCoefficients = new double[srgr_coefficients[target_index].coefficients.size];
@@ -175,14 +175,15 @@ inline __device__ __host__ double ComputeRangeIndexGrdImpl(cuda::KernelArray<Srg
     if (mu > 1.0) {
         return NO_RESULT;
     }
+    double srgr_polynomial_calc_buf[POLYNOMIAL_BUFFER_LENGTH];
     for (size_t i = 0; i < interpolation_length; i++) {
-        srgr_polynomial_calc_buf.array[i] =
+        srgr_polynomial_calc_buf[i] =
             math::interpolations::Linear(srgr_coefficients.array[target_index].coefficients.array[i],
                                          srgr_coefficients.array[target_index + 1].coefficients.array[i], mu);
     }
     const auto ground_range =
         ComputeGroundRange(source_image_width, range_spacing, slant_range, srgr_polynomial_calc_buf,
-                           srgr_coefficients.array[target_index].ground_range_origin);
+                           interpolation_length, srgr_coefficients.array[target_index].ground_range_origin);
     if (ground_range < 0.0) {
         return NO_RESULT;
     } else {
@@ -192,8 +193,7 @@ inline __device__ __host__ double ComputeRangeIndexGrdImpl(cuda::KernelArray<Srg
 
 inline __device__ __host__ bool GetPositionImpl(double lat, double lon, double alt, s1tbx::PositionData& satellite_pos,
                                                 const GetPositionMetadata& metadata,
-                                                cuda::KernelArray<SrgrCoefficientsDevice>& srgr_coefficients,
-                                                cuda::KernelArray<double> srgr_polynomial_calc_buf) {
+                                                cuda::KernelArray<SrgrCoefficientsDevice>& srgr_coefficients) {
     snapengine::geoutils::Geo2xyzWgs84Impl(lat, lon, alt, satellite_pos.earth_point);
     const auto zero_doppler_time = s1tbx::sargeocoding::GetEarthPointZeroDopplerTimeImpl(
         metadata.first_line_utc, metadata.line_time_interval, metadata.wavelength, satellite_pos.earth_point,
@@ -207,8 +207,8 @@ inline __device__ __host__ bool GetPositionImpl(double lat, double lon, double a
 
     if (srgr_coefficients.size > 0) {
         satellite_pos.range_index =
-            ComputeRangeIndexGrdImpl(srgr_coefficients, srgr_polynomial_calc_buf, zero_doppler_time,
-                                     metadata.source_image_width, metadata.range_spacing, satellite_pos.slant_range);
+            ComputeRangeIndexGrdImpl(srgr_coefficients, zero_doppler_time, metadata.source_image_width,
+                                     metadata.range_spacing, satellite_pos.slant_range);
     } else {
         satellite_pos.range_index = s1tbx::sargeocoding::ComputeRangeIndexSlcImpl(
             metadata.range_spacing, satellite_pos.slant_range, metadata.near_edge_slant_range);

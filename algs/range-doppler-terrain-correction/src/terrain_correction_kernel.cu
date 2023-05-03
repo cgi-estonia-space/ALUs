@@ -11,7 +11,6 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
-#include <cmath>
 
 #include "copdem_cog_30m_calc.cuh"
 #include "dem_calc.cuh"
@@ -19,11 +18,7 @@
 #include "math_utils.cuh"
 #include "range_doppler_geocoding.cuh"
 #include "raster_utils.cuh"
-#include "s1tbx-commons/sar_geocoding.cuh"
 
-#include "cuda_util.h"
-#include "position_data.h"
-#include "raster_properties.h"
 #include "tc_tile.h"
 #include "terrain_correction_constants.h"
 #include "terrain_correction_kernel.h"
@@ -83,7 +78,7 @@ __device__ Coordinates GetPixelCoordinates(TcTileCoordinates tile_coordinates,
 __device__ bool CheckPositionAndCellValidity(s1tbx::PositionData& position_data, Coordinates coordinates,
                                              double altitude, GetSourceRectangleKernelArgs args) {
     if (!GetPositionImpl(coordinates.lat, coordinates.lon, altitude, position_data, args.get_position_metadata,
-                         args.d_srgr_coefficients, args.d_srgr_polynomial_calc_buf)) {
+                         args.d_srgr_coefficients)) {
         return false;
     }
 
@@ -144,6 +139,8 @@ cudaError_t LaunchTerrainCorrectionKernel(TcTileCoordinates tc_tile_coordinates,
     return cudaGetLastError();
 }
 
+// Arbitrary sizes, at the time of implementation these were 28 and 9 respectively.
+//__constant__ SrgrCoefficientsDevice srgr_global[2*28][2*9];
 __global__ void GetSourceRectangleKernel(TcTileCoordinates tile_coordinates, GetSourceRectangleKernelArgs args,
                                          SourceRectangeResult* result) {
     const auto thread_x = threadIdx.x + blockIdx.x * blockDim.x;

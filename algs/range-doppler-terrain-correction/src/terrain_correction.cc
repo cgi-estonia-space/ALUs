@@ -298,17 +298,6 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
 #endif
 
     std::vector<PerThreadData> context_vec(n_threads);
-    if (!metadata_.srgr_coefficients.empty()) {
-        auto max_it = std::max_element(metadata_.srgr_coefficients.cbegin(), metadata_.srgr_coefficients.cend(),
-                                       [](const SrgrCoefficients& a, const SrgrCoefficients& b) {
-                                           return a.coefficient.size() < b.coefficient.size();
-                                       });
-        const auto max_coefficient_count = max_it->coefficient.size();
-        LOGD << "Creating SRGR coefficients' polynomial calculation area for " << max_coefficient_count << " items";
-        for (auto& c : context_vec) {
-            c.d_srgr_coefficient_polynomial_buffer.Resize(max_coefficient_count);
-        }
-    }
     std::vector<std::thread> threads_vec;
 
     for (size_t i = 0; i < n_threads; i++) {
@@ -533,8 +522,6 @@ void TerrainCorrection::CalculateTile(TcTileCoordinates tile_coordinates, Shared
 
     src_args.d_azimuth_index = ctx->device_memory_arena.AllocArray<double>(target_sz);
     src_args.d_range_index = ctx->device_memory_arena.AllocArray<double>(target_sz);
-    src_args.d_srgr_polynomial_calc_buf.array = ctx->d_srgr_coefficient_polynomial_buffer.data();
-    src_args.d_srgr_polynomial_calc_buf.size = ctx->d_srgr_coefficient_polynomial_buffer.GetElemCount();
 
     snapengine::resampling::ResamplingRaster resampling_raster{0, 0, INVALID_SUB_SWATH_INDEX, {}, nullptr, false};
     resampling_raster.source_rectangle = GetSourceRectangle(tile_coordinates, src_args, ctx);
