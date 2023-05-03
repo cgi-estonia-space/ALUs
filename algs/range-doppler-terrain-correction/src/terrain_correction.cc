@@ -37,6 +37,9 @@
 #include "tie_point_geocoding.h"
 #include "tile_queue.h"
 
+#define TC_DEBUG_DEVICE_ARRAYS 0
+#define TC_DEBUG_SRGR 0
+
 namespace {
 void InitThreadContext(alus::terraincorrection::PerThreadData* ctx, size_t max_tile_size, bool use_pinned_memory) {
     ctx->use_pinned_memory = use_pinned_memory;
@@ -117,6 +120,43 @@ void TerrainCorrection::DebugDeviceArrays() const {
     // arrays on host, can be viewed in debugger
     LOGD << "sensor position size = " << h_positions.size() << " velocity = " << h_velocities.size();
     LOGD << "osv size = " << h_osv.size() << " osv lut size = " << h_osv_lut.size();
+
+    std::stringstream debug_str_buffer;
+    //    for (const auto& pos : h_positions) {
+    //        debug_str_buffer << std::setprecision(16) << pos.x << " " << pos.y << " " << pos.z << std::endl;
+    //    }
+    //    LOGD << "Positions:" << std::endl << debug_str_buffer.str();
+    //
+    //    for (const auto& pos : h_velocities) {
+    //        debug_str_buffer << std::setprecision(16) << pos.x << " " << pos.y << " " << pos.z << std::endl;
+    //    }
+    //    LOGD << "Velocities:" << std::endl << debug_str_buffer.str();
+
+    size_t index{0};
+    for (const auto& o : h_osv) {
+        debug_str_buffer << "Orbit vector " << ++index << std::endl
+                         << std::setprecision(16) << o.timeMjd_ << std::endl
+                         << std::setprecision(16) << o.xPos_ << std::endl
+                         << std::setprecision(16) << o.yPos_ << std::endl
+                         << std::setprecision(16) << o.zPos_ << std::endl
+                         << std::setprecision(16) << o.xVel_ << std::endl
+                         << std::setprecision(16) << o.yVel_ << std::endl
+                         << std::setprecision(16) << o.zVel_ << std::endl;
+    }
+    LOGD << std::endl << debug_str_buffer.str();
+}
+
+void TerrainCorrection::DebugSrgrEntries() const {
+    std::stringstream debug_str;
+    for (size_t i{0}; i < metadata_.srgr_coefficients.size(); i++) {
+        debug_str << "Srgr entry " << i + 1 << std::endl
+                  << std::setprecision(16) << metadata_.srgr_coefficients.at(i).time_mjd << std::endl
+                  << std::setprecision(16) << metadata_.srgr_coefficients.at(i).ground_range_origin << std::endl;
+        for (size_t j{0}; j < metadata_.srgr_coefficients.at(i).coefficient.size(); j++) {
+            debug_str << std::setprecision(16) << metadata_.srgr_coefficients.at(i).coefficient.at(j) << std::endl;
+        }
+    }
+    LOGD << debug_str.str();
 }
 
 void TerrainCorrection::CreateHostMetadata(double line_time_interval_in_days) {
@@ -248,6 +288,14 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
     shared_data.tile_queue.InsertData(std::move(tiles));
 
     CreateSrgrCoefficientsOnDevice();
+
+#if TC_DEBUG_DEVICE_ARRAYS
+    DebugDeviceArrays();
+#endif
+
+#if TC_DEBUG_SRGR
+    DebugSrgrEntries();
+#endif
 
     std::vector<PerThreadData> context_vec(n_threads);
     if (!metadata_.srgr_coefficients.empty()) {
@@ -616,11 +664,37 @@ void TerrainCorrection::CreateSrgrCoefficientsOnDevice() {
         CHECK_CUDA_ERR(cudaMemcpy(h_tmp.coefficients.array, h_srgr.coefficient.data(),
                                   coefficient_count * sizeof(double), cudaMemcpyHostToDevice));
 
-
         CHECK_CUDA_ERR(cudaMemcpy(d_srgr_entry, &h_tmp, sizeof(SrgrCoefficientsDevice), cudaMemcpyHostToDevice));
 
         cuda_arrays_to_clean_.push_back(h_tmp.coefficients.array);
     }
     cuda_arrays_to_clean_.push_back(d_srgr_coefficients_.array);
+
+#if TC_DEBUG_SRGR
+    for (size_t i{0}; i < srgr_coefficients_count; i++) {
+        SrgrCoefficientsDevice h_tmp = {};
+        CHECK_CUDA_ERR(
+            cudaMemcpy(&h_tmp, &d_srgr_coefficients_.array[i], sizeof(SrgrCoefficientsDevice), cudaMemcpyDeviceToHost));
+
+        auto& host_prop = metadata_.srgr_coefficients.at(i);
+        if (h_tmp.time_mjd != metadata_.srgr_coefficients.at(i).time_mjd) {
+            std::cout << "MJD origin: " << host_prop.time_mjd << " on device:" << h_tmp.time_mjd << std::endl;
+        }
+        if (h_tmp.ground_range_origin != host_prop.ground_range_origin) {
+            std::cout << "Ground range origin: " << host_prop.ground_range_origin
+                      << " on device: " << h_tmp.ground_range_origin << std::endl;
+        }
+
+        std::vector<double> coeff(host_prop.coefficient.size());
+        CHECK_CUDA_ERR(cudaMemcpy(coeff.data(), h_tmp.coefficients.array, host_prop.coefficient.size() * sizeof(double),
+                                  cudaMemcpyDeviceToHost));
+        for (size_t j{0}; j < host_prop.coefficient.size(); j++) {
+            if (coeff.at(j) != host_prop.coefficient.at(j)) {
+                std::cout << "Coeff origin: " << host_prop.coefficient.at(j) << " on device: " << coeff.at(j)
+                          << std::endl;
+            }
+        }
+    }
+#endif
 }
 }  // namespace alus::terraincorrection

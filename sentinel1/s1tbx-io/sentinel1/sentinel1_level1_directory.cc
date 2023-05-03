@@ -1098,7 +1098,9 @@ void Sentinel1Level1Directory::AddSRGRCoefficients(
         snapengine::AbstractMetadata::SetAttribute(srgr_list_elem, snapengine::AbstractMetadata::GROUND_RANGE_ORIGIN,
                                                    gr_origin);
 
-        const std::string coeff_str = elem->GetElement("srgrCoefficients")->GetAttributeString("srgrCoefficients", "");
+        // This is initially counterintuitive, see -
+        // https://forum.step.esa.int/t/srgr-coefficients-of-sentinel-1-grd-products/8479
+        const std::string coeff_str = elem->GetElement("grsrCoefficients")->GetAttributeString("grsrCoefficients", "");
         if (!coeff_str.empty()) {
             boost::char_separator<char> sep{" \t\n\r\f"};
             boost::tokenizer<boost::char_separator<char>> st{coeff_str, sep};

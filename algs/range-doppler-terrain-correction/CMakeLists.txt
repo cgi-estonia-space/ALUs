@@ -22,12 +22,12 @@ set_target_properties(terrain-correction-static
         )
 target_link_libraries(terrain-correction-static
         PUBLIC
-        alus-math-static
         cuda-util-static
         common-util-static
         dem-util-static
         exotic-operations-static
         gdal-util-static
+        math-util-static
         snap-engine-static
         sentinel1-util-static
         )

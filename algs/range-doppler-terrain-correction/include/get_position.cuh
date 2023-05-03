@@ -172,6 +172,9 @@ inline __device__ __host__ double ComputeRangeIndexGrdImpl(cuda::KernelArray<Srg
     const auto mu =
         (zero_doppler_time - srgr_coefficients.array[target_index].time_mjd) /
         (srgr_coefficients.array[target_index + 1].time_mjd - srgr_coefficients.array[target_index].time_mjd);
+    if (mu > 1.0) {
+        return NO_RESULT;
+    }
     for (size_t i = 0; i < interpolation_length; i++) {
         srgr_polynomial_calc_buf.array[i] =
             math::interpolations::Linear(srgr_coefficients.array[target_index].coefficients.array[i],
@@ -203,9 +206,9 @@ inline __device__ __host__ bool GetPositionImpl(double lat, double lon, double a
                                  satellite_pos.earth_point, satellite_pos.sensor_pos);
 
     if (srgr_coefficients.size > 0) {
-        satellite_pos.range_index = 0;
-        ComputeRangeIndexGrdImpl(srgr_coefficients, srgr_polynomial_calc_buf, zero_doppler_time,
-                                 metadata.source_image_width, metadata.range_spacing, satellite_pos.slant_range);
+        satellite_pos.range_index =
+            ComputeRangeIndexGrdImpl(srgr_coefficients, srgr_polynomial_calc_buf, zero_doppler_time,
+                                     metadata.source_image_width, metadata.range_spacing, satellite_pos.slant_range);
     } else {
         satellite_pos.range_index = s1tbx::sargeocoding::ComputeRangeIndexSlcImpl(
             metadata.range_spacing, satellite_pos.slant_range, metadata.near_edge_slant_range);

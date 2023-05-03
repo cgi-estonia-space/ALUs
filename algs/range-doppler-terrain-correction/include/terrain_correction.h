@@ -113,6 +113,8 @@ private:
      */
     void DebugDeviceArrays() const;
 
+    void DebugSrgrEntries() const;
+
     void FreeCudaArrays();
 
     struct SharedThreadData;
