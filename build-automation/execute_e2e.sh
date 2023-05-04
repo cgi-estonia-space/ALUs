@@ -67,6 +67,9 @@ echo "
 *****Maharashtra coherence SLC scenes with COPDEM 30m COG******"
 ./run_maharashtra_coherence_test.sh $test_datasets_dir $copdem30_files_dir $orbit_files_dir $products_output
 echo "
+*****UKR GRD calibration with COPDEM 30m COG******"
+./run_ukr_grd_test.sh $test_datasets_dir $copdem30_files_dir $products_output
+echo "
 *****Jupyter notebook tests*****"
 python3 -m venv .env
 source .env/bin/activate
