@@ -120,7 +120,7 @@ std::vector<size_t> DetermineNoiseVectorIndices(double start_az_time, double end
                                                 const std::vector<s1tbx::NoiseVector>& noise_range);
 
 void FillRangeNoiseWithInterpolatedValues(const s1tbx::NoiseVector& nv, int first_range_sample, int last_range_sample,
-                                          std::vector<double> to_compute);
+                                          std::vector<double>& to_compute);
 
 inline int GetSampleIndex(int sample, const std::vector<int>& pixels) {
     for (size_t i = 0; i < pixels.size(); i++) {
@@ -133,7 +133,7 @@ inline int GetSampleIndex(int sample, const std::vector<int>& pixels) {
 }
 
 void FillAzimuthNoiseVectorWithInterpolatedValues(const s1tbx::NoiseAzimuthVector& v, int first_azimuth_line,
-                                                  int last_azimuth_line, std::vector<double> to_compute);
+                                                  int last_azimuth_line, std::vector<double>& to_compute);
 
 void ComputeNoiseMatrix(int tile_offset_x, int tile_offset_y, int nx0, int nx_max, int ny0, int ny_max,
                         const std::vector<int>& noise_range_vector_line,

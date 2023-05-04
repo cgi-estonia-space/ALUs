@@ -383,7 +383,7 @@ inline double InterpolateNoise(int p1, int p2, double noise1, double noise2, int
 }
 
 void FillRangeNoiseWithInterpolatedValues(const s1tbx::NoiseVector& nv, int first_range_sample, int last_range_sample,
-                                          std::vector<double> to_compute) {
+                                          std::vector<double>& to_compute) {
     const int nv_pix_len{static_cast<int>(nv.pixels.size())};
     if (nv_pix_len < 2) {
         throw std::runtime_error(std::string(__FUNCTION__) + " expects more elements in noise vector than " +
@@ -404,7 +404,7 @@ void FillRangeNoiseWithInterpolatedValues(const s1tbx::NoiseVector& nv, int firs
 }
 
 void FillAzimuthNoiseVectorWithInterpolatedValues(const s1tbx::NoiseAzimuthVector& v, int first_azimuth_line,
-                                                  int last_azimuth_line, std::vector<double> to_compute) {
+                                                  int last_azimuth_line, std::vector<double>& to_compute) {
     const int nv_pix_len{static_cast<int>(v.lines.size())};
     if (nv_pix_len < 2) {
         for (int line = first_azimuth_line; line <= last_azimuth_line; line++) {

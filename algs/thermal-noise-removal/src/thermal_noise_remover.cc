@@ -77,7 +77,7 @@ void ThermalNoiseRemover::ComputeTileImage(ThreadData* context, SharedData* tnr_
                 return;
             }
 
-            if (is_complex_data_) {
+            if (is_complex_input_) {
                 ComputeComplexTile(target_tile, context, tnr_data);
             } else {
                 ComputeAmplitudeTile(target_tile, context, tnr_data);
@@ -195,7 +195,7 @@ void ThermalNoiseRemover::Initialise() {
 
     CreateTargetDatasetFromProduct();
 
-    if (is_complex_data_) {
+    if (is_complex_input_) {
         thermal_noise_info_ = GetThermalNoiseInfoForBursts(
             polarisation_, subswath_,
             source_product_->GetMetadataRoot()->GetElement(snapengine::AbstractMetadata::ORIGINAL_PRODUCT_METADATA));
@@ -339,8 +339,6 @@ void ThermalNoiseRemover::SetTargetImages() {
             std::vector<ThreadData> thread_contexts(n_threads);
             std::vector<std::thread> threads;
             for (size_t i = 0; i < n_threads; ++i) {
-                //                auto t = std::thread(&ThermalNoiseRemover::ComputeTileImage, this,
-                //                &thread_contexts.at(i), &tnr_data); t.join();
                 threads.emplace_back(&ThermalNoiseRemover::ComputeTileImage, this, &thread_contexts.at(i), &tnr_data);
             }
 
@@ -436,7 +434,7 @@ ThermalNoiseRemover::ThermalNoiseRemover(std::shared_ptr<snapengine::Product> so
       output_path_(output_path),
       tile_width_(tile_width),
       tile_height_(tile_height),
-      is_complex_data_{GDALDataTypeIsComplex(
+      is_complex_input_{GDALDataTypeIsComplex(
                            source_ds_->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)->GetRasterDataType()) ==
                        1} {
     Initialise();

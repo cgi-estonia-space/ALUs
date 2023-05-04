@@ -90,7 +90,7 @@ private:
     int tile_width_{};
     int tile_height_{};
 
-    bool is_complex_data_;
+    bool is_complex_input_;
 
     double target_no_data_value_{0.0};
     const double target_floor_value_{1e-5};
