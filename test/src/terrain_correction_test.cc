@@ -189,7 +189,7 @@ TEST_F(TerrainCorrectionTest, getPositionTrueScenario) {
     KernelArray<double> osv_lut = {osv_lookup.data(), osv_lookup.size()};
 
     const GetPositionMetadata metadata{7135.669951395567, 2.3822903166873924E-8, 0.05546576,
-                                       2.329562,          799303.6132771898,     sensor_positions,
+                                       2.329562,          799303.6132771898, {}, sensor_positions,
                                        sensor_velocity,   orbit_state_vectors,   osv_lut};
     const auto series_size = pos_data_true.size();
     for (size_t i = 0; i < series_size; i++) {
@@ -248,7 +248,7 @@ TEST_F(TerrainCorrectionTest, getPositionFalseScenario) {
     KernelArray<double> osv_lut = {osv_lookup.data(), osv_lookup.size()};
 
     const GetPositionMetadata metadata{7135.669951395567, 2.3822903166873924E-8, 0.05546576,
-                                       2.329562,          799303.6132771898,     sensor_positions,
+                                       2.329562,          799303.6132771898, {}, sensor_positions,
                                        sensor_velocity,   orbit_state_vectors,   osv_lut};
     const auto series_size = pos_data_false.size();
     for (size_t i = 0; i < series_size; i++) {
@@ -329,7 +329,7 @@ TEST_F(TerrainCorrectionTest, getPositionTrueScenarioKernel) {
                                                    837674.477817126}};
 
     GetPositionMetadata metadata{
-        7135.669951395567, 2.3822903166873924E-8, 0.05546576, 2.329562, 799303.6132771898, {}, {}, {}, {}};  // NOLINT
+        7135.669951395567, 2.3822903166873924E-8, 0.05546576, 2.329562, 799303.6132771898, {}, {}, {}, {}, {}};  // NOLINT
 
     std::vector<OrbitStateVectorComputation> comp_orbits;
     comp_orbits.reserve(ORBIT_STATE_VECTORS.size());

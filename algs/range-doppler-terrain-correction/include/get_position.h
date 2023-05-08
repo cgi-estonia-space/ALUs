@@ -59,5 +59,23 @@ inline std::vector<double> CalculateOrbitStateVectorLUT(
     return h_lut;
 }
 
+/**
+ * Determines satellite position by filling PositionData structure.
+ *
+ * This is a port from RangeDopplerGeoCodingOp.java's GetPosition() procedure. It consists of 4 calculations -
+ * geoutils::Geo2xyzWgs84(), SarGeocoding::getEarthPointZeroDopplerTime(), SarGeocoding::computeSlantRange,
+ * SarGeocoding::computeRangeIndex() [only SLC images].
+ * All class fields and static data is supplied here as a separate argument.
+ *
+ * @param[in] lat Pixel latitude
+ * @param[in] lon Pixel longitude
+ * @param[in] alt Pixel elevation (in SNAP code it is altitude, but elevation is more precise)
+ * @param[out] satellite_pos Structure that consists of satellite position
+ * @param[in] metadata Various metadata needed for the calulcations.
+ * @return
+ */
+bool GetPosition(double lat, double lon, double alt, s1tbx::PositionData& satellite_pos,
+                 const GetPositionMetadata& metadata);
+
 }  // namespace terraincorrection
 }  // namespace alus

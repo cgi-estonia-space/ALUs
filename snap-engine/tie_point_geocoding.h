@@ -39,6 +39,7 @@ public:
     TiePointGeocoding& operator=(const TiePointGeocoding&) = delete;
     ~TiePointGeocoding() override = default;
 
+private:
     tiepointgrid::TiePointGrid latitude_grid_;
     tiepointgrid::TiePointGrid longitude_grid_;
 };

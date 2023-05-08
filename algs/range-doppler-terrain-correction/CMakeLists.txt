@@ -1,4 +1,5 @@
 list(APPEND TERRAIN_CORRECTION_SOURCES
+        ${CMAKE_CURRENT_LIST_DIR}/src/get_position.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction_kernel.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/terrain_correction_metadata.cc

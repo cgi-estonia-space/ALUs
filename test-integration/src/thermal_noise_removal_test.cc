@@ -53,7 +53,8 @@ TEST_F(ThermalNoiseRemovalTest, fullSubswathProcessing) {
         auto split_product = split_op.GetTargetProduct();
         auto* pixel_reader = split_op.GetPixelReader()->GetDataset();
 
-        ThermalNoiseRemover tnr(split_product, pixel_reader, "IW1", "VV", "/tmp/", 6000, 6000);
+        ThermalNoiseRemover tnr(split_product, pixel_reader->GetGdalDataset(), pixel_reader->GetReadingArea(), "IW1",
+                                "VV", "/tmp/", 6000, 6000);
 
         tnr.Execute();
 
@@ -83,7 +84,8 @@ TEST_F(ThermalNoiseRemovalTest, partialSubswathProcessing) {
         auto split_product = split_op.GetTargetProduct();
         auto* pixel_reader = split_op.GetPixelReader()->GetDataset();
 
-        ThermalNoiseRemover tnr(split_product, pixel_reader, "IW1", "VH", "/tmp/", 6000, 6000);
+        ThermalNoiseRemover tnr(split_product, pixel_reader->GetGdalDataset(), pixel_reader->GetReadingArea(), "IW1",
+                                "VH", "/tmp/", 6000, 6000);
 
         tnr.Execute();
 
