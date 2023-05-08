@@ -13,10 +13,12 @@
  */
 #pragma once
 
+#include <memory>
 #include <tuple>
 
 #include "geocoding.h"
 #include "raster_properties.h"
+#include "snap-core/core/datamodel/tie_point_grid.h"
 #include "tie_point_grid.h"
 
 namespace alus::snapengine::geocoding {
@@ -32,15 +34,18 @@ public:
     [[nodiscard]] PrecisePixelPosition GetPixelPosition(std::tuple<double, double> pixel_coordinates) const override;
     [[nodiscard]] PrecisePixelPosition GetPixelPosition(double lon, double lat) const override;
 
-    TiePointGeocoding(tiepointgrid::TiePointGrid latitude_grid, tiepointgrid::TiePointGrid longitude_grid)
-        : latitude_grid_(latitude_grid), longitude_grid_(longitude_grid){};
+    TiePointGeocoding(std::shared_ptr<snapengine::TiePointGrid> latitude_grid,
+                      std::shared_ptr<snapengine::TiePointGrid> longitude_grid)
+        : latitude_grid_(latitude_grid), longitude_grid_(longitude_grid){}
+
+    TiePointGeocoding(tiepointgrid::TiePointGrid& latitude_grid, tiepointgrid::TiePointGrid& longitude_grid);
 
     TiePointGeocoding(const TiePointGeocoding&) = delete;
     TiePointGeocoding& operator=(const TiePointGeocoding&) = delete;
     ~TiePointGeocoding() override = default;
 
 private:
-    tiepointgrid::TiePointGrid latitude_grid_;
-    tiepointgrid::TiePointGrid longitude_grid_;
+    std::shared_ptr<snapengine::TiePointGrid> latitude_grid_;
+    std::shared_ptr<snapengine::TiePointGrid> longitude_grid_;
 };
 }  // namespace alus::snapengine::geocoding

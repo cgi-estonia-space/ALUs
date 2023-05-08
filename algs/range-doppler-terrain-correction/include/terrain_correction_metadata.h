@@ -25,7 +25,6 @@
 #include "product.h"
 #include "snap-core/core/datamodel/tie_point_grid.h"
 #include "spectral_band_info.h"
-#include "tie_point_grid.h"
 
 namespace alus {
 namespace terraincorrection {
@@ -79,11 +78,6 @@ struct RangeDopplerTerrainMetadata {
 
 class Metadata final {
 public:
-    struct TiePoints {
-        size_t grid_width;
-        size_t grid_height;
-        std::vector<float> values;
-    };
 
     Metadata() = delete;
     Metadata(std::string_view dim_metadata_file, std::string_view lat_tie_points_file,
@@ -92,10 +86,10 @@ public:
     Metadata(std::shared_ptr<snapengine::Product> product);
 
     [[nodiscard]] const RangeDopplerTerrainMetadata& GetMetadata() const { return metadata_fields_; }
-    [[nodiscard]] const snapengine::tiepointgrid::TiePointGrid& GetLatTiePointGrid() const {
+    [[nodiscard]] std::shared_ptr<snapengine::TiePointGrid> GetLatTiePointGrid() const {
         return lat_tie_point_grid_;
     }
-    [[nodiscard]] const snapengine::tiepointgrid::TiePointGrid& GetLonTiePointGrid() const {
+    [[nodiscard]] std::shared_ptr<snapengine::TiePointGrid> GetLonTiePointGrid() const {
         return lon_tie_point_grid_;
     }
 
@@ -105,18 +99,17 @@ private:
     static constexpr std::string_view LATITUDE_TIE_POINT_GRID{"latitude"};
     static constexpr std::string_view LONGITUDE_TIE_POINT_GRID{"longitude"};
 
-    static void FetchTiePoints(std::string_view tie_points_file, snapengine::tiepointgrid::TiePointGrid& tie_points,
+    static void FetchTiePoints(std::string_view tie_points_file, std::shared_ptr<snapengine::TiePointGrid>& tie_points,
                                std::vector<float>& buffer);
     void FillDimMetadata(std::string_view dim_metadata_file);
     void FillMetadataFrom(std::shared_ptr<snapengine::MetadataElement> master_root);
     static void FetchTiePointGrids(std::string_view dim_metadata_file,
-                                   snapengine::tiepointgrid::TiePointGrid& lat_tie_point_grid,
-                                   snapengine::tiepointgrid::TiePointGrid& lon_tie_point_grid);
-    [[nodiscard]] static snapengine::tiepointgrid::TiePointGrid GetTiePointGrid(snapengine::TiePointGrid& grid);
+                                   std::shared_ptr<snapengine::TiePointGrid>& lat_tie_point_grid,
+                                   std::shared_ptr<snapengine::TiePointGrid>& lon_tie_point_grid);
     static std::vector<SrgrCoefficients> ParseSrgrCoefficients(std::shared_ptr<snapengine::MetadataElement> root);
 
-    snapengine::tiepointgrid::TiePointGrid lat_tie_point_grid_;
-    snapengine::tiepointgrid::TiePointGrid lon_tie_point_grid_;
+    std::shared_ptr<snapengine::TiePointGrid> lat_tie_point_grid_;
+    std::shared_ptr<snapengine::TiePointGrid> lon_tie_point_grid_;
 
     std::vector<float> lat_tie_points_buffer_;
     std::vector<float> lon_tie_points_buffer_;

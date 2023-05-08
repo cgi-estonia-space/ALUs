@@ -206,8 +206,8 @@ void TerrainCorrection::CreateGetPositionDeviceArrays(int y_size, double line_ti
 }
 
 TerrainCorrection::TerrainCorrection(GDALDataset* input_dataset, const RangeDopplerTerrainMetadata& metadata,
-                                     const snapengine::tiepointgrid::TiePointGrid& lat_tie_point_grid,
-                                     const snapengine::tiepointgrid::TiePointGrid& lon_tie_point_grid,
+                                     std::shared_ptr<snapengine::TiePointGrid> lat_tie_point_grid,
+                                     std::shared_ptr<snapengine::TiePointGrid> lon_tie_point_grid,
                                      const PointerHolder* dem_tiles, size_t dem_tiles_length,
                                      const dem::Property* dem_property, const dem::Type dem_type,
                                      const std::vector<dem::Property>& dem_property_value, int selected_band_id,

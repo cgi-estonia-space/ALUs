@@ -34,6 +34,7 @@
 #include "terrain_correction_metadata.h"
 #include "tests_common.h"
 #include "tie_point_geocoding.h"
+#include "tie_point_grid.h"
 
 namespace alus::tests {
 // Forward declare function from terrain_correction_test_kernels.cu.
