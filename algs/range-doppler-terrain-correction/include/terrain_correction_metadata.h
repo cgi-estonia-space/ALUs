@@ -26,8 +26,7 @@
 #include "snap-core/core/datamodel/tie_point_grid.h"
 #include "spectral_band_info.h"
 
-namespace alus {
-namespace terraincorrection {
+namespace alus::terraincorrection {
 
 struct SrgrCoefficients {
     double time_mjd;
@@ -78,7 +77,6 @@ struct RangeDopplerTerrainMetadata {
 
 class Metadata final {
 public:
-
     Metadata() = delete;
     Metadata(std::string_view dim_metadata_file, std::string_view lat_tie_points_file,
              std::string_view lon_tie_points_file);
@@ -86,12 +84,8 @@ public:
     Metadata(std::shared_ptr<snapengine::Product> product);
 
     [[nodiscard]] const RangeDopplerTerrainMetadata& GetMetadata() const { return metadata_fields_; }
-    [[nodiscard]] std::shared_ptr<snapengine::TiePointGrid> GetLatTiePointGrid() const {
-        return lat_tie_point_grid_;
-    }
-    [[nodiscard]] std::shared_ptr<snapengine::TiePointGrid> GetLonTiePointGrid() const {
-        return lon_tie_point_grid_;
-    }
+    [[nodiscard]] std::shared_ptr<snapengine::TiePointGrid> GetLatTiePointGrid() const { return lat_tie_point_grid_; }
+    [[nodiscard]] std::shared_ptr<snapengine::TiePointGrid> GetLonTiePointGrid() const { return lon_tie_point_grid_; }
 
     ~Metadata() = default;
 
@@ -117,5 +111,4 @@ private:
     RangeDopplerTerrainMetadata metadata_fields_ = {};
 };
 
-}  // namespace terraincorrection
-}  // namespace alus
+}  // namespace alus::terraincorrection

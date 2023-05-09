@@ -15,16 +15,18 @@
 
 #include <stdexcept>
 
+#include "operator_utils.h"
+
 namespace alus::snapengine::geocoding {
 TiePointGeocoding::TiePointGeocoding(tiepointgrid::TiePointGrid& latitude_grid,
                                      tiepointgrid::TiePointGrid& longitude_grid) {
     latitude_grid_ = std::make_shared<snapengine::TiePointGrid>(
-        "latitude", latitude_grid.grid_width, latitude_grid.grid_height, latitude_grid.offset_x, latitude_grid.offset_y,
-        latitude_grid.sub_sampling_x, latitude_grid.sub_sampling_y,
+        OperatorUtils::TPG_LATITUDE, latitude_grid.grid_width, latitude_grid.grid_height, latitude_grid.offset_x,
+        latitude_grid.offset_y, latitude_grid.sub_sampling_x, latitude_grid.sub_sampling_y,
         std::vector<float>(latitude_grid.tie_points,
                            latitude_grid.tie_points + (latitude_grid.grid_width * latitude_grid.grid_height)));
     longitude_grid_ = std::make_shared<snapengine::TiePointGrid>(
-        "longitude", longitude_grid.grid_width, longitude_grid.grid_height, longitude_grid.offset_x,
+        OperatorUtils::TPG_LONGITUDE, longitude_grid.grid_width, longitude_grid.grid_height, longitude_grid.offset_x,
         longitude_grid.offset_y, longitude_grid.sub_sampling_x, longitude_grid.sub_sampling_y,
         std::vector<float>(longitude_grid.tie_points,
                            longitude_grid.tie_points + (longitude_grid.grid_width * longitude_grid.grid_height)));

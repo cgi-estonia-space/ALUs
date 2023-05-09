@@ -16,20 +16,14 @@
 
 #include <cstddef>
 
-#ifdef __CUDACC__
-#define DEVICE_STUB __device__
-#define HOST_STUB __host__
-#else
-#define DEVICE_STUB
-#define HOST_STUB
-#endif
+#include "cuda_stubs.h"
 
 namespace alus::math::polynomials {
 
-inline DEVICE_STUB HOST_STUB double CalculateValue(double x, double* coefficients, size_t coefficients_length) {
+inline DEVICE_STUB HOST_STUB double CalculateValue(double x, double* coefficients, int coefficients_length) {
     double val = 0.0;
 
-    for (size_t i = coefficients_length - 1; i > 0; i--) {
+    for (int i = coefficients_length - 1; i > 0; i--) {
         val += coefficients[i];
         val *= x;
     }

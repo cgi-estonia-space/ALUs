@@ -44,10 +44,17 @@ std::shared_ptr<T> OpenSentinel1SafeRaster(std::string_view safe_path, std::stri
         boost::filesystem::path boost_path = std::string(safe_path);
         ceres::Zip dir(boost_path);
         // Convert path to SAFE
-        auto leaf = path.filename();
-        leaf.replace_extension("SAFE");
+        auto leaf = path.filename().string();
+        const auto dot_start = leaf.find_first_of(".");
+        if (dot_start == std::string::npos) {
+            throw std::runtime_error("Invalid SAFE input filename - " + leaf + " - expected to have extension.");
+        }
+        // Some SAFE files have .SAFE.zip ending, some .zip, erase extension(s) and append simple SAFE
+        leaf.erase(dot_start);
+        // Zip file internal structure is packed into folder ending with .SAFE
+        leaf.append(".SAFE");
 
-        const auto file_list = dir.List(leaf.string() + "/" + std::string(measurement_dir));
+        const auto file_list = dir.List(leaf + "/" + std::string(measurement_dir));
         const auto image_file =
             std::find_if(std::begin(file_list), std::end(file_list), [&low_subswath, &low_polarisation](auto& file) {
                 return file.find(low_subswath) != std::string::npos && file.find(low_polarisation) != std::string::npos;
@@ -56,7 +63,7 @@ std::shared_ptr<T> OpenSentinel1SafeRaster(std::string_view safe_path, std::stri
             std::invalid_argument("SAFE does not contain raster for '" + low_subswath + "' and '" + low_polarisation +
                                   "'.");
         }
-        input_file = leaf.string() + "/measurement/" + *image_file;
+        input_file = leaf + "/" + std::string(measurement_dir) + "/" + *image_file;
         return std::make_shared<T>(gdal::constants::GDAL_ZIP_PREFIX.data() + path.string() + "/" + input_file);
     } else {
         std::filesystem::path measurement = path.string() + "/" + std::string(measurement_dir);

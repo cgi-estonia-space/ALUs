@@ -23,8 +23,7 @@
 #include "terrain_correction_constants.h"
 #include "terrain_correction_kernel.h"
 
-namespace alus {
-namespace terraincorrection {
+namespace alus::terraincorrection {
 __global__ void CalculateVelocitiesAndPositionsKernel(
     const double first_line_utc, const double line_time_interval,
     cuda::KernelArray<snapengine::OrbitStateVectorComputation> vectors,
@@ -139,8 +138,6 @@ cudaError_t LaunchTerrainCorrectionKernel(TcTileCoordinates tc_tile_coordinates,
     return cudaGetLastError();
 }
 
-// Arbitrary sizes, at the time of implementation these were 28 and 9 respectively.
-//__constant__ SrgrCoefficientsDevice srgr_global[2*28][2*9];
 __global__ void GetSourceRectangleKernel(TcTileCoordinates tile_coordinates, GetSourceRectangleKernelArgs args,
                                          SourceRectangeResult* result) {
     const auto thread_x = threadIdx.x + blockIdx.x * blockDim.x;
@@ -223,5 +220,4 @@ Rectangle GetSourceRectangle(TcTileCoordinates tile_coordinates, GetSourceRectan
 
     return {x_min, y_min, x_max - x_min, y_max - y_min};
 }
-}  // namespace terraincorrection
-}  // namespace alus
+}  // namespace alus::terraincorrection

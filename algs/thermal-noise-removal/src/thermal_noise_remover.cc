@@ -14,10 +14,8 @@
 #include "thermal_noise_remover.h"
 
 #include <array>
-#include <cstddef>
 #include <filesystem>
 #include <memory>
-#include <mutex>
 #include <vector>
 
 #include <gdal.h>
@@ -30,8 +28,6 @@
 #include "operator_utils.h"
 #include "shapes.h"
 #include "shapes_util.h"
-#include "snap-core/core/datamodel/band.h"
-#include "snap-core/core/datamodel/product.h"
 #include "snap-core/core/util/product_utils.h"
 #include "snap-engine-utilities/engine-utilities/datamodel/metadata/abstract_metadata.h"
 #include "snap-engine-utilities/engine-utilities/datamodel/unit.h"
@@ -94,8 +90,6 @@ void ThermalNoiseRemover::ComputeTileImage(ThreadData* context, SharedData* tnr_
 }
 void ThermalNoiseRemover::ComputeComplexTile(alus::Rectangle target_tile, ThreadData* context, SharedData* tnr_data) {
     const auto d_noise_block = BuildNoiseLutForTOPSSLC(target_tile, thermal_noise_info_, context);
-//    LOGI << "Tile size " << target_tile.width << "x" << target_tile.height << " "
-//         << target_tile.height * target_tile.width << " matrix size " << d_noise_block.size;
     static_assert(sizeof(alus::Iq16) == sizeof(*context->h_tile_buffer.Get()));
     auto* buffer_ptr = reinterpret_cast<alus::Iq16*>(context->h_tile_buffer.Get());
 
@@ -110,16 +104,16 @@ void ThermalNoiseRemover::ComputeComplexTile(alus::Rectangle target_tile, Thread
     cuda::KernelArray<IntensityData> d_pixel_buffer{nullptr, tile_size};
     d_pixel_buffer.array = context->dev_mem_arena.AllocArray<IntensityData>(tile_size);
 
-    CHECK_CUDA_ERR(cudaMemcpyAsync(d_pixel_buffer.array, context->h_tile_buffer.Get(), d_pixel_buffer.ByteSize(),
-                                   cudaMemcpyHostToDevice, context->stream));
+    CHECK_CUDA_ERR(cudaMemcpyAsync(d_pixel_buffer.array, buffer_ptr, d_pixel_buffer.ByteSize(), cudaMemcpyHostToDevice,
+                                   context->stream));
 
     // There is a check in SNAP for a case when TNR is performed after calibration. However, ALUs does not allow such
     // use case so this check was omitted.
 
     LaunchComputeComplexTileKernel(target_tile, target_no_data_value_, target_floor_value_, d_pixel_buffer,
                                    d_noise_block, context->stream);
-    CHECK_CUDA_ERR(cudaMemcpyAsync(context->h_tile_buffer.Get(), d_pixel_buffer.array, d_pixel_buffer.ByteSize(),
-                                   cudaMemcpyDeviceToHost, context->stream));
+    CHECK_CUDA_ERR(cudaMemcpyAsync(buffer_ptr, d_pixel_buffer.array, d_pixel_buffer.ByteSize(), cudaMemcpyDeviceToHost,
+                                   context->stream));
     CHECK_CUDA_ERR(cudaStreamSynchronize(context->stream));
     CHECK_CUDA_ERR(cudaGetLastError());
 
@@ -149,16 +143,16 @@ void ThermalNoiseRemover::ComputeAmplitudeTile(alus::Rectangle target_tile, Thre
     cuda::KernelArray<IntensityData> d_pixel_buffer{nullptr, tile_size};
     d_pixel_buffer.array = context->dev_mem_arena.AllocArray<IntensityData>(tile_size);
 
-    CHECK_CUDA_ERR(cudaMemcpyAsync(d_pixel_buffer.array, context->h_tile_buffer.Get(), d_pixel_buffer.ByteSize(),
-                                   cudaMemcpyHostToDevice, context->stream));
+    CHECK_CUDA_ERR(cudaMemcpyAsync(d_pixel_buffer.array, buffer_ptr, d_pixel_buffer.ByteSize(), cudaMemcpyHostToDevice,
+                                   context->stream));
 
     // There is a check in SNAP for a case when TNR is performed after calibration. However, ALUs does not allow such
     // use case so this check was omitted.
 
     LaunchComputeAmplitudeTileKernel(target_tile, target_no_data_value_, target_floor_value_, d_pixel_buffer,
                                      d_noise_block, context->stream);
-    CHECK_CUDA_ERR(cudaMemcpyAsync(context->h_tile_buffer.Get(), d_pixel_buffer.array, d_pixel_buffer.ByteSize(),
-                                   cudaMemcpyDeviceToHost, context->stream));
+    CHECK_CUDA_ERR(cudaMemcpyAsync(buffer_ptr, d_pixel_buffer.array, d_pixel_buffer.ByteSize(), cudaMemcpyDeviceToHost,
+                                   context->stream));
     CHECK_CUDA_ERR(cudaStreamSynchronize(context->stream));
     CHECK_CUDA_ERR(cudaGetLastError());
 
@@ -168,8 +162,8 @@ void ThermalNoiseRemover::ComputeAmplitudeTile(alus::Rectangle target_tile, Thre
     {
         std::unique_lock lock(tnr_data->dst_mutex);
         CHECK_GDAL_ERROR(tnr_data->dst_band->RasterIO(GF_Write, target_tile.x, target_tile.y, target_tile.width,
-                                                      target_tile.height, buffer_ptr,
-                                                      target_tile.width, target_tile.height, GDT_Float32, 0, 0));
+                                                      target_tile.height, buffer_ptr, target_tile.width,
+                                                      target_tile.height, GDT_Float32, 0, 0));
     }
 }
 
@@ -434,9 +428,9 @@ ThermalNoiseRemover::ThermalNoiseRemover(std::shared_ptr<snapengine::Product> so
       output_path_(output_path),
       tile_width_(tile_width),
       tile_height_(tile_height),
-      is_complex_input_{GDALDataTypeIsComplex(
-                           source_ds_->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)->GetRasterDataType()) ==
-                       1} {
+      is_complex_input_{
+          GDALDataTypeIsComplex(
+              source_ds_->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)->GetRasterDataType()) == 1} {
     Initialise();
 }
 const std::shared_ptr<snapengine::Product>& ThermalNoiseRemover::GetTargetProduct() const { return target_product_; }

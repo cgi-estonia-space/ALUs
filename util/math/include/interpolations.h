@@ -14,13 +14,7 @@
 
 #pragma once
 
-#ifdef __CUDACC__
-#define DEVICE_STUB __device__
-#define HOST_STUB __host__
-#else
-#define DEVICE_STUB
-#define HOST_STUB
-#endif
+#include "cuda_stubs.h"
 
 namespace alus::math::interpolations {
 

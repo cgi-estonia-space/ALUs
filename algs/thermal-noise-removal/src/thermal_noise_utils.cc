@@ -320,11 +320,6 @@ device::Matrix<double> BuildNoiseLutForTOPSGRD(Rectangle tile, const ThermalNois
 
         std::vector<double> interpolated_azimuth_vector(ny_max - ny0 + 1);
         FillAzimuthNoiseVectorWithInterpolatedValues(nav, ny0, ny_max, interpolated_azimuth_vector);
-        //        std::cout << "Tile size " << tile.width << "x" << tile.height << " for range and azimuth interpolated
-        //        sizes "
-        //                  << interpolated_range_value_count << "x" << interpolated_azimuth_vector.size()
-        //                  << " with interpolated range vector having elements - " << noise_vector_indices.size() <<
-        //                  std::endl;
         ComputeNoiseMatrix(tile.x, tile.y, nx0, nx_max, ny0, ny_max, noise_range_vector_line,
                            interpolated_range_vectors, interpolated_azimuth_vector, noise_matrix);
     }

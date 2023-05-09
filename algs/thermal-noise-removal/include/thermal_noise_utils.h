@@ -13,9 +13,10 @@
  */
 #pragma once
 
-#include <driver_types.h>
 #include <map>
 #include <memory>
+
+#include <driver_types.h>
 
 #include "kernel_array.h"
 #include "s1tbx-commons/noise_azimuth_vector.h"

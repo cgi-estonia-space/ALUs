@@ -35,7 +35,7 @@ static_assert(alignof(CInt16) == 4);
 
 union IntensityData {
     CInt16 input_complex;
-    uint32_t input_amplitude;  // Real values are uint16_t.
+    uint32_t input_amplitude;  // GRD raster values are uint16_t.
     float output;
 };
 

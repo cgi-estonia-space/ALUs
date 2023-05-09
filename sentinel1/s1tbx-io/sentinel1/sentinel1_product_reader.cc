@@ -108,8 +108,6 @@ void Sentinel1ProductReader::ReadBandRasterDataImpl(
             ReadSLCRasterBand(source_offset_x, source_offset_y, source_step_x, source_step_y, dest_buffer,
                               dest_offset_x, dest_offset_y, dest_width, dest_height, band_info);
         } else {
-            throw std::runtime_error("Hey you, I am used. " + std::string(__FUNCTION__) + ":" +
-                                     std::to_string(__LINE__));
             //            currently only slc
             //            band_info->img_->ReadImageIORasterBand(source_offset_x, source_offset_y, source_step_x,
             //            source_step_y,

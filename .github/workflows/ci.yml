@@ -57,6 +57,7 @@ jobs:
         $GITHUB_WORKSPACE/build-automation/trigger_ec2_instance.sh ${{ secrets.ALUS_SID_INSTANCE_ID }} | tee trigger_out.txt
         ip_address=$(cat trigger_out.txt | tail -n 1)
         echo "instance_ip=$ip_address" >> $GITHUB_OUTPUT
+        sleep 15
 
   run-ci-process:
     name: Build and run tests

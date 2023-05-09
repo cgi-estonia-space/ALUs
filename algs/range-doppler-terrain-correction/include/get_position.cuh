@@ -164,7 +164,7 @@ inline __device__ __host__ double ComputeRangeIndexGrdImpl(cuda::KernelArray<Srg
     if (interpolation_length > POLYNOMIAL_BUFFER_LENGTH) {
         return NO_RESULT;
     }
-    //    final double[] srgrCoefficients = new double[srgr_coefficients[target_index].coefficients.size];
+
     if (target_index == srgr_coefficients.size - 1) {
         target_index--;
     }

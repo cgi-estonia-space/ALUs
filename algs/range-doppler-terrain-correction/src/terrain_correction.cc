@@ -27,7 +27,6 @@
 #include "cuda_util.h"
 #include "gdal_util.h"
 #include "general_constants.h"
-#include "product_old.h"
 #include "raster_properties.h"
 #include "shapes_util.h"
 #include "snap-engine-utilities/engine-utilities//eo/constants.h"
