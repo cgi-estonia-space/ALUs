@@ -272,7 +272,7 @@ device::Matrix<double> BuildNoiseLutForTOPSSLC(Rectangle tile, const ThermalNois
 }
 
 device::Matrix<double> BuildNoiseLutForTOPSGRD(Rectangle tile, const ThermalNoiseInfo& thermal_noise_info,
-                                               ThreadData*) {
+                                               ThreadData* thread_data) {
     const auto x_max = tile.x + tile.width - 1;
     const auto y_max = tile.y + tile.height - 1;
     bool has_data{false};
@@ -332,7 +332,8 @@ device::Matrix<double> BuildNoiseLutForTOPSGRD(Rectangle tile, const ThermalNois
             " h:" + std::to_string(tile.height));
     }
 
-    const auto noise_matrix_dev = device::CreateKernelMatrix<double>(tile.width, tile.height, noise_matrix);
+    const auto noise_matrix_dev =
+        device::CreateKernelMatrix<double>(tile.width, tile.height, noise_matrix, thread_data->stream);
     return noise_matrix_dev;
 }
 

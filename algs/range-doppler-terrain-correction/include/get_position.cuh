@@ -134,7 +134,7 @@ inline __device__ __host__ double ComputeGroundRange(int source_image_width, dou
  * @param slantRange      The slant range in meters.
  * @return The range index.
  */
-inline __device__ __host__ double ComputeRangeIndexGrdImpl(cuda::KernelArray<SrgrCoefficientsDevice>& srgr_coefficients,
+inline __device__ __host__ double ComputeRangeIndexGrdImpl(cuda::KernelArray<SrgrCoefficientsDevice> srgr_coefficients,
                                                            double zero_doppler_time, int source_image_width,
                                                            double range_spacing, double slant_range) {
     constexpr auto NO_RESULT{-1.0};
