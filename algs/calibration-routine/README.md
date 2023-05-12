@@ -1,12 +1,18 @@
 # Calibration routine
 
-Calibration routine consists of:
+Processing steps below.
 
+**SLC**
 * Sentinel-1 SLC split
 * Thermal noise removal
 * Calibration
 * Deburst
 * Merge - optional when multiple subswaths selected
+* Range doppler terrain correction
+
+**GRD**
+* Thermal noise removal
+* Calibration
 * Range doppler terrain correction
 
 ## Requirements
@@ -31,7 +37,7 @@ Arguments:
                              same folder as final outcome). NOTE - this may 
                              decrease performance. Default OFF.
   --sw arg                   Subswath for which the calibration will be 
-                             performed, one of the following - IW1;IW2;IW3
+                             performed, one of the following - IW1;IW2;IW3.
   -p [ --polarisation ] arg  Polarisation for which the calibration will be 
                              performed - VV;VH
   --bi1 arg                  First burst index - starting at '1', leave 

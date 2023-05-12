@@ -442,16 +442,17 @@ void ComputeNoiseMatrix(int tile_offset_x, int tile_offset_y, int nx0, int nx_ma
             int line_index = line0_index;
 
             for (int y = ny0; y <= ny_max; y++) {
-                if (y > noise_range_vector_line.at(line_index + 1) &&
+                if (y > noise_range_vector_line[line_index + 1] &&
                     line_index < static_cast<int>(noise_range_vector_line.size()) - 2) {
                     line_index++;
                 }
 
-                values.at(y - tile_offset_y).at(x - tile_offset_x) =
-                    interpolated_azimuth_vector.at(y - ny0) *
-                    InterpolateNoise(noise_range_vector_line.at(line_index), noise_range_vector_line.at(line_index + 1),
-                                     interpolated_range_vectors.at(line_index).at(xx),
-                                     interpolated_range_vectors.at(line_index + 1).at(xx), y);
+                // Direct access with '[]' is faster around half a second per GRD dataset.
+                values[y - tile_offset_y][x - tile_offset_x] =
+                    interpolated_azimuth_vector[y - ny0] *
+                    InterpolateNoise(noise_range_vector_line[line_index], noise_range_vector_line[line_index + 1],
+                                     interpolated_range_vectors[line_index][xx],
+                                     interpolated_range_vectors[line_index + 1][xx], y);
             }
         }
     }
