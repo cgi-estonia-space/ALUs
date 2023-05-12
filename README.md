@@ -12,7 +12,8 @@ through [ESA's GSTP programme](https://www.esa.int/Enabling_Support/Space_Engine
 
 Developed by [CGI Estonia](https://www.cgi.com/ee/et).
 
-## For appetizer -> [performance test](PERFORMANCE.md) and [further ESA SNAP comparison](docs/SNAP_COMPARISON.md)
+## [Quick performance overview](PERFORMANCE.md)
+For further comprehensive evaluation see [Wiki](https://github.com/cgi-estonia-space/ALUs/wiki) 
 
 # Out of the box usage
 
@@ -82,10 +83,13 @@ It can be used in conjunction with binaries to easily execute code. Read the [in
 
 # Minimum/Recommended requirements
 
+For specific, check each processor's README.
+
+Below are rough figures:
 * NVIDIA GPU device compute capability 6.0 (Pascal) or higher
 * 2(minimum)/4(recommended) GB of available device memory (some ALUs can manage with less)
 * High speed (NVMe) SSD to benefit from the computation speedups
-* 4 GB of avalable RAM to enable better caching/input-output
+* 4 GB of extra RAM to enable better caching/input-output (GDAL raster IO)
 
 # Contributing
 

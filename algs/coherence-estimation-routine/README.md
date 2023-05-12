@@ -18,6 +18,11 @@ Coherence estimation routine consists of:
 ### alus-coh
 
 ```
+ALUs - Coherence estimation routine
+Version 1.6.0
+
+Arguments:
+
   -h [ --help ]                         Print help
   -r [ --in_ref ] arg                   Reference scene's input SAFE dataset 
                                         (zipped or unpacked)
@@ -43,9 +48,11 @@ Coherence estimation routine consists of:
   -p [ --polarisation ] arg             Polarisation for which coherence 
                                         estimation will be performed - VV;VH
   --sw arg                              Reference scene's subswath
-  -a [ --aoi ] arg                      Area Of Interest WKT polygon, overrules
-                                        first and last burst indexes
-  --dem arg                             DEM file(s). SRTM3 and Copernicus DEM
+  -a [ --aoi ] arg                      Area Of Interest WKT polygon. Or 
+                                        shapefile (.shp) consisting similar 
+                                        geometry.Overrules first and last burst
+                                        indexes and subswath selections.
+  --dem arg                             DEM file(s). SRTM3 and Copernicus DEM 
                                         30m COG are currently supported.
   --no_mask_cor                         Do not mask out areas without elevation
                                         in coregistration
@@ -76,6 +83,8 @@ Coherence estimation routine consists of:
   --gpu_mem arg (=100)                  Percentage of how much GPU memory can 
                                         be used for processing
 
+
+https://github.com/cgi-estonia-space/ALUs
 
 ```
 
@@ -126,6 +135,10 @@ Coherence estimation routine consists of:
 ```
 
 ## Performance
+
+Please see the latest and always updated comprehensive evaluation in the [Wiki](https://github.com/cgi-estonia-space/ALUs/wiki/Coherence-estimation-evaluation)
+
+**Following contents below might be deprecated**
 
 Reference laptop computer details:  
 CPU: Intel i7 10750h </br>
@@ -201,10 +214,7 @@ Band 1 Block=14224x1 Type=Float32, ColorInterp=Gray
 Legend</br>
 ![relative_error_legend](../../docs/relative_error_legend.png)
 
-Full scene</br>
-![full_scene](../../docs/coh_relative_error_colored.png)
-
-Orbit state vector related, [see cause](../../docs/GPU-GSTP-MPR-0008.pdf)
+Orbit state vector related, [see cause](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/GPU-GSTP-MPR-0008.pdf)
 ![spots](../../docs/coh_relative_error_spots.png)
 
 For Copernicus DEM such comparison is not done because of the pending issues found in the SNAP - https://forum.step.esa.int/t/copernicus-dem-complications-when-coregistering-s1/38659/2

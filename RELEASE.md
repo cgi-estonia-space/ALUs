@@ -1,3 +1,25 @@
+# Release 1.6.0
+
+## Breaking changes
+
+## Known Caveats
+* Coherence estimation results can have missing pixels(or coherence 0 values) on north and east direction on coastlines when compared to SNAP.
+  Currently it is unresolved what is the correct way. See examples [A](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/coh_missing_pixels.png) and [B](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/beirut_iw1_b6_coastal.png).
+  See posts about the issues/bugs - [tile size affecting results](https://forum.step.esa.int/t/tile-size-is-affecting-coregistration-results/32193/4)
+  and [no-data value interpretation](https://forum.step.esa.int/t/coregistration-no-data-value/35304/2).
+* Due to the nature of floating point arithmetic there are some discrepancies when compared to SNAP, see [slideshow](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/GPU-GSTP-MPR-0008.pdf)
+
+## Major Features and Improvements
+* Basic S1 metadata in the produced results for `alus-coh`, `alus-cal` and `alus-coht` - [PR item](https://github.com/cgi-estonia-space/ALUs/pull/29)
+* Polynomial estimation for subtract flat earth phase for each burst in coherence opeation - [PR item](https://github.com/cgi-estonia-space/ALUs/pull/26)
+* Jupyter notebook and related dependencies updates - [PR item](https://github.com/cgi-estonia-space/ALUs/pull/25)
+* GRD support for `alus-cal` - [PR item](https://github.com/cgi-estonia-space/ALUs/pull/31)
+
+## Bug Fixes and Other Changes
+
+## Thanks to our Contributors
+
+
 # Release 1.5.0
 
 ## Breaking changes
@@ -6,10 +28,10 @@
 
 ## Known Caveats
 * Coherence estimation results can have missing pixels(or coherence 0 values) on north and east direction on coastlines when compared to SNAP.
-  Currently it is unresolved what is the correct way. See examples [A](docs/coh_missing_pixels.png) and [B](docs/beirut_iw1_b6_coastal.png).
+  Currently it is unresolved what is the correct way. See examples [A](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/coh_missing_pixels.png) and [B](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/beirut_iw1_b6_coastal.png).
   See posts about the issues/bugs - [tile size affecting results](https://forum.step.esa.int/t/tile-size-is-affecting-coregistration-results/32193/4)
   and [no-data value interpretation](https://forum.step.esa.int/t/coregistration-no-data-value/35304/2).
-* Due to the nature of floating point arithmetic there are some discrepancies when compared to SNAP, see [slideshow](docs/GPU-GSTP-MPR-0008.pdf)
+* Due to the nature of floating point arithmetic there are some discrepancies when compared to SNAP, see [slideshow](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/GPU-GSTP-MPR-0008.pdf)
 * Processing scenes with Copernicus DEM 30m COG has not well defined behavior for some specific cases.
   See workaround in ALUs - https://github.com/cgi-estonia-space/ALUs/wiki/DEM-handling-functionality-for-Sentinel-1-processors#copernicus-dem-cog-30m
   SNAP processing discrepancies - https://forum.step.esa.int/t/copernicus-dem-complications-when-coregistering-s1/38659/3
@@ -32,10 +54,10 @@
 
 ## Known Caveats
 * Coherence estimation results can have missing pixels(or coherence 0 values) on north and east direction on coastlines when compared to SNAP.
-  Currently it is unresolved what is the correct way. See examples [A](docs/coh_missing_pixels.png) and [B](docs/beirut_iw1_b6_coastal.png).
+  Currently it is unresolved what is the correct way. See examples [A](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/coh_missing_pixels.png) and [B](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/beirut_iw1_b6_coastal.png).
   See posts about the issues/bugs - [tile size affecting results](https://forum.step.esa.int/t/tile-size-is-affecting-coregistration-results/32193/4)
   and [no-data value interpretation](https://forum.step.esa.int/t/coregistration-no-data-value/35304/2).
-* Due to the nature of floating point arithmetic there are some discrepancies when compared to SNAP, see [slideshow](docs/GPU-GSTP-MPR-0008.pdf)
+* Due to the nature of floating point arithmetic there are some discrepancies when compared to SNAP, see [slideshow](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/GPU-GSTP-MPR-0008.pdf)
 * There are two code paths to calculate terrain corrected outputs' dimensions and geocoordinates
   ([see description](https://forum.step.esa.int/t/range-doppler-terrain-correction-raster-size-and-coordinates-inconsistency/35977)). Since ALUs
   implements the SNAP UI way the end results probably differ when compared to SNAP GPT outputs.
@@ -55,10 +77,10 @@
 
 ## Known Caveats
 * Coherence estimation results can have missing pixels(or coherence 0 values) on north and east direction on coastlines when compared to SNAP.
-  Currently it is unresolved what is the correct way. See examples [A](docs/coh_missing_pixels.png) and [B](docs/beirut_iw1_b6_coastal.png).
+  Currently it is unresolved what is the correct way. See examples [A](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/coh_missing_pixels.png) and [B](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/beirut_iw1_b6_coastal.png).
   See posts about the issues/bugs - [tile size affecting results](https://forum.step.esa.int/t/tile-size-is-affecting-coregistration-results/32193/4)
   and [no-data value interpretation](https://forum.step.esa.int/t/coregistration-no-data-value/35304/2).
-* Due to the nature of floating point arithmetic there are some discrepancies when compared to SNAP, see [slideshow](docs/GPU-GSTP-MPR-0008.pdf)
+* Due to the nature of floating point arithmetic there are some discrepancies when compared to SNAP, see [slideshow](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/GPU-GSTP-MPR-0008.pdf)
 * There are two code paths to calculate terrain corrected outputs' dimensions and geocoordinates
   ([see description](https://forum.step.esa.int/t/range-doppler-terrain-correction-raster-size-and-coordinates-inconsistency/35977)). Since ALUs
   implements the SNAP UI way the end results probably differ when compared to SNAP GPT outputs.
@@ -77,10 +99,10 @@
 
 ## Known Caveats
 * Coherence estimation results can have missing pixels(or coherence 0 values) on north and east direction on coastlines when compared to SNAP.
-  Currently it is unresolved what is the correct way. See examples [A](docs/coh_missing_pixels.png) and [B](docs/beirut_iw1_b6_coastal.png).
+  Currently it is unresolved what is the correct way. See examples [A](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/coh_missing_pixels.png) and [B](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/beirut_iw1_b6_coastal.png).
   See posts about the issues/bugs - [tile size affecting results](https://forum.step.esa.int/t/tile-size-is-affecting-coregistration-results/32193/4) 
   and [no-data value interpretation](https://forum.step.esa.int/t/coregistration-no-data-value/35304/2).
-* Due to the nature of floating point arithmetic there are some discrepancies when compared to SNAP, see [slideshow](docs/GPU-GSTP-MPR-0008.pdf)
+* Due to the nature of floating point arithmetic there are some discrepancies when compared to SNAP, see [slideshow](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/GPU-GSTP-MPR-0008.pdf)
 * There are two code paths to calculate terrain corrected outputs' dimensions and geocoordinates
   ([see description](https://forum.step.esa.int/t/range-doppler-terrain-correction-raster-size-and-coordinates-inconsistency/35977)). Since ALUs
   implements the SNAP UI way the end results probably differ when compared to SNAP GPT outputs.
@@ -104,10 +126,10 @@
 
 ## Known Caveats
 * Coherence estimation results can have missing pixels(or coherence 0 values) on north and east direction on coastlines when compared to SNAP.
-  Currently it is unresolved what is the correct way. See examples [A](docs/coh_missing_pixels.png) and [B](docs/beirut_iw1_b6_coastal.png).
+  Currently it is unresolved what is the correct way. See examples [A](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/coh_missing_pixels.png) and [B](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/beirut_iw1_b6_coastal.png).
   See posts about the issues/bugs - [tile size affecting results](https://forum.step.esa.int/t/tile-size-is-affecting-coregistration-results/32193/4) 
   and [no-data value interpretation](https://forum.step.esa.int/t/coregistration-no-data-value/35304/2).
-* Due to the nature of floating point arithmetic there are some discrepancies when compared to SNAP, see [slideshow](docs/GPU-GSTP-MPR-0008.pdf)
+* Due to the nature of floating point arithmetic there are some discrepancies when compared to SNAP, see [slideshow](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/GPU-GSTP-MPR-0008.pdf)
 
 ## Major Features and Improvements
 * `--no_mask_cor` implemented to disable masking during the coregister step for coherence estimation. Disabling avoids 
@@ -137,9 +159,9 @@ This is the first release with refactored architecture where each processor is a
 
 ## Known Caveats
 * Coherence estimation results can have missing pixels(or coherence 0 values) on north and east direction on coastlines when compared to SNAP.
-  Currently it is unresolved what is the correct way. See examples [A](docs/coh_missing_pixels.png) and [B](docs/beirut_iw1_b6_coastal.png).
+  Currently it is unresolved what is the correct way. See examples [A](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/coh_missing_pixels.png) and [B](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/beirut_iw1_b6_coastal.png).
   See posts about the issues/bugs - [tile size affecting results](https://forum.step.esa.int/t/tile-size-is-affecting-coregistration-results/32193/4) and [no-data value interpretation](https://forum.step.esa.int/t/coregistration-no-data-value/35304/2).
-* Due to the nature of floating point arithmetic there are some discrepancies when compared to SNAP, see [slideshow](docs/GPU-GSTP-MPR-0008.pdf)
+* Due to the nature of floating point arithmetic there are some discrepancies when compared to SNAP, see [slideshow](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/GPU-GSTP-MPR-0008.pdf)
 
 ## Major Features and Improvements
 * There is a Jupyter notebook, which enables to more easily assign processing parameters, inputs and it automatically downloads needed auxiliary files background. 
@@ -164,7 +186,7 @@ This will be the last release with the current architecture (algorithms as share
 
 * Auxiliary files must be separately downloaded and supplied via CLI arguments.
 * Coherence estimation results can have missing pixels(or coherence 0 values) on north and east direction on coastlines.
-  Currently investigation is ongoing to find out the exact reason. See examples [A](docs/coh_missing_pixels.png) and [B](docs/beirut_iw1_b6_coastal.png).
+  Currently investigation is ongoing to find out the exact reason. See examples [A](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/coh_missing_pixels.png) and [B](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/beirut_iw1_b6_coastal.png).
 
 ## Major Features and Improvements
 
@@ -184,7 +206,7 @@ This will be the last release with the current architecture (algorithms as share
 
 * Auxiliary files must be separately downloaded and supplied via CLI arguments
 * Coherence estimation results can have missing pixels(or coherence 0 values) on north and east direction on coastlines.
-  Currently investigation is ongoing to find out the exact reason. See examples [A](docs/coh_missing_pixels.png) and [B](docs/beirut_iw1_b6_coastal.png)
+  Currently investigation is ongoing to find out the exact reason. See examples [A](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/coh_missing_pixels.png) and [B](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/beirut_iw1_b6_coastal.png)
 
 ## Major Features and Improvements
 
