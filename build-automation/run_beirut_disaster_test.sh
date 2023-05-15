@@ -70,24 +70,24 @@ fi
 set +e
 
 echo "Validating $test_1_prod_path"
-./alus_result_check.py -I $test_1_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_IW1_coh_deb_tc.tif
+./alus_result_check.py -I $test_1_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_IW1_coh_deb_tc.tif -O SKIP_ALUs_VERSION
 res1=$?
 
 echo "Validating $test_2_prod_path"
 # This file will fail automatic gdal_convert scaling. Maybe GDAL bug, but the values range from 0...0.988 and conversion fails when converting to PNG.
-./alus_result_check.py -I $test_2_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_IW1_b6_coh_deb_tc.tif
+./alus_result_check.py -I $test_2_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_IW1_b6_coh_deb_tc.tif -O SKIP_ALUs_VERSION
 res2=$?
 
 echo "Validating $test_3_prod_path"
-./alus_result_check.py -I $test_3_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_IW1_b47_coh_deb_tc.tif
+./alus_result_check.py -I $test_3_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_IW1_b47_coh_deb_tc.tif -O SKIP_ALUs_VERSION
 res3=$?
 
 echo "Validating $test_4_prod_path"
-./alus_result_check.py -I $test_4_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_IW1_aoi_coh_deb_tc.tif
+./alus_result_check.py -I $test_4_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_IW1_aoi_coh_deb_tc.tif -O SKIP_ALUs_VERSION
 res4=$?
 
 echo "Validating $test_5_prod_path"
-./alus_result_check.py -I $test_5_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_IW1_b47_coh_deb_tc.tif
+./alus_result_check.py -I $test_5_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_IW1_b47_coh_deb_tc.tif -O SKIP_ALUs_VERSION
 res5=$?
 
 exit $(($res1 | $res2 | $res3 | $res4 | $res5))

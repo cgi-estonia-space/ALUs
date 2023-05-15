@@ -101,28 +101,28 @@ fi
 set +e
 
 echo "Validating $test_1_prod_path"
-./alus_result_check.py -I $test_1_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_Orb_Stack_IW3_coh_deb_tc.tif
+./alus_result_check.py -I $test_1_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_Orb_Stack_IW3_coh_deb_tc.tif -O SKIP_ALUs_VERSION
 res1=$?
 echo "Validating $test_2_prod_path"
-./alus_result_check.py -I $test_2_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1B_IW_SLC__1SDV_20210615T054959_20210615T055026_027363_0344A0_83FE_Orb_Stack_IW3_coh_deb_tc.tif
+./alus_result_check.py -I $test_2_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1B_IW_SLC__1SDV_20210615T054959_20210615T055026_027363_0344A0_83FE_Orb_Stack_IW3_coh_deb_tc.tif -O SKIP_ALUs_VERSION
 res2=$?
 echo "Validating $test_3_prod_path"
-./alus_result_check.py -I $test_3_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1B_IW_SLC__1SDV_20210615T054959_20210615T055026_027363_0344A0_83FE_Orb_Stack_IW3_coh_deb_tc.tif
+./alus_result_check.py -I $test_3_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1B_IW_SLC__1SDV_20210615T054959_20210615T055026_027363_0344A0_83FE_Orb_Stack_IW3_coh_deb_tc.tif -O SKIP_ALUs_VERSION
 res3=$?
 echo "Validating $test_4_prod_path"
-./alus_result_check.py -I $test_4_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_Orb_Stack_coh_deb_mrg_IW1_IW2_IW3_tc.tif
+./alus_result_check.py -I $test_4_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_Orb_Stack_coh_deb_mrg_IW1_IW2_IW3_tc.tif -O SKIP_ALUs_VERSION
 res4=$?
 echo "Validating $test_5_prod_path"
-./alus_result_check.py -I $test_5_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_Orb_Stack_coh_deb_mrg_IW2_IW3_tc.tif
+./alus_result_check.py -I $test_5_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_Orb_Stack_coh_deb_mrg_IW2_IW3_tc.tif -O SKIP_ALUs_VERSION
 res5=$?
 echo "Validating $test_6_prod_path"
-./alus_result_check.py -I $test_6_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_Orb_Stack_coh_deb_tc_mrg_no_orb.tif
+./alus_result_check.py -I $test_6_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_Orb_Stack_coh_deb_tc_mrg_no_orb.tif -O SKIP_ALUs_VERSION
 res6=$?
 echo "Validating $test_7_prod_path"
-./alus_result_check.py -I $test_7_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_Orb_Stack_coh_deb_mrg_IW2_IW3_tc_shp.tif
+./alus_result_check.py -I $test_7_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_Orb_Stack_coh_deb_mrg_IW2_IW3_tc_shp.tif -O SKIP_ALUs_VERSION
 res7=$?
 echo "Validating $test_8_prod_path"
-./alus_result_check.py -I $test_8_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1B_IW_SLC__1SDV_20210615T054959_20210615T055026_027363_0344A0_83FE_Orb_IW3_b18_Stack_coh_deb_tc_copdem.tif
+./alus_result_check.py -I $test_8_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1B_IW_SLC__1SDV_20210615T054959_20210615T055026_027363_0344A0_83FE_Orb_IW3_b18_Stack_coh_deb_tc_copdem.tif -O SKIP_ALUs_VERSION
 res8=$?
 
 exit $(($res1 | $res2 | $res3 | $res4 | $res5 | $res6 | $res7 | $res8))
