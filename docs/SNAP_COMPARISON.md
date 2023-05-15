@@ -237,7 +237,7 @@ Produced files:
 
 ALUS discrepancies on the coastal line of Beirut displayed in QGIS:
 
-![comparison](beirut_iw1_b6_coastal.png)
+![comparison](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/beirut_iw1_b6_coastal.png)
 
 Some of the pixels "missing" due to value being equal to NO_DATA value. Coastal line otherwise matches exactly the SNAP one.
 

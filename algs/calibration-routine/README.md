@@ -26,7 +26,7 @@ Processing steps below.
 
 ```
 ALUs - Calibration
-Version 1.4.0
+Version 1.6.0
 
 Arguments:
 
@@ -37,16 +37,18 @@ Arguments:
                              same folder as final outcome). NOTE - this may 
                              decrease performance. Default OFF.
   --sw arg                   Subswath for which the calibration will be 
-                             performed, one of the following - IW1;IW2;IW3.
+                             performed, one of the following - IW1;IW2;IW3. Not
+                             used for GRD.
   -p [ --polarisation ] arg  Polarisation for which the calibration will be 
                              performed - VV;VH
   --bi1 arg                  First burst index - starting at '1', leave 
-                             unspecified for whole subswath
+                             unspecified for whole subswath and GRD
   --bi2 arg                  Last burst index - starting at '1', leave 
-                             unspecified for whole subswath
+                             unspecified for whole subswath and GRD
   -a [ --aoi ] arg           Area Of Interest WKT polygon. Or shapefile (.shp) 
                              consisting similar geometry.Overrules first and 
-                             last burst indexes and subswath selections.
+                             last burst indexes and subswath selections. Not 
+                             effective for GRD.
   -t [ --type ] arg          Type of calibration to be performed, one of the 
                              following - sigma;beta;gamma;dn
   --dem arg                  DEM file(s). SRTM3 and Copernicus DEM 30m COG are 
@@ -59,9 +61,14 @@ Arguments:
 
 
 https://github.com/cgi-estonia-space/ALUs
+
 ```
 
 ## Performance
+
+Please see the latest and always updated comprehensive evaluation in the [Wiki](https://github.com/cgi-estonia-space/ALUs/wiki/Calibration-routine-evaluation)
+
+**Following contents below might be deprecated**
 
 Reference laptop computer details:  
 CPU: Intel i7 10750h </br>
