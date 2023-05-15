@@ -63,16 +63,16 @@ fi
 set +e
 
 echo "Validating $test_1_prod_path"
-./alus_result_check.py -I $test_1_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_tnr_Calib_IW2_b26_tc.tif
+./alus_result_check.py -I $test_1_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_tnr_Calib_IW2_b26_tc.tif -O SKIP_ALUs_VERSION
 res1=$?
 echo "Validating $test_2_prod_path"
-./alus_result_check.py -I $test_2_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_tnr_Calib_IW2_b26_tc.tif
+./alus_result_check.py -I $test_2_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_tnr_Calib_IW2_b26_tc.tif -O SKIP_ALUs_VERSION
 res2=$?
 echo "Validating $test_3_prod_path"
-./alus_result_check.py -I $test_3_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_tnr_Cal_deb_tc_aoi_merge.tif
+./alus_result_check.py -I $test_3_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_tnr_Cal_deb_tc_aoi_merge.tif -O SKIP_ALUs_VERSION
 res3=$?
 echo "Validating $test_4_prod_path"
-./alus_result_check.py -I $test_4_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_tnr_Cal_deb_tc_aoishp_merge.tif
+./alus_result_check.py -I $test_4_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_tnr_Cal_deb_tc_aoishp_merge.tif -O SKIP_ALUs_VERSION
 res4=$?
 
 

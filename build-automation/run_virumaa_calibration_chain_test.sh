@@ -40,6 +40,6 @@ if [[ -z "${NIGHTLY_GOLDEN_DIR}" ]]; then
 fi
 
 echo "Validating $test_1_prod_path"
-./alus_result_check.py -I $test_1_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_tnr_Calib_IW1_tc.tif
+./alus_result_check.py -I $test_1_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_SLC__1SDV_20180815T154813_20180815T154840_023259_028747_4563_tnr_Calib_IW1_tc.tif -O SKIP_ALUs_VERSION
 
 exit $?

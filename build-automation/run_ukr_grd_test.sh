@@ -56,6 +56,6 @@ fi
 set +e
 
 echo "Validating $test_1_prod_path"
-./alus_result_check.py -I $test_1_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_GRDH_1SDV_20230130T152052_20230130T152117_047015_05A3B0_874C_tnr_Cal_VV_tc.tif
+./alus_result_check.py -I $test_1_prod_path -G "$NIGHTLY_GOLDEN_DIR"/S1A_IW_GRDH_1SDV_20230130T152052_20230130T152117_047015_05A3B0_874C_tnr_Cal_VV_tc.tif -O SKIP_ALUs_VERSION
 
 exit $?
