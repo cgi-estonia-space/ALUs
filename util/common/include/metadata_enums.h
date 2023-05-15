@@ -14,7 +14,7 @@
 #pragma once
 
 namespace alus::metadata {
-enum class ProductType { SLC };
+enum class ProductType { SLC, GRD };
 
 enum class AcquisitionMode { IW };
 
@@ -24,7 +24,7 @@ enum class Swath { IW1 };
 
 enum class Pass { ASCENDING, DESCENDING };
 
-enum class SampleType { COMPLEX };
+enum class SampleType { COMPLEX, DETECTED };
 
 enum class Polarisation { VH, VV };
 

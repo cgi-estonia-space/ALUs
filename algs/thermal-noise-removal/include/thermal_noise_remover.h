@@ -37,7 +37,8 @@ namespace alus::tnr {
 struct SharedData {
     // synchronised internally
     ThreadSafeTileQueue<Rectangle> tile_queue;
-    Dataset<Iq16>* src_dataset;
+    GDALDataset* src_dataset;
+    Rectangle src_area;
 
     // explicit mutex
     std::mutex dst_mutex;
@@ -53,9 +54,9 @@ struct SharedData {
 
 class ThermalNoiseRemover {
 public:
-    ThermalNoiseRemover(std::shared_ptr<snapengine::Product> source_product, Dataset<Iq16>* pixel_reader,
-                        std::string_view subswath, std::string_view polarisation, std::string_view output_path,
-                        int tile_width = 2000, int tile_height = 2000);
+    ThermalNoiseRemover(std::shared_ptr<snapengine::Product> source_product, GDALDataset* source_dataset,
+                        Rectangle source_ds_area, std::string_view subswath, std::string_view polarisation,
+                        std::string_view output_path, int tile_width = 2000, int tile_height = 2000);
 
     ThermalNoiseRemover(const ThermalNoiseRemover&) = delete;
     ThermalNoiseRemover(ThermalNoiseRemover&&) = delete;
@@ -71,7 +72,8 @@ public:
 
 private:
     std::shared_ptr<snapengine::Product> source_product_;
-    Dataset<Iq16>* pixel_reader_;
+    GDALDataset* source_ds_;
+    Rectangle source_ds_area_;
     std::string subswath_;
     std::string polarisation_;
     std::string output_path_;
@@ -88,19 +90,19 @@ private:
     int tile_width_{};
     int tile_height_{};
 
-    bool is_complex_data_{
-        true};  // TNR is intended to be the first operator in chain, but that might not always be the case.
+    bool is_complex_input_;
 
     double target_no_data_value_{0.0};
     const double target_floor_value_{1e-5};
 
     static constexpr std::array<std::string_view, 1> SUPPORTED_ACQUISITION_MODES{"IW" /*, "EW", "SM"*/};
-    static constexpr std::array<std::string_view, 1> SUPPORTED_PRODUCT_TYPES{"SLC" /*, "GRD"*/};
+    static constexpr std::array<std::string_view, 2> SUPPORTED_PRODUCT_TYPES{"SLC", "GRD"};
     static constexpr std::string_view ALG_NAME{"Thermal Noise Removal"};
     static constexpr std::string_view PRODUCT_SUFFIX{"_tnr"};
 
     void ComputeTileImage(ThreadData* context, SharedData* tnr_data);
     void ComputeComplexTile(Rectangle target_tile, ThreadData* context, SharedData* tnr_data);
+    void ComputeAmplitudeTile(alus::Rectangle target_tile, ThreadData* context, SharedData* tnr_data);
 
     /**
      * Initialises the TNR operator.
@@ -151,7 +153,7 @@ private:
      * @param target_band Band for which the tiles will be calculated.
      * @return Vector of tiles.
      */
-    [[nodiscard]] std::vector<Rectangle> CalculateTiles(snapengine::Band& target_band) const;
+    [[nodiscard]] std::vector<Rectangle> CalculateTiles(Rectangle in_raster_area) const;
 
     /**
      * Creates a GDALDataset from the product.

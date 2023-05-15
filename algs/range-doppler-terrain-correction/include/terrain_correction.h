@@ -29,18 +29,19 @@
 #include "pointer_holders.h"
 #include "product_old.h"
 #include "resampling.h"
+#include "snap-core/core/datamodel/tie_point_grid.h"
+#include "srgr_coefficients.h"
 #include "tc_tile.h"
 #include "terrain_correction_kernel.h"
 #include "terrain_correction_metadata.h"
-#include "tie_point_grid.h"
 
 namespace alus::terraincorrection {
 
 class TerrainCorrection {
 public:
     explicit TerrainCorrection(GDALDataset* input_dataset, const RangeDopplerTerrainMetadata& metadata,
-                               const snapengine::tiepointgrid::TiePointGrid& lat_tie_point_grid,
-                               const snapengine::tiepointgrid::TiePointGrid& lon_tie_point_grid,
+                               std::shared_ptr<snapengine::TiePointGrid> lat_tie_point_grid,
+                               std::shared_ptr<snapengine::TiePointGrid> lon_tie_point_grid,
                                const PointerHolder* dem_tiles, size_t dem_tiles_length,
                                const dem::Property* dem_property, const dem::Type dem_type,
                                const std::vector<dem::Property>& dem_property_value, int selected_band_id = 1,
@@ -72,13 +73,14 @@ private:
     const std::vector<dem::Property> dem_property_value_;
     std::vector<void*> cuda_arrays_to_clean_{};
     const int selected_band_id_;
-    const snapengine::tiepointgrid::TiePointGrid& lat_tie_point_grid_;
-    const snapengine::tiepointgrid::TiePointGrid& lon_tie_point_grid_;
+    std::shared_ptr<snapengine::TiePointGrid> lat_tie_point_grid_;
+    std::shared_ptr<snapengine::TiePointGrid> lon_tie_point_grid_;
     const bool use_average_scene_height_{false};
     GetPositionMetadata d_get_position_metadata_;
     std::vector<snapengine::OrbitStateVectorComputation> h_orbit_state_vectors_;
     std::pair<std::string, std::shared_ptr<GDALDataset>> output_;
     common::metadata::Container metadata_output_;
+    cuda::KernelArray<SrgrCoefficientsDevice> d_srgr_coefficients_{nullptr, 0};
 
     /**
      * Computes target image boundary by creating a rectangle around the source image. The source image should be
@@ -111,10 +113,14 @@ private:
      */
     void DebugDeviceArrays() const;
 
+    void DebugSrgrEntries() const;
+
     void FreeCudaArrays();
 
     struct SharedThreadData;
     static void CalculateTile(TcTileCoordinates tile, SharedThreadData* tc_data, PerThreadData* c);
     static void TileLoop(SharedThreadData* tc_data, PerThreadData* ctx);
+
+    void CreateSrgrCoefficientsOnDevice();
 };
 }  // namespace alus::terraincorrection

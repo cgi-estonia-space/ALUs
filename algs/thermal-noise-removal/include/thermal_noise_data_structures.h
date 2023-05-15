@@ -14,8 +14,9 @@
 #pragma once
 
 #include <cassert>
-#include <cuda_runtime.h>
 #include <vector>
+
+#include <cuda_runtime.h>
 
 #include "cuda_mem_arena.h"
 #include "cuda_util.h"
@@ -32,22 +33,22 @@ struct alignas(4) CInt16 {
 static_assert(sizeof(CInt16) == 4);
 static_assert(alignof(CInt16) == 4);
 
-union ComplexIntensityData {
-    CInt16 input;
+union IntensityData {
+    CInt16 input_complex;
+    uint32_t input_amplitude;  // GRD raster values are uint16_t.
     float output;
 };
 
 // per thread stream + host memory buffer + device memory buffer
 struct ThreadData {
-    alus::PagedOrPinnedHostPtr<ComplexIntensityData> h_tile_buffer;
+    alus::PagedOrPinnedHostPtr<IntensityData> h_tile_buffer;
     cuda::MemArena dev_mem_arena;
     cudaStream_t stream = nullptr;
 };
 namespace device {
 
 // Array index is intended to be used as a key.
-using BurstIndexToRangeVectorMap =
-    cuda::KernelArray<s1tbx::DeviceNoiseVector>;
+using BurstIndexToRangeVectorMap = cuda::KernelArray<s1tbx::DeviceNoiseVector>;
 
 using BurstIndexToInterpolatedRangeVectorMap = cuda::KernelArray<cuda::KernelArray<double>>;
 
@@ -73,9 +74,29 @@ inline Matrix<T> CreateKernelMatrix(size_t row_width, size_t row_count) {
         CHECK_CUDA_ERR(cudaMalloc(&row.array, row.ByteSize()));
     }
 
-    BurstIndexToInterpolatedRangeVectorMap d_map{nullptr, row_count};
+    Matrix<T> d_map{nullptr, row_count};
     CHECK_CUDA_ERR(cudaMalloc(&d_map.array, d_map.ByteSize()));
     CHECK_CUDA_ERR(cudaMemcpy(d_map.array, h_map.data(), d_map.ByteSize(), cudaMemcpyHostToDevice));
+
+    return d_map;
+}
+
+template <typename T>
+inline Matrix<T> CreateKernelMatrix(size_t row_width, size_t row_count, const std::vector<std::vector<T>>& data,
+                                    cudaStream_t stream) {
+    std::vector<cuda::KernelArray<T>> h_map(row_count);
+    int row_i{0};
+    for (auto& row : h_map) {
+        row.size = row_width;
+        CHECK_CUDA_ERR(cudaMallocAsync(&row.array, row.ByteSize(), stream));
+        CHECK_CUDA_ERR(cudaMemcpyAsync(row.array, data.at(row_i).data(), data.at(row_i).size() * sizeof(T),
+                                       cudaMemcpyHostToDevice, stream));
+        row_i++;
+    }
+
+    Matrix<T> d_map{nullptr, row_count};
+    CHECK_CUDA_ERR(cudaMallocAsync(&d_map.array, d_map.ByteSize(), stream));
+    CHECK_CUDA_ERR(cudaMemcpyAsync(d_map.array, h_map.data(), d_map.ByteSize(), cudaMemcpyHostToDevice, stream));
 
     return d_map;
 }

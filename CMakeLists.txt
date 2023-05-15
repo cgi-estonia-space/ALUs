@@ -89,6 +89,7 @@ add_subdirectory(util/exotic-operations)
 add_subdirectory(util/common)
 add_subdirectory(util/cuda)
 add_subdirectory(util/dem)
+add_subdirectory(util/math)
 add_subdirectory(snap-engine)
 
 # Algorithms

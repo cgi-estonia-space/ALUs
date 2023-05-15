@@ -24,7 +24,7 @@
 #include "alus_log.h"
 #include "aoi_burst_extract.h"
 #include "c16_dataset.h"
-#include "ceres-core/core/zip.h"
+#include "dataset_util.h"
 #include "general_constants.h"
 #include "s1tbx-commons/subswath_info.h"
 #include "s1tbx-io/sentinel1/sentinel1_product_reader_plug_in.h"
@@ -32,7 +32,6 @@
 #include "snap-core/core/datamodel/band.h"
 #include "snap-core/core/datamodel/metadata_element.h"
 #include "snap-core/core/datamodel/product_data_utc.h"
-#include "snap-core/core/datamodel/pugixml_meta_data_reader.h"
 #include "snap-core/core/datamodel/tie_point_geo_coding.h"
 #include "snap-core/core/datamodel/tie_point_grid.h"
 #include "snap-core/core/subset/pixel_subset_region.h"
@@ -40,7 +39,6 @@
 #include "snap-engine-utilities/engine-utilities/eo/constants.h"
 #include "snap-engine-utilities/engine-utilities/gpf/input_product_validator.h"
 #include "split_product_subset_builder.h"
-#include "zip_util.h"
 
 namespace {
 constexpr std::string_view ALG_NAME{"TOPSAR-SPLIT"};
@@ -99,64 +97,10 @@ void TopsarSplit::LoadInputDataset(std::string_view filename) {
 }
 
 void TopsarSplit::OpenPixelReader(std::string_view filename) {
-    bool found_it = false;
-    boost::filesystem::path path = std::string(filename);
-    boost::filesystem::path measurement = path.string() + "/measurement";
-    boost::filesystem::directory_iterator end_itr;
-    std::string low_subswath = boost::to_lower_copy(std::string(subswath_));
-    std::string low_polarisation = boost::to_lower_copy(std::string(selected_polarisations_.front()));
-    std::string input_file{};
-
-    if (common::zip::IsFileAnArchive(filename)) {
-        if (!boost::filesystem::exists(filename.data())) {
-            std::string error_message{"No file " + std::string(filename) + " found"};
-            THROW_ALGORITHM_EXCEPTION(ALG_NAME, error_message);
-        }
-
-        ceres::Zip dir(path);
-        // Convert path to SAFE
-        auto leaf = path.leaf();
-        leaf.replace_extension("SAFE");
-
-        std::shared_ptr<snapengine::PugixmlMetaDataReader> xml_reader;
-        const auto file_list = dir.List(leaf.string() + "/measurement");
-        const auto image_file =
-            std::find_if(std::begin(file_list), std::end(file_list), [&low_subswath, &low_polarisation](auto& file) {
-                return file.find(low_subswath) != std::string::npos && file.find(low_polarisation) != std::string::npos;
-            });
-        if (image_file == std::end(file_list)) {
-            THROW_ALGORITHM_EXCEPTION(ALG_NAME, "Image file for " + low_subswath + " and " + low_polarisation +
-                                                    " does not exist in dataset.");
-        }
-        input_file = leaf.string() + "/measurement/" + *image_file;
-        pixel_reader_ = std::make_shared<C16Dataset<int16_t>>(gdal::constants::GDAL_ZIP_PREFIX.data() + path.string() +
-                                                              "/" + input_file);
-        pixel_reader_->SetReadingArea(split_reading_area_);
-        pixel_reader_->TryToCacheImage();
-        found_it = true;
-    } else {
-        std::shared_ptr<snapengine::PugixmlMetaDataReader> xml_reader;
-        for (boost::filesystem::directory_iterator itr(measurement); itr != end_itr; itr++) {
-            if (is_regular_file(itr->path())) {
-                std::string current_file = itr->path().string();
-                if (current_file.find(low_subswath) != std::string::npos &&
-                    current_file.find(low_polarisation) != std::string::npos) {
-                    LOGV << "Selecting tif for reading: " << current_file;
-                    pixel_reader_ = std::make_shared<C16Dataset<int16_t>>(current_file);
-                    pixel_reader_->SetReadingArea(split_reading_area_);
-                    pixel_reader_->TryToCacheImage();
-                    found_it = true;
-                    break;
-                }
-            }
-        }
-    }
-
-    if (!found_it) {
-        throw common::AlgorithmException(ALG_NAME, "SAFE file does not contain GeoTIFF file for subswath '" +
-                                                       subswath_ + "' and polarisation '" +
-                                                       selected_polarisations_.front() + "'");
-    }
+    pixel_reader_ =
+        dataset::OpenSentinel1SafeRaster<C16Dataset<int16_t>>(filename, subswath_, selected_polarisations_.front());
+    pixel_reader_->SetReadingArea(split_reading_area_);
+    pixel_reader_->TryToCacheImage();
 }
 
 /**

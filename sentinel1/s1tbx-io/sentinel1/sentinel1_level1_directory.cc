@@ -29,10 +29,8 @@
 
 #include "alus_log.h"
 #include "general_constants.h"
-#include "s1tbx-commons/io/image_i_o_file.h"
 #include "s1tbx-commons/io/sar_reader.h"
 #include "s1tbx-io/geotiffxml/geo_tiff_utils.h"
-#include "s1tbx-io/sentinel1/i_sentinel1_directory.h"
 #include "s1tbx-io/sentinel1/sentinel1_constants.h"
 #include "snap-core/core/datamodel/band.h"
 #include "snap-core/core/datamodel/i_geo_coding.h"
@@ -944,6 +942,8 @@ void Sentinel1Level1Directory::AddBandAbstractedMetadata(
         if (!common_metadata_retrieved) {
             // these should be the same for all swaths
             // set to absRoot
+            // This was the initial assumption. Actually they are NOT! Everything related to noise and biases differ.
+            // But atm do not influence results.
 
             const std::shared_ptr<snapengine::MetadataElement> general_annotation =
                 prod_elem->GetElement("generalAnnotation");
@@ -1098,6 +1098,8 @@ void Sentinel1Level1Directory::AddSRGRCoefficients(
         snapengine::AbstractMetadata::SetAttribute(srgr_list_elem, snapengine::AbstractMetadata::GROUND_RANGE_ORIGIN,
                                                    gr_origin);
 
+        // This is initially counterintuitive, see -
+        // https://forum.step.esa.int/t/srgr-coefficients-of-sentinel-1-grd-products/8479
         const std::string coeff_str = elem->GetElement("grsrCoefficients")->GetAttributeString("grsrCoefficients", "");
         if (!coeff_str.empty()) {
             boost::char_separator<char> sep{" \t\n\r\f"};
@@ -1113,6 +1115,7 @@ void Sentinel1Level1Directory::AddSRGRCoefficients(
                                                                      "SRGR Coefficient");
                 snapengine::AbstractMetadata::SetAttribute(coef_elem, snapengine::AbstractMetadata::SRGR_COEF,
                                                            coef_value);
+                srgr_list_elem->AddElement(coef_elem);
             }
         }
     }

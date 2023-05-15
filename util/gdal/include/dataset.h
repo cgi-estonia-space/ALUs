@@ -56,7 +56,7 @@ public:
     void LoadRasterBand(int band_nr) override;
     explicit Dataset(GDALDataset& dataset);
 
-    GDALDataset* GetGdalDataset() { return dataset_; }
+    GDALDataset* GetGdalDataset();
 
     Dataset(Dataset<BufferType>&& other) noexcept { *this = std::move(other); }
 
@@ -118,6 +118,7 @@ public:
     void ReadRectangle(Rectangle rectangle, std::map<int, BufferType*>& bands) override;
     void TryToCacheImage() override;
     void SetReadingArea(Rectangle new_area) override { reading_area_ = new_area; };
+    Rectangle GetReadingArea() const { return reading_area_; }
 
     virtual ~Dataset();
 

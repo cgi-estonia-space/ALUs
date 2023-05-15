@@ -28,6 +28,7 @@ target_link_libraries(terrain-correction-static
         dem-util-static
         exotic-operations-static
         gdal-util-static
+        math-util-static
         snap-engine-static
         sentinel1-util-static
         )

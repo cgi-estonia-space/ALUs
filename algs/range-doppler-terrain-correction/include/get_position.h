@@ -29,29 +29,12 @@ struct GetPositionMetadata {
     double wavelength;
     double range_spacing;
     double near_edge_slant_range;
+    int source_image_width;
     cuda::KernelArray<snapengine::PosVector> sensor_position;
     cuda::KernelArray<snapengine::PosVector> sensor_velocity;
     cuda::KernelArray<snapengine::OrbitStateVectorComputation> orbit_state_vectors;
     cuda::KernelArray<double> orbit_state_vector_lut;
 };
-
-/**
- * Determines satellite position by filling PositionData structure.
- *
- * This is a port from RangeDopplerGeoCodingOp.java's GetPosition() procedure. It consists of 4 calculations -
- * geoutils::Geo2xyzWgs84(), SarGeocoding::getEarthPointZeroDopplerTime(), SarGeocoding::computeSlantRange,
- * SarGeocoding::computeRangeIndex() [only SLC images].
- * All class fields and static data is supplied here as a separate argument.
- *
- * @param[in] lat Pixel latitude
- * @param[in] lon Pixel longitude
- * @param[in] alt Pixel elevation (in SNAP code it is altitude, but elevation is more precise)
- * @param[out] satellite_pos Structure that consists of satellite position
- * @param[in] metadata Various metadata needed for the calulcations.
- * @return
- */
-bool GetPosition(double lat, double lon, double alt, s1tbx::PositionData& satellite_pos,
-                 const GetPositionMetadata& metadata);
 
 /**
  * Calculates a lookup table for the orbit state interpolation, this can be used to turn a divide into a multiply
@@ -75,6 +58,24 @@ inline std::vector<double> CalculateOrbitStateVectorLUT(
     }
     return h_lut;
 }
+
+/**
+ * Determines satellite position by filling PositionData structure.
+ *
+ * This is a port from RangeDopplerGeoCodingOp.java's GetPosition() procedure. It consists of 4 calculations -
+ * geoutils::Geo2xyzWgs84(), SarGeocoding::getEarthPointZeroDopplerTime(), SarGeocoding::computeSlantRange,
+ * SarGeocoding::computeRangeIndex() [only SLC images].
+ * All class fields and static data is supplied here as a separate argument.
+ *
+ * @param[in] lat Pixel latitude
+ * @param[in] lon Pixel longitude
+ * @param[in] alt Pixel elevation (in SNAP code it is altitude, but elevation is more precise)
+ * @param[out] satellite_pos Structure that consists of satellite position
+ * @param[in] metadata Various metadata needed for the calulcations.
+ * @return
+ */
+bool GetPosition(double lat, double lon, double alt, s1tbx::PositionData& satellite_pos,
+                 const GetPositionMetadata& metadata);
 
 }  // namespace terraincorrection
 }  // namespace alus

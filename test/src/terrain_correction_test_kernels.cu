@@ -32,9 +32,10 @@ __global__ void GetPositionKernel(cuda::KernelArray<double> lat_args, cuda::Kern
         return;
     }
 
+    cuda::KernelArray<terraincorrection::SrgrCoefficientsDevice> a{nullptr, 0};
     results.array[thread_x] =
         terraincorrection::GetPositionImpl(lat_args.array[thread_x], lon_args.array[thread_x], alt_args.array[thread_x],
-                                           sat_positions.array[thread_x], metadata);
+                                           sat_positions.array[thread_x], metadata, a);
 }
 
 void LaunchGetPositionKernel(const std::vector<double>& lat_args, const std::vector<double>& lon_args,

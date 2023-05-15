@@ -105,17 +105,15 @@ TEST(TerrainCorrection, ParsesMetadataCorrectlyForSaaremaa1) {
     const auto& lon_tie_points = metadata.GetLonTiePointGrid();
     const size_t expected_width{21};
     const size_t expected_height{6};
-    EXPECT_THAT(lat_tie_points.grid_width, Eq(expected_width));
-    EXPECT_THAT(lat_tie_points.grid_height, Eq(expected_height));
-    EXPECT_THAT(lon_tie_points.grid_width, Eq(expected_width));
-    EXPECT_THAT(lon_tie_points.grid_height, Eq(expected_height));
+    EXPECT_THAT(lat_tie_points->GetGridWidth(), Eq(expected_width));
+    EXPECT_THAT(lat_tie_points->GetGridHeight(), Eq(expected_height));
 
     for (size_t i = 0; i < expected_lat_tie_points.size(); i++) {
-        EXPECT_THAT(lat_tie_points.tie_points[i], FloatEq(expected_lat_tie_points[i]));
+        EXPECT_THAT(lat_tie_points->GetGridData()->GetElemFloatAt(i), FloatEq(expected_lat_tie_points[i]));
     }
 
     for (size_t i = 0; i < expected_lon_tie_points.size(); i++) {
-        EXPECT_THAT(lon_tie_points.tie_points[i], FloatEq(expected_lon_tie_points[i]));
+        EXPECT_THAT(lon_tie_points->GetGridData()->GetElemFloatAt(i), FloatEq(expected_lon_tie_points[i]));
     }
 
     const auto& metadata_fields = metadata.GetMetadata();

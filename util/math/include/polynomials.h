@@ -12,16 +12,23 @@
  * with this program; if not, see http://www.gnu.org/licenses/
  */
 
-#include "get_position.cuh"
-#include "get_position.h"
+#pragma once
 
-namespace alus {
-namespace terraincorrection {
-bool GetPosition(double lat, double lon, double alt, s1tbx::PositionData& satellite_pos,
-                 const GetPositionMetadata& metadata) {
-    cuda::KernelArray<SrgrCoefficientsDevice> a{nullptr, 0};
-    return GetPositionImpl(lat, lon, alt, satellite_pos, metadata, a);
+#include <cstddef>
+
+#include "cuda_stubs.h"
+
+namespace alus::math::polynomials {
+
+inline DEVICE_STUB HOST_STUB double CalculateValue(double x, double* coefficients, int coefficients_length) {
+    double val = 0.0;
+
+    for (int i = coefficients_length - 1; i > 0; i--) {
+        val += coefficients[i];
+        val *= x;
+    }
+
+    return val + coefficients[0];
 }
 
-}  // namespace terraincorrection
-}  // namespace alus
+}  // namespace alus::math::polynomials

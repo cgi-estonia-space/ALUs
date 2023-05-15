@@ -13,9 +13,10 @@
  */
 #pragma once
 
-#include <driver_types.h>
 #include <map>
 #include <memory>
+
+#include <driver_types.h>
 
 #include "kernel_array.h"
 #include "s1tbx-commons/noise_azimuth_vector.h"
@@ -29,15 +30,26 @@
 namespace alus::tnr {
 
 /**
- * Gathers metadata required for execution of Thermal Noise Removal operator.
+ * Gathers metadata required for execution of Thermal Noise Removal operator. For SLC data.
  *
  * @param polarisation Selected polarisation.
  * @param sub_swath Selected subswath.
  * @param origin_metadata_root Metadata of the product.
  * @return Parsed metadata.
  */
-ThermalNoiseInfo GetThermalNoiseInfo(std::string_view polarisation, std::string_view sub_swath,
-                                     const std::shared_ptr<snapengine::MetadataElement>& origin_metadata_root);
+ThermalNoiseInfo GetThermalNoiseInfoForBursts(std::string_view polarisation, std::string_view sub_swath,
+                                              const std::shared_ptr<snapengine::MetadataElement>& origin_metadata_root);
+
+/**
+ * Gathers metadata required for execution of Thermal Noise Removal operator. For GRD data.
+ *
+ * @param polarisation Selected polarisation.
+ * @param sub_swath Selected subswath.
+ * @param origin_metadata_root Metadata of the product.
+ * @return Parsed metadata.
+ */
+ThermalNoiseInfo GetThermalNoiseInfoForGrd(std::string_view polarisation,
+                                           const std::shared_ptr<snapengine::MetadataElement>& origin_metadata_root);
 
 /**
  * Fills time maps with T0 and DeltaTS values acquired from the product metadata.
@@ -100,5 +112,34 @@ size_t GetLineIndex(int line, const std::vector<int>& lines);
 device::Matrix<double> BuildNoiseLutForTOPSSLC(Rectangle tile, const ThermalNoiseInfo& thermal_noise_info,
                                                ThreadData* thread_data);
 
+device::Matrix<double> BuildNoiseLutForTOPSGRD(Rectangle tile, const ThermalNoiseInfo& thermal_noise_info,
+                                               ThreadData* thread_data);
+
 cuda::KernelArray<int> CalculateBurstIndices(Rectangle tile, int lines_per_burst, ThreadData* thread_data);
+
+std::vector<size_t> DetermineNoiseVectorIndices(double start_az_time, double end_az_time,
+                                                const std::vector<s1tbx::NoiseVector>& noise_range);
+
+void FillRangeNoiseWithInterpolatedValues(const s1tbx::NoiseVector& nv, int first_range_sample, int last_range_sample,
+                                          std::vector<double>& to_compute);
+
+inline int GetSampleIndex(int sample, const std::vector<int>& pixels) {
+    for (size_t i = 0; i < pixels.size(); i++) {
+        if (sample < pixels.at(i)) {
+            return (i > 0) ? i - 1 : 0;
+        }
+    }
+
+    return pixels.size() - 2;
+}
+
+void FillAzimuthNoiseVectorWithInterpolatedValues(const s1tbx::NoiseAzimuthVector& v, int first_azimuth_line,
+                                                  int last_azimuth_line, std::vector<double>& to_compute);
+
+void ComputeNoiseMatrix(int tile_offset_x, int tile_offset_y, int nx0, int nx_max, int ny0, int ny_max,
+                        const std::vector<int>& noise_range_vector_line,
+                        const std::vector<std::vector<double>>& interpolated_range_vectors,
+                        const std::vector<double>& interpolated_azimuth_vector,
+                        std::vector<std::vector<double>>& values);
+
 }  // namespace alus::tnr

@@ -78,6 +78,7 @@ void Arguments::Construct() {
         subswath_help.append(s).append(";");
     }
     subswath_help.pop_back();
+    subswath_help.append(". Not used for GRD.");
 
     std::string polarisation_help = "Polarisation for which the calibration will be performed - ";
     for (const auto& s : POLARISATIONS) {
@@ -101,12 +102,12 @@ void Arguments::Construct() {
         ("sw", po::value<std::string>(&subswath_), subswath_help.c_str())
         ("polarisation,p", po::value<std::string>(&polarisation_)->required(), polarisation_help.c_str())
         ("bi1", po::value<size_t>(&burst_start_index_),
-            "First burst index - starting at '1', leave unspecified for whole subswath")
+            "First burst index - starting at '1', leave unspecified for whole subswath and GRD")
         ("bi2", po::value<size_t>(&burst_last_index_),
-            "Last burst index - starting at '1', leave unspecified for whole subswath")
+            "Last burst index - starting at '1', leave unspecified for whole subswath and GRD")
         ("aoi,a", po::value<std::string>(&aoi_),
          "Area Of Interest WKT polygon. Or shapefile (.shp) consisting similar geometry."
-         "Overrules first and last burst indexes and subswath selections.")
+         "Overrules first and last burst indexes and subswath selections. Not effective for GRD.")
         ("type,t", po::value<std::string>(&calibration_type_)->required(), calibration_type_help.c_str())
         ("dem", po::value<std::vector<std::string>>(&dem_files_)->required(),
             "DEM file(s). SRTM3 and Copernicus DEM 30m COG are currently supported.");

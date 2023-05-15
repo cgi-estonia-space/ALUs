@@ -27,7 +27,6 @@
 #include "cuda_util.h"
 #include "gdal_util.h"
 #include "general_constants.h"
-#include "product_old.h"
 #include "raster_properties.h"
 #include "shapes_util.h"
 #include "snap-engine-utilities/engine-utilities//eo/constants.h"
@@ -36,6 +35,9 @@
 #include "terrain_correction_kernel.h"
 #include "tie_point_geocoding.h"
 #include "tile_queue.h"
+
+#define TC_DEBUG_DEVICE_ARRAYS 0
+#define TC_DEBUG_SRGR 0
 
 namespace {
 void InitThreadContext(alus::terraincorrection::PerThreadData* ctx, size_t max_tile_size, bool use_pinned_memory) {
@@ -117,6 +119,43 @@ void TerrainCorrection::DebugDeviceArrays() const {
     // arrays on host, can be viewed in debugger
     LOGD << "sensor position size = " << h_positions.size() << " velocity = " << h_velocities.size();
     LOGD << "osv size = " << h_osv.size() << " osv lut size = " << h_osv_lut.size();
+
+    std::stringstream debug_str_buffer;
+    //    for (const auto& pos : h_positions) {
+    //        debug_str_buffer << std::setprecision(16) << pos.x << " " << pos.y << " " << pos.z << std::endl;
+    //    }
+    //    LOGD << "Positions:" << std::endl << debug_str_buffer.str();
+    //
+    //    for (const auto& pos : h_velocities) {
+    //        debug_str_buffer << std::setprecision(16) << pos.x << " " << pos.y << " " << pos.z << std::endl;
+    //    }
+    //    LOGD << "Velocities:" << std::endl << debug_str_buffer.str();
+
+    size_t index{0};
+    for (const auto& o : h_osv) {
+        debug_str_buffer << "Orbit vector " << ++index << std::endl
+                         << std::setprecision(16) << o.timeMjd_ << std::endl
+                         << std::setprecision(16) << o.xPos_ << std::endl
+                         << std::setprecision(16) << o.yPos_ << std::endl
+                         << std::setprecision(16) << o.zPos_ << std::endl
+                         << std::setprecision(16) << o.xVel_ << std::endl
+                         << std::setprecision(16) << o.yVel_ << std::endl
+                         << std::setprecision(16) << o.zVel_ << std::endl;
+    }
+    LOGD << std::endl << debug_str_buffer.str();
+}
+
+void TerrainCorrection::DebugSrgrEntries() const {
+    std::stringstream debug_str;
+    for (size_t i{0}; i < metadata_.srgr_coefficients.size(); i++) {
+        debug_str << "Srgr entry " << i + 1 << std::endl
+                  << std::setprecision(16) << metadata_.srgr_coefficients.at(i).time_mjd << std::endl
+                  << std::setprecision(16) << metadata_.srgr_coefficients.at(i).ground_range_origin << std::endl;
+        for (size_t j{0}; j < metadata_.srgr_coefficients.at(i).coefficient.size(); j++) {
+            debug_str << std::setprecision(16) << metadata_.srgr_coefficients.at(i).coefficient.at(j) << std::endl;
+        }
+    }
+    LOGD << debug_str.str();
 }
 
 void TerrainCorrection::CreateHostMetadata(double line_time_interval_in_days) {
@@ -166,8 +205,8 @@ void TerrainCorrection::CreateGetPositionDeviceArrays(int y_size, double line_ti
 }
 
 TerrainCorrection::TerrainCorrection(GDALDataset* input_dataset, const RangeDopplerTerrainMetadata& metadata,
-                                     const snapengine::tiepointgrid::TiePointGrid& lat_tie_point_grid,
-                                     const snapengine::tiepointgrid::TiePointGrid& lon_tie_point_grid,
+                                     std::shared_ptr<snapengine::TiePointGrid> lat_tie_point_grid,
+                                     std::shared_ptr<snapengine::TiePointGrid> lon_tie_point_grid,
                                      const PointerHolder* dem_tiles, size_t dem_tiles_length,
                                      const dem::Property* dem_property, const dem::Type dem_type,
                                      const std::vector<dem::Property>& dem_property_value, int selected_band_id,
@@ -211,6 +250,8 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
                                           static_cast<double>(ds_y_size - 1)};
 
     CreateHostMetadata(line_time_interval_in_days);
+    d_get_position_metadata_.source_image_width =
+        input_ds_->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)->GetXSize();
     CreateGetPositionDeviceArrays(static_cast<int>(ds_y_size), line_time_interval_in_days);
 
     // Target tile
@@ -244,6 +285,16 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
     shared_data.use_pinned_memory = use_pinned_memory;
     shared_data.max_tile_size = tile_height * tile_width;
     shared_data.tile_queue.InsertData(std::move(tiles));
+
+    CreateSrgrCoefficientsOnDevice();
+
+#if TC_DEBUG_DEVICE_ARRAYS
+    DebugDeviceArrays();
+#endif
+
+#if TC_DEBUG_SRGR
+    DebugSrgrEntries();
+#endif
 
     std::vector<PerThreadData> context_vec(n_threads);
     std::vector<std::thread> threads_vec;
@@ -371,9 +422,7 @@ snapengine::old::Product TerrainCorrection::CreateTargetProduct(
                                       std::abs(image_boundary[3] - image_boundary[2]),
                                       std::abs(image_boundary[1] - image_boundary[0])};
 
-    if (OGRErr error = target_crs.Validate() != OGRERR_NONE) {
-        LOGE << "OGR ERROR: " << error;  // TODO: implement some real error (SNAPGPU-163)
-    }
+    CHECK_OGR_ERROR(target_crs.Validate());
 
     GDALDriver* output_driver = GetGdalGeoTiffDriver();
 
@@ -465,8 +514,8 @@ void TerrainCorrection::CalculateTile(TcTileCoordinates tile_coordinates, Shared
     src_args.source_image_height = band->GetYSize();
     src_args.diff_lat = shared->diff_lat;
     src_args.target_geo_transform = shared->target_geo_transform;
-    src_args.dem_tiles = {shared->terrain_correction->d_dem_tiles_,
-                          shared->terrain_correction->d_dem_tiles_length_};
+    src_args.dem_tiles = {shared->terrain_correction->d_dem_tiles_, shared->terrain_correction->d_dem_tiles_length_};
+    src_args.d_srgr_coefficients = shared->terrain_correction->d_srgr_coefficients_;
 
     const size_t target_sz = tile_coordinates.target_height * tile_coordinates.target_width;
 
@@ -577,5 +626,61 @@ void TerrainCorrection::TileLoop(SharedThreadData* shared, PerThreadData* ctx) {
             LOGE << e.what();
         }
     }
+}
+
+void TerrainCorrection::CreateSrgrCoefficientsOnDevice() {
+    const auto srgr_coefficients_count = metadata_.srgr_coefficients.size();
+    if (srgr_coefficients_count == 0) {
+        return;
+    }
+
+    CHECK_CUDA_ERR(cudaMalloc(&d_srgr_coefficients_.array, srgr_coefficients_count * sizeof(SrgrCoefficientsDevice)));
+    d_srgr_coefficients_.size = srgr_coefficients_count;
+    for (size_t i{0}; i < srgr_coefficients_count; i++) {
+        const auto& h_srgr = metadata_.srgr_coefficients.at(i);
+        auto* d_srgr_entry = &d_srgr_coefficients_.array[i];
+        const auto coefficient_count = h_srgr.coefficient.size();
+
+        SrgrCoefficientsDevice h_tmp = {};
+        h_tmp.ground_range_origin = h_srgr.ground_range_origin;
+        h_tmp.time_mjd = h_srgr.time_mjd;
+        h_tmp.coefficients.size = coefficient_count;
+
+        CHECK_CUDA_ERR(cudaMalloc(&h_tmp.coefficients.array, coefficient_count * sizeof(double)));
+        CHECK_CUDA_ERR(cudaMemcpy(h_tmp.coefficients.array, h_srgr.coefficient.data(),
+                                  coefficient_count * sizeof(double), cudaMemcpyHostToDevice));
+
+        CHECK_CUDA_ERR(cudaMemcpy(d_srgr_entry, &h_tmp, sizeof(SrgrCoefficientsDevice), cudaMemcpyHostToDevice));
+
+        cuda_arrays_to_clean_.push_back(h_tmp.coefficients.array);
+    }
+    cuda_arrays_to_clean_.push_back(d_srgr_coefficients_.array);
+
+#if TC_DEBUG_SRGR
+    for (size_t i{0}; i < srgr_coefficients_count; i++) {
+        SrgrCoefficientsDevice h_tmp = {};
+        CHECK_CUDA_ERR(
+            cudaMemcpy(&h_tmp, &d_srgr_coefficients_.array[i], sizeof(SrgrCoefficientsDevice), cudaMemcpyDeviceToHost));
+
+        auto& host_prop = metadata_.srgr_coefficients.at(i);
+        if (h_tmp.time_mjd != metadata_.srgr_coefficients.at(i).time_mjd) {
+            std::cout << "MJD origin: " << host_prop.time_mjd << " on device:" << h_tmp.time_mjd << std::endl;
+        }
+        if (h_tmp.ground_range_origin != host_prop.ground_range_origin) {
+            std::cout << "Ground range origin: " << host_prop.ground_range_origin
+                      << " on device: " << h_tmp.ground_range_origin << std::endl;
+        }
+
+        std::vector<double> coeff(host_prop.coefficient.size());
+        CHECK_CUDA_ERR(cudaMemcpy(coeff.data(), h_tmp.coefficients.array, host_prop.coefficient.size() * sizeof(double),
+                                  cudaMemcpyDeviceToHost));
+        for (size_t j{0}; j < host_prop.coefficient.size(); j++) {
+            if (coeff.at(j) != host_prop.coefficient.at(j)) {
+                std::cout << "Coeff origin: " << host_prop.coefficient.at(j) << " on device: " << coeff.at(j)
+                          << std::endl;
+            }
+        }
+    }
+#endif
 }
 }  // namespace alus::terraincorrection

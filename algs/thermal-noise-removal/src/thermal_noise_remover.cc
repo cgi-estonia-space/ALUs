@@ -14,9 +14,8 @@
 #include "thermal_noise_remover.h"
 
 #include <array>
-#include <cstddef>
+#include <filesystem>
 #include <memory>
-#include <mutex>
 #include <vector>
 
 #include <gdal.h>
@@ -26,16 +25,14 @@
 #include "alus_log.h"
 #include "gdal_util.h"
 #include "general_utils.h"
+#include "operator_utils.h"
 #include "shapes.h"
 #include "shapes_util.h"
-#include "snap-core/core/datamodel/band.h"
-#include "snap-core/core/datamodel/product.h"
 #include "snap-core/core/util/product_utils.h"
 #include "snap-engine-utilities/engine-utilities/datamodel/metadata/abstract_metadata.h"
 #include "snap-engine-utilities/engine-utilities/datamodel/unit.h"
 #include "snap-engine-utilities/engine-utilities/gpf/input_product_validator.h"
 #include "thermal_noise_kernel.h"
-#include "operator_utils.h"
 #include "thermal_noise_utils.h"
 
 namespace alus::tnr {
@@ -49,7 +46,7 @@ void InitThreadContext(ThreadData* context, const SharedData* tnr_data) {
     context->h_tile_buffer.Allocate(tnr_data->use_pinned_memory, tile_size);
     size_t dev_mem_bytes{0};
     dev_mem_bytes += sizeof(double) * tile_size;                              // Noise matrix
-    dev_mem_bytes += sizeof(ComplexIntensityData) * tile_size;                // Pixel buffer
+    dev_mem_bytes += sizeof(IntensityData) * tile_size;                       // Pixel buffer
     dev_mem_bytes += sizeof(s1tbx::DeviceNoiseVector) * average_burst_count;  // Maximum number of bursts
     dev_mem_bytes += dev_mem_bytes / padding_coefficient;
     context->dev_mem_arena.ReserveMemory(dev_mem_bytes);
@@ -76,10 +73,10 @@ void ThermalNoiseRemover::ComputeTileImage(ThreadData* context, SharedData* tnr_
                 return;
             }
 
-            if (is_complex_data_) {
+            if (is_complex_input_) {
                 ComputeComplexTile(target_tile, context, tnr_data);
             } else {
-                THROW_ALGORITHM_EXCEPTION(ALG_NAME, "Unsupported input.");
+                ComputeAmplitudeTile(target_tile, context, tnr_data);
             }
         }
     } catch (const std::exception& e) {
@@ -96,22 +93,27 @@ void ThermalNoiseRemover::ComputeComplexTile(alus::Rectangle target_tile, Thread
     static_assert(sizeof(alus::Iq16) == sizeof(*context->h_tile_buffer.Get()));
     auto* buffer_ptr = reinterpret_cast<alus::Iq16*>(context->h_tile_buffer.Get());
 
-    tnr_data->src_dataset->ReadRectangle(target_tile, 1, buffer_ptr);
+    {
+        std::unique_lock l(tnr_data->dataset_mutex);
+        CHECK_GDAL_ERROR(tnr_data->src_dataset->GetRasterBand(1)->RasterIO(
+            GF_Read, target_tile.x + tnr_data->src_area.x, target_tile.y + tnr_data->src_area.y, target_tile.width,
+            target_tile.height, buffer_ptr, target_tile.width, target_tile.height, GDT_CInt16, 0, 0));
+    }
 
     const auto tile_size = static_cast<size_t>(target_tile.width) * static_cast<size_t>(target_tile.height);
-    cuda::KernelArray<ComplexIntensityData> d_pixel_buffer{nullptr, tile_size};
-    d_pixel_buffer.array = context->dev_mem_arena.AllocArray<ComplexIntensityData>(tile_size);
+    cuda::KernelArray<IntensityData> d_pixel_buffer{nullptr, tile_size};
+    d_pixel_buffer.array = context->dev_mem_arena.AllocArray<IntensityData>(tile_size);
 
-    CHECK_CUDA_ERR(cudaMemcpyAsync(d_pixel_buffer.array, context->h_tile_buffer.Get(), d_pixel_buffer.ByteSize(),
-                                   cudaMemcpyHostToDevice, context->stream));
+    CHECK_CUDA_ERR(cudaMemcpyAsync(d_pixel_buffer.array, buffer_ptr, d_pixel_buffer.ByteSize(), cudaMemcpyHostToDevice,
+                                   context->stream));
 
     // There is a check in SNAP for a case when TNR is performed after calibration. However, ALUs does not allow such
     // use case so this check was omitted.
 
     LaunchComputeComplexTileKernel(target_tile, target_no_data_value_, target_floor_value_, d_pixel_buffer,
                                    d_noise_block, context->stream);
-    CHECK_CUDA_ERR(cudaMemcpyAsync(context->h_tile_buffer.Get(), d_pixel_buffer.array, d_pixel_buffer.ByteSize(),
-                                   cudaMemcpyDeviceToHost, context->stream));
+    CHECK_CUDA_ERR(cudaMemcpyAsync(buffer_ptr, d_pixel_buffer.array, d_pixel_buffer.ByteSize(), cudaMemcpyDeviceToHost,
+                                   context->stream));
     CHECK_CUDA_ERR(cudaStreamSynchronize(context->stream));
     CHECK_CUDA_ERR(cudaGetLastError());
 
@@ -123,6 +125,45 @@ void ThermalNoiseRemover::ComputeComplexTile(alus::Rectangle target_tile, Thread
         CHECK_GDAL_ERROR(tnr_data->dst_band->RasterIO(GF_Write, target_tile.x, target_tile.y, target_tile.width,
                                                       target_tile.height, context->h_tile_buffer.Get(),
                                                       target_tile.width, target_tile.height, GDT_Float32, 0, 0));
+    }
+}
+
+void ThermalNoiseRemover::ComputeAmplitudeTile(alus::Rectangle target_tile, ThreadData* context, SharedData* tnr_data) {
+    const auto d_noise_block = BuildNoiseLutForTOPSGRD(target_tile, thermal_noise_info_, context);
+    static_assert(sizeof(IntensityData::input_amplitude) == sizeof(*context->h_tile_buffer.Get()));
+    auto* buffer_ptr = reinterpret_cast<uint32_t*>(context->h_tile_buffer.Get());
+    {
+        std::unique_lock l(tnr_data->dataset_mutex);
+        CHECK_GDAL_ERROR(tnr_data->src_dataset->GetRasterBand(1)->RasterIO(
+            GF_Read, target_tile.x + tnr_data->src_area.x, target_tile.y + tnr_data->src_area.y, target_tile.width,
+            target_tile.height, buffer_ptr, target_tile.width, target_tile.height, GDT_UInt32, 0, 0));
+    }
+
+    const auto tile_size = static_cast<size_t>(target_tile.width) * static_cast<size_t>(target_tile.height);
+    cuda::KernelArray<IntensityData> d_pixel_buffer{nullptr, tile_size};
+    d_pixel_buffer.array = context->dev_mem_arena.AllocArray<IntensityData>(tile_size);
+
+    CHECK_CUDA_ERR(cudaMemcpyAsync(d_pixel_buffer.array, buffer_ptr, d_pixel_buffer.ByteSize(), cudaMemcpyHostToDevice,
+                                   context->stream));
+
+    // There is a check in SNAP for a case when TNR is performed after calibration. However, ALUs does not allow such
+    // use case so this check was omitted.
+
+    LaunchComputeAmplitudeTileKernel(target_tile, target_no_data_value_, target_floor_value_, d_pixel_buffer,
+                                     d_noise_block, context->stream);
+    CHECK_CUDA_ERR(cudaMemcpyAsync(buffer_ptr, d_pixel_buffer.array, d_pixel_buffer.ByteSize(), cudaMemcpyDeviceToHost,
+                                   context->stream));
+    CHECK_CUDA_ERR(cudaStreamSynchronize(context->stream));
+    CHECK_CUDA_ERR(cudaGetLastError());
+
+    device::DestroyKernelMatrix(d_noise_block);
+    context->dev_mem_arena.Reset();
+
+    {
+        std::unique_lock lock(tnr_data->dst_mutex);
+        CHECK_GDAL_ERROR(tnr_data->dst_band->RasterIO(GF_Write, target_tile.x, target_tile.y, target_tile.width,
+                                                      target_tile.height, buffer_ptr, target_tile.width,
+                                                      target_tile.height, GDT_Float32, 0, 0));
     }
 }
 
@@ -148,9 +189,19 @@ void ThermalNoiseRemover::Initialise() {
 
     CreateTargetDatasetFromProduct();
 
-    thermal_noise_info_ = GetThermalNoiseInfo(
-        polarisation_, subswath_,
-        source_product_->GetMetadataRoot()->GetElement(snapengine::AbstractMetadata::ORIGINAL_PRODUCT_METADATA));
+    if (is_complex_input_) {
+        thermal_noise_info_ = GetThermalNoiseInfoForBursts(
+            polarisation_, subswath_,
+            source_product_->GetMetadataRoot()->GetElement(snapengine::AbstractMetadata::ORIGINAL_PRODUCT_METADATA));
+    } else {
+        thermal_noise_info_ = GetThermalNoiseInfoForGrd(
+            polarisation_,
+            source_product_->GetMetadataRoot()->GetElement(snapengine::AbstractMetadata::ORIGINAL_PRODUCT_METADATA));
+        FillTimeMapsWithT0AndDeltaTS(
+            std::filesystem::path(source_ds_->GetDescription()).stem().string(),
+            source_product_->GetMetadataRoot()->GetElement(snapengine::AbstractMetadata::ORIGINAL_PRODUCT_METADATA),
+            thermal_noise_info_.time_maps);
+    }
 }
 
 void ThermalNoiseRemover::GetSubsetOffset() {
@@ -196,7 +247,6 @@ void ThermalNoiseRemover::CreateTargetProduct() {
 }
 
 void ThermalNoiseRemover::AddSelectedBands() {
-//    const auto source_bands = source_product_->GetBands();
     std::vector<std::string> source_band_names;
     const auto source_bands = snapengine::OperatorUtils::GetSourceBands(source_product_, source_band_names, false);
     for (size_t i = 0; i < source_bands.size(); i++) {
@@ -264,8 +314,10 @@ void ThermalNoiseRemover::SetTargetImages() {
             auto source_band_name = target_band_name_to_source_band_names_.at(band_name).at(0);
 
             tnr_data.dst_band = target_dataset_->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND);
-            tnr_data.src_dataset = pixel_reader_;
-            std::vector<Rectangle> tiles = CalculateTiles(*band);
+            tnr_data.src_dataset = source_ds_;
+            tnr_data.src_area = source_ds_area_;
+
+            std::vector<Rectangle> tiles = CalculateTiles(source_ds_area_);
 
             // If bound by GPU, then more than 2 give almost no gains
             // If bound by gdal, then locking for both input and output means more than 3 should give almost no benefit
@@ -295,10 +347,10 @@ void ThermalNoiseRemover::SetTargetImages() {
         }
     }
 }
-std::vector<Rectangle> ThermalNoiseRemover::CalculateTiles(snapengine::Band& target_band) const {
+std::vector<Rectangle> ThermalNoiseRemover::CalculateTiles(Rectangle in_raster_area) const {
     std::vector<Rectangle> output_tiles;
-    int x_max = target_band.GetRasterWidth();
-    int y_max = target_band.GetRasterHeight();
+    int x_max = in_raster_area.width;
+    int y_max = in_raster_area.height;
     int x_count = x_max / tile_width_ + 1;
     int y_count = y_max / tile_height_ + 1;
 
@@ -346,16 +398,14 @@ void ThermalNoiseRemover::CreateTargetDatasetFromProduct() {
             // Create dataset
             const auto output_file = output_path_ + target_product_->GetName() + "_" + sub_swath;
 
-            auto* const source_sub_dataset = pixel_reader_->GetGdalDataset();
-
             const int band_count{1};
 
             GDALDataset* gdal_dataset =
-                driver->Create(output_file.data(), pixel_reader_->GetRasterSizeX(), pixel_reader_->GetRasterSizeY(),
-                               band_count, GDT_Float32, dataset_options);
+                driver->Create(output_file.data(), source_ds_area_.width, source_ds_area_.height, band_count,
+                               GDT_Float32, dataset_options);
 
             std::array<double, gdal::constants::GDAL_GEOTRANSFORM_PARAMETER_COUNT> geo_transform;
-            source_sub_dataset->GetGeoTransform(geo_transform.data());
+            source_ds_->GetGeoTransform(geo_transform.data());
             gdal_dataset->SetGeoTransform(geo_transform.data());
 
             std::shared_ptr<GDALDataset> dataset(gdal_dataset, [](auto dataset_arg) { GDALClose(dataset_arg); });
@@ -365,17 +415,22 @@ void ThermalNoiseRemover::CreateTargetDatasetFromProduct() {
         }
     }
 }
+
 ThermalNoiseRemover::ThermalNoiseRemover(std::shared_ptr<snapengine::Product> source_product,
-                                         Dataset<Iq16>* pixel_reader, std::string_view subswath,
-                                         std::string_view polarisation, std::string_view output_path, int tile_width,
-                                         int tile_height)
+                                         GDALDataset* source_dataset, Rectangle source_ds_area,
+                                         std::string_view subswath, std::string_view polarisation,
+                                         std::string_view output_path, int tile_width, int tile_height)
     : source_product_(source_product),
-      pixel_reader_(pixel_reader),
+      source_ds_{source_dataset},
+      source_ds_area_{source_ds_area},
       subswath_(subswath),
       polarisation_(polarisation),
       output_path_(output_path),
       tile_width_(tile_width),
-      tile_height_(tile_height) {
+      tile_height_(tile_height),
+      is_complex_input_{
+          GDALDataTypeIsComplex(
+              source_ds_->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)->GetRasterDataType()) == 1} {
     Initialise();
 }
 const std::shared_ptr<snapengine::Product>& ThermalNoiseRemover::GetTargetProduct() const { return target_product_; }

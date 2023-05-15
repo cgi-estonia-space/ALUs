@@ -93,6 +93,22 @@ device::Matrix<double> CalculateNoiseMatrix(Rectangle tile, int lines_per_burst,
  * @param stream CUDA stream on which the computation will be performed.
  */
 void LaunchComputeComplexTileKernel(alus::Rectangle tile, double no_data_value, double target_floor_value,
-                                    cuda::KernelArray<ComplexIntensityData> pixel_data,
+                                    cuda::KernelArray<IntensityData> pixel_data,
                                     device::Matrix<double> noise_matrix, cudaStream_t stream);
+
+/**
+ * Performs the computation with the "GRD"'s amplitude data.
+ *
+ * @param tile Input tile dimensions.
+ * @param no_data_value No data value.
+ * @param target_floor_value The minimal possible value.
+ * @param pixel_data Input pixel values.
+ * @param noise_matrix Noise lookup table.
+ * @param stream CUDA stream on which the computation will be performed.
+ */
+void LaunchComputeAmplitudeTileKernel(alus::Rectangle tile, double no_data_value, double target_floor_value,
+                                    cuda::KernelArray<IntensityData> pixel_data,
+                                    device::Matrix<double> noise_matrix, cudaStream_t stream);
+
+
 }  // namespace alus::tnr
