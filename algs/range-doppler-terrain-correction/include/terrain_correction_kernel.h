@@ -51,6 +51,7 @@ struct TerrainCorrectionKernelArgs {
     unsigned int source_image_width;
     unsigned int source_image_height;
     float target_no_data_value;
+    bool db_values;
     double* d_azimuth_index;
     double* d_range_index;
     snapengine::resampling::ResamplingRaster resampling_raster;

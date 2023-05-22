@@ -226,7 +226,8 @@ void Execute::PrintProcessingParameters() const {
          << "First burst index - " << params_.burst_first_index << std::endl
          << "Last burst index - " << params_.burst_last_index << std::endl
          << "AOI - " << params_.aoi << std::endl
-         << "Write intermediate files - " << (params_.wif ? "YES" : "NO") << std::endl;
+         << "Write intermediate files - " << (params_.wif ? "YES" : "NO") << std::endl
+         << "convert to dB - " << (params_.output_db_values ? "YES" : "NO") << std::endl;
 }
 
 void Execute::ParseCalibrationType(std::string_view type) {
@@ -516,7 +517,7 @@ std::string Execute::TerrainCorrection(const std::shared_ptr<snapengine::Product
                                      ? boost::filesystem::change_extension(output_name.data(), "").string() + "_tc.tif"
                                      : std::string(predefined_output_name);
     tc.RegisterMetadata(metadata_);
-    tc.ExecuteTerrainCorrection(tc_output_file, x_tile_size, y_tile_size);
+    tc.ExecuteTerrainCorrection(tc_output_file, x_tile_size, y_tile_size, params_.output_db_values);
     LOGI << "Terrain correction done - "
          << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - tc_start).count()
          << "ms";

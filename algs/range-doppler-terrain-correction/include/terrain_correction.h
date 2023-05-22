@@ -51,7 +51,8 @@ public:
                                                  std::string_view output_filename);
 
     void RegisterMetadata(common::metadata::Container md) { metadata_output_ = md; }
-    void ExecuteTerrainCorrection(std::string_view output_file_name, size_t tile_width, size_t tile_height);
+    void ExecuteTerrainCorrection(std::string_view output_file_name, size_t tile_width, size_t tile_height,
+                                  bool output_db_values = false);
 
     TerrainCorrection(const TerrainCorrection&) = delete;
     TerrainCorrection(TerrainCorrection&&) = delete;
