@@ -19,6 +19,7 @@
 #include "range_doppler_geocoding.cuh"
 #include "raster_utils.cuh"
 
+#include "calc_kernels.cuh"
 #include "tc_tile.h"
 #include "terrain_correction_constants.h"
 #include "terrain_correction_kernel.h"
@@ -129,6 +130,11 @@ cudaError_t LaunchTerrainCorrectionKernel(TcTileCoordinates tc_tile_coordinates,
 
     TerrainCorrectionKernel<<<main_kernel_grid_size, block_size, 0, stream>>>(tc_tile_coordinates, args.d_target, args,
                                                                               args.resampling_raster);
+    if (args.db_values) {
+        math::calckernels::CalcDb<<<main_kernel_grid_size, block_size, 0, stream>>>(
+            args.d_target, tc_tile_coordinates.target_width, tc_tile_coordinates.target_height,
+            args.target_no_data_value);
+    }
 
     cuda::CopyArrayAsyncD2H(h_target_buffer, args.d_target.array, args.d_target.size, stream);
 

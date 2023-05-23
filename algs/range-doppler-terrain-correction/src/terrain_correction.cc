@@ -90,6 +90,7 @@ struct TerrainCorrection::SharedThreadData {
     int diff_lat = 0;
     size_t max_tile_size = 0;
     bool use_pinned_memory = false;
+    bool db_values = false;
 };
 
 void FillGetPositionMetadata(GetPositionMetadata& get_position_metadata, const ComputationMetadata& comp_metadata,
@@ -221,10 +222,10 @@ TerrainCorrection::TerrainCorrection(GDALDataset* input_dataset, const RangeDopp
       selected_band_id_(selected_band_id),
       lat_tie_point_grid_{lat_tie_point_grid},
       lon_tie_point_grid_{lon_tie_point_grid},
-      use_average_scene_height_{use_average_scene_height} {}
+      use_average_scene_height_{use_average_scene_height}{}
 
 void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_name, size_t tile_width,
-                                                 size_t tile_height) {
+                                                 size_t tile_height, bool output_db_values) {
     // Calculate target dimensions
     auto const ds_y_size{
         static_cast<size_t>(input_ds_->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)->GetYSize())};
@@ -285,6 +286,7 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
     shared_data.use_pinned_memory = use_pinned_memory;
     shared_data.max_tile_size = tile_height * tile_width;
     shared_data.tile_queue.InsertData(std::move(tiles));
+    shared_data.db_values = output_db_values;
 
     CreateSrgrCoefficientsOnDevice();
 
@@ -582,6 +584,7 @@ void TerrainCorrection::CalculateTile(TcTileCoordinates tile_coordinates, Shared
         tc_args.source_image_width = src_args.source_image_width;
         tc_args.source_image_height = src_args.source_image_width;
         tc_args.target_no_data_value = static_cast<float>(shared->output_dataset->GetRasterBand(1)->GetNoDataValue());
+        tc_args.db_values = shared->db_values;
         tc_args.d_azimuth_index = src_args.d_azimuth_index;
         tc_args.d_range_index = src_args.d_range_index;
         tc_args.resampling_raster = resampling_raster;

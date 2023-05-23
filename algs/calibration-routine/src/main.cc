@@ -39,6 +39,7 @@ alus::calibrationroutine::Execute::Parameters AssembleParameters(const alus::cal
     params.aoi = args.GetAoi().value_or("");
     params.burst_first_index = alus::calibrationroutine::INVALID_BURST_INDEX;
     params.burst_last_index = alus::calibrationroutine::INVALID_BURST_INDEX;
+    params.output_db_values = args.OutputValuesInDb();
     if (const auto bursts = args.GetBurstIndexes(); bursts.has_value()) {
         params.burst_first_index = std::get<0>(bursts.value());
         params.burst_last_index = std::get<1>(bursts.value());

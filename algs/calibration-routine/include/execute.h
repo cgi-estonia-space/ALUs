@@ -39,6 +39,7 @@ public:
         size_t burst_first_index;
         size_t burst_last_index;
         std::string calibration_type;
+        bool output_db_values;
     };
 
     Execute() = delete;

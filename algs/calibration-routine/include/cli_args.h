@@ -47,6 +47,7 @@ public:
     const std::vector<std::string>& GetDemFiles() const { return dem_files_; }
     std::string GetOutput() const { return output_; }
     bool DoSaveIntermediateResults() const { return wif_; };
+    bool OutputValuesInDb() const { return db_values_; }
     size_t GetGpuMemoryPercentage() const { return alus_args_.GetGpuMemoryPercentage(); }
     common::log::Level GetLogLevel() const { return alus_args_.GetLogLevel(); }
 
@@ -68,6 +69,7 @@ private:
     size_t burst_last_index_;
     std::string calibration_type_;
     std::vector<std::string> dem_files_;
+    bool db_values_{false};
     std::string output_;
     bool wif_{false};
 };
