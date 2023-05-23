@@ -35,7 +35,7 @@ __global__ void CalcDb(cuda::KernelArray<float> buffer, size_t w, size_t h, floa
         return;
     }
 
-    buffer.array[index] = log10(orig_value);
+    buffer.array[index] = 10 * log10(orig_value);
 }
 
 }  // namespace alus::math::calckernels
