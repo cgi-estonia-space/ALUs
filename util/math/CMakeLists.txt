@@ -12,7 +12,8 @@ target_include_directories(math-util-static
         $<INSTALL_INTERFACE:../cuda/include>)
 
 list(APPEND MATH_UTIL_SOURCES
-        ${CMAKE_CURRENT_LIST_DIR}/src/calc_kernels.cu)
+        ${CMAKE_CURRENT_LIST_DIR}/src/calc_kernels.cu
+        ${CMAKE_CURRENT_LIST_DIR}/src/filters.cu)
 
 add_library(math-util-kernels-static
         STATIC
