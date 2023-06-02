@@ -76,7 +76,7 @@ namespace alus::terraincorrection {
 
 struct TerrainCorrection::SharedThreadData {
     // read-write access, must explictly synchronize between threads
-    ThreadSafeTileQueue<TcTileCoordinates> tile_queue;
+    ThreadSafeTileQueue<TcTileIndexMap> tile_queue;
     GDALDataset* input_dataset = nullptr;
     std::mutex gdal_read_mutex;
     GDALDataset* output_dataset = nullptr;
@@ -258,7 +258,7 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
     // Target tile
     snapengine::resampling::Tile target_image{
         0, 0, static_cast<size_t>(target_x_size), static_cast<size_t>(target_y_size), false, false, nullptr};
-    std::vector<TcTileCoordinates> tiles =
+    std::vector<TcTileIndexMap> tiles =
         CalculateTiles(target_image, {0, 0, target_x_size, target_y_size}, tile_width, tile_height);
 
     // If bound by GPU, then more than 2 give almost no gains
@@ -368,10 +368,10 @@ std::vector<double> TerrainCorrection::ComputeImageBoundary(const snapengine::ge
 
 // TODO: this is a very good place for optimisation in case of small tiles (420x416 tiles causes 238 iterations)
 // (SNAPGPU-216)
-std::vector<TcTileCoordinates> TerrainCorrection::CalculateTiles(const snapengine::resampling::Tile& base_image,
+std::vector<TcTileIndexMap> TerrainCorrection::CalculateTiles(const snapengine::resampling::Tile& base_image,
                                                                  Rectangle dest_bounds, int tile_width,
                                                                  int tile_height) const {
-    std::vector<TcTileCoordinates> output_tiles;
+    std::vector<TcTileIndexMap> output_tiles;
     int x_count = base_image.width / tile_width + 1;
     int y_count = base_image.height / tile_height + 1;
 
@@ -386,12 +386,12 @@ std::vector<TcTileCoordinates> TerrainCorrection::CalculateTiles(const snapengin
             if (intersection.width == 0 || intersection.height == 0) {
                 continue;
             }
-            TcTileCoordinates tile{0,
+            TcTileIndexMap tile{0,
                                    0,
                                    0,
                                    0,
-                                   static_cast<double>(intersection.x),
-                                   static_cast<double>(intersection.y),
+                                   intersection.x,
+                                   intersection.y,
                                    static_cast<size_t>(intersection.width),
                                    static_cast<size_t>(intersection.height)};
             output_tiles.push_back(tile);
@@ -492,14 +492,14 @@ void TerrainCorrection::FreeCudaArrays() {
 }
 std::pair<std::string, std::shared_ptr<GDALDataset>> TerrainCorrection::GetOutputDataset() const { return output_; }
 
-void SetTileSourceCoordinates(TcTileCoordinates& tile_coordinates, const Rectangle& source_rectangle) {
+void SetTileSourceCoordinates(TcTileIndexMap& tile_coordinates, const Rectangle& source_rectangle) {
     tile_coordinates.source_height = source_rectangle.height;
     tile_coordinates.source_width = source_rectangle.width;
     tile_coordinates.source_x_0 = source_rectangle.x;
     tile_coordinates.source_y_0 = source_rectangle.y;
 }
 
-void TerrainCorrection::CalculateTile(TcTileCoordinates tile_coordinates, SharedThreadData* shared,
+void TerrainCorrection::CalculateTile(TcTileIndexMap tile_coordinates, SharedThreadData* shared,
                                       PerThreadData* ctx) {
     auto* band = shared->input_dataset->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND);
 
@@ -615,7 +615,7 @@ void TerrainCorrection::TileLoop(SharedThreadData* shared, PerThreadData* ctx) {
                     break;
                 }
             }
-            TcTileCoordinates tile = {};
+            TcTileIndexMap tile = {};
             if (!shared->tile_queue.PopFront(tile)) {
                 break;
             }

@@ -19,19 +19,15 @@
 
 namespace alus {
 
-struct TcTileCoordinates {
-    double source_x_0;
-    double source_y_0;
+struct TcTileIndexMap {
+    int source_x_0;
+    int source_y_0;
     size_t source_width;
     size_t source_height;
-    double target_x_0;
-    double target_y_0;
+    int target_x_0;
+    int target_y_0;
     size_t target_width;
     size_t target_height;
 };
 
-struct TcTile {
-    TcTileCoordinates tc_tile_coordinates;
-    cuda::KernelArray<float> target_tile_data_buffer;
-};
 }  // namespace alus

@@ -103,7 +103,7 @@ private:
      * @param base_image The input image represented as a simple large tile.
      * @param dest_bounds Destination image bounds.
      */
-    std::vector<TcTileCoordinates> CalculateTiles(const snapengine::resampling::Tile& base_image, Rectangle dest_bounds,
+    std::vector<TcTileIndexMap> CalculateTiles(const snapengine::resampling::Tile& base_image, Rectangle dest_bounds,
                                                   int tile_width, int tile_height) const;
 
     void CreateHostMetadata(double line_time_interval_in_days);
@@ -119,7 +119,7 @@ private:
     void FreeCudaArrays();
 
     struct SharedThreadData;
-    static void CalculateTile(TcTileCoordinates tile, SharedThreadData* tc_data, PerThreadData* c);
+    static void CalculateTile(TcTileIndexMap tile, SharedThreadData* tc_data, PerThreadData* c);
     static void TileLoop(SharedThreadData* tc_data, PerThreadData* ctx);
 
     void CreateSrgrCoefficientsOnDevice();

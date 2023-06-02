@@ -84,7 +84,7 @@ void CalculateVelocitiesAndPositions(int source_image_height, double first_line_
                                      cuda::KernelArray<snapengine::PosVector> velocities,
                                      cuda::KernelArray<snapengine::PosVector> positions);
 
-cudaError_t LaunchTerrainCorrectionKernel(TcTileCoordinates tc_tile_coordinates, TerrainCorrectionKernelArgs args,
+cudaError_t LaunchTerrainCorrectionKernel(TcTileIndexMap tc_tile_coordinates, TerrainCorrectionKernelArgs args,
                                           float* h_target_buffer, cudaStream_t stream);
 
 /**
@@ -94,5 +94,5 @@ cudaError_t LaunchTerrainCorrectionKernel(TcTileCoordinates tc_tile_coordinates,
  * @param args Terrain Correction arguments.
  * @return Rectangle containing pixels corresponding to the given target tile.
  */
-Rectangle GetSourceRectangle(TcTileCoordinates tile_coordinates, GetSourceRectangleKernelArgs args, PerThreadData* ctx);
+Rectangle GetSourceRectangle(TcTileIndexMap tile_coordinates, GetSourceRectangleKernelArgs args, PerThreadData* ctx);
 }  // namespace alus::terraincorrection
