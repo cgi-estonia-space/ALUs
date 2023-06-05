@@ -26,12 +26,14 @@
 #include "dataset_util.h"
 #include "dem_assistant.h"
 #include "gdal_management.h"
+#include "gdal_util.h"
 #include "metadata_record.h"
 #include "product.h"
 #include "product_name.h"
 #include "sentinel1_calibrate.h"
 #include "sentinel1_product_reader_plug_in.h"
 #include "shapes.h"
+#include "target_dataset.h"
 #include "terrain_correction.h"
 #include "terrain_correction_metadata.h"
 #include "thermal_noise_remover.h"
@@ -91,9 +93,8 @@ void Calibration(const std::vector<std::shared_ptr<alus::snapengine::Product>>& 
          << "ms";
 }
 
-std::string TerrainCorrection(const std::shared_ptr<alus::snapengine::Product>& merge_product, GDALDataset* in_ds,
-                              std::string_view output_name, std::shared_ptr<alus::dem::Assistant> dem_assistant,
-                              std::string_view predefined_output_name) {
+alus::SimpleDataset<float> TerrainCorrection(const std::shared_ptr<alus::snapengine::Product>& merge_product, GDALDataset* in_ds,
+                              std::shared_ptr<alus::dem::Assistant> dem_assistant) {
     const auto tc_start = std::chrono::steady_clock::now();
 
     alus::terraincorrection::Metadata metadata(merge_product);
@@ -112,16 +113,13 @@ std::string TerrainCorrection(const std::shared_ptr<alus::snapengine::Product>& 
         in_ds, metadata.GetMetadata(), metadata.GetLatTiePointGrid(), metadata.GetLonTiePointGrid(), d_dem_tiles,
         dem_tiles_length, dem_assistant->GetElevationManager()->GetProperties(), dem_assistant->GetType(),
         dem_assistant->GetElevationManager()->GetPropertiesValue(), selected_band);
-    std::string tc_output_file = predefined_output_name.empty()
-                                     ? boost::filesystem::change_extension(output_name.data(), "").string() + "_tc.tif"
-                                     : std::string(predefined_output_name);
     // tc.RegisterMetadata(metadata_);
-    tc.ExecuteTerrainCorrection(tc_output_file, x_tile_size, y_tile_size, true);
+    const auto simple_dataset = tc.ExecuteTerrainCorrection(x_tile_size, y_tile_size, true);
     LOGI << "Terrain correction done - "
          << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - tc_start).count()
          << "ms";
 
-    return tc_output_file;
+    return simple_dataset;
 }
 
 }  // namespace
@@ -188,14 +186,11 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t gpu_memory_percentage)
     tnr_datasets.clear();
 
     dem_assistant->GetElevationManager()->TransferToDevice();
-    // std::string TerrainCorrection(const std::shared_ptr<alus::snapengine::Product>& merge_product, GDALDataset*
-    // in_ds,
-    //                               std::string_view output_name, std::shared_ptr<alus::dem::Assistant> dem_assistant,
-    //                               std::string_view predefined_output_name) {
-    TerrainCorrection(product, calib_datasets.front().get(), "VV", dem_assistant,
-                      final_product_name.GetDirectory() + "S1A_tnr_cal_tc_seg_vv.tif");
-    TerrainCorrection(product, calib_datasets.back().get(), "VH", dem_assistant,
-                      final_product_name.GetDirectory() + "S1A_tnr_cal_tc_seg_vh.tif");
+
+    const auto simple_ds_vv = TerrainCorrection(product, calib_datasets.front().get(), dem_assistant);
+    GeoTiffWriteFile(simple_ds_vv, "/tmp/segment_test_vv.tif");
+    const auto simple_ds_vh = TerrainCorrection(product, calib_datasets.back().get(), dem_assistant);
+    GeoTiffWriteFile(simple_ds_vh, "/tmp/segment_test_vh.tif");
 }
 
 void Execute::ParseCalibrationType(std::string_view type) {

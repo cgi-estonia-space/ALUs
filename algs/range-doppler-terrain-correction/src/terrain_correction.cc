@@ -76,12 +76,12 @@ namespace alus::terraincorrection {
 
 struct TerrainCorrection::SharedThreadData {
     // read-write access, must explictly synchronize between threads
-    ThreadSafeTileQueue<TcTileIndexMap> tile_queue;
+    ThreadSafeTileQueue<TcTileIndexPair> tile_queue;
     GDALDataset* input_dataset = nullptr;
     std::mutex gdal_read_mutex;
     float no_data_value;
     int output_buffer_stride;
-    std::unique_ptr<float[]> output_buffer{};
+    std::shared_ptr<float[]> output_buffer{};
     std::exception_ptr exception_ptr = nullptr;
     std::mutex exception_mutex;
 
@@ -259,7 +259,7 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
     // Target tile
     snapengine::resampling::Tile target_image{
         0, 0, static_cast<size_t>(target_x_size), static_cast<size_t>(target_y_size), false, false, nullptr};
-    std::vector<TcTileIndexMap> tiles =
+    std::vector<TcTileIndexPair> tiles =
         CalculateTiles(target_image, {0, 0, target_x_size, target_y_size}, tile_width, tile_height);
 
     // If bound by GPU, then more than 2 give almost no gains
@@ -280,7 +280,7 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
     SharedThreadData shared_data = {};
     shared_data.terrain_correction = this;
     shared_data.output_buffer_stride = target_x_size;
-    shared_data.output_buffer = std::unique_ptr<float[]>(new float[target_x_size * target_y_size]);
+    shared_data.output_buffer = std::shared_ptr<float[]>(new float[target_x_size * target_y_size]);
     const auto band_info = metadata_.band_info.front();
     shared_data.no_data_value = band_info.no_data_value_used && band_info.no_data_value.has_value()
                                     ? band_info.no_data_value.value()
@@ -325,6 +325,95 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
     CHECK_GDAL_ERROR(target_product.dataset_->GetRasterBand(selected_band_id_)
                          ->RasterIO(GF_Write, 0, 0, target_x_size, target_y_size, shared_data.output_buffer.get(),
                                     target_x_size, target_y_size, GDT_Float32, 0, 0));
+}
+
+SimpleDataset<float> TerrainCorrection::ExecuteTerrainCorrection(size_t tile_width, size_t tile_height,
+                                                                 bool output_db_values) {
+    // Calculate target dimensions
+    auto const ds_y_size{
+        static_cast<size_t>(input_ds_->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)->GetYSize())};
+
+    snapengine::geocoding::TiePointGeocoding source_geocoding(lat_tie_point_grid_, lon_tie_point_grid_);
+    int diff_lat;
+    auto target_dataset = CreateSimpleTargetProduct(&source_geocoding, diff_lat);
+    auto const target_x_size{target_dataset.width};
+    auto const target_y_size{target_dataset.height};
+
+    GeoTransformParameters const target_geo_transform{
+        GeoTransformConstruct::BuildFromGdal(target_dataset.geo_transform)};
+
+    const auto line_time_interval_in_days{(metadata_.last_line_time->GetMjd() - metadata_.first_line_time->GetMjd()) /
+                                          static_cast<double>(ds_y_size - 1)};
+
+    CreateHostMetadata(line_time_interval_in_days);
+    d_get_position_metadata_.source_image_width =
+        input_ds_->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)->GetXSize();
+    CreateGetPositionDeviceArrays(static_cast<int>(ds_y_size), line_time_interval_in_days);
+
+    // Target tile
+    snapengine::resampling::Tile target_image{
+        0, 0, static_cast<size_t>(target_x_size), static_cast<size_t>(target_y_size), false, false, nullptr};
+    std::vector<TcTileIndexPair> tiles =
+        CalculateTiles(target_image, {0, 0, target_x_size, target_y_size}, tile_width, tile_height);
+
+    // If bound by GPU, then more than 2 give almost no gains
+    // If bound by gdal, then locking for both input and output means more than 3 should give almost no benefit
+    constexpr size_t thread_limit = 3;
+
+    const size_t n_threads = (tiles.size() / thread_limit) > 0 ? thread_limit : 1;
+
+    /*
+     * Pinned memory allows streams to overlap kernel execution with H2D & D2H transfers,
+     * however allocating pinned memory takes time
+     */
+    const bool use_pinned_memory = (tiles.size() / n_threads) > 5;
+    LOGD << "TC tiles = " << tiles.size() << " threads = " << n_threads
+         << " transfer mode = " << (use_pinned_memory ? "pinned" : "paged");
+
+    // setup data for use by threads, these must outlive threads themselves
+    SharedThreadData shared_data = {};
+    shared_data.terrain_correction = this;
+    shared_data.output_buffer_stride = target_x_size;
+    shared_data.output_buffer = target_dataset.buffer;
+    shared_data.no_data_value = target_dataset.no_data;
+    shared_data.input_dataset = input_ds_;
+
+    shared_data.target_geo_transform = target_geo_transform;
+    shared_data.diff_lat = diff_lat;
+    shared_data.use_pinned_memory = use_pinned_memory;
+    shared_data.max_tile_size = tile_height * tile_width;
+    shared_data.tile_queue.InsertData(std::move(tiles));
+    shared_data.db_values = output_db_values;
+
+    CreateSrgrCoefficientsOnDevice();
+
+#if TC_DEBUG_DEVICE_ARRAYS
+    DebugDeviceArrays();
+#endif
+
+#if TC_DEBUG_SRGR
+    DebugSrgrEntries();
+#endif
+
+    std::vector<PerThreadData> context_vec(n_threads);
+    std::vector<std::thread> threads_vec;
+
+    for (size_t i = 0; i < n_threads; i++) {
+        threads_vec.emplace_back(TileLoop, &shared_data, &context_vec.at(i));
+    }
+
+    for (auto& thread : threads_vec) {
+        thread.join();
+    }
+    for (auto& ctx : context_vec) {
+        FreeThreadContext(&ctx);
+    }
+
+    if (shared_data.exception_ptr != nullptr) {
+        std::rethrow_exception(shared_data.exception_ptr);
+    }
+
+    return target_dataset;
 }
 
 std::vector<double> TerrainCorrection::ComputeImageBoundary(const snapengine::geocoding::Geocoding* geocoding,
@@ -378,10 +467,10 @@ std::vector<double> TerrainCorrection::ComputeImageBoundary(const snapengine::ge
 
 // TODO: this is a very good place for optimisation in case of small tiles (420x416 tiles causes 238 iterations)
 // (SNAPGPU-216)
-std::vector<TcTileIndexMap> TerrainCorrection::CalculateTiles(const snapengine::resampling::Tile& base_image,
-                                                              Rectangle dest_bounds, int tile_width,
-                                                              int tile_height) const {
-    std::vector<TcTileIndexMap> output_tiles;
+std::vector<TcTileIndexPair> TerrainCorrection::CalculateTiles(const snapengine::resampling::Tile& base_image,
+                                                               Rectangle dest_bounds, int tile_width,
+                                                               int tile_height) const {
+    std::vector<TcTileIndexPair> output_tiles;
     int x_count = base_image.width / tile_width + 1;
     int y_count = base_image.height / tile_height + 1;
 
@@ -396,14 +485,14 @@ std::vector<TcTileIndexMap> TerrainCorrection::CalculateTiles(const snapengine::
             if (intersection.width == 0 || intersection.height == 0) {
                 continue;
             }
-            TcTileIndexMap tile{0,
-                                0,
-                                0,
-                                0,
-                                intersection.x,
-                                intersection.y,
-                                static_cast<size_t>(intersection.width),
-                                static_cast<size_t>(intersection.height)};
+            TcTileIndexPair tile{0,
+                                 0,
+                                 0,
+                                 0,
+                                 intersection.x,
+                                 intersection.y,
+                                 static_cast<size_t>(intersection.width),
+                                 static_cast<size_t>(intersection.height)};
             output_tiles.push_back(tile);
         }
     }
@@ -493,6 +582,67 @@ snapengine::old::Product TerrainCorrection::CreateTargetProduct(
     return target_product;
 }
 
+SimpleDataset<float> TerrainCorrection::CreateSimpleTargetProduct(const snapengine::geocoding::Geocoding* geocoding,
+                                                                  int& diff_lat) {
+    SimpleDataset<float> simple_target_dataset;
+    double pixel_spacing_in_meter = metadata_.azimuth_spacing;
+    double pixel_spacing_in_degree =
+        pixel_spacing_in_meter / snapengine::eo::constants::SEMI_MAJOR_AXIS * snapengine::eo::constants::RTOD;
+
+    OGRSpatialReference target_crs;
+    // EPSG:4326 is target_ds_width WGS84 code
+    target_crs.importFromEPSG(4326);
+
+    std::vector<double> image_boundary =
+        ComputeImageBoundary(geocoding, input_ds_->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)->GetXSize(),
+                             input_ds_->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)->GetYSize());
+
+    double pixel_size_x = pixel_spacing_in_degree;
+    double pixel_size_y = pixel_spacing_in_degree;
+
+    // Calculates target_ds_width rectangle coordinates (x0, y0, width, height) for new product based on source image
+    // diagonals
+    std::vector<double> target_bounds{image_boundary[3] < image_boundary[2] ? image_boundary[3] : image_boundary[2],
+                                      image_boundary[1] < image_boundary[0] ? image_boundary[1] : image_boundary[0],
+                                      std::abs(image_boundary[3] - image_boundary[2]),
+                                      std::abs(image_boundary[1] - image_boundary[0])};
+
+    CHECK_OGR_ERROR(target_crs.Validate());
+
+    simple_target_dataset.width = static_cast<int>(std::floor((target_bounds[2]) / pixel_size_x));
+    simple_target_dataset.height = static_cast<int>(std::floor((target_bounds[3]) / pixel_size_y));
+
+    double output_geo_transform[6] = {target_bounds[0], pixel_size_x, 0, target_bounds[1] + target_bounds[3], 0,
+                                      -pixel_size_y};
+    // Apply shear and translate
+    output_geo_transform[0] = output_geo_transform[0] + output_geo_transform[1] * (-0.5);
+    output_geo_transform[3] = output_geo_transform[3] + output_geo_transform[5] * (-0.5);
+    std::memcpy(simple_target_dataset.geo_transform, output_geo_transform, 6 * sizeof(double));
+
+    {
+        char* projection_wkt = nullptr;
+        auto cpl_free = [](char* csl_data) { CPLFree(csl_data); };
+        target_crs.exportToWkt(&projection_wkt);
+        std::unique_ptr<char, decltype(cpl_free)> projection_guard(projection_wkt, cpl_free);
+        simple_target_dataset.projection_wkt = std::string(projection_wkt);
+    }
+    auto band_info = metadata_.band_info.at(0);
+    simple_target_dataset.no_data = band_info.no_data_value_used && band_info.no_data_value.has_value()
+                                        ? band_info.no_data_value.value()
+                                        : input_ds_->GetRasterBand(selected_band_id_)->GetNoDataValue();
+
+    GeoTransformParameters geo_transform_parameters{output_geo_transform[0], output_geo_transform[3],
+                                                    output_geo_transform[1], output_geo_transform[5]};
+
+    const auto geocoding_stub = snapengine::geocoding::CrsGeocoding(geo_transform_parameters);
+    diff_lat = static_cast<int>(std::abs(geocoding_stub.GetPixelCoordinates(0, 0).lat -
+                                         geocoding_stub.GetPixelCoordinates(0, simple_target_dataset.height - 1).lat));
+    simple_target_dataset.buffer =
+        std::shared_ptr<float[]>(new float[simple_target_dataset.width * simple_target_dataset.height]);
+
+    return simple_target_dataset;
+}
+
 TerrainCorrection::~TerrainCorrection() { FreeCudaArrays(); }
 void TerrainCorrection::FreeCudaArrays() {
     for (auto&& a : cuda_arrays_to_clean_) {
@@ -502,14 +652,14 @@ void TerrainCorrection::FreeCudaArrays() {
 }
 std::pair<std::string, std::shared_ptr<GDALDataset>> TerrainCorrection::GetOutputDataset() const { return output_; }
 
-void SetTileSourceCoordinates(TcTileIndexMap& tile_coordinates, const Rectangle& source_rectangle) {
+void SetTileSourceCoordinates(TcTileIndexPair& tile_coordinates, const Rectangle& source_rectangle) {
     tile_coordinates.source_height = source_rectangle.height;
     tile_coordinates.source_width = source_rectangle.width;
     tile_coordinates.source_x_0 = source_rectangle.x;
     tile_coordinates.source_y_0 = source_rectangle.y;
 }
 
-void TerrainCorrection::CalculateTile(TcTileIndexMap tile_coordinates, SharedThreadData* shared, PerThreadData* ctx) {
+void TerrainCorrection::CalculateTile(TcTileIndexPair tile_coordinates, SharedThreadData* shared, PerThreadData* ctx) {
     auto* band = shared->input_dataset->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND);
 
     GetSourceRectangleKernelArgs src_args = {};
@@ -623,7 +773,7 @@ void TerrainCorrection::TileLoop(SharedThreadData* shared, PerThreadData* ctx) {
                     break;
                 }
             }
-            TcTileIndexMap tile = {};
+            TcTileIndexPair tile = {};
             if (!shared->tile_queue.PopFront(tile)) {
                 break;
             }

@@ -24,6 +24,7 @@
 #include <gdal_priv.h>
 
 #include "metadata_record.h"
+#include "target_dataset.h"
 #include "type_parameter.h"
 
 
@@ -171,6 +172,20 @@ inline TypeParameters CreateTypeParametersFrom(GDALDataType dt) {
 }
 
 void GeoTiffWriteFile(GDALDataset* input_dataset, std::string_view output_file);
+template <typename T>
+void GeoTiffWriteFile(SimpleDataset<T> ds, std::string_view path) {
+    auto output_driver = GetGdalGeoTiffDriver();
+    CHECK_GDAL_PTR(output_driver);
+
+    auto gdal_ds = output_driver->Create(path.data(), ds.width, ds.height, 1, FindGdalDataType<T>(), nullptr);
+    CHECK_GDAL_PTR(gdal_ds);
+    CHECK_GDAL_ERROR(gdal_ds->SetGeoTransform(ds.geo_transform));
+    CHECK_GDAL_ERROR(gdal_ds->SetProjection(ds.projection_wkt.data()));
+    CHECK_GDAL_ERROR(gdal_ds->GetRasterBand(1)
+                         ->RasterIO(GF_Write, 0, 0, ds.width, ds.height, ds.buffer.get(),
+                                    ds.width, ds.height, FindGdalDataType<T>(), 0, 0));
+    GDALClose(gdal_ds);
+}
 
 std::string FindOptimalTileSize(int raster_dimension);
 

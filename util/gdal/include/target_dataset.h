@@ -14,7 +14,9 @@
 #pragma once
 
 #include <deque>
+#include <memory>
 #include <mutex>
+#include <string>
 #include <vector>
 
 #include <gdal_priv.h>
@@ -67,4 +69,16 @@ private:
     GDALDataType gdal_data_type_;
     RasterDimension const dimensions_{};
 };
+
+
+template <typename T>
+struct SimpleDataset {
+    double geo_transform[alus::transform::GEOTRANSFORM_ARRAY_LENGTH];
+    std::string projection_wkt;
+    int width;
+    int height;
+    std::shared_ptr<T[]> buffer;
+    T no_data;
+};
+
 }  // namespace alus

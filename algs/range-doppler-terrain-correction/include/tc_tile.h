@@ -19,7 +19,7 @@
 
 namespace alus {
 
-struct TcTileIndexMap {
+struct TcTileIndexPair {
     int source_x_0;
     int source_y_0;
     size_t source_width;

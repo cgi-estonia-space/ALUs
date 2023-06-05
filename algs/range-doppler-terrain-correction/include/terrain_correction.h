@@ -31,6 +31,7 @@
 #include "resampling.h"
 #include "snap-core/core/datamodel/tie_point_grid.h"
 #include "srgr_coefficients.h"
+#include "target_dataset.h"
 #include "tc_tile.h"
 #include "terrain_correction_kernel.h"
 #include "terrain_correction_metadata.h"
@@ -53,6 +54,8 @@ public:
     void RegisterMetadata(common::metadata::Container md) { metadata_output_ = md; }
     void ExecuteTerrainCorrection(std::string_view output_file_name, size_t tile_width, size_t tile_height,
                                   bool output_db_values = false);
+    SimpleDataset<float> ExecuteTerrainCorrection(size_t tile_width, size_t tile_height, bool output_db_values = false);
+
 
     TerrainCorrection(const TerrainCorrection&) = delete;
     TerrainCorrection(TerrainCorrection&&) = delete;
@@ -83,6 +86,8 @@ private:
     common::metadata::Container metadata_output_;
     cuda::KernelArray<SrgrCoefficientsDevice> d_srgr_coefficients_{nullptr, 0};
 
+
+    SimpleDataset<float> CreateSimpleTargetProduct(const snapengine::geocoding::Geocoding* geocoding, int& diff_lat);
     /**
      * Computes target image boundary by creating a rectangle around the source image. The source image should be
      * TiePoint Geocoded. Boundary is in degree coordinates.
@@ -103,7 +108,7 @@ private:
      * @param base_image The input image represented as a simple large tile.
      * @param dest_bounds Destination image bounds.
      */
-    std::vector<TcTileIndexMap> CalculateTiles(const snapengine::resampling::Tile& base_image, Rectangle dest_bounds,
+    std::vector<TcTileIndexPair> CalculateTiles(const snapengine::resampling::Tile& base_image, Rectangle dest_bounds,
                                                   int tile_width, int tile_height) const;
 
     void CreateHostMetadata(double line_time_interval_in_days);
@@ -119,7 +124,7 @@ private:
     void FreeCudaArrays();
 
     struct SharedThreadData;
-    static void CalculateTile(TcTileIndexMap tile, SharedThreadData* tc_data, PerThreadData* c);
+    static void CalculateTile(TcTileIndexPair tile, SharedThreadData* tc_data, PerThreadData* c);
     static void TileLoop(SharedThreadData* tc_data, PerThreadData* ctx);
 
     void CreateSrgrCoefficientsOnDevice();
