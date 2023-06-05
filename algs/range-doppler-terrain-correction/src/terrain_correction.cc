@@ -74,11 +74,19 @@ void FreeThreadContext(alus::terraincorrection::PerThreadData* ctx) {
 
 namespace alus::terraincorrection {
 
+enum class DataSinkOption {
+    GDAL_DATASET,
+    MEMORY_BUFFER
+};
+
 struct TerrainCorrection::SharedThreadData {
     // read-write access, must explictly synchronize between threads
     ThreadSafeTileQueue<TcTileIndexPair> tile_queue;
     GDALDataset* input_dataset = nullptr;
     std::mutex gdal_read_mutex;
+    DataSinkOption sink_option;
+    GDALDataset* output_dataset = nullptr;
+    std::mutex gdal_write_mutex;
     float no_data_value;
     int output_buffer_stride;
     std::shared_ptr<float[]> output_buffer{};
@@ -279,8 +287,8 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
     // setup data for use by threads, these must outlive threads themselves
     SharedThreadData shared_data = {};
     shared_data.terrain_correction = this;
-    shared_data.output_buffer_stride = target_x_size;
-    shared_data.output_buffer = std::shared_ptr<float[]>(new float[target_x_size * target_y_size]);
+    shared_data.sink_option = DataSinkOption::GDAL_DATASET;
+    shared_data.output_dataset = target_product.dataset_.get();
     const auto band_info = metadata_.band_info.front();
     shared_data.no_data_value = band_info.no_data_value_used && band_info.no_data_value.has_value()
                                     ? band_info.no_data_value.value()
@@ -321,10 +329,6 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
     if (shared_data.exception_ptr != nullptr) {
         std::rethrow_exception(shared_data.exception_ptr);
     }
-
-    CHECK_GDAL_ERROR(target_product.dataset_->GetRasterBand(selected_band_id_)
-                         ->RasterIO(GF_Write, 0, 0, target_x_size, target_y_size, shared_data.output_buffer.get(),
-                                    target_x_size, target_y_size, GDT_Float32, 0, 0));
 }
 
 SimpleDataset<float> TerrainCorrection::ExecuteTerrainCorrection(size_t tile_width, size_t tile_height,
@@ -373,6 +377,7 @@ SimpleDataset<float> TerrainCorrection::ExecuteTerrainCorrection(size_t tile_wid
     // setup data for use by threads, these must outlive threads themselves
     SharedThreadData shared_data = {};
     shared_data.terrain_correction = this;
+    shared_data.sink_option = DataSinkOption::MEMORY_BUFFER;
     shared_data.output_buffer_stride = target_x_size;
     shared_data.output_buffer = target_dataset.buffer;
     shared_data.no_data_value = target_dataset.no_data;
@@ -750,12 +755,21 @@ void TerrainCorrection::CalculateTile(TcTileIndexPair tile_coordinates, SharedTh
         tc_args.d_target = target_array;
         CHECK_CUDA_ERR(LaunchTerrainCorrectionKernel(tile_coordinates, tc_args, ctx->h_target_tile.Get(), ctx->stream));
 
-        // Strided write.
-        for (size_t i = 0; i < tile_coordinates.target_height; i++) {
-            memcpy(shared->output_buffer.get() +
+        if (shared->sink_option == DataSinkOption::GDAL_DATASET) {
+            std::unique_lock lock(shared->gdal_write_mutex);
+            CHECK_GDAL_ERROR(shared->output_dataset->GetRasterBand(shared->terrain_correction->selected_band_id_)
+                                 ->RasterIO(GF_Write, tile_coordinates.target_x_0, tile_coordinates.target_y_0,
+                                            tile_coordinates.target_width, tile_coordinates.target_height,
+                                            ctx->h_target_tile.Get(), tile_coordinates.target_width,
+                                            tile_coordinates.target_height, GDT_Float32, 0, 0));
+        } else if (shared->sink_option == DataSinkOption::MEMORY_BUFFER) {
+            // Strided write.
+            for (size_t i = 0; i < tile_coordinates.target_height; i++) {
+                memcpy(shared->output_buffer.get() +
                        ((tile_coordinates.target_y_0 + i) * shared->output_buffer_stride + tile_coordinates.target_x_0),
-                   ctx->h_target_tile.Get() + (i * tile_coordinates.target_width),
-                   tile_coordinates.target_width * sizeof(float));
+                       ctx->h_target_tile.Get() + (i * tile_coordinates.target_width),
+                       tile_coordinates.target_width * sizeof(float));
+            }
         }
     }
 
