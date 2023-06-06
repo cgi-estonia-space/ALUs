@@ -2,6 +2,7 @@ list(APPEND SAR_SEGMENT_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/cli_args.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/execute.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/main.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/sar_segment_kernels.cu
         )
 
 list(APPEND SAR_SEGMENT_INCLUDES

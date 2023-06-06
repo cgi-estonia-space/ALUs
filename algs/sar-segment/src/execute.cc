@@ -14,6 +14,7 @@
 
 #include "execute.h"
 
+#include <algorithm>
 #include <chrono>
 #include <cstddef>
 
@@ -22,14 +23,20 @@
 
 #include "algorithm_exception.h"
 #include "alus_log.h"
+#include "calc_funcs.h"
 #include "constants.h"
+#include "cuda_copies.h"
+#include "cuda_mem_arena.h"
 #include "dataset_util.h"
 #include "dem_assistant.h"
 #include "gdal_management.h"
 #include "gdal_util.h"
+#include "kernel_array.h"
+#include "memory_policy.h"
 #include "metadata_record.h"
 #include "product.h"
 #include "product_name.h"
+#include "sar_segment_kernels.h"
 #include "sentinel1_calibrate.h"
 #include "sentinel1_product_reader_plug_in.h"
 #include "shapes.h"
@@ -40,8 +47,6 @@
 
 namespace {
 
-// Single GRD is ~8-900M times the polarizations (2) plus the third band.
-constexpr size_t GDAL_CACHE_SIZE{static_cast<size_t>(900e6 * 3)};
 constexpr size_t TILE_SIZE_DIMENSION{2048};
 
 void ThermalNoiseRemoval(const std::vector<std::shared_ptr<alus::snapengine::Product>>& prods,
@@ -93,8 +98,8 @@ void Calibration(const std::vector<std::shared_ptr<alus::snapengine::Product>>& 
          << "ms";
 }
 
-alus::SimpleDataset<float> TerrainCorrection(const std::shared_ptr<alus::snapengine::Product>& merge_product, GDALDataset* in_ds,
-                              std::shared_ptr<alus::dem::Assistant> dem_assistant) {
+alus::SimpleDataset<float> TerrainCorrection(const std::shared_ptr<alus::snapengine::Product>& merge_product,
+                                             GDALDataset* in_ds, std::shared_ptr<alus::dem::Assistant> dem_assistant) {
     const auto tc_start = std::chrono::steady_clock::now();
 
     alus::terraincorrection::Metadata metadata(merge_product);
@@ -122,6 +127,93 @@ alus::SimpleDataset<float> TerrainCorrection(const std::shared_ptr<alus::snapeng
     return simple_dataset;
 }
 
+alus::SimpleDataset<float> CalculateDivideAndDb(const alus::SimpleDataset<float>& vh,
+                                                const alus::SimpleDataset<float>& vv, const alus::cuda::CudaDevice& dev,
+                                                size_t gpu_mem_percentage) {
+    // Pass also gpu memory percentage and how much available? Single TC GRD takes ~3.5Gb
+    // Try to do in one pass the following - tile of VH and VV + tile of div_VH_VV - now all to dB, then move back,
+    // delete from GPU memory, start new calculation and then write to GeoTIFF async.
+    // const auto band_size_bytes = vh.width * vh.height * sizeof(float);
+//    const auto allocation_step = static_cast<size_t>(vh.width);
+//    const auto memory_police = alus::cuda::MemoryFitPolice(dev, gpu_mem_percentage);
+//    constexpr size_t CUSHION{200 << 20};  // 200 MiB leverage for not pushing it too tight.
+//
+//    const auto tile_width{allocation_step};
+//    const auto scene_height{static_cast<size_t>(vh.height)};
+//    size_t tile_height{1};
+//    for (size_t i = tile_height; i <= static_cast<size_t>(vh.height); i++) {
+//        auto memory_budget_registry = alus::cuda::MemoryAllocationForecast(dev.GetMemoryAlignment());
+//        // We need to allocate for VH, VV and VH/VV all are preserved in the memory for dB calculation as well.
+//        const auto proposed_tile_size_bytes = tile_width * i * sizeof(float);
+//        memory_budget_registry.Add(proposed_tile_size_bytes);  // This counts the alignment as well.
+//        memory_budget_registry.Add(proposed_tile_size_bytes);
+//        memory_budget_registry.Add(proposed_tile_size_bytes);
+//        if (memory_police.CanFit(memory_budget_registry.Get() + CUSHION)) {
+//            tile_height = i;
+//        } else {
+//            if (i == 1) {
+//                throw std::runtime_error("Given GPU memory is not enough for VH, VV and VH/VV (dB) processing.");
+//            }
+//            break;
+//        }
+//    }
+//
+//    LOGD << "Suitable tile size for GPU device " << tile_width << "x" << tile_height;
+    alus::SimpleDataset<float> vh_div_vv = vh;
+    vh_div_vv.buffer = std::shared_ptr<float[]>(new float[vh.width * vh.height]);
+//    alus::cuda::MemArena vh_dev_arena(tile_width * tile_height * sizeof(float));
+//    alus::cuda::KernelArray<float> vh_dev;
+//    vh_dev.array = vh_dev_arena.AllocArray<float>(tile_width * tile_height);
+//    alus::cuda::MemArena vv_dev_arena(tile_width * tile_height * sizeof(float));
+//    alus::cuda::KernelArray<float> vv_dev;
+//    vv_dev.array = vv_dev_arena.AllocArray<float>(tile_width * tile_height);
+//    alus::cuda::MemArena vh_div_vv_dev_arena(tile_width * tile_height * sizeof(float));
+//    alus::cuda::KernelArray<float> vh_div_vv_dev;
+//    vh_div_vv_dev.array = vh_div_vv_dev_arena.AllocArray<float>(tile_width * tile_height);
+//    for (auto i{0u}; i < scene_height; i += tile_height) {
+//        const auto computed_tile_height = std::min(tile_height, scene_height - i);
+//        const auto host_buffer_offset = i * tile_width;
+//        const auto computed_tile_pixel_count = tile_width * computed_tile_height;
+//        // const auto computed_tile_size_bytes = computed_tile_pixel_count * sizeof(float);
+//        alus::cuda::CopyArrayH2D(vh_dev.array, vh.buffer.get() + host_buffer_offset, computed_tile_pixel_count);
+//        vh_dev.size = computed_tile_pixel_count;
+//        alus::cuda::CopyArrayH2D(vv_dev.array, vv.buffer.get() + host_buffer_offset, computed_tile_pixel_count);
+//        vv_dev.size = computed_tile_pixel_count;
+//        alus::sarsegment::ComputeDivision(vh_div_vv_dev, vh_dev, vv_dev, tile_width, computed_tile_height, vh.no_data);
+//        vh_div_vv_dev.size = computed_tile_pixel_count;
+//        // Do not forget to Despeckle.
+//        alus::sarsegment::ComputeDecibel(vh_dev, tile_width, computed_tile_height, vh.no_data);
+//        alus::sarsegment::ComputeDecibel(vv_dev, tile_width, computed_tile_height, vv.no_data);
+//        alus::sarsegment::ComputeDecibel(vh_div_vv_dev, tile_width, computed_tile_height, vh_div_vv.no_data);
+//        alus::cuda::CopyArrayD2H(vh.buffer.get() + host_buffer_offset, vh_dev.array, vh_dev.size);
+//        alus::cuda::CopyArrayD2H(vv.buffer.get() + host_buffer_offset, vv_dev.array, vv_dev.size);
+//        alus::cuda::CopyArrayD2H(vh_div_vv.buffer.get() + host_buffer_offset, vh_div_vv_dev.array, vh_div_vv_dev.size);
+//    }
+
+    (void)dev;
+    (void)gpu_mem_percentage;
+    const auto no_data = vh.no_data;
+    LOGI << "Start on CPU";
+    for (auto index = 0; index < vh.height * vh.width; index++) {
+        const auto vh_val = vh.buffer[index];
+        const auto vv_val = vv.buffer[index];
+        if (vv_val == 0) {
+            vh_div_vv.buffer[index] = 0;
+        } else if (vh_val == no_data || vv_val == no_data){
+            vh_div_vv.buffer[index] = no_data;
+        } else {
+            vh_div_vv.buffer[index] = alus::math::calcfuncs::Decibel(vh_val / vv_val);
+        }
+
+        vh.buffer[index] = alus::math::calcfuncs::Decibel(vh_val, no_data);
+        vv.buffer[index] = alus::math::calcfuncs::Decibel(vv_val, no_data);
+    }
+    LOGI << "Done on CPU";
+    LOGI << "Calculations done";
+
+    return vh_div_vv;
+}
+
 }  // namespace
 
 namespace alus::sarsegment {
@@ -129,6 +221,7 @@ namespace alus::sarsegment {
 Execute::Execute(Parameters params, const std::vector<std::string>& dem_files)
     : params_{std::move(params)}, dem_files_{dem_files} {
     alus::gdalmanagement::Initialize();
+    //alus::gdalmanagement::SetCacheMax(12e9);
 }
 
 void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t gpu_memory_percentage) {
@@ -137,7 +230,6 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t gpu_memory_percentage)
     (void)gpu_memory_percentage;
 
     auto final_product_name = common::ProductName(params_.output);
-    alus::gdalmanagement::SetCacheMax(GDAL_CACHE_SIZE);
     auto dem_assistant = dem::Assistant::CreateFormattedDemTilesOnGpuFrom(dem_files_);
 
     auto reader_plug_in = std::make_shared<s1tbx::Sentinel1ProductReaderPlugIn>();
@@ -187,10 +279,49 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t gpu_memory_percentage)
 
     dem_assistant->GetElevationManager()->TransferToDevice();
 
-    const auto simple_ds_vv = TerrainCorrection(product, calib_datasets.front().get(), dem_assistant);
-    GeoTiffWriteFile(simple_ds_vv, "/tmp/segment_test_vv.tif");
-    const auto simple_ds_vh = TerrainCorrection(product, calib_datasets.back().get(), dem_assistant);
-    GeoTiffWriteFile(simple_ds_vh, "/tmp/segment_test_vh.tif");
+    auto simple_ds_vv = TerrainCorrection(product, calib_datasets.front().get(), dem_assistant);
+    auto simple_ds_vh = TerrainCorrection(product, calib_datasets.back().get(), dem_assistant);
+    dem_assistant->GetElevationManager()->ReleaseFromDevice();
+    const auto vh_div_vv_buffer = CalculateDivideAndDb(simple_ds_vh, simple_ds_vv, cuda_device, gpu_memory_percentage);
+
+    LOGI << "Start write";
+    std::string x_tile_sz = FindOptimalTileSize(simple_ds_vv.width);
+    std::string y_tile_sz = FindOptimalTileSize(simple_ds_vv.height);
+    char** output_driver_options = nullptr;
+    output_driver_options = CSLSetNameValue(output_driver_options, "TILED", "YES");
+    output_driver_options = CSLSetNameValue(output_driver_options, "BLOCKXSIZE", x_tile_sz.c_str());
+    output_driver_options = CSLSetNameValue(output_driver_options, "BLOCKYSIZE", y_tile_sz.c_str());
+    //output_driver_options = CSLSetNameValue(output_driver_options, "NUM_THREADS", "ALL_CPUS");
+    output_driver_options = CSLSetNameValue(output_driver_options, "COMPRESS", "LZW");
+    auto csl_destroy = [](char** options) { CSLDestroy(options); };
+    std::unique_ptr<char*, decltype(csl_destroy)> driver_opt_guard(output_driver_options, csl_destroy);
+    auto gdal_ds = (GDALDataset*)GDALCreate(GetGdalGeoTiffDriver(), "/tmp/sar_segment.tif", simple_ds_vv.width, simple_ds_vv.height,
+                              3, GDT_Float32, output_driver_options);
+    CHECK_GDAL_PTR(gdal_ds);
+    CHECK_GDAL_ERROR(gdal_ds->SetProjection(simple_ds_vv.projection_wkt.c_str()));
+    CHECK_GDAL_ERROR(gdal_ds->SetGeoTransform(const_cast<double*>(simple_ds_vv.geo_transform)));
+    CHECK_GDAL_ERROR(gdal_ds->GetRasterBand(1)->SetNoDataValue(simple_ds_vv.no_data));
+    CHECK_GDAL_ERROR(gdal_ds->GetRasterBand(2)->SetNoDataValue(simple_ds_vh.no_data));
+    CHECK_GDAL_ERROR(gdal_ds->GetRasterBand(3)->SetNoDataValue(vh_div_vv_buffer.no_data));
+    CHECK_GDAL_ERROR(gdal_ds->GetRasterBand(1)->RasterIO(GF_Write, 0, 0, simple_ds_vv.width, simple_ds_vv.height,
+                                                         simple_ds_vv.buffer.get(), simple_ds_vv.width,
+                                                         simple_ds_vv.height, GDALDataType::GDT_Float32, 0, 0));
+    LOGI << "Checkpoint";
+    simple_ds_vv.buffer.reset();
+    LOGI << "Band 1 " << (GDALGetCacheUsed64() >> 20);
+    CHECK_GDAL_ERROR(gdal_ds->GetRasterBand(2)->RasterIO(GF_Write, 0, 0, simple_ds_vh.width, simple_ds_vh.height,
+                                                         simple_ds_vh.buffer.get(), simple_ds_vh.width,
+                                                         simple_ds_vh.height, GDALDataType::GDT_Float32, 0, 0));
+
+    LOGI << "Checkpoint";
+    simple_ds_vh.buffer.reset();
+    LOGI << "Band 2 " << (GDALGetCacheUsed64() >> 20);
+    CHECK_GDAL_ERROR(gdal_ds->GetRasterBand(3)->RasterIO(GF_Write, 0, 0, simple_ds_vh.width, simple_ds_vh.height,
+                                                         vh_div_vv_buffer.buffer.get(), simple_ds_vh.width,
+                                                         simple_ds_vh.height, GDALDataType::GDT_Float32, 0, 0));
+    LOGI << "Band 3 " << (GDALGetCacheUsed64() >> 20);
+    GDALClose(gdal_ds);
+    LOGI << "Close";
 }
 
 void Execute::ParseCalibrationType(std::string_view type) {
