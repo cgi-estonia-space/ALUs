@@ -135,81 +135,62 @@ alus::SimpleDataset<float> CalculateDivideAndDb(const alus::SimpleDataset<float>
     // Pass also gpu memory percentage and how much available? Single TC GRD takes ~3.5Gb
     // Try to do in one pass the following - tile of VH and VV + tile of div_VH_VV - now all to dB, then move back,
     // delete from GPU memory, start new calculation and then write to GeoTIFF async.
-    // const auto band_size_bytes = vh.width * vh.height * sizeof(float);
-//    const auto allocation_step = static_cast<size_t>(vh.width);
-//    const auto memory_police = alus::cuda::MemoryFitPolice(dev, gpu_mem_percentage);
-//    constexpr size_t CUSHION{200 << 20};  // 200 MiB leverage for not pushing it too tight.
-//
-//    const auto tile_width{allocation_step};
-//    const auto scene_height{static_cast<size_t>(vh.height)};
-//    size_t tile_height{1};
-//    for (size_t i = tile_height; i <= static_cast<size_t>(vh.height); i++) {
-//        auto memory_budget_registry = alus::cuda::MemoryAllocationForecast(dev.GetMemoryAlignment());
-//        // We need to allocate for VH, VV and VH/VV all are preserved in the memory for dB calculation as well.
-//        const auto proposed_tile_size_bytes = tile_width * i * sizeof(float);
-//        memory_budget_registry.Add(proposed_tile_size_bytes);  // This counts the alignment as well.
-//        memory_budget_registry.Add(proposed_tile_size_bytes);
-//        memory_budget_registry.Add(proposed_tile_size_bytes);
-//        if (memory_police.CanFit(memory_budget_registry.Get() + CUSHION)) {
-//            tile_height = i;
-//        } else {
-//            if (i == 1) {
-//                throw std::runtime_error("Given GPU memory is not enough for VH, VV and VH/VV (dB) processing.");
-//            }
-//            break;
-//        }
-//    }
-//
-//    LOGD << "Suitable tile size for GPU device " << tile_width << "x" << tile_height;
+    const auto allocation_step = static_cast<size_t>(vh.width);
+    const auto memory_police = alus::cuda::MemoryFitPolice(dev, gpu_mem_percentage);
+    constexpr size_t CUSHION{200 << 20};  // 200 MiB leverage for not pushing it too tight.
+
+    const auto tile_width{allocation_step};
+    const auto scene_height{static_cast<size_t>(vh.height)};
+    size_t tile_height{1};
+    for (size_t i = tile_height; i <= static_cast<size_t>(vh.height); i++) {
+        auto memory_budget_registry = alus::cuda::MemoryAllocationForecast(dev.GetMemoryAlignment());
+        // We need to allocate for VH, VV and VH/VV all are preserved in the memory for dB calculation as well.
+        const auto proposed_tile_size_bytes = tile_width * i * sizeof(float);
+        memory_budget_registry.Add(proposed_tile_size_bytes);  // This counts the alignment as well.
+        memory_budget_registry.Add(proposed_tile_size_bytes);
+        memory_budget_registry.Add(proposed_tile_size_bytes);
+        if (memory_police.CanFit(memory_budget_registry.Get() + CUSHION)) {
+            tile_height = i;
+        } else {
+            if (i == 1) {
+                throw std::runtime_error("Given GPU memory is not enough for VH, VV and VH/VV (dB) processing.");
+            }
+            break;
+        }
+    }
+
+    LOGD << "Suitable tile size for GPU device " << tile_width << "x" << tile_height;
     alus::SimpleDataset<float> vh_div_vv = vh;
     vh_div_vv.buffer = std::shared_ptr<float[]>(new float[vh.width * vh.height]);
-//    alus::cuda::MemArena vh_dev_arena(tile_width * tile_height * sizeof(float));
-//    alus::cuda::KernelArray<float> vh_dev;
-//    vh_dev.array = vh_dev_arena.AllocArray<float>(tile_width * tile_height);
-//    alus::cuda::MemArena vv_dev_arena(tile_width * tile_height * sizeof(float));
-//    alus::cuda::KernelArray<float> vv_dev;
-//    vv_dev.array = vv_dev_arena.AllocArray<float>(tile_width * tile_height);
-//    alus::cuda::MemArena vh_div_vv_dev_arena(tile_width * tile_height * sizeof(float));
-//    alus::cuda::KernelArray<float> vh_div_vv_dev;
-//    vh_div_vv_dev.array = vh_div_vv_dev_arena.AllocArray<float>(tile_width * tile_height);
-//    for (auto i{0u}; i < scene_height; i += tile_height) {
-//        const auto computed_tile_height = std::min(tile_height, scene_height - i);
-//        const auto host_buffer_offset = i * tile_width;
-//        const auto computed_tile_pixel_count = tile_width * computed_tile_height;
-//        // const auto computed_tile_size_bytes = computed_tile_pixel_count * sizeof(float);
-//        alus::cuda::CopyArrayH2D(vh_dev.array, vh.buffer.get() + host_buffer_offset, computed_tile_pixel_count);
-//        vh_dev.size = computed_tile_pixel_count;
-//        alus::cuda::CopyArrayH2D(vv_dev.array, vv.buffer.get() + host_buffer_offset, computed_tile_pixel_count);
-//        vv_dev.size = computed_tile_pixel_count;
-//        alus::sarsegment::ComputeDivision(vh_div_vv_dev, vh_dev, vv_dev, tile_width, computed_tile_height, vh.no_data);
-//        vh_div_vv_dev.size = computed_tile_pixel_count;
-//        // Do not forget to Despeckle.
-//        alus::sarsegment::ComputeDecibel(vh_dev, tile_width, computed_tile_height, vh.no_data);
-//        alus::sarsegment::ComputeDecibel(vv_dev, tile_width, computed_tile_height, vv.no_data);
-//        alus::sarsegment::ComputeDecibel(vh_div_vv_dev, tile_width, computed_tile_height, vh_div_vv.no_data);
-//        alus::cuda::CopyArrayD2H(vh.buffer.get() + host_buffer_offset, vh_dev.array, vh_dev.size);
-//        alus::cuda::CopyArrayD2H(vv.buffer.get() + host_buffer_offset, vv_dev.array, vv_dev.size);
-//        alus::cuda::CopyArrayD2H(vh_div_vv.buffer.get() + host_buffer_offset, vh_div_vv_dev.array, vh_div_vv_dev.size);
-//    }
-
-    (void)dev;
-    (void)gpu_mem_percentage;
-    const auto no_data = vh.no_data;
-    LOGI << "Start on CPU";
-    for (auto index = 0; index < vh.height * vh.width; index++) {
-        const auto vh_val = vh.buffer[index];
-        const auto vv_val = vv.buffer[index];
-        if (vv_val == 0) {
-            vh_div_vv.buffer[index] = 0;
-        } else if (vh_val == no_data || vv_val == no_data){
-            vh_div_vv.buffer[index] = no_data;
-        } else {
-            vh_div_vv.buffer[index] = alus::math::calcfuncs::Decibel(vh_val / vv_val);
-        }
-
-        vh.buffer[index] = alus::math::calcfuncs::Decibel(vh_val, no_data);
-        vv.buffer[index] = alus::math::calcfuncs::Decibel(vv_val, no_data);
+    alus::cuda::MemArena vh_dev_arena(tile_width * tile_height * sizeof(float));
+    alus::cuda::KernelArray<float> vh_dev;
+    vh_dev.array = vh_dev_arena.AllocArray<float>(tile_width * tile_height);
+    alus::cuda::MemArena vv_dev_arena(tile_width * tile_height * sizeof(float));
+    alus::cuda::KernelArray<float> vv_dev;
+    vv_dev.array = vv_dev_arena.AllocArray<float>(tile_width * tile_height);
+    alus::cuda::MemArena vh_div_vv_dev_arena(tile_width * tile_height * sizeof(float));
+    alus::cuda::KernelArray<float> vh_div_vv_dev;
+    vh_div_vv_dev.array = vh_div_vv_dev_arena.AllocArray<float>(tile_width * tile_height);
+    for (auto i{0u}; i < scene_height; i += tile_height) {
+        const auto computed_tile_height = std::min(tile_height, scene_height - i);
+        const auto host_buffer_offset = i * tile_width;
+        const auto computed_tile_pixel_count = tile_width * computed_tile_height;
+        // const auto computed_tile_size_bytes = computed_tile_pixel_count * sizeof(float);
+        alus::cuda::CopyArrayH2D(vh_dev.array, vh.buffer.get() + host_buffer_offset, computed_tile_pixel_count);
+        vh_dev.size = computed_tile_pixel_count;
+        alus::cuda::CopyArrayH2D(vv_dev.array, vv.buffer.get() + host_buffer_offset, computed_tile_pixel_count);
+        vv_dev.size = computed_tile_pixel_count;
+        alus::sarsegment::ComputeDivision(vh_div_vv_dev, vh_dev, vv_dev, tile_width, computed_tile_height, vh.no_data);
+        vh_div_vv_dev.size = computed_tile_pixel_count;
+        // Do not forget to Despeckle.
+        alus::sarsegment::ComputeDecibel(vh_dev, tile_width, computed_tile_height, vh.no_data);
+        alus::sarsegment::ComputeDecibel(vv_dev, tile_width, computed_tile_height, vv.no_data);
+        alus::sarsegment::ComputeDecibel(vh_div_vv_dev, tile_width, computed_tile_height, vh_div_vv.no_data);
+        alus::cuda::CopyArrayD2H(vh.buffer.get() + host_buffer_offset, vh_dev.array, vh_dev.size);
+        alus::cuda::CopyArrayD2H(vv.buffer.get() + host_buffer_offset, vv_dev.array, vv_dev.size);
+        alus::cuda::CopyArrayD2H(vh_div_vv.buffer.get() + host_buffer_offset, vh_div_vv_dev.array, vh_div_vv_dev.size);
     }
+
     LOGI << "Segmentation representation done - "
          << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - time_start).count()
          << "ms";
