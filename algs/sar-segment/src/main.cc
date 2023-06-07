@@ -31,7 +31,6 @@ alus::sarsegment::Execute::Parameters AssembleParameters(const alus::sarsegment:
     alus::sarsegment::Execute::Parameters params;
     params.input = args.GetInput();
     params.output = args.GetOutput();
-    params.wif = args.DoSaveIntermediateResults();
     params.calibration_type = args.GetCalibrationType();
 
     return params;

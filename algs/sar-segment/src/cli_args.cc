@@ -31,9 +31,6 @@ Arguments::Arguments(const std::vector<char*>& args) : Arguments() { Parse(args)
 
 void Arguments::Parse(const std::vector<char*>& args) {
     po::store(po::parse_command_line(static_cast<int>(args.size()), args.data(), combined_args_), vm_);
-    if (vm_.count("wif")) {
-        wif_ = true;
-    }
 }
 
 void Arguments::Check() {
@@ -61,9 +58,6 @@ void Arguments::Construct() {
         ("help,h", "Print help")
         ("input,i", po::value<std::string>(&input_)->required(), "Input SAFE dataset (zipped or unpacked)")
         ("output,o", po::value<std::string>(&output_)->required(), "Output folder or filename")
-        ("wif,w",
-         "Write intermediate results (will be saved in the same folder as final outcome)."
-         " NOTE - this may decrease performance. Default OFF.")
         ("type,t", po::value<std::string>(&calibration_type_)->required(), calibration_type_help.c_str())
         ("dem", po::value<std::vector<std::string>>(&dem_files_)->required(),
          "DEM file(s). SRTM3 and Copernicus DEM 30m COG are currently supported.");

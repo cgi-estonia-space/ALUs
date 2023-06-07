@@ -18,7 +18,6 @@
 #include <string_view>
 
 
-
 namespace alus::common {
 
 class ProductName final {

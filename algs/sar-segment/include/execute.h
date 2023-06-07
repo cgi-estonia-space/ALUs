@@ -27,7 +27,6 @@ public:
     struct Parameters {
         std::string input;
         std::string output;
-        bool wif;
         std::string calibration_type;
     };
 

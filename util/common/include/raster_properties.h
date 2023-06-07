@@ -85,5 +85,4 @@ public:
     static constexpr int PIXEL_X_SIZE_INDEX{1};  // Or pixel width
     static constexpr int PIXEL_Y_SIZE_INDEX{5};  // Or pixel height
 };
-
 }  // namespace alus

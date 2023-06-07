@@ -173,21 +173,6 @@ inline TypeParameters CreateTypeParametersFrom(GDALDataType dt) {
 void GeoTiffWriteFile(GDALDataset* input_dataset, std::string_view output_file);
 
 template <typename T>
-void GeoTiffWriteFile(SimpleDataset<T> ds, std::string_view path) {
-    auto output_driver = GetGdalGeoTiffDriver();
-    CHECK_GDAL_PTR(output_driver);
-
-    auto gdal_ds = output_driver->Create(path.data(), ds.width, ds.height, 1, FindGdalDataType<T>(), nullptr);
-    CHECK_GDAL_PTR(gdal_ds);
-    CHECK_GDAL_ERROR(gdal_ds->SetGeoTransform(ds.geo_transform));
-    CHECK_GDAL_ERROR(gdal_ds->SetProjection(ds.projection_wkt.data()));
-    CHECK_GDAL_ERROR(gdal_ds->GetRasterBand(1)->RasterIO(GF_Write, 0, 0, ds.width, ds.height, ds.buffer.get(), ds.width,
-                                                         ds.height, FindGdalDataType<T>(), 0, 0));
-    CHECK_GDAL_ERROR(gdal_ds->GetRasterBand(1)->SetNoDataValue(ds.no_data));
-    GDALClose(gdal_ds);
-}
-
-template <typename T>
 void WriteSimpleDatasetToGeoTiff(std::vector<SimpleDataset<T>> ds, std::string_view path,
                                  const std::vector<std::pair<std::string, std::string>>& options,
                                  bool release_band_buffer = false) {

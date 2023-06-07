@@ -39,5 +39,4 @@ void ProductName::Add(std::string_view part_of_a_name) {
     }
     filename_ += part_of_a_name;
 }
-
 }  // namespace alus::common

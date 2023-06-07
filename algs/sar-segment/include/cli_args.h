@@ -40,7 +40,6 @@ public:
     std::string GetCalibrationType() const { return calibration_type_; }
     const std::vector<std::string>& GetDemFiles() const { return dem_files_; }
     std::string GetOutput() const { return output_; }
-    bool DoSaveIntermediateResults() const { return wif_; };
     size_t GetGpuMemoryPercentage() const { return alus_args_.GetGpuMemoryPercentage(); }
     common::log::Level GetLogLevel() const { return alus_args_.GetLogLevel(); }
 
@@ -58,6 +57,5 @@ private:
     std::string calibration_type_;
     std::vector<std::string> dem_files_;
     std::string output_;
-    bool wif_{false};
 };
 }  // namespace alus::sarsegment

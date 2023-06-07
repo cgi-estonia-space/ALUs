@@ -210,7 +210,6 @@ Execute::Execute(Parameters params, const std::vector<std::string>& dem_files)
 void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t gpu_memory_percentage) {
     ParseCalibrationType(params_.calibration_type);
     PrintProcessingParameters();
-    (void)gpu_memory_percentage;
 
     auto final_product_name = common::ProductName(params_.output);
     auto dem_assistant = dem::Assistant::CreateFormattedDemTilesOnGpuFrom(dem_files_);
@@ -218,6 +217,13 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t gpu_memory_percentage)
     auto reader_plug_in = std::make_shared<s1tbx::Sentinel1ProductReaderPlugIn>();
     auto reader = reader_plug_in->CreateReaderInstance();
     auto product = reader->ReadProductNodes(boost::filesystem::canonical(params_.input), nullptr);
+
+    common::ProductName prod_name(params_.output);
+    bool create_prod_name = !prod_name.IsFinal();
+
+    if (create_prod_name) {
+        prod_name.Add(product->GetName());
+    }
 
     std::vector<std::shared_ptr<snapengine::Product>> tnr_in_products;
     std::shared_ptr<Dataset<uint16_t>> grd_ds_vv;
@@ -251,6 +257,9 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t gpu_memory_percentage)
     std::vector<std::shared_ptr<GDALDataset>> tnr_datasets(2);
     ThermalNoiseRemoval(tnr_in_products, tnr_in_ds, tnr_in_ds_areas, swath_selection, final_product_name.GetDirectory(),
                         tnr_products, tnr_datasets);
+    if (create_prod_name) {
+        prod_name.Add("tnr");
+    }
 
     std::vector<std::shared_ptr<snapengine::Product>> calib_products(tnr_products.size());
     std::vector<std::shared_ptr<GDALDataset>> calib_datasets(tnr_datasets.size());
@@ -259,16 +268,26 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t gpu_memory_percentage)
                 final_product_name.GetDirectory(), output_names, calib_products, calib_datasets);
     tnr_products.clear();
     tnr_datasets.clear();
+    if (create_prod_name) {
+        prod_name.Add("cal");
+    }
 
     dem_assistant->GetElevationManager()->TransferToDevice();
 
     auto simple_ds_vv = TerrainCorrection(product, calib_datasets.front().get(), dem_assistant);
     auto simple_ds_vh = TerrainCorrection(product, calib_datasets.back().get(), dem_assistant);
+    if (create_prod_name) {
+        prod_name.Add("tc");
+    }
     dem_assistant->GetElevationManager()->ReleaseFromDevice();
 
     const auto vh_div_vv_buffer = CalculateDivideAndDb(simple_ds_vh, simple_ds_vv, cuda_device, gpu_memory_percentage);
+    if (create_prod_name) {
+        prod_name.Add("segment");
+    }
 
-    LOGI << "Start write";
+    const auto result_filepath = prod_name.Construct(".tif");
+    LOGI << "Start write " << result_filepath;
     std::string x_tile_sz = FindOptimalTileSize(simple_ds_vv.width);
     std::string y_tile_sz = FindOptimalTileSize(simple_ds_vv.height);
     std::vector<std::pair<std::string, std::string>> driver_options;
@@ -278,7 +297,7 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t gpu_memory_percentage)
     driver_options.emplace_back("COMPRESS", "LZW");
     driver_options.emplace_back("BIGTIFF", "YES");
     std::vector<SimpleDataset<float>> bands{simple_ds_vv, simple_ds_vh, vh_div_vv_buffer};
-    WriteSimpleDatasetToGeoTiff(bands, "/tmp/sar_segment.tif", driver_options, true);
+    WriteSimpleDatasetToGeoTiff(bands, result_filepath, driver_options, true);
     LOGI << "Done";
 }
 
@@ -299,8 +318,7 @@ void Execute::ParseCalibrationType(std::string_view type) {
 void Execute::PrintProcessingParameters() const {
     LOGI << "Processing parameters:" << std::endl
          << "Input product - " << params_.input << std::endl
-         << "Calibration type - " << params_.calibration_type << std::endl
-         << "Write intermediate files - " << (params_.wif ? "YES" : "NO") << std::endl;
+         << "Calibration type - " << params_.calibration_type << std::endl;
 }
 
 Execute::~Execute() { alus::gdalmanagement::Deinitialize(); }
