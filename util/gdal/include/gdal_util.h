@@ -27,7 +27,6 @@
 #include "target_dataset.h"
 #include "type_parameter.h"
 
-
 #define CHECK_GDAL_ERROR(err) alus::CheckGdalError(err, __FILE__, __LINE__)
 #define CHECK_GDAL_PTR(ptr) CHECK_GDAL_ERROR((ptr) == nullptr ? CE_Failure : CE_None)
 #define CHECK_OGR_ERROR(err) alus::CheckOgrError(err, __FILE__, __LINE__)
@@ -172,6 +171,7 @@ inline TypeParameters CreateTypeParametersFrom(GDALDataType dt) {
 }
 
 void GeoTiffWriteFile(GDALDataset* input_dataset, std::string_view output_file);
+
 template <typename T>
 void GeoTiffWriteFile(SimpleDataset<T> ds, std::string_view path) {
     auto output_driver = GetGdalGeoTiffDriver();
@@ -181,9 +181,43 @@ void GeoTiffWriteFile(SimpleDataset<T> ds, std::string_view path) {
     CHECK_GDAL_PTR(gdal_ds);
     CHECK_GDAL_ERROR(gdal_ds->SetGeoTransform(ds.geo_transform));
     CHECK_GDAL_ERROR(gdal_ds->SetProjection(ds.projection_wkt.data()));
-    CHECK_GDAL_ERROR(gdal_ds->GetRasterBand(1)
-                         ->RasterIO(GF_Write, 0, 0, ds.width, ds.height, ds.buffer.get(),
-                                    ds.width, ds.height, FindGdalDataType<T>(), 0, 0));
+    CHECK_GDAL_ERROR(gdal_ds->GetRasterBand(1)->RasterIO(GF_Write, 0, 0, ds.width, ds.height, ds.buffer.get(), ds.width,
+                                                         ds.height, FindGdalDataType<T>(), 0, 0));
+    CHECK_GDAL_ERROR(gdal_ds->GetRasterBand(1)->SetNoDataValue(ds.no_data));
+    GDALClose(gdal_ds);
+}
+
+template <typename T>
+void WriteSimpleDatasetToGeoTiff(std::vector<SimpleDataset<T>> ds, std::string_view path,
+                                 const std::vector<std::pair<std::string, std::string>>& options,
+                                 bool release_band_buffer = false) {
+    auto output_driver = GetGdalGeoTiffDriver();
+    CHECK_GDAL_PTR(output_driver);
+
+    const auto gdal_dt = FindGdalDataType<T>();
+    char** output_driver_options = nullptr;
+    for (const auto& option : options) {
+        output_driver_options = CSLSetNameValue(output_driver_options, option.first.c_str(), option.second.c_str());
+    }
+
+    auto csl_destroy = [](char** options) { CSLDestroy(options); };
+    std::unique_ptr<char*, decltype(csl_destroy)> driver_opt_guard(output_driver_options, csl_destroy);
+    auto gdal_ds = output_driver->Create(path.data(), ds.front().width, ds.front().height, ds.size(), gdal_dt,
+                                         output_driver_options);
+    CHECK_GDAL_PTR(gdal_ds);
+    CHECK_GDAL_ERROR(gdal_ds->SetGeoTransform(ds.front().geo_transform));
+    CHECK_GDAL_ERROR(gdal_ds->SetProjection(ds.front().projection_wkt.data()));
+    auto band_index{gdal::constants::GDAL_DEFAULT_RASTER_BAND};
+    for (auto& band : ds) {
+        CHECK_GDAL_ERROR(gdal_ds->GetRasterBand(band_index)->SetNoDataValue(band.no_data));
+        CHECK_GDAL_ERROR(gdal_ds->GetRasterBand(band_index)
+                             ->RasterIO(GF_Write, 0, 0, band.width, band.height, band.buffer.get(), band.width,
+                                        band.height, gdal_dt, 0, 0));
+        if (release_band_buffer) {
+            band.buffer.reset();
+        }
+        band_index++;
+    }
     GDALClose(gdal_ds);
 }
 

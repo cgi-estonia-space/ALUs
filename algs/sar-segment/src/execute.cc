@@ -119,7 +119,7 @@ alus::SimpleDataset<float> TerrainCorrection(const std::shared_ptr<alus::snapeng
         dem_tiles_length, dem_assistant->GetElevationManager()->GetProperties(), dem_assistant->GetType(),
         dem_assistant->GetElevationManager()->GetPropertiesValue(), selected_band);
     // tc.RegisterMetadata(metadata_);
-    const auto simple_dataset = tc.ExecuteTerrainCorrection(x_tile_size, y_tile_size, true);
+    const auto simple_dataset = tc.ExecuteTerrainCorrection(x_tile_size, y_tile_size, false);
     LOGI << "Terrain correction done - "
          << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - tc_start).count()
          << "ms";
@@ -130,6 +130,8 @@ alus::SimpleDataset<float> TerrainCorrection(const std::shared_ptr<alus::snapeng
 alus::SimpleDataset<float> CalculateDivideAndDb(const alus::SimpleDataset<float>& vh,
                                                 const alus::SimpleDataset<float>& vv, const alus::cuda::CudaDevice& dev,
                                                 size_t gpu_mem_percentage) {
+    LOGI << "Dividing VH/VV and calculating dB values";
+    const auto time_start = std::chrono::steady_clock::now();
     // Pass also gpu memory percentage and how much available? Single TC GRD takes ~3.5Gb
     // Try to do in one pass the following - tile of VH and VV + tile of div_VH_VV - now all to dB, then move back,
     // delete from GPU memory, start new calculation and then write to GeoTIFF async.
@@ -208,8 +210,9 @@ alus::SimpleDataset<float> CalculateDivideAndDb(const alus::SimpleDataset<float>
         vh.buffer[index] = alus::math::calcfuncs::Decibel(vh_val, no_data);
         vv.buffer[index] = alus::math::calcfuncs::Decibel(vv_val, no_data);
     }
-    LOGI << "Done on CPU";
-    LOGI << "Calculations done";
+    LOGI << "Segmentation representation done - "
+         << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - time_start).count()
+         << "ms";
 
     return vh_div_vv;
 }
@@ -221,7 +224,6 @@ namespace alus::sarsegment {
 Execute::Execute(Parameters params, const std::vector<std::string>& dem_files)
     : params_{std::move(params)}, dem_files_{dem_files} {
     alus::gdalmanagement::Initialize();
-    //alus::gdalmanagement::SetCacheMax(12e9);
 }
 
 void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t gpu_memory_percentage) {
@@ -282,46 +284,21 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t gpu_memory_percentage)
     auto simple_ds_vv = TerrainCorrection(product, calib_datasets.front().get(), dem_assistant);
     auto simple_ds_vh = TerrainCorrection(product, calib_datasets.back().get(), dem_assistant);
     dem_assistant->GetElevationManager()->ReleaseFromDevice();
+
     const auto vh_div_vv_buffer = CalculateDivideAndDb(simple_ds_vh, simple_ds_vv, cuda_device, gpu_memory_percentage);
 
     LOGI << "Start write";
     std::string x_tile_sz = FindOptimalTileSize(simple_ds_vv.width);
     std::string y_tile_sz = FindOptimalTileSize(simple_ds_vv.height);
-    char** output_driver_options = nullptr;
-    output_driver_options = CSLSetNameValue(output_driver_options, "TILED", "YES");
-    output_driver_options = CSLSetNameValue(output_driver_options, "BLOCKXSIZE", x_tile_sz.c_str());
-    output_driver_options = CSLSetNameValue(output_driver_options, "BLOCKYSIZE", y_tile_sz.c_str());
-    //output_driver_options = CSLSetNameValue(output_driver_options, "NUM_THREADS", "ALL_CPUS");
-    output_driver_options = CSLSetNameValue(output_driver_options, "COMPRESS", "LZW");
-    auto csl_destroy = [](char** options) { CSLDestroy(options); };
-    std::unique_ptr<char*, decltype(csl_destroy)> driver_opt_guard(output_driver_options, csl_destroy);
-    auto gdal_ds = (GDALDataset*)GDALCreate(GetGdalGeoTiffDriver(), "/tmp/sar_segment.tif", simple_ds_vv.width, simple_ds_vv.height,
-                              3, GDT_Float32, output_driver_options);
-    CHECK_GDAL_PTR(gdal_ds);
-    CHECK_GDAL_ERROR(gdal_ds->SetProjection(simple_ds_vv.projection_wkt.c_str()));
-    CHECK_GDAL_ERROR(gdal_ds->SetGeoTransform(const_cast<double*>(simple_ds_vv.geo_transform)));
-    CHECK_GDAL_ERROR(gdal_ds->GetRasterBand(1)->SetNoDataValue(simple_ds_vv.no_data));
-    CHECK_GDAL_ERROR(gdal_ds->GetRasterBand(2)->SetNoDataValue(simple_ds_vh.no_data));
-    CHECK_GDAL_ERROR(gdal_ds->GetRasterBand(3)->SetNoDataValue(vh_div_vv_buffer.no_data));
-    CHECK_GDAL_ERROR(gdal_ds->GetRasterBand(1)->RasterIO(GF_Write, 0, 0, simple_ds_vv.width, simple_ds_vv.height,
-                                                         simple_ds_vv.buffer.get(), simple_ds_vv.width,
-                                                         simple_ds_vv.height, GDALDataType::GDT_Float32, 0, 0));
-    LOGI << "Checkpoint";
-    simple_ds_vv.buffer.reset();
-    LOGI << "Band 1 " << (GDALGetCacheUsed64() >> 20);
-    CHECK_GDAL_ERROR(gdal_ds->GetRasterBand(2)->RasterIO(GF_Write, 0, 0, simple_ds_vh.width, simple_ds_vh.height,
-                                                         simple_ds_vh.buffer.get(), simple_ds_vh.width,
-                                                         simple_ds_vh.height, GDALDataType::GDT_Float32, 0, 0));
-
-    LOGI << "Checkpoint";
-    simple_ds_vh.buffer.reset();
-    LOGI << "Band 2 " << (GDALGetCacheUsed64() >> 20);
-    CHECK_GDAL_ERROR(gdal_ds->GetRasterBand(3)->RasterIO(GF_Write, 0, 0, simple_ds_vh.width, simple_ds_vh.height,
-                                                         vh_div_vv_buffer.buffer.get(), simple_ds_vh.width,
-                                                         simple_ds_vh.height, GDALDataType::GDT_Float32, 0, 0));
-    LOGI << "Band 3 " << (GDALGetCacheUsed64() >> 20);
-    GDALClose(gdal_ds);
-    LOGI << "Close";
+    std::vector<std::pair<std::string, std::string>> driver_options;
+    driver_options.emplace_back("TILED", "YES");
+    driver_options.emplace_back("BLOCKXSIZE", x_tile_sz.c_str());
+    driver_options.emplace_back("BLOCKYSIZE", y_tile_sz.c_str());
+    driver_options.emplace_back("COMPRESS", "LZW");
+    driver_options.emplace_back("BIGTIFF", "YES");
+    std::vector<SimpleDataset<float>> bands{simple_ds_vv, simple_ds_vh, vh_div_vv_buffer};
+    WriteSimpleDatasetToGeoTiff(bands, "/tmp/sar_segment.tif", driver_options, true);
+    LOGI << "Done";
 }
 
 void Execute::ParseCalibrationType(std::string_view type) {
