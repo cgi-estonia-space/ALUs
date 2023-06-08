@@ -66,10 +66,15 @@ perito_moreno_test_exit=$?
 echo "
 *****Maharashtra coherence SLC scenes with COPDEM 30m COG******"
 ./run_maharashtra_coherence_test.sh $test_datasets_dir $copdem30_files_dir $orbit_files_dir $products_output
+maharashtra_coherence_test=$?
 echo "
 *****UKR GRD calibration with COPDEM 30m COG******"
 ./run_ukr_grd_test.sh $test_datasets_dir $copdem30_files_dir $products_output
+ukr_grd_test=$?
 echo "
+*****Segmentation generation test******"
+./run_segmentation_test.sh $test_datasets_dir $copdem30_files_dir $products_output
+segmentation_test=$?
 *****Jupyter notebook tests*****"
 python3 -m venv .env
 source .env/bin/activate
@@ -78,4 +83,5 @@ jupyter_test_exit=$?
 deactivate
 
 exit $((disaster_test_exit | virumaa_calibration_test_exit | flood_test_exit | maharashtra_calibration_test_exit | \
-        resample_test_exit | gabor_feature_extraction_exit | jupyter_test_exit | perito_moreno_test_exit))
+        resample_test_exit | gabor_feature_extraction_exit | jupyter_test_exit | perito_moreno_test_exit | \
+        maharashtra_coherence_test | ukr_grd_test | segmentation_test))
