@@ -66,7 +66,7 @@ void Arguments::Construct() {
         ("input,i", po::value<std::string>(&input_)->required(), "Input SAFE dataset (zipped or unpacked)")
         ("output,o", po::value<std::string>(&output_)->required(), "Output folder or filename")
         ("type,t", po::value<std::string>(&calibration_type_)->required(), calibration_type_help.c_str())
-        ("win", po::value<size_t>(&despeckle_window_), "Despeckle window size for Refined Lee filter."
+        ("win", po::value<size_t>(&despeckle_window_), "Despeckle window size for Refined Lee filter. "
                                                        "Usually 3,5...17. When unspecified no despeckle processed.")
         ("dem", po::value<std::vector<std::string>>(&dem_files_)->required(),
          "DEM file(s). SRTM3 and Copernicus DEM 30m COG are currently supported.");

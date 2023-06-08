@@ -30,7 +30,7 @@ fi
 mkdir -p $output_dir
 
 test_1_prod_path=$output_dir/S1A_IW_GRDH_1SDV_20230130T152052_20230130T152117_047015_05A3B0_874C_tnr_cal_tc_segment.tif
-time alus-cal -i $test_dataset_dir/S1A_IW_GRDH_1SDV_20230130T152052_20230130T152117_047015_05A3B0_874C.SAFE \
+time alus-sar-segment -i $test_dataset_dir/S1A_IW_GRDH_1SDV_20230130T152052_20230130T152117_047015_05A3B0_874C.SAFE \
      -o $test_1_prod_path -t gamma --ll info \
      --dem $dem_files_dir/Copernicus_DSM_COG_10_N47_00_E035_00_DEM.tif \
      --dem $dem_files_dir/Copernicus_DSM_COG_10_N47_00_E036_00_DEM.tif \
@@ -50,7 +50,7 @@ time alus-cal -i $test_dataset_dir/S1A_IW_GRDH_1SDV_20230130T152052_20230130T152
 
 
 test_2_prod_path=$output_dir/S1A_IW_GRDH_1SDV_20230130T152052_20230130T152117_047015_05A3B0_874C_tnr_cal_tc_despeckle_segment.tif
-time alus-cal -i $test_dataset_dir/S1A_IW_GRDH_1SDV_20230130T152052_20230130T152117_047015_05A3B0_874C.SAFE \
+time alus-sar-segment -i $test_dataset_dir/S1A_IW_GRDH_1SDV_20230130T152052_20230130T152117_047015_05A3B0_874C.SAFE \
      -o $test_2_prod_path -t gamma --win 3 --ll info \
      --dem $dem_files_dir/Copernicus_DSM_COG_10_N47_00_E035_00_DEM.tif \
      --dem $dem_files_dir/Copernicus_DSM_COG_10_N47_00_E036_00_DEM.tif \

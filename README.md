@@ -31,6 +31,7 @@ Each algorithm is a separate executable. Currently available ones are (more info
 * Sentinel 2 and other raster resample and tiling - ``alus-resa`` ([README](algs/resample/README.md))
 * Gabor feature extraction - ``alus-gfe`` ([README](algs/feature-extraction-gabor/README.md))
 * PALSAR level 0 focuser - ``alus-palsar-focus`` ([README](algs/palsar-focus/README.md))
+* SAR segmentation generation - ``alus-sar-segment`` ([README](algs/sar-segment/README.md))
 
 When building separately, these are located at ``<build_dir>/alus_package``
 
