@@ -21,9 +21,9 @@
 #include <gdal_priv.h>
 #include <boost/algorithm/string/predicate.hpp>
 
+#include "abstract_metadata.h"
 #include "algorithm_exception.h"
 #include "alus_log.h"
-#include "calc_funcs.h"
 #include "constants.h"
 #include "cuda_copies.h"
 #include "cuda_mem_arena.h"
@@ -33,7 +33,6 @@
 #include "gdal_util.h"
 #include "kernel_array.h"
 #include "memory_policy.h"
-#include "metadata_record.h"
 #include "product.h"
 #include "product_name.h"
 #include "sar_segment_kernels.h"
@@ -128,8 +127,8 @@ alus::SimpleDataset<float> TerrainCorrection(const std::shared_ptr<alus::snapeng
 }
 
 alus::SimpleDataset<float> CalculateDivideAndDb(const alus::SimpleDataset<float>& vh,
-                                                const alus::SimpleDataset<float>& vv, const alus::cuda::CudaDevice& dev,
-                                                size_t gpu_mem_percentage) {
+                                                const alus::SimpleDataset<float>& vv, bool process_speckle,
+                                                const alus::cuda::CudaDevice& dev, size_t gpu_mem_percentage) {
     LOGI << "Dividing VH/VV and calculating dB values";
     const auto time_start = std::chrono::steady_clock::now();
     // Pass also gpu memory percentage and how much available? Single TC GRD takes ~3.5Gb
@@ -145,8 +144,10 @@ alus::SimpleDataset<float> CalculateDivideAndDb(const alus::SimpleDataset<float>
     for (size_t i = tile_height; i <= static_cast<size_t>(vh.height); i++) {
         auto memory_budget_registry = alus::cuda::MemoryAllocationForecast(dev.GetMemoryAlignment());
         // We need to allocate for VH, VV and VH/VV all are preserved in the memory for dB calculation as well.
+        // Plus an extra buffer for despeckle.
         const auto proposed_tile_size_bytes = tile_width * i * sizeof(float);
         memory_budget_registry.Add(proposed_tile_size_bytes);  // This counts the alignment as well.
+        memory_budget_registry.Add(proposed_tile_size_bytes);
         memory_budget_registry.Add(proposed_tile_size_bytes);
         memory_budget_registry.Add(proposed_tile_size_bytes);
         if (memory_police.CanFit(memory_budget_registry.Get() + CUSHION)) {
@@ -171,18 +172,27 @@ alus::SimpleDataset<float> CalculateDivideAndDb(const alus::SimpleDataset<float>
     alus::cuda::MemArena vh_div_vv_dev_arena(tile_width * tile_height * sizeof(float));
     alus::cuda::KernelArray<float> vh_div_vv_dev;
     vh_div_vv_dev.array = vh_div_vv_dev_arena.AllocArray<float>(tile_width * tile_height);
+    alus::cuda::MemArena despeckle_buffer_arena(tile_width * tile_height * sizeof(float));
+    alus::cuda::KernelArray<float> despeckle_buffer;
+    despeckle_buffer.array = despeckle_buffer_arena.AllocArray<float>(tile_width * tile_height);
     for (auto i{0u}; i < scene_height; i += tile_height) {
         const auto computed_tile_height = std::min(tile_height, scene_height - i);
         const auto host_buffer_offset = i * tile_width;
         const auto computed_tile_pixel_count = tile_width * computed_tile_height;
-        // const auto computed_tile_size_bytes = computed_tile_pixel_count * sizeof(float);
+        // Create VH/VV
         alus::cuda::CopyArrayH2D(vh_dev.array, vh.buffer.get() + host_buffer_offset, computed_tile_pixel_count);
         vh_dev.size = computed_tile_pixel_count;
         alus::cuda::CopyArrayH2D(vv_dev.array, vv.buffer.get() + host_buffer_offset, computed_tile_pixel_count);
         vv_dev.size = computed_tile_pixel_count;
         alus::sarsegment::ComputeDivision(vh_div_vv_dev, vh_dev, vv_dev, tile_width, computed_tile_height, vh.no_data);
         vh_div_vv_dev.size = computed_tile_pixel_count;
-        // Do not forget to Despeckle.
+        // Despeckle
+        if (process_speckle) {
+            alus::sarsegment::Despeckle(vh_dev, despeckle_buffer, tile_width, tile_height, vh.no_data);
+            alus::sarsegment::Despeckle(vv_dev, despeckle_buffer, tile_width, tile_height, vv.no_data);
+            alus::sarsegment::Despeckle(vh_div_vv_dev, despeckle_buffer, tile_width, tile_height, vh_div_vv.no_data);
+        }
+        // dB
         alus::sarsegment::ComputeDecibel(vh_dev, tile_width, computed_tile_height, vh.no_data);
         alus::sarsegment::ComputeDecibel(vv_dev, tile_width, computed_tile_height, vv.no_data);
         alus::sarsegment::ComputeDecibel(vh_div_vv_dev, tile_width, computed_tile_height, vh_div_vv.no_data);
@@ -224,6 +234,17 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t gpu_memory_percentage)
     if (create_prod_name) {
         prod_name.Add(product->GetName());
     }
+
+    metadata_.Add("BANDS", "VV VH VH/VV");
+    metadata_.Add("UNIT", "dB");
+    metadata_.Add(common::metadata::sentinel1::SENSING_START,
+                  snapengine::AbstractMetadata::GetAbstractedMetadata(product)
+                      ->GetAttributeUtc(alus::snapengine::AbstractMetadata::FIRST_LINE_TIME)
+                      ->ToString());
+    metadata_.Add(common::metadata::sentinel1::SENSING_END,
+                  snapengine::AbstractMetadata::GetAbstractedMetadata(product)
+                      ->GetAttributeUtc(alus::snapengine::AbstractMetadata::LAST_LINE_TIME)
+                      ->ToString());
 
     std::vector<std::shared_ptr<snapengine::Product>> tnr_in_products;
     std::shared_ptr<Dataset<uint16_t>> grd_ds_vv;
@@ -271,6 +292,7 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t gpu_memory_percentage)
     if (create_prod_name) {
         prod_name.Add("cal");
     }
+    metadata_.Add("CALIBRATION", params_.calibration_type);
 
     dem_assistant->GetElevationManager()->TransferToDevice();
 
@@ -281,8 +303,13 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t gpu_memory_percentage)
     }
     dem_assistant->GetElevationManager()->ReleaseFromDevice();
 
-    const auto vh_div_vv_buffer = CalculateDivideAndDb(simple_ds_vh, simple_ds_vv, cuda_device, gpu_memory_percentage);
+    auto vh_div_vv_buffer =
+        CalculateDivideAndDb(simple_ds_vh, simple_ds_vv, params_.remove_speckle, cuda_device, gpu_memory_percentage);
     if (create_prod_name) {
+        if (params_.remove_speckle) {
+            prod_name.Add("speckle");
+            metadata_.Add("DESPECKLE_WINDOW", std::to_string(params_.refined_lee_window_size));
+        }
         prod_name.Add("segment");
     }
 
@@ -297,7 +324,11 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t gpu_memory_percentage)
     driver_options.emplace_back("COMPRESS", "LZW");
     driver_options.emplace_back("BIGTIFF", "YES");
     std::vector<SimpleDataset<float>> bands{simple_ds_vv, simple_ds_vh, vh_div_vv_buffer};
-    WriteSimpleDatasetToGeoTiff(bands, result_filepath, driver_options, true);
+    // Reset counters for buffer, need to erase memory after write.
+    simple_ds_vv.buffer.reset();
+    simple_ds_vh.buffer.reset();
+    vh_div_vv_buffer.buffer.reset();
+    WriteSimpleDatasetToGeoTiff(std::move(bands), result_filepath, driver_options, metadata_, true);
     LOGI << "Done";
 }
 
@@ -316,9 +347,14 @@ void Execute::ParseCalibrationType(std::string_view type) {
 }
 
 void Execute::PrintProcessingParameters() const {
+    std::string despeckle_params =
+        "Despeckle - " + (params_.remove_speckle
+                              ? std::string("YES") + " window size " + std::to_string(params_.refined_lee_window_size)
+                              : std::string("NO"));
     LOGI << "Processing parameters:" << std::endl
          << "Input product - " << params_.input << std::endl
-         << "Calibration type - " << params_.calibration_type << std::endl;
+         << "Calibration type - " << params_.calibration_type << std::endl
+         << despeckle_params << std::endl;
 }
 
 Execute::~Execute() { alus::gdalmanagement::Deinitialize(); }

@@ -172,10 +172,12 @@ inline TypeParameters CreateTypeParametersFrom(GDALDataType dt) {
 
 void GeoTiffWriteFile(GDALDataset* input_dataset, std::string_view output_file);
 
+void AddMetadataTo(GDALDataset* ds, const common::metadata::Container& md);
+
 template <typename T>
 void WriteSimpleDatasetToGeoTiff(std::vector<SimpleDataset<T>> ds, std::string_view path,
                                  const std::vector<std::pair<std::string, std::string>>& options,
-                                 bool release_band_buffer = false) {
+                                 const common::metadata::Container& md, bool release_band_buffer = false) {
     auto output_driver = GetGdalGeoTiffDriver();
     CHECK_GDAL_PTR(output_driver);
 
@@ -203,6 +205,7 @@ void WriteSimpleDatasetToGeoTiff(std::vector<SimpleDataset<T>> ds, std::string_v
         }
         band_index++;
     }
+    AddMetadataTo(gdal_ds, md);
     GDALClose(gdal_ds);
 }
 
@@ -217,7 +220,5 @@ std::string FindOptimalTileSize(int raster_dimension);
 std::string AdjustFilePath(std::string_view file_path);
 
 std::string ConvertToWkt(std::string_view shp_file_path);
-
-void AddMetadataTo(GDALDataset* ds, const common::metadata::Container& md);
 
 }  // namespace alus

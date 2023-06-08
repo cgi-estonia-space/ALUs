@@ -28,6 +28,8 @@ public:
         std::string input;
         std::string output;
         std::string calibration_type;
+        bool remove_speckle;
+        size_t refined_lee_window_size;
     };
 
     Execute() = delete;

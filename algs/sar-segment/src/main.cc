@@ -32,6 +32,8 @@ alus::sarsegment::Execute::Parameters AssembleParameters(const alus::sarsegment:
     params.input = args.GetInput();
     params.output = args.GetOutput();
     params.calibration_type = args.GetCalibrationType();
+    params.remove_speckle = args.DespeckleRequested();
+    params.refined_lee_window_size = args.GetDespeckleWindow();
 
     return params;
 }

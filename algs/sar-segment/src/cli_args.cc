@@ -31,11 +31,18 @@ Arguments::Arguments(const std::vector<char*>& args) : Arguments() { Parse(args)
 
 void Arguments::Parse(const std::vector<char*>& args) {
     po::store(po::parse_command_line(static_cast<int>(args.size()), args.data(), combined_args_), vm_);
+
+    if (vm_.count("win")) {
+        despeckle_requested_ = true;
+    }
 }
 
 void Arguments::Check() {
     boost::program_options::notify(vm_);
 
+    if (despeckle_requested_ && despeckle_window_ == 0) {
+        throw std::invalid_argument("Descpeckle window size 0 is invalid.");
+    }
     alus_args_.Check();
 }
 
@@ -59,6 +66,8 @@ void Arguments::Construct() {
         ("input,i", po::value<std::string>(&input_)->required(), "Input SAFE dataset (zipped or unpacked)")
         ("output,o", po::value<std::string>(&output_)->required(), "Output folder or filename")
         ("type,t", po::value<std::string>(&calibration_type_)->required(), calibration_type_help.c_str())
+        ("win", po::value<size_t>(&despeckle_window_), "Despeckle window size for Refined Lee filter."
+                                                       "Usually 3,5...17. When unspecified no despeckle processed.")
         ("dem", po::value<std::vector<std::string>>(&dem_files_)->required(),
          "DEM file(s). SRTM3 and Copernicus DEM 30m COG are currently supported.");
     // clang-format on

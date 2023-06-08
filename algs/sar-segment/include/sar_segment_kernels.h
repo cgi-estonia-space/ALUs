@@ -24,4 +24,8 @@ void ComputeDivision(cuda::KernelArray<float> vh_div_vv_dest, cuda::KernelArray<
                      size_t width, size_t height, float no_data);
 
 void ComputeDecibel(cuda::KernelArray<float> buffer, size_t width, size_t height, float no_data);
+
+void Despeckle(cuda::KernelArray<float> in, cuda::KernelArray<float> despeckle_buffer, size_t width, size_t height,
+               float no_data);
+
 }  // namespace alus::sarsegment
