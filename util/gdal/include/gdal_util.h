@@ -209,6 +209,29 @@ void WriteSimpleDatasetToGeoTiff(std::vector<SimpleDataset<T>> ds, std::string_v
     GDALClose(gdal_ds);
 }
 
+template <typename T>
+void FetchSimpleDatasetFromGdalDataset(SimpleDataset<T>& ds, GDALDataset* gdal_ds) {
+    const auto width = gdal_ds->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)->GetXSize();
+    const auto height = gdal_ds->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)->GetYSize();
+
+    ds.buffer = std::shared_ptr<T[]>(new T[width * height]);
+    ds.width = width;
+    ds.height = height;
+    ds.no_data = static_cast<T>(gdal_ds->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)->GetNoDataValue());
+    CHECK_GDAL_ERROR(gdal_ds->GetGeoTransform(ds.geo_transform));
+    ds.projection_wkt = gdal_ds->GetProjectionRef();
+
+    CHECK_GDAL_ERROR(
+        gdal_ds->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)
+            ->RasterIO(GF_Read, 0, 0, width, height, ds.buffer.get(), width, height, FindGdalDataType<T>(), 0, 0));
+}
+
+template <typename T>
+void StoreSimpleDatasetToGdalRasterBand(SimpleDataset<T>& ds, GDALRasterBand* gdal_band) {
+    CHECK_GDAL_ERROR(gdal_band->RasterIO(GF_Write, 0, 0, ds.width, ds.height, ds.buffer.get(), ds.width, ds.height,
+                                         FindGdalDataType<T>(), 0, 0));
+}
+
 std::string FindOptimalTileSize(int raster_dimension);
 
 /**

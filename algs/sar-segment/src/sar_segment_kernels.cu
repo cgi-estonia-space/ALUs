@@ -44,15 +44,13 @@ void ComputeDecibel(cuda::KernelArray<float> buffer, size_t width, size_t height
     CHECK_CUDA_ERR(cudaGetLastError());
 }
 
-void Despeckle(cuda::KernelArray<float> in, cuda::KernelArray<float> despeckle_buffer, size_t width, size_t height,
-               float no_data) {
+void Despeckle(cuda::KernelArray<float> in, cuda::KernelArray<float> despeckle_buffer, size_t width, size_t height, size_t window) {
     dim3 block_size{16, 16};
     dim3 main_kernel_grid_size{static_cast<unsigned int>(width / block_size.x + 1),
                                static_cast<unsigned int>(height / block_size.y + 1)};
-    math::filters::RefinedLee<<<main_kernel_grid_size, block_size>>>(in, despeckle_buffer, width, height, 5, no_data);
+    math::filters::RefinedLee<<<main_kernel_grid_size, block_size>>>(in, despeckle_buffer, width, height, window);
     CHECK_CUDA_ERR(cudaDeviceSynchronize());
     CHECK_CUDA_ERR(cudaGetLastError());
-    CHECK_CUDA_ERR(cudaMemcpy(in.array, despeckle_buffer.array, in.ByteSize(), cudaMemcpyDeviceToDevice));
 }
 
 }  // namespace alus::sarsegment

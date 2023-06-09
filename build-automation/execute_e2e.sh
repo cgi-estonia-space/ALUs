@@ -75,6 +75,7 @@ echo "
 *****Segmentation generation test******"
 ./run_segmentation_test.sh $test_datasets_dir $copdem30_files_dir $products_output
 segmentation_test=$?
+echo "
 *****Jupyter notebook tests*****"
 python3 -m venv .env
 source .env/bin/activate
