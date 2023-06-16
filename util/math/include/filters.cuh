@@ -19,6 +19,6 @@
 namespace alus::math::filters {
 
 __global__ void RefinedLee(cuda::KernelArray<float> in, cuda::KernelArray<float> out, int width, int height,
-                           int window);
+                           int window, float no_data);
 
 }

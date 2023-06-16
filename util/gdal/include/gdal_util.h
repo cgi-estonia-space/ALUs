@@ -175,7 +175,7 @@ void GeoTiffWriteFile(GDALDataset* input_dataset, std::string_view output_file);
 void AddMetadataTo(GDALDataset* ds, const common::metadata::Container& md);
 
 template <typename T>
-void WriteSimpleDatasetToGeoTiff(std::vector<SimpleDataset<T>> ds, std::string_view path,
+void WriteSimpleDatasetToGeoTiff(std::vector<SimpleDataset<T>>& ds, std::string_view path,
                                  const std::vector<std::pair<std::string, std::string>>& options,
                                  const common::metadata::Container& md, bool release_band_buffer = false) {
     auto output_driver = GetGdalGeoTiffDriver();
@@ -192,6 +192,7 @@ void WriteSimpleDatasetToGeoTiff(std::vector<SimpleDataset<T>> ds, std::string_v
     auto gdal_ds = output_driver->Create(path.data(), ds.front().width, ds.front().height, ds.size(), gdal_dt,
                                          output_driver_options);
     CHECK_GDAL_PTR(gdal_ds);
+    std::unique_ptr<GDALDataset, decltype(&GDALClose)> gdal_close_guard(gdal_ds, GDALClose);
     CHECK_GDAL_ERROR(gdal_ds->SetGeoTransform(ds.front().geo_transform));
     CHECK_GDAL_ERROR(gdal_ds->SetProjection(ds.front().projection_wkt.data()));
     auto band_index{gdal::constants::GDAL_DEFAULT_RASTER_BAND};
@@ -206,7 +207,6 @@ void WriteSimpleDatasetToGeoTiff(std::vector<SimpleDataset<T>> ds, std::string_v
         band_index++;
     }
     AddMetadataTo(gdal_ds, md);
-    GDALClose(gdal_ds);
 }
 
 template <typename T>
@@ -214,7 +214,7 @@ void FetchSimpleDatasetFromGdalDataset(SimpleDataset<T>& ds, GDALDataset* gdal_d
     const auto width = gdal_ds->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)->GetXSize();
     const auto height = gdal_ds->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)->GetYSize();
 
-    ds.buffer = std::shared_ptr<T[]>(new T[width * height]);
+    ds.buffer = std::unique_ptr<T[]>(new T[width * height]);
     ds.width = width;
     ds.height = height;
     ds.no_data = static_cast<T>(gdal_ds->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)->GetNoDataValue());

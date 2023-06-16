@@ -89,7 +89,7 @@ struct TerrainCorrection::SharedThreadData {
     std::mutex gdal_write_mutex;
     float no_data_value;
     int output_buffer_stride;
-    std::shared_ptr<float[]> output_buffer{};
+    float* output_buffer{};
     std::exception_ptr exception_ptr = nullptr;
     std::mutex exception_mutex;
 
@@ -331,15 +331,15 @@ void TerrainCorrection::ExecuteTerrainCorrection(std::string_view output_file_na
     }
 }
 
-SimpleDataset<float> TerrainCorrection::ExecuteTerrainCorrection(size_t tile_width, size_t tile_height,
-                                                                 bool output_db_values) {
+void TerrainCorrection::ExecuteTerrainCorrection(SimpleDataset<float>& target_dataset, size_t tile_width,
+                                                 size_t tile_height, bool output_db_values) {
     // Calculate target dimensions
     auto const ds_y_size{
         static_cast<size_t>(input_ds_->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)->GetYSize())};
 
     snapengine::geocoding::TiePointGeocoding source_geocoding(lat_tie_point_grid_, lon_tie_point_grid_);
     int diff_lat;
-    auto target_dataset = CreateSimpleTargetProduct(&source_geocoding, diff_lat);
+    CreateSimpleTargetProduct(target_dataset, &source_geocoding, diff_lat);
     auto const target_x_size{target_dataset.width};
     auto const target_y_size{target_dataset.height};
 
@@ -379,7 +379,7 @@ SimpleDataset<float> TerrainCorrection::ExecuteTerrainCorrection(size_t tile_wid
     shared_data.terrain_correction = this;
     shared_data.sink_option = DataSinkOption::MEMORY_BUFFER;
     shared_data.output_buffer_stride = target_x_size;
-    shared_data.output_buffer = target_dataset.buffer;
+    shared_data.output_buffer = target_dataset.buffer.get();
     shared_data.no_data_value = target_dataset.no_data;
     shared_data.input_dataset = input_ds_;
 
@@ -417,8 +417,6 @@ SimpleDataset<float> TerrainCorrection::ExecuteTerrainCorrection(size_t tile_wid
     if (shared_data.exception_ptr != nullptr) {
         std::rethrow_exception(shared_data.exception_ptr);
     }
-
-    return target_dataset;
 }
 
 std::vector<double> TerrainCorrection::ComputeImageBoundary(const snapengine::geocoding::Geocoding* geocoding,
@@ -587,9 +585,8 @@ snapengine::old::Product TerrainCorrection::CreateTargetProduct(
     return target_product;
 }
 
-SimpleDataset<float> TerrainCorrection::CreateSimpleTargetProduct(const snapengine::geocoding::Geocoding* geocoding,
-                                                                  int& diff_lat) {
-    SimpleDataset<float> simple_target_dataset;
+void TerrainCorrection::CreateSimpleTargetProduct(SimpleDataset<float>& target_ds,
+                                                  const snapengine::geocoding::Geocoding* geocoding, int& diff_lat) {
     double pixel_spacing_in_meter = metadata_.azimuth_spacing;
     double pixel_spacing_in_degree =
         pixel_spacing_in_meter / snapengine::eo::constants::SEMI_MAJOR_AXIS * snapengine::eo::constants::RTOD;
@@ -614,38 +611,35 @@ SimpleDataset<float> TerrainCorrection::CreateSimpleTargetProduct(const snapengi
 
     CHECK_OGR_ERROR(target_crs.Validate());
 
-    simple_target_dataset.width = static_cast<int>(std::floor((target_bounds[2]) / pixel_size_x));
-    simple_target_dataset.height = static_cast<int>(std::floor((target_bounds[3]) / pixel_size_y));
+    target_ds.width = static_cast<int>(std::floor((target_bounds[2]) / pixel_size_x));
+    target_ds.height = static_cast<int>(std::floor((target_bounds[3]) / pixel_size_y));
 
     double output_geo_transform[6] = {target_bounds[0], pixel_size_x, 0, target_bounds[1] + target_bounds[3], 0,
                                       -pixel_size_y};
     // Apply shear and translate
     output_geo_transform[0] = output_geo_transform[0] + output_geo_transform[1] * (-0.5);
     output_geo_transform[3] = output_geo_transform[3] + output_geo_transform[5] * (-0.5);
-    std::memcpy(simple_target_dataset.geo_transform, output_geo_transform, 6 * sizeof(double));
+    std::memcpy(target_ds.geo_transform, output_geo_transform, 6 * sizeof(double));
 
     {
         char* projection_wkt = nullptr;
         auto cpl_free = [](char* csl_data) { CPLFree(csl_data); };
         target_crs.exportToWkt(&projection_wkt);
         std::unique_ptr<char, decltype(cpl_free)> projection_guard(projection_wkt, cpl_free);
-        simple_target_dataset.projection_wkt = std::string(projection_wkt);
+        target_ds.projection_wkt = std::string(projection_wkt);
     }
     auto band_info = metadata_.band_info.at(0);
-    simple_target_dataset.no_data = band_info.no_data_value_used && band_info.no_data_value.has_value()
-                                        ? band_info.no_data_value.value()
-                                        : input_ds_->GetRasterBand(selected_band_id_)->GetNoDataValue();
+    target_ds.no_data = band_info.no_data_value_used && band_info.no_data_value.has_value()
+                            ? band_info.no_data_value.value()
+                            : input_ds_->GetRasterBand(selected_band_id_)->GetNoDataValue();
 
     GeoTransformParameters geo_transform_parameters{output_geo_transform[0], output_geo_transform[3],
                                                     output_geo_transform[1], output_geo_transform[5]};
 
     const auto geocoding_stub = snapengine::geocoding::CrsGeocoding(geo_transform_parameters);
     diff_lat = static_cast<int>(std::abs(geocoding_stub.GetPixelCoordinates(0, 0).lat -
-                                         geocoding_stub.GetPixelCoordinates(0, simple_target_dataset.height - 1).lat));
-    simple_target_dataset.buffer =
-        std::shared_ptr<float[]>(new float[simple_target_dataset.width * simple_target_dataset.height]);
-
-    return simple_target_dataset;
+                                         geocoding_stub.GetPixelCoordinates(0, target_ds.height - 1).lat));
+    target_ds.buffer = std::unique_ptr<float[]>(new float[target_ds.width * target_ds.height]);
 }
 
 TerrainCorrection::~TerrainCorrection() { FreeCudaArrays(); }
@@ -765,7 +759,7 @@ void TerrainCorrection::CalculateTile(TcTileIndexPair tile_coordinates, SharedTh
         } else if (shared->sink_option == DataSinkOption::MEMORY_BUFFER) {
             // Strided write.
             for (size_t i = 0; i < tile_coordinates.target_height; i++) {
-                memcpy(shared->output_buffer.get() +
+                memcpy(shared->output_buffer +
                        ((tile_coordinates.target_y_0 + i) * shared->output_buffer_stride + tile_coordinates.target_x_0),
                        ctx->h_target_tile.Get() + (i * tile_coordinates.target_width),
                        tile_coordinates.target_width * sizeof(float));

@@ -97,8 +97,9 @@ void Calibration(const std::vector<std::shared_ptr<alus::snapengine::Product>>& 
          << "ms";
 }
 
-alus::SimpleDataset<float> TerrainCorrection(const std::shared_ptr<alus::snapengine::Product>& merge_product,
-                                             GDALDataset* in_ds, std::shared_ptr<alus::dem::Assistant> dem_assistant) {
+void TerrainCorrection(alus::SimpleDataset<float>& simple_dataset,
+                       const std::shared_ptr<alus::snapengine::Product>& merge_product, GDALDataset* in_ds,
+                       std::shared_ptr<alus::dem::Assistant> dem_assistant) {
     const auto tc_start = std::chrono::steady_clock::now();
 
     alus::terraincorrection::Metadata metadata(merge_product);
@@ -117,16 +118,13 @@ alus::SimpleDataset<float> TerrainCorrection(const std::shared_ptr<alus::snapeng
         in_ds, metadata.GetMetadata(), metadata.GetLatTiePointGrid(), metadata.GetLonTiePointGrid(), d_dem_tiles,
         dem_tiles_length, dem_assistant->GetElevationManager()->GetProperties(), dem_assistant->GetType(),
         dem_assistant->GetElevationManager()->GetPropertiesValue(), selected_band);
-    // tc.RegisterMetadata(metadata_);
-    const auto simple_dataset = tc.ExecuteTerrainCorrection(x_tile_size, y_tile_size, false);
+    tc.ExecuteTerrainCorrection(simple_dataset, x_tile_size, y_tile_size, false);
     LOGI << "Terrain correction done - "
          << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - tc_start).count()
          << "ms";
-
-    return simple_dataset;
 }
 
-void ProcessDespeckle(alus::SimpleDataset<float>& vv, alus::SimpleDataset<float>& vh, size_t window,
+void ProcessDespeckle(alus::SimpleDataset<float>& vv, alus::SimpleDataset<float>& vh, size_t window, float no_data,
                       const alus::cuda::CudaDevice& dev, size_t gpu_mem_percentage) {
     LOGI << "Despeckle using Refined Lee filter";
     const auto time_start = std::chrono::steady_clock::now();
@@ -176,9 +174,9 @@ void ProcessDespeckle(alus::SimpleDataset<float>& vv, alus::SimpleDataset<float>
         alus::cuda::CopyArrayH2D(vh_dev.array, vh.buffer.get() + host_buffer_offset, vh_dev.size);
         vv_dev.size = computed_tile_pixel_count;
         alus::cuda::CopyArrayH2D(vv_dev.array, vv.buffer.get() + host_buffer_offset, vv_dev.size);
-        alus::sarsegment::Despeckle(vv_dev, despeckle_buffer, tile_width, tile_height, window);
+        alus::sarsegment::Despeckle(vv_dev, despeckle_buffer, tile_width, tile_height, window, no_data);
         alus::cuda::CopyArrayD2H(vv.buffer.get() + host_buffer_offset, despeckle_buffer.array, vv_dev.size);
-        alus::sarsegment::Despeckle(vh_dev, despeckle_buffer, tile_width, tile_height, window);
+        alus::sarsegment::Despeckle(vh_dev, despeckle_buffer, tile_width, tile_height, window, no_data);
         alus::cuda::CopyArrayD2H(vh.buffer.get() + host_buffer_offset, despeckle_buffer.array, vh_dev.size);
     }
 
@@ -187,14 +185,11 @@ void ProcessDespeckle(alus::SimpleDataset<float>& vv, alus::SimpleDataset<float>
          << "ms";
 }
 
-alus::SimpleDataset<float> CalculateDivideAndDb(const alus::SimpleDataset<float>& vh,
-                                                const alus::SimpleDataset<float>& vv, const alus::cuda::CudaDevice& dev,
-                                                size_t gpu_mem_percentage) {
+void CalculateDivideAndDb(const alus::SimpleDataset<float>& vh, const alus::SimpleDataset<float>& vv,
+                          alus::SimpleDataset<float>& vh_div_vv, const alus::cuda::CudaDevice& dev,
+                          size_t gpu_mem_percentage) {
     LOGI << "Dividing VH/VV and calculating dB values";
     const auto time_start = std::chrono::steady_clock::now();
-    // Pass also gpu memory percentage and how much available? Single TC GRD takes ~3.5Gb
-    // Try to do in one pass the following - tile of VH and VV + tile of div_VH_VV - now all to dB, then move back,
-    // delete from GPU memory, start new calculation and then write to GeoTIFF async.
     const auto allocation_step = static_cast<size_t>(vh.width);
     const auto memory_police = alus::cuda::MemoryFitPolice(dev, gpu_mem_percentage);
     constexpr size_t CUSHION{200 << 20};  // 200 MiB leverage for not pushing it too tight.
@@ -220,8 +215,12 @@ alus::SimpleDataset<float> CalculateDivideAndDb(const alus::SimpleDataset<float>
     }
 
     LOGD << "Suitable tile size for GPU device " << tile_width << "x" << tile_height;
-    alus::SimpleDataset<float> vh_div_vv = vh;
-    vh_div_vv.buffer = std::shared_ptr<float[]>(new float[vh.width * vh.height]);
+    vh_div_vv.buffer = std::unique_ptr<float[]>(new float[vh.width * vh.height]);
+    vh_div_vv.height = vh.height;
+    vh_div_vv.width = vh.width;
+    vh_div_vv.no_data = vh.no_data;
+    vh_div_vv.projection_wkt = vh.projection_wkt;
+    std::memcpy(vh_div_vv.geo_transform, vh.geo_transform, sizeof(vh.geo_transform));
     alus::cuda::MemArena vh_dev_arena(tile_width * tile_height * sizeof(float));
     alus::cuda::KernelArray<float> vh_dev;
     vh_dev.array = vh_dev_arena.AllocArray<float>(tile_width * tile_height);
@@ -254,8 +253,6 @@ alus::SimpleDataset<float> CalculateDivideAndDb(const alus::SimpleDataset<float>
     LOGI << "Segmentation representation done - "
          << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - time_start).count()
          << "ms";
-
-    return vh_div_vv;
 }
 
 }  // namespace
@@ -349,7 +346,7 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t gpu_memory_percentage)
         FetchSimpleDatasetFromGdalDataset(simple_ds_vv, calib_datasets.front().get());
         SimpleDataset<float> simple_ds_vh;
         FetchSimpleDatasetFromGdalDataset(simple_ds_vh, calib_datasets.back().get());
-        ProcessDespeckle(simple_ds_vv, simple_ds_vh, params_.refined_lee_window_size, cuda_device,
+        ProcessDespeckle(simple_ds_vv, simple_ds_vh, params_.refined_lee_window_size, 0, cuda_device,
                          gpu_memory_percentage);
         StoreSimpleDatasetToGdalRasterBand(
             simple_ds_vv, calib_datasets.front()->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND));
@@ -363,34 +360,30 @@ void Execute::Run(alus::cuda::CudaInit& cuda_init, size_t gpu_memory_percentage)
 
     dem_assistant->GetElevationManager()->TransferToDevice();
 
-    auto simple_ds_vv = TerrainCorrection(product, calib_datasets.front().get(), dem_assistant);
-    auto simple_ds_vh = TerrainCorrection(product, calib_datasets.back().get(), dem_assistant);
+    std::vector<SimpleDataset<float>> bands(3);
+    TerrainCorrection(bands.at(0), product, calib_datasets.front().get(), dem_assistant);
+    TerrainCorrection(bands.at(1), product, calib_datasets.back().get(), dem_assistant);
     if (create_prod_name) {
         prod_name.Add("tc");
     }
     dem_assistant->GetElevationManager()->ReleaseFromDevice();
 
-    auto vh_div_vv_buffer = CalculateDivideAndDb(simple_ds_vh, simple_ds_vv, cuda_device, gpu_memory_percentage);
+    CalculateDivideAndDb(bands.at(1), bands.at(0), bands.at(2), cuda_device, gpu_memory_percentage);
     if (create_prod_name) {
         prod_name.Add("segment");
     }
 
     const auto result_filepath = prod_name.Construct(".tif");
     LOGI << "Start write " << result_filepath;
-    std::string x_tile_sz = FindOptimalTileSize(simple_ds_vv.width);
-    std::string y_tile_sz = FindOptimalTileSize(simple_ds_vv.height);
+    std::string x_tile_sz = FindOptimalTileSize(bands.front().width);
+    std::string y_tile_sz = FindOptimalTileSize(bands.front().height);
     std::vector<std::pair<std::string, std::string>> driver_options;
     driver_options.emplace_back("TILED", "YES");
     driver_options.emplace_back("BLOCKXSIZE", x_tile_sz.c_str());
     driver_options.emplace_back("BLOCKYSIZE", y_tile_sz.c_str());
     driver_options.emplace_back("COMPRESS", "LZW");
     driver_options.emplace_back("BIGTIFF", "YES");
-    std::vector<SimpleDataset<float>> bands{simple_ds_vv, simple_ds_vh, vh_div_vv_buffer};
-    // Reset counters for buffer, need to erase memory after write.
-    simple_ds_vv.buffer.reset();
-    simple_ds_vh.buffer.reset();
-    vh_div_vv_buffer.buffer.reset();
-    WriteSimpleDatasetToGeoTiff(std::move(bands), result_filepath, driver_options, metadata_, true);
+    WriteSimpleDatasetToGeoTiff(bands, result_filepath, driver_options, metadata_, true);
     LOGI << "Done";
 }
 

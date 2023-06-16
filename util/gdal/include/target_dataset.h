@@ -77,7 +77,7 @@ struct SimpleDataset {
     std::string projection_wkt;
     int width;
     int height;
-    std::shared_ptr<T[]> buffer;
+    std::unique_ptr<T[]> buffer;
     T no_data;
 };
 

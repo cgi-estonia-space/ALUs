@@ -9,9 +9,9 @@ Processing steps below.
 **Sentinel-1 GRD**
 * Thermal noise removal
 * Calibration
+* Despeckle (optional)
 * Range doppler terrain correction
 * Division between VH/VV
-* Despeckle (optional)
 * All 3 bands converted to dB
 
 ## Requirements

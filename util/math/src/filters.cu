@@ -19,7 +19,7 @@
 namespace alus::math::filters {
 
 __global__ void RefinedLee(cuda::KernelArray<float> in, cuda::KernelArray<float> out, int width, int height,
-                           int window) {
+                           int window, float no_data) {
     const int x = blockIdx.x * blockDim.x + threadIdx.x;
     const int y = blockIdx.y * blockDim.y + threadIdx.y;
 
@@ -27,6 +27,7 @@ __global__ void RefinedLee(cuda::KernelArray<float> in, cuda::KernelArray<float>
         return;
     }
 
+    int no_data_counter = 0;
     // Calculate the mean
     int half_window = window / 2;
     float mean = 0.0f;
@@ -38,11 +39,21 @@ __global__ void RefinedLee(cuda::KernelArray<float> in, cuda::KernelArray<float>
             // Check bounds
             if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
                 const auto value = in.array[nx + ny * width];
-                mean += value;
+                if (value == no_data) {
+                    no_data_counter++;
+                } else {
+                    mean += value;
+                }
             }
         }
     }
-    mean /= window * window;
+    const auto win_sq = window * window;
+    // If more than half of the pixels in the window are no_data.
+    if (no_data_counter > win_sq / 2) {
+        out.array[x + y * width] = in.array[x + y * width];
+        return;
+    }
+    mean /= win_sq;
 
     // Calculate the variance
     float variance = 0.0f;
@@ -58,7 +69,7 @@ __global__ void RefinedLee(cuda::KernelArray<float> in, cuda::KernelArray<float>
             }
         }
     }
-    variance /= window * window;
+    variance /= win_sq;
 
     // Refined Lee
     float sum = 0.0f;
