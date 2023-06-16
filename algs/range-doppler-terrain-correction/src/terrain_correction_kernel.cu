@@ -65,11 +65,11 @@ __inline__ __device__ void SetNoDataValue(int index, T value, T* dest_data) {
     dest_data[index] = value;
 }
 
-__device__ Coordinates GetPixelCoordinates(TcTileCoordinates tile_coordinates,
+__device__ Coordinates GetPixelCoordinates(TcTileIndexPair tile_coordinates,
                                            GeoTransformParameters target_geo_transform, unsigned int thread_x,
                                            unsigned int thread_y) {
-    const PrecisePixelPosition pixel_position{thread_x + tile_coordinates.target_x_0,
-                                              thread_y + tile_coordinates.target_y_0};
+    const PrecisePixelPosition pixel_position{static_cast<double>(thread_x + tile_coordinates.target_x_0),
+                                              static_cast<double>(thread_y + tile_coordinates.target_y_0)};
     const auto temp_coordinates = rasterutils::CalculatePixelCoordinates(pixel_position, target_geo_transform);
     return {mathutils::ChooseOne(temp_coordinates.lon < 180.0, temp_coordinates.lon, temp_coordinates.lon - 360.0),
             temp_coordinates.lat};
@@ -90,7 +90,7 @@ __device__ bool CheckPositionAndCellValidity(s1tbx::PositionData& position_data,
     return true;
 }
 
-__global__ void TerrainCorrectionKernel(TcTileCoordinates tile_coordinates, cuda::KernelArray<float> target,
+__global__ void TerrainCorrectionKernel(TcTileIndexPair tile_coordinates, cuda::KernelArray<float> target,
                                         TerrainCorrectionKernelArgs args,
                                         snapengine::resampling::ResamplingRaster resampling_raster) {
     const auto thread_x = threadIdx.x + blockIdx.x * blockDim.x;
@@ -122,7 +122,7 @@ __global__ void TerrainCorrectionKernel(TcTileCoordinates tile_coordinates, cuda
     target.array[index] = v;
 }
 
-cudaError_t LaunchTerrainCorrectionKernel(TcTileCoordinates tc_tile_coordinates, TerrainCorrectionKernelArgs args,
+cudaError_t LaunchTerrainCorrectionKernel(TcTileIndexPair tc_tile_coordinates, TerrainCorrectionKernelArgs args,
                                           float* h_target_buffer, cudaStream_t stream) {
     dim3 block_size{16, 16};
     dim3 main_kernel_grid_size{static_cast<unsigned int>(tc_tile_coordinates.target_width / block_size.x + 1),
@@ -144,7 +144,7 @@ cudaError_t LaunchTerrainCorrectionKernel(TcTileCoordinates tc_tile_coordinates,
     return cudaGetLastError();
 }
 
-__global__ void GetSourceRectangleKernel(TcTileCoordinates tile_coordinates, GetSourceRectangleKernelArgs args,
+__global__ void GetSourceRectangleKernel(TcTileIndexPair tile_coordinates, GetSourceRectangleKernelArgs args,
                                          SourceRectangeResult* result) {
     const auto thread_x = threadIdx.x + blockIdx.x * blockDim.x;
     const auto thread_y = threadIdx.y + blockIdx.y * blockDim.y;
@@ -193,7 +193,7 @@ __global__ void GetSourceRectangleKernel(TcTileCoordinates tile_coordinates, Get
     atomicMin(&result->min_range, range_int);
 }
 
-Rectangle GetSourceRectangle(TcTileCoordinates tile_coordinates, GetSourceRectangleKernelArgs args,
+Rectangle GetSourceRectangle(TcTileIndexPair tile_coordinates, GetSourceRectangleKernelArgs args,
                              PerThreadData* ctx) {
     dim3 block_dim{16, 16};
     dim3 grid_dim{static_cast<uint>(cuda::GetGridDim(block_dim.x, tile_coordinates.target_width)),

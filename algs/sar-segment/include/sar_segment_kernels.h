@@ -11,23 +11,21 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
+
 #pragma once
 
-#include <cstddef>
+#include <cstdint>
 
 #include "kernel_array.h"
 
-namespace alus {
+namespace alus::sarsegment {
 
-struct TcTileIndexPair {
-    int source_x_0;
-    int source_y_0;
-    size_t source_width;
-    size_t source_height;
-    int target_x_0;
-    int target_y_0;
-    size_t target_width;
-    size_t target_height;
-};
+void ComputeDivision(cuda::KernelArray<float> vh_div_vv_dest, cuda::KernelArray<float> vh, cuda::KernelArray<float> vv,
+                     size_t width, size_t height, float no_data);
 
-}  // namespace alus
+void ComputeDecibel(cuda::KernelArray<float> buffer, size_t width, size_t height, float no_data);
+
+void Despeckle(cuda::KernelArray<float> in, cuda::KernelArray<float> despeckle_buffer, size_t width, size_t height,
+               size_t window, float no_data);
+
+}  // namespace alus::sarsegment

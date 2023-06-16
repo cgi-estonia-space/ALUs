@@ -6,6 +6,7 @@ list(APPEND COMMON_UTIL_INCLUDE_DIRS
 list(APPEND COMMON_UTIL_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/alus_log.cc
         ${CMAKE_CURRENT_LIST_DIR}/src/metadata_record.cc
+        ${CMAKE_CURRENT_LIST_DIR}/src/product_name.cc
     )
 
 add_library(common-util-static
@@ -28,3 +29,6 @@ target_link_libraries(common-util-static
         gdal-util-static
         )
 
+if (ENABLE_TESTS)
+    add_subdirectory(unit-test)
+endif ()

@@ -16,6 +16,8 @@
 
 #include <cmath>
 
+#include "calc_funcs.h"
+
 namespace alus::math::calckernels {
 
 __global__ void CalcDb(cuda::KernelArray<float> buffer, size_t w, size_t h, float no_data_value) {
@@ -28,14 +30,35 @@ __global__ void CalcDb(cuda::KernelArray<float> buffer, size_t w, size_t h, floa
 
     const auto index = thread_y * w + thread_x;
     const auto orig_value = buffer.array[index];
-    if (orig_value == 0 || isnan(orig_value)) {
-        return;
-    }
-    if (!isnan(no_data_value) && orig_value == no_data_value) {
+    buffer.array[index] = calcfuncs::Decibel(orig_value, no_data_value);
+}
+
+__global__ void CalcDiv(cuda::KernelArray<float> dividend, cuda::KernelArray<float> divisor, size_t w, size_t h,
+                        cuda::KernelArray<float> result, float no_data_value) {
+    const auto thread_x = threadIdx.x + blockIdx.x * blockDim.x;
+    const auto thread_y = threadIdx.y + blockIdx.y * blockDim.y;
+
+    if (thread_x >= w || thread_y >= h) {
         return;
     }
 
-    buffer.array[index] = 10 * log10(orig_value);
+    const auto index = thread_y * w + thread_x;
+    const auto dividend_orig_value = dividend.array[index];
+    const auto divisor_orig_value = divisor.array[index];
+    if (isnan(dividend_orig_value) || isnan(divisor_orig_value)) {
+        result.array[index] = no_data_value;
+        return;
+    }
+    if (!isnan(no_data_value) && (dividend_orig_value == no_data_value || divisor_orig_value == no_data_value)) {
+        result.array[index] = no_data_value;
+        return;
+    }
+
+    if (divisor_orig_value == 0) {
+        result.array[index] = 0;
+    } else {
+        result.array[index] = dividend_orig_value / divisor_orig_value;
+    }
 }
 
 }  // namespace alus::math::calckernels

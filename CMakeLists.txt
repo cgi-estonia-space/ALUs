@@ -108,6 +108,7 @@ add_subdirectory(algs/resample)
 add_subdirectory(algs/topsar-merge)
 add_subdirectory(algs/thermal-noise-removal)
 add_subdirectory(algs/palsar-focus)
+add_subdirectory(algs/sar-segment)
 
 # Test helpers
 add_subdirectory(test/range-doppler-geocoding)

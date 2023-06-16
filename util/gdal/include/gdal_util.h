@@ -24,8 +24,8 @@
 #include <gdal_priv.h>
 
 #include "metadata_record.h"
+#include "target_dataset.h"
 #include "type_parameter.h"
-
 
 #define CHECK_GDAL_ERROR(err) alus::CheckGdalError(err, __FILE__, __LINE__)
 #define CHECK_GDAL_PTR(ptr) CHECK_GDAL_ERROR((ptr) == nullptr ? CE_Failure : CE_None)
@@ -172,6 +172,66 @@ inline TypeParameters CreateTypeParametersFrom(GDALDataType dt) {
 
 void GeoTiffWriteFile(GDALDataset* input_dataset, std::string_view output_file);
 
+void AddMetadataTo(GDALDataset* ds, const common::metadata::Container& md);
+
+template <typename T>
+void WriteSimpleDatasetToGeoTiff(std::vector<SimpleDataset<T>>& ds, std::string_view path,
+                                 const std::vector<std::pair<std::string, std::string>>& options,
+                                 const common::metadata::Container& md, bool release_band_buffer = false) {
+    auto output_driver = GetGdalGeoTiffDriver();
+    CHECK_GDAL_PTR(output_driver);
+
+    const auto gdal_dt = FindGdalDataType<T>();
+    char** output_driver_options = nullptr;
+    for (const auto& option : options) {
+        output_driver_options = CSLSetNameValue(output_driver_options, option.first.c_str(), option.second.c_str());
+    }
+
+    auto csl_destroy = [](char** options) { CSLDestroy(options); };
+    std::unique_ptr<char*, decltype(csl_destroy)> driver_opt_guard(output_driver_options, csl_destroy);
+    auto gdal_ds = output_driver->Create(path.data(), ds.front().width, ds.front().height, ds.size(), gdal_dt,
+                                         output_driver_options);
+    CHECK_GDAL_PTR(gdal_ds);
+    std::unique_ptr<GDALDataset, decltype(&GDALClose)> gdal_close_guard(gdal_ds, GDALClose);
+    CHECK_GDAL_ERROR(gdal_ds->SetGeoTransform(ds.front().geo_transform));
+    CHECK_GDAL_ERROR(gdal_ds->SetProjection(ds.front().projection_wkt.data()));
+    auto band_index{gdal::constants::GDAL_DEFAULT_RASTER_BAND};
+    for (auto& band : ds) {
+        CHECK_GDAL_ERROR(gdal_ds->GetRasterBand(band_index)->SetNoDataValue(band.no_data));
+        CHECK_GDAL_ERROR(gdal_ds->GetRasterBand(band_index)
+                             ->RasterIO(GF_Write, 0, 0, band.width, band.height, band.buffer.get(), band.width,
+                                        band.height, gdal_dt, 0, 0));
+        if (release_band_buffer) {
+            band.buffer.reset();
+        }
+        band_index++;
+    }
+    AddMetadataTo(gdal_ds, md);
+}
+
+template <typename T>
+void FetchSimpleDatasetFromGdalDataset(SimpleDataset<T>& ds, GDALDataset* gdal_ds) {
+    const auto width = gdal_ds->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)->GetXSize();
+    const auto height = gdal_ds->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)->GetYSize();
+
+    ds.buffer = std::unique_ptr<T[]>(new T[width * height]);
+    ds.width = width;
+    ds.height = height;
+    ds.no_data = static_cast<T>(gdal_ds->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)->GetNoDataValue());
+    CHECK_GDAL_ERROR(gdal_ds->GetGeoTransform(ds.geo_transform));
+    ds.projection_wkt = gdal_ds->GetProjectionRef();
+
+    CHECK_GDAL_ERROR(
+        gdal_ds->GetRasterBand(gdal::constants::GDAL_DEFAULT_RASTER_BAND)
+            ->RasterIO(GF_Read, 0, 0, width, height, ds.buffer.get(), width, height, FindGdalDataType<T>(), 0, 0));
+}
+
+template <typename T>
+void StoreSimpleDatasetToGdalRasterBand(SimpleDataset<T>& ds, GDALRasterBand* gdal_band) {
+    CHECK_GDAL_ERROR(gdal_band->RasterIO(GF_Write, 0, 0, ds.width, ds.height, ds.buffer.get(), ds.width, ds.height,
+                                         FindGdalDataType<T>(), 0, 0));
+}
+
 std::string FindOptimalTileSize(int raster_dimension);
 
 /**
@@ -183,7 +243,5 @@ std::string FindOptimalTileSize(int raster_dimension);
 std::string AdjustFilePath(std::string_view file_path);
 
 std::string ConvertToWkt(std::string_view shp_file_path);
-
-void AddMetadataTo(GDALDataset* ds, const common::metadata::Container& md);
 
 }  // namespace alus

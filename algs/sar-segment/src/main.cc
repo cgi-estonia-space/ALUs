@@ -27,22 +27,13 @@
 #include "execute.h"
 
 namespace {
-alus::calibrationroutine::Execute::Parameters AssembleParameters(const alus::calibrationroutine::Arguments& args) {
-    alus::calibrationroutine::Execute::Parameters params;
+alus::sarsegment::Execute::Parameters AssembleParameters(const alus::sarsegment::Arguments& args) {
+    alus::sarsegment::Execute::Parameters params;
     params.input = args.GetInput();
     params.output = args.GetOutput();
-    params.wif = args.DoSaveIntermediateResults();
-    params.subswath = args.GetSubswath();
-    params.polarisation = args.GetPolarisation();
     params.calibration_type = args.GetCalibrationType();
-    params.aoi = args.GetAoi().value_or("");
-    params.burst_first_index = alus::calibrationroutine::INVALID_BURST_INDEX;
-    params.burst_last_index = alus::calibrationroutine::INVALID_BURST_INDEX;
-    params.output_db_values = args.OutputValuesInDb();
-    if (const auto bursts = args.GetBurstIndexes(); bursts.has_value()) {
-        params.burst_first_index = std::get<0>(bursts.value());
-        params.burst_last_index = std::get<1>(bursts.value());
-    }
+    params.remove_speckle = args.DespeckleRequested();
+    params.refined_lee_window_size = args.GetDespeckleWindow();
 
     return params;
 }
@@ -61,23 +52,23 @@ int main(int argc, char* argv[]) {
         alus::common::log::Initialize();
         auto cuda_init = alus::cuda::CudaInit();
 
-        alus::calibrationroutine::Arguments args;
+        alus::sarsegment::Arguments args;
         args_help = args.GetHelp();
         args.Parse(std::vector<char*>(argv, argv + argc));
 
         if (args.IsHelpRequested()) {
-            std::cout << alus::app::GenerateHelpMessage(alus::calibrationroutine::ALG_NAME, args_help);
+            std::cout << alus::app::GenerateHelpMessage(alus::sarsegment::ALG_NAME, args_help);
             return alus::app::errorcode::ALG_SUCCESS;
         }
 
         args.Check();
         alus::common::log::SetLevel(args.GetLogLevel());
 
-        alus::calibrationroutine::Execute exe(AssembleParameters(args), args.GetDemFiles());
+        alus::sarsegment::Execute exe(AssembleParameters(args), args.GetDemFiles());
         exe.Run(cuda_init, args.GetGpuMemoryPercentage());
 
     } catch (const boost::program_options::error& e) {
-        std::cout << alus::app::GenerateHelpMessage(alus::calibrationroutine::ALG_NAME, args_help);
+        std::cout << alus::app::GenerateHelpMessage(alus::sarsegment::ALG_NAME, args_help);
         ExceptionMessagePrint(e);
         return alus::app::errorcode::ARGUMENT_PARSE;
     } catch (const alus::CudaErrorException& e) {

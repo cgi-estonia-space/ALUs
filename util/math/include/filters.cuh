@@ -11,23 +11,14 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
-#pragma once
 
-#include <cstddef>
+#pragma once
 
 #include "kernel_array.h"
 
-namespace alus {
+namespace alus::math::filters {
 
-struct TcTileIndexPair {
-    int source_x_0;
-    int source_y_0;
-    size_t source_width;
-    size_t source_height;
-    int target_x_0;
-    int target_y_0;
-    size_t target_width;
-    size_t target_height;
-};
+__global__ void RefinedLee(cuda::KernelArray<float> in, cuda::KernelArray<float> out, int width, int height,
+                           int window, float no_data);
 
-}  // namespace alus
+}

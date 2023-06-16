@@ -11,23 +11,17 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, see http://www.gnu.org/licenses/
  */
+
 #pragma once
 
-#include <cstddef>
+#include <string_view>
 
-#include "kernel_array.h"
+namespace alus::sarsegment {
 
-namespace alus {
+constexpr std::string_view ALG_NAME{"SAR segment"};
 
-struct TcTileIndexPair {
-    int source_x_0;
-    int source_y_0;
-    size_t source_width;
-    size_t source_height;
-    int target_x_0;
-    int target_y_0;
-    size_t target_width;
-    size_t target_height;
-};
-
-}  // namespace alus
+constexpr std::string_view CALIBRATION_TYPE_BETA{"beta"};
+constexpr std::string_view CALIBRATION_TYPE_SIGMA{"sigma"};
+constexpr std::string_view CALIBRATION_TYPE_GAMMA{"gamma"};
+constexpr std::string_view CALIBRATION_TYPE_DN{"dn"};
+}  // namespace alus::sarsegment
