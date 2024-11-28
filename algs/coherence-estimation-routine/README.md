@@ -212,9 +212,9 @@ Band 1 Block=14224x1 Type=Float32, ColorInterp=Gray
 ```
 
 Legend</br>
-![relative_error_legend](../../docs/relative_error_legend.png)
+![relative_error_legend](https://github.com/user-attachments/assets/6abab687-e440-4071-ab8b-b523882aedc9)
 
-Orbit state vector related, [see cause](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/GPU-GSTP-MPR-0008.pdf)
-![spots](../../docs/coh_relative_error_spots.png)
+Orbit state vector related, [see cause](https://github.com/user-attachments/files/17943084/GPU-GSTP-MPR-0008.pdf)
+![spots](https://github.com/user-attachments/assets/a6ddd497-97bb-4b9a-81d6-4a97ecc7c32f)
 
 For Copernicus DEM such comparison is not done because of the pending issues found in the SNAP - https://forum.step.esa.int/t/copernicus-dem-complications-when-coregistering-s1/38659/2

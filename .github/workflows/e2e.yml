@@ -45,7 +45,7 @@ jobs:
           echo "package_name=$release_package_name" >> $GITHUB_ENV
           echo "package_filename=$release_package_filename" >> $GITHUB_OUTPUT
           echo "package_name=$release_package_name" >> $GITHUB_OUTPUT
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: ${{ env.package_name }}
           path: ${{ env.package_path }}

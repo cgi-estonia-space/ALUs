@@ -31,7 +31,7 @@ jobs:
           $GITHUB_WORKSPACE/build-automation/create_ci_package.sh $GITHUB_WORKSPACE $CI_PACKAGE_FILENAME_PATH
           echo "package_path=$CI_PACKAGE_FILENAME_PATH" >> $GITHUB_ENV
           echo "package_filename=$CI_PACKAGE_FILENAME" >> $GITHUB_OUTPUT
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: ${{ env.CI_PACKAGE_NAME }}
           path: ${{ env.package_path }}

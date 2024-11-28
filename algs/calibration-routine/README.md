@@ -218,10 +218,10 @@ Band 1 Block=14224x1 Type=Float32, ColorInterp=Gray
 ```
 
 Legend</br>
-![relative_error_legend](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/calibration_routine_readme/relative_error_legend.png)
+![relative_error_legend](https://github.com/user-attachments/assets/6abab687-e440-4071-ab8b-b523882aedc9)
 
 Difference when using SRTM3 DEM</br>
-![srtm3_iw2](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/calibration_routine_readme/cal_relative_error_colored.png)
+![srtm3_iw2](https://github.com/user-attachments/assets/85cd7155-0693-4f90-a8de-8cde1ed016d6)
 
 Difference when using Copernicus DEM 30m COG</br>
 
@@ -249,21 +249,12 @@ The match is nearly identical for Copernicus DEM, since its resolution is higher
 introduced rounding errors between interpolated values of the pixels. The relative difference picture is almost
 completely dark. The 'nodata' values are a box with white color, inside, the difference can be seen (black == equal).
 
-![copdem_iw2](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/calibration_routine_readme/cal_relative_error_copdem.png)
+![copdem_iw2](https://github.com/user-attachments/assets/a6ee5381-19df-460e-9092-3af62d858229)
 
 Here is a zoomed in picture where pixels are different on byte level (maximum difference 4.5299530029297e-05) are marked with white, highlighted with red.
-![copdem_iw2_rel_highlight](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/calibration_routine_readme/cal_rel_error_highlight_red.png)
+![copdem_iw2_rel_highlight](https://github.com/user-attachments/assets/566b1d9b-94c1-4cea-a7db-77610ccfe2cb)
 
-## Sources and resulting files
+## Sources
 
-Inputs
-* [S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7.SAFE](https://alus-goods-set.s3.eu-central-1.amazonaws.com/validation/flood_in_belgium_germany/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7.zip)
-* [Auxilliary files](https://alus-goods-set.s3.eu-central-1.amazonaws.com/validation/flood_in_belgium_germany/aux.zip)
-
-Processed using Copernicus DEM
-* [ALUs result](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/calibration_routine_readme/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_split_IW2_tnr_cal_deb_tc_copdem.tif)
-* [SNAP result](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/calibration_routine_readme/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_split_IW2_tnr_Cal_deb_TC_copdem_no_data.tif)
-* [SNAP BEAM DIMAP project](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/calibration_routine_readme/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_split_IW2_tnr_Cal_deb_TC_copdem.dim.zip)
-* [Relative diff](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/calibration_routine_readme/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_split_IW2_tnr_cal_deb_tc_copdem_rel_diff.tif)
-* [Colored diff](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/calibration_routine_readme/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_split_IW2_tnr_cal_deb_tc_copdem_clr_diff.tif)
-* [gdal_calc diff](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/calibration_routine_readme/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_split_IW2_tnr_cal_deb_tc_copdem_snap_min_alus_diff.tif)
+Input
+* S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7.SAFE
