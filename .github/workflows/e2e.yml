@@ -89,7 +89,7 @@ jobs:
           echo "$SSH_PRIVATE_KEY" > $key_path
           sudo chmod 600 $key_path
           ssh-keygen -f $key_path -y > $key_path.pub
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
         with:
           name: ${{ needs.release-package.outputs.package_name }}
       - name: Transfer package

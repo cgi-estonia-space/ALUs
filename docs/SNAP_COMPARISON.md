@@ -124,9 +124,9 @@ Differences Found: 6
 ```
 
 Produced files:  
-[SNAP](https://alus-goods.s3.eu-central-1.amazonaws.com/snap_comparison/version0_6/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_coh_deb_TC.tif)  
-[SNAP nodata corrected](https://alus-goods.s3.eu-central-1.amazonaws.com/snap_comparison/version0_6/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_coh_deb_TC_no_data0_calc.tif)  
-[ALUS](https://alus-goods.s3.eu-central-1.amazonaws.com/snap_comparison/version0_6/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_IW1_coh_deb_tc_940mx.tif)  
+[SNAP [link not present]](https://alus-goods.s3.eu-central-1.amazonaws.com/snap_comparison/version0_6/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_coh_deb_TC.tif)  
+[SNAP nodata corrected [link not present]](https://alus-goods.s3.eu-central-1.amazonaws.com/snap_comparison/version0_6/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_coh_deb_TC_no_data0_calc.tif)  
+[ALUS [link not present]](https://alus-goods.s3.eu-central-1.amazonaws.com/snap_comparison/version0_6/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_IW1_coh_deb_tc_940mx.tif)  
 
 ## Single burst from IW1 (explosion area)
 
@@ -231,13 +231,13 @@ Differences Found: 6
 ```
 
 Produced files:  
-[SNAP](https://alus-goods.s3.eu-central-1.amazonaws.com/snap_comparison/version0_6/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_b6_coh_deb_TC.tif)  
-[SNAP nodata corrected](https://alus-goods.s3.eu-central-1.amazonaws.com/snap_comparison/version0_6/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_b6_coh_deb_TC_no_data0_calc.tif)  
-[ALUS](https://alus-goods.s3.eu-central-1.amazonaws.com/snap_comparison/version0_6/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_IW1_b6_coh_deb_tc_940mx.tif)  
+[SNAP [link not present]](https://alus-goods.s3.eu-central-1.amazonaws.com/snap_comparison/version0_6/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_b6_coh_deb_TC.tif)  
+[SNAP nodata corrected [link not present]](https://alus-goods.s3.eu-central-1.amazonaws.com/snap_comparison/version0_6/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_b6_coh_deb_TC_no_data0_calc.tif)  
+[ALUS [link not present]](https://alus-goods.s3.eu-central-1.amazonaws.com/snap_comparison/version0_6/S1A_IW_SLC__1SDV_20200724T034334_20200724T034401_033591_03E49D_96AA_Orb_Stack_IW1_b6_coh_deb_tc_940mx.tif)  
 
 ALUS discrepancies on the coastal line of Beirut displayed in QGIS:
 
-![comparison](https://alus-goods-set.s3.eu-central-1.amazonaws.com/alus_repo_docs/beirut_iw1_b6_coastal.png)
+![comparison](https://github.com/user-attachments/assets/dcb73140-0653-469a-b6d3-0f53e8d4f287)
 
 Some of the pixels "missing" due to value being equal to NO_DATA value. Coastal line otherwise matches exactly the SNAP one.
 
@@ -317,8 +317,8 @@ Band 1 Block=256x432 Type=Float32, ColorInterp=Gray
 NB! Exactly same raster results were processed by Tesla V100 EC2 AWS instance
 
 Produced files:  
-[SNAP](https://alus-goods.s3.eu-central-1.amazonaws.com/snap_comparison/version0_6/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_Orb_Stack_coh_deb_TC.tif)  
-[ALUS](https://alus-goods.s3.eu-central-1.amazonaws.com/snap_comparison/version0_6/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_Orb_Stack_coh_deb_tc.tif)
+[SNAP [link not present]](https://alus-goods.s3.eu-central-1.amazonaws.com/snap_comparison/version0_6/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_Orb_Stack_coh_deb_TC.tif)  
+[ALUS [link not present]](https://alus-goods.s3.eu-central-1.amazonaws.com/snap_comparison/version0_6/S1A_IW_SLC__1SDV_20210703T055050_20210703T055117_038609_048E45_35F7_Orb_Stack_coh_deb_tc.tif)
 
 Histogram comparisons in QGIS
 
@@ -403,7 +403,7 @@ Band 1 Block=448x448 Type=Float32, ColorInterp=Gray
 NB! Exactly same raster results were processed by Tesla V100 EC2 AWS instance
 
 Produced files:  
-[SNAP](https://alus-goods.s3.eu-central-1.amazonaws.com/snap_comparison/version0_6/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_split_Cal_deb_TC.tif)  
-[ALUS](https://alus-goods.s3.eu-central-1.amazonaws.com/snap_comparison/version0_6/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_Calib_b26_tc_mx940.tif)
+[SNAP [link not present]](https://alus-goods.s3.eu-central-1.amazonaws.com/snap_comparison/version0_6/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_split_Cal_deb_TC.tif)  
+[ALUS [link not present]](https://alus-goods.s3.eu-central-1.amazonaws.com/snap_comparison/version0_6/S1A_IW_SLC__1SDV_20210722T005537_20210722T005604_038883_049695_2E58_Calib_b26_tc_mx940.tif)
 
 ![gamm0](gamma0_calibrate.png)
