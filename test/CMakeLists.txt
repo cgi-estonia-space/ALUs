@@ -112,3 +112,12 @@ target_link_libraries(alus-gmock-main-static
         common-util-static
         gdal-util-static
         )
+
+# ETAD unit coverage is limited to parsing and combinations of input metadata.
+add_executable(sentinel1-etad-unit-test
+        src/etad_annotation_test.cc)
+target_link_libraries(sentinel1-etad-unit-test PRIVATE gtest_main sentinel1-util-static pugixml-static)
+set_target_properties(sentinel1-etad-unit-test PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${ALUS_UNIT_TEST_BINARY_OUTPUT_DIR})
+add_test(NAME sentinel1-etad-unit-test COMMAND sentinel1-etad-unit-test)
+set_tests_properties(sentinel1-etad-unit-test PROPERTIES LABELS unit)

@@ -40,7 +40,8 @@ message(STATUS "CUDA binary code will be generated for the following architectur
 
 find_package(Boost 1.71.0 REQUIRED COMPONENTS program_options date_time filesystem iostreams log log_setup)
 
-find_package(GDAL REQUIRED)
+# ETAD grouped NetCDF reads use the multidimensional API (GDAL 3.1+).
+find_package(GDAL 3.1 REQUIRED)
 include_directories(${GDAL_INCLUDE_DIRS})
 
 find_package(Eigen3 REQUIRED)

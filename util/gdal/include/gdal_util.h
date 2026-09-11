@@ -36,6 +36,7 @@ namespace gdal::constants {
 // GDAL driver constants
 constexpr char GDAL_MEM_DRIVER[]{"MEM"};
 constexpr char GDAL_GTIFF_DRIVER[]{"GTiff"};
+constexpr char GDAL_NETCDF_DRIVER[]{"netCDF"};
 constexpr char SQLITE_DRIVER[]{"SQLite"};
 constexpr char GDAL_GTIFF_FILE_EXTENSION[]{".tif"};
 constexpr int GDAL_DEFAULT_RASTER_BAND{1};

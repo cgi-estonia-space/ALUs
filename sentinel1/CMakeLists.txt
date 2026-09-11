@@ -14,6 +14,7 @@ list(APPEND SENTINEL1_UTIL_SOURCES
         jlinda/jlinda-core/ellipsoid.cc
         jlinda/jlinda-core/geopoint.cc
         s1tbx-io/sentinel1/sentinel1_product_reader.cc
+        s1tbx-io/sentinel1/sentinel1_etad_product.cc
         s1tbx-io/sentinel1/sentinel1_level1_directory.cc
         s1tbx-io/sentinel1/sentinel1_product_reader_plug_in.cc
         s1tbx-io/geotiffxml/geo_tiff_utils.cc
@@ -82,4 +83,3 @@ target_link_libraries(sentinel1-util-static
         staticZipper
         common-util-static
         )
-
