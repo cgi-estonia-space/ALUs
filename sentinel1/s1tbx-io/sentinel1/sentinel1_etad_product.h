@@ -123,10 +123,10 @@ const Burst* FindBurst(const Metadata& metadata, int p_index, std::string_view s
                        double range_time);
 
 /**
- * Reference range calibration for the swath, excluding channel offsets. First matching record; absent swath is zero.
- * Channel-dependent timing corrections need polarisation-aware selection and are not applied by this function.
+ * Direct/reference range calibration for one channel, excluding retained channel offsets.
+ * Missing or duplicate swath/polarisation records throw.
  */
-double RangeCalibration(const Metadata& metadata, std::string_view swath_id);
+double RangeCalibration(const Metadata& metadata, std::string_view swath_id, std::string_view polarisation);
 
 /**
  * Bilinear sample using burst coverage minima and sampling intervals.
@@ -172,10 +172,11 @@ public:
     /**
      * Load four InSAR layers and calculate corrections with the SLC frequency in Hz.
      * Input samples and phase/gradient results retain double precision, with no intermediate Float32 conversion.
-     * Numerical differences against SNAP's Float32 reader/exports are documented in docs/etad-precision.md.
+     * Numerical differences against SNAP's Float32 reader/exports are documented in docs/etad.md.
      * Uses reference range calibration; channel-dependent calibration offsets are retained as metadata only.
      */
-    [[nodiscard]] etad::InSarLayers LoadInSarBurstLayers(int b_index, double frequency_hz) const;
+    [[nodiscard]] etad::InSarLayers LoadInSarBurstLayers(int b_index, std::string_view polarisation,
+                                                         double frequency_hz) const;
 
 private:
     Sentinel1EtadProduct() = default;

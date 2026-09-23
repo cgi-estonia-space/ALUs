@@ -43,6 +43,8 @@ public:
 
         std::string input_reference;
         std::string input_secondary;
+        std::string etad_reference;
+        std::string etad_secondary;
         size_t burst_index_start_reference;
         size_t burst_index_last_reference;
         size_t burst_index_start_secondary;

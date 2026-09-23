@@ -343,13 +343,18 @@ const Burst* FindBurst(const Metadata& metadata, int p_index, std::string_view s
     return nullptr;
 }
 
-double RangeCalibration(const Metadata& metadata, std::string_view swath_id) {
+double RangeCalibration(const Metadata& metadata, std::string_view swath_id, std::string_view polarisation) {
+    const Calibration* found = nullptr;
     for (const auto& calibration : metadata.calibrations) {
-        if (calibration.swath_id == swath_id) {
-            return calibration.range_seconds;
+        if (calibration.swath_id == swath_id && calibration.polarisation == polarisation) {
+            Require(found == nullptr,
+                    "duplicate timing calibration for " + std::string(swath_id) + "/" + std::string(polarisation));
+            found = &calibration;
         }
     }
-    return 0.0;
+    Require(found != nullptr,
+            "missing timing calibration for " + std::string(swath_id) + "/" + std::string(polarisation));
+    return found->range_seconds;
 }
 
 double Interpolate(const Grid& grid, const Burst& burst, double azimuth_time, double range_time) {
@@ -426,6 +431,9 @@ Sentinel1EtadProduct Sentinel1EtadProduct::Open(const std::filesystem::path& pat
         root = roots.front() + "/";
     }
     product.name_ = root.empty() ? input.stem().string() : std::filesystem::path(root).parent_path().stem().string();
+    if (boost::algorithm::iends_with(product.name_, ".SAFE")) {
+        product.name_.resize(product.name_.size() - std::string_view(".SAFE").size());
+    }
     const auto annotation = SingleFile(directory, root + "annotation", ".xml");
     const auto measurement = SingleFile(directory, root + "measurement", ".nc");
     // GetFile uses the virtual directory's owned extraction path (unlike Zip::GetInputStream).
@@ -488,7 +496,8 @@ etad::Grid Sentinel1EtadProduct::LoadLayer(int b_index, std::string_view layer) 
     return grid;
 }
 
-etad::InSarLayers Sentinel1EtadProduct::LoadInSarBurstLayers(int b_index, double frequency_hz) const {
+etad::InSarLayers Sentinel1EtadProduct::LoadInSarBurstLayers(int b_index, std::string_view polarisation,
+                                                             double frequency_hz) const {
     CheckFrequency(frequency_hz);
     const auto& burst = etad::GetBurst(metadata_, b_index);
     const auto troposphere = LoadLayer(b_index, "troposphericCorrectionRg");
@@ -496,6 +505,6 @@ etad::InSarLayers Sentinel1EtadProduct::LoadInSarBurstLayers(int b_index, double
     const auto ionosphere = LoadLayer(b_index, "ionosphericCorrectionRg");
     const auto height = LoadLayer(b_index, "height");
     return etad::ComputeInSarLayers(troposphere, geodetic, ionosphere, height, frequency_hz,
-                                    etad::RangeCalibration(metadata_, burst.swath_id));
+                                    etad::RangeCalibration(metadata_, burst.swath_id, polarisation));
 }
 }  // namespace alus::s1tbx

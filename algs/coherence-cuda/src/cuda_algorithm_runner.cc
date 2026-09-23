@@ -74,6 +74,12 @@ void CUDAAlgorithmRunner::ThreadRun(CUDAAlgorithmRunner* algo, ThreadParams* par
             algo->tile_reader_->ReadTile(tile_in, ctx.h_buffer.Get(), 4);
             ctx.d_band_slave_imag.Resize(tile_in_sz);
             cuda::CopyArrayAsyncH2D(ctx.d_band_slave_imag.Get(), ctx.h_buffer.Get(), tile_in_sz, ctx.stream);
+            if (algo->algo_->IsEtadEnabled()) {
+                CHECK_CUDA_ERRORS(cudaStreamSynchronize(ctx.stream));
+                algo->tile_reader_->ReadTile(tile_in, ctx.h_buffer.Get(), 5);
+                ctx.d_etad_ifg.Resize(tile_in_sz);
+                cuda::CopyArrayAsyncH2D(ctx.d_etad_ifg.Get(), ctx.h_buffer.Get(), tile_in_sz, ctx.stream);
+            }
 
             algo->algo_->TileCalc(tile, ctx);
             const size_t tile_out_sz = ctx.d_tile_out.GetElemCount();

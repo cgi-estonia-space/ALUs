@@ -36,6 +36,7 @@ struct ThreadContext {
     cuda::DeviceBuffer<float> d_band_master_imag;
     cuda::DeviceBuffer<float> d_band_slave_real;
     cuda::DeviceBuffer<float> d_band_slave_imag;
+    cuda::DeviceBuffer<float> d_etad_ifg;
     cuda::DeviceBuffer<bool> d_tile_out_slave_real_bool;
 
     cuda::DeviceBuffer<float> complex_data_slave_norm_real;
@@ -119,7 +120,7 @@ public:
      * @param band_params
      */
     void LaunchCoherence(const CohTile& tile, ThreadContext& buffers, const CohWindow& coh_window,
-                         const BandParams& band_params);
+                         const BandParams& band_params, bool apply_etad);
 };
 }  // namespace coherence_cuda
 }  // namespace alus

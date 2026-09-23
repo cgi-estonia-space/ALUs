@@ -27,6 +27,7 @@
 #include "backgeocoding.h"
 #include "dem_property.h"
 #include "dem_type.h"
+#include "etad_correction.h"
 #include "pointer_holders.h"
 #include "snap-core/core/datamodel/product.h"
 
@@ -55,7 +56,8 @@ public:
                             std::shared_ptr<AlusFileReader<int16_t>> slave_input_dataset,
                             std::shared_ptr<AlusFileWriter<float>> output_dataset,
                             std::shared_ptr<snapengine::Product> master_product,
-                            std::shared_ptr<snapengine::Product> slave_product);
+                            std::shared_ptr<snapengine::Product> slave_product,
+                            std::shared_ptr<const s1tbx::etad::PreparedPair> etad_pair = nullptr);
 
     ~BackgeocodingController() = default;
     BackgeocodingController(const BackgeocodingController&) = delete;  // class does not support copying(and moving)
@@ -70,8 +72,11 @@ public:
                                            double* device_x_points, double* device_y_points);
     void ReadSlave(Rectangle slave_area, int16_t* i_tile, int16_t* q_tile) const;
     void CoreCompute(const CoreComputeParams& params) const;
+    void ComputeEtad(int reference_burst_index, int secondary_burst_index, Rectangle target_area,
+                     const double* secondary_x, const double* secondary_y, float* output) const;
+    [[nodiscard]] bool HasEtadCorrection() const { return etad_pair_ != nullptr; }
     void WriteOutputs(Rectangle output_area, float* i_master_results, float* q_master_results, float* i_slave_results,
-                      float* q_slave_results) const;
+                      float* q_slave_results, float* etad_ifg) const;
     void DoWork();
     void Initialize();
 
@@ -90,6 +95,8 @@ private:
     std::shared_ptr<snapengine::Product> master_product_;
     std::shared_ptr<snapengine::Product> slave_product_;
     std::shared_ptr<snapengine::Product> target_product_;
+    std::unique_ptr<EtadCorrection> etad_correction_;
+    std::shared_ptr<const s1tbx::etad::PreparedPair> etad_pair_;
 
     std::mutex exception_mutex_;
 

@@ -14,6 +14,7 @@
 #include "backgeocoding_controller.h"
 
 #include <cstdint>
+#include <limits>
 #include <vector>
 
 #include "alus_log.h"
@@ -23,7 +24,7 @@
 namespace alus::backgeocoding {
 
 void BackgeocodingController::BackgeocodingWorker::Work() {
-    CoreComputeParams core_params;
+    CoreComputeParams core_params{};
     std::vector<float> i_results;
     std::vector<float> q_results;
 
@@ -55,6 +56,8 @@ void BackgeocodingController::BackgeocodingWorker::Work() {
         PositionComputeResults pos_results = controller_->PositionCompute(
             params_.master_burst_index, params_.slave_burst_index, params_.master_input_area,
             core_params.device_x_points, core_params.device_y_points);
+
+        std::vector<float> etad_results;
 
         // Position computation succeeded
         if (pos_results.slave_area.width != 0 && pos_results.slave_area.height != 0) {
@@ -89,7 +92,17 @@ void BackgeocodingController::BackgeocodingWorker::Work() {
             core_params.device_i_results = device_i_results.Get();
             core_params.device_q_results = device_q_results.Get();
 
+            cuda::CudaPtr<float> device_etad_results;
+            if (controller_->HasEtadCorrection()) {
+                device_etad_results.Resize(tile_size);
+            }
+
             controller_->CoreCompute(core_params);
+            if (controller_->HasEtadCorrection()) {
+                controller_->ComputeEtad(params_.master_burst_index, params_.slave_burst_index,
+                                         params_.master_input_area, core_params.device_x_points,
+                                         core_params.device_y_points, device_etad_results.Get());
+            }
             LOGV << "all computations ended: " << params_.index;
             device_slave_i.free();
             device_slave_q.free();
@@ -104,6 +117,11 @@ void BackgeocodingController::BackgeocodingWorker::Work() {
                                       cudaMemcpyDeviceToHost));
             CHECK_CUDA_ERR(cudaMemcpy(q_results.data(), core_params.device_q_results, tile_size * sizeof(float),
                                       cudaMemcpyDeviceToHost));
+            if (controller_->HasEtadCorrection()) {
+                etad_results.resize(tile_size);
+                CHECK_CUDA_ERR(cudaMemcpy(etad_results.data(), device_etad_results.Get(), tile_size * sizeof(float),
+                                          cudaMemcpyDeviceToHost));
+            }
 
             device_i_results.free();
             device_q_results.free();
@@ -111,12 +129,16 @@ void BackgeocodingController::BackgeocodingWorker::Work() {
         } else {  // position computation failed, write out no data values.
             i_results.resize(tile_size, controller_->output_no_data_value_);
             q_results.resize(tile_size, controller_->output_no_data_value_);
+            if (controller_->HasEtadCorrection()) {
+                etad_results.resize(tile_size, std::numeric_limits<float>::quiet_NaN());
+            }
         }
 
         device_x_points.free();
         device_y_points.free();
         controller_->WriteOutputs(params_.master_input_area, out_master_tile_i.data(), out_master_tile_q.data(),
-                                  i_results.data(), q_results.data());
+                                  i_results.data(), q_results.data(),
+                                  etad_results.empty() ? nullptr : etad_results.data());
     } catch (const std::exception& e) {
         LOGE << "Thread nr " << params_.index << " has caught exception " << e.what();
         controller_->RegisterException(std::current_exception());

@@ -42,6 +42,8 @@ public:
     [[nodiscard]] std::optional<std::string> GetOrbitDirection() const;
     [[nodiscard]] std::string GetInputReference() const { return input_reference_; }
     [[nodiscard]] std::string GetInputSecondary() const { return input_secondary_; }
+    [[nodiscard]] std::string GetEtadReference() const { return etad_reference_; }
+    [[nodiscard]] std::string GetEtadSecondary() const { return etad_secondary_; }
     [[nodiscard]] std::optional<std::tuple<size_t, size_t>> GetBurstIndexesReference() const;
     [[nodiscard]] std::optional<std::tuple<size_t, size_t>> GetBurstIndexesSecondary() const;
     [[nodiscard]] std::string GetSubswath() const { return subswath_; }
@@ -78,6 +80,8 @@ private:
     bool timeline_args_;
     std::string input_reference_;
     std::string input_secondary_;
+    std::string etad_reference_;
+    std::string etad_secondary_;
     size_t burst_start_index_reference_;
     size_t burst_last_index_reference_;
     size_t burst_start_index_secondary_;

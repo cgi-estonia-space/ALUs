@@ -32,6 +32,13 @@ constexpr std::string_view ORBIT_DEGREE{"ORBIT_DEGREE"};
 constexpr std::string_view SUBTRACT_FLAT_EARTH_PHASE{"SUBTRACT_FLAT_EARTH_PHASE"};
 constexpr std::string_view SENSING_START{"SENSING_START"};
 constexpr std::string_view SENSING_END{"SENSING_END"};
+constexpr std::string_view ETAD_CORRECTION_APPLIED{"etad_correction_applied"};
+constexpr std::string_view ETAD_GEOMETRY_APPLIED{"etad_geometry_applied"};
+constexpr std::string_view ETAD_PHASE_APPLIED{"etad_phase_applied"};
+constexpr std::string_view ETAD_AZIMUTH_APPLIED{"etad_azimuth_applied"};
+constexpr std::string_view ETAD_CORRECTION_FLAG{"etad_correction_flag"};
+constexpr std::string_view ETAD_PRODUCT_REFERENCE{"etad_product_reference"};
+constexpr std::string_view ETAD_PRODUCT_SECONDARY{"etad_product_secondary"};
 }  // namespace sentinel1
 
 inline std::string CreateBooleanValue(bool value) {

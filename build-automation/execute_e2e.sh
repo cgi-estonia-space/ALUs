@@ -69,6 +69,11 @@ echo "
 echo "
 *****UKR GRD calibration with COPDEM 30m COG******"
 ./run_ukr_grd_test.sh $test_datasets_dir $copdem30_files_dir $products_output
+echo "
+*****Saint-Etienne ETAD coherence*****"
+./run_saint_etienne_etad_test.sh "$test_datasets_dir/S1-ETAD/Saint-Etienne" "$copdem30_files_dir" \
+  "$orbit_files_dir" "$products_output/saint-etienne-etad"
+etad_coherence_exit=$?
 
 exit $((disaster_test_exit | virumaa_calibration_test_exit | flood_test_exit | maharashtra_calibration_test_exit | \
-        resample_test_exit | gabor_feature_extraction_exit | perito_moreno_test_exit))
+        resample_test_exit | gabor_feature_extraction_exit | perito_moreno_test_exit | etad_coherence_exit))

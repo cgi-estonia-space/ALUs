@@ -23,14 +23,20 @@ ALUS_ETAD_HOST_DEVICE inline double DelayToPhase(double delay, double frequency_
     return -TWO_PI * frequency_hz * delay;
 }
 
-/** InSAR range phase; unlike a geometric range correction, the ionospheric contribution is subtracted. */
+/** InSAR range phase; unlike a geometric range correction, the ionospheric contribution is subtracted.
+ * See https://youtu.be/laPG-cCp6vA?si=wLop3kI4eCbvJrxs @ 5:00
+ * "Interferometric phase corrections based on ESA's Extended Timing Annotation Dataset (ETAD) for Sentinel-1"
+ * Fringe 2023
+ */
 ALUS_ETAD_HOST_DEVICE inline double RangePhase(double troposphere, double geodetic, double ionosphere,
                                                double calibration_seconds, double frequency_hz) {
     const double phase = DelayToPhase(troposphere + geodetic - ionosphere + calibration_seconds, frequency_hz);
     return std::isfinite(phase) ? phase : std::numeric_limits<double>::quiet_NaN();
 }
 
-/** Pair correction in radians; secondary fields must already be sampled in reference geometry. */
+/** Pair correction in radians; secondary fields must already be sampled in reference geometry.
+ * The last term is the newer height-compensation extension (gradient, reference and secondary height).
+ */
 ALUS_ETAD_HOST_DEVICE inline double DifferentialPhase(double reference_phase, double secondary_phase,
                                                       double reference_height, double secondary_height,
                                                       double secondary_gradient) {

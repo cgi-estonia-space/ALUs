@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <stdexcept>
 #include <string_view>
 #include <thread>
 
@@ -45,15 +46,17 @@ BackgeocodingController::BackgeocodingController(std::shared_ptr<AlusFileReader<
       slave_metadata_file_(slave_metadata_file) {}
 
 BackgeocodingController::BackgeocodingController(std::shared_ptr<AlusFileReader<int16_t>> master_input_dataset,
-                                                 std::shared_ptr<AlusFileReader<int16_t>> slave_input_dataset,
-                                                 std::shared_ptr<AlusFileWriter<float>> output_dataset,
-                                                 std::shared_ptr<snapengine::Product> master_product,
-                                                 std::shared_ptr<snapengine::Product> slave_product)
+                                                  std::shared_ptr<AlusFileReader<int16_t>> slave_input_dataset,
+                                                  std::shared_ptr<AlusFileWriter<float>> output_dataset,
+                                                  std::shared_ptr<snapengine::Product> master_product,
+                                                  std::shared_ptr<snapengine::Product> slave_product,
+                                                  std::shared_ptr<const s1tbx::etad::PreparedPair> etad_pair)
     : master_input_dataset_(std::move(master_input_dataset)),
       slave_input_dataset_(std::move(slave_input_dataset)),
       output_dataset_(std::move(output_dataset)),
       master_product_(std::move(master_product)),
-      slave_product_(std::move(slave_product)) {}
+      slave_product_(std::move(slave_product)),
+      etad_pair_(std::move(etad_pair)) {}
 
 void BackgeocodingController::PrepareToCompute(const float* egm96_device_array, PointerArray dem_tiles,
                                                bool mask_out_area_without_elevation,
@@ -66,6 +69,9 @@ void BackgeocodingController::PrepareToCompute(const float* egm96_device_array, 
         backgeocoding_->PrepareToCompute(master_metadata_file_, slave_metadata_file_);
     } else {
         backgeocoding_->PrepareToCompute(master_product_, slave_product_);
+    }
+    if (etad_pair_ != nullptr) {
+        etad_correction_ = std::make_unique<EtadCorrection>(*etad_pair_);
     }
 
     num_of_bursts_ = backgeocoding_->GetNrOfBursts();
@@ -111,12 +117,24 @@ void BackgeocodingController::CoreCompute(const CoreComputeParams& params) const
     backgeocoding_->CoreCompute(params);
 }
 
+void BackgeocodingController::ComputeEtad(int reference_burst_index, int secondary_burst_index, Rectangle target_area,
+                                          const double* secondary_x, const double* secondary_y, float* output) const {
+    if (etad_correction_ == nullptr) {
+        throw std::logic_error("ETAD correction is not configured");
+    }
+    etad_correction_->Compute(reference_burst_index, secondary_burst_index, target_area, secondary_x, secondary_y,
+                              output);
+}
+
 void BackgeocodingController::WriteOutputs(Rectangle output_area, float* i_master_results, float* q_master_results,
-                                           float* i_slave_results, float* q_slave_results) const {
+                                            float* i_slave_results, float* q_slave_results, float* etad_ifg) const {
     output_dataset_->WriteRectangle(i_master_results, output_area, 1);
     output_dataset_->WriteRectangle(q_master_results, output_area, 2);
     output_dataset_->WriteRectangle(i_slave_results, output_area, 3);
     output_dataset_->WriteRectangle(q_slave_results, output_area, 4);
+    if (etad_pair_ != nullptr) {
+        output_dataset_->WriteRectangle(etad_ifg, output_area, 5);
+    }
 }
 
 void BackgeocodingController::DoWork() {

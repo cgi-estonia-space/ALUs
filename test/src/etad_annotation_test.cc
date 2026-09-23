@@ -121,6 +121,8 @@ TEST(EtadAnnotation, ReferenceAndChannelOffsetsAreRetainedSeparately) {
     EXPECT_DOUBLE_EQ(metadata.calibrations[1].range_offset_seconds, 2E-10);
     EXPECT_DOUBLE_EQ(metadata.calibrations[0].azimuth_offset_seconds, 2E-6);
     EXPECT_DOUBLE_EQ(metadata.calibrations[1].azimuth_offset_seconds, 3E-6);
+    EXPECT_DOUBLE_EQ(etad::RangeCalibration(metadata, "IW1", "VV"), 7.4E-10);
+    EXPECT_THROW(etad::RangeCalibration(metadata, "IW1", "VH"), std::runtime_error);
 }
 
 TEST(EtadAnnotation, DirectCalibrationValuesRetainSwathAndPolarisation) {
@@ -147,6 +149,8 @@ TEST(EtadAnnotation, DirectCalibrationValuesRetainSwathAndPolarisation) {
     EXPECT_DOUBLE_EQ(metadata.calibrations[0].range_seconds, 1E-9);
     EXPECT_DOUBLE_EQ(metadata.calibrations[1].range_seconds, 2E-9);
     EXPECT_DOUBLE_EQ(metadata.calibrations[1].range_offset_seconds, 0);
+    EXPECT_DOUBLE_EQ(etad::RangeCalibration(metadata, "IW1", "VV"), 1E-9);
+    EXPECT_DOUBLE_EQ(etad::RangeCalibration(metadata, "IW1", "VH"), 2E-9);
 }
 
 TEST(EtadSelection, SensingTokensSurviveSplitNamesAndDifferentProductIdentifiers) {

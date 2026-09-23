@@ -51,6 +51,8 @@ public:
     void OpenPixelReader(std::string_view filename);
     [[nodiscard]] const std::shared_ptr<C16Dataset<int16_t>>& GetPixelReader() const { return pixel_reader_; }
     std::string_view GetSubswath() const { return subswath_; }
+    [[nodiscard]] size_t GetFirstBurstIndex() const { return static_cast<size_t>(first_burst_index_); }
+    [[nodiscard]] size_t GetLastBurstIndex() const { return static_cast<size_t>(last_burst_index_); }
 
     constexpr static int BURST_INDEX_OFFSET{1};
 

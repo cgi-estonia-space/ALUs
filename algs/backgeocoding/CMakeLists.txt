@@ -9,6 +9,7 @@ list(APPEND BACKGEOCODING_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/extended_amount.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/burst_offset.cu
         ${CMAKE_CURRENT_LIST_DIR}/src/elevation_mask.cu
+        ${CMAKE_CURRENT_LIST_DIR}/src/etad_correction.cu
         )
 
 list(APPEND BACKGEOCODING_INCLUDE_DIRS
@@ -47,4 +48,3 @@ target_link_libraries(backgeocoding-static
         snap-engine-static
         Boost::program_options
         )
-

@@ -127,7 +127,8 @@ void Coregistration::Initialize(const Coregistration::Parameters& params) {
 }
 
 void Coregistration::Initialize(std::shared_ptr<topsarsplit::TopsarSplit> split_reference,
-                                std::shared_ptr<topsarsplit::TopsarSplit> split_secondary) {
+                                std::shared_ptr<topsarsplit::TopsarSplit> split_secondary,
+                                std::shared_ptr<const s1tbx::etad::PreparedPair> etad_pair) {
     split_reference_ = std::move(split_reference);
     split_secondary_ = std::move(split_secondary);
     std::shared_ptr<C16Dataset<int16_t>> reference_reader = split_reference_->GetPixelReader();
@@ -135,7 +136,7 @@ void Coregistration::Initialize(std::shared_ptr<topsarsplit::TopsarSplit> split_
 
     alus::TargetDatasetParams out_ds_params = {};
     out_ds_params.filename = "";
-    out_ds_params.band_count = 4;
+    out_ds_params.band_count = etad_pair == nullptr ? 4 : 5;
     out_ds_params.dataset_per_band = true;
     out_ds_params.driver = GetGdalMemDriver();
     out_ds_params.dimension = reference_temp->GetRasterDimensions();
@@ -146,7 +147,7 @@ void Coregistration::Initialize(std::shared_ptr<topsarsplit::TopsarSplit> split_
 
     backgeocoding_ = std::make_unique<backgeocoding::BackgeocodingController>(
         reference_reader, split_secondary_->GetPixelReader(), target_dataset_, split_reference_->GetTargetProduct(),
-        split_secondary_->GetTargetProduct());
+        split_secondary_->GetTargetProduct(), std::move(etad_pair));
 }
 
 void Coregistration::DoWork(const float* egm96_device_array, PointerArray dem_tiles,

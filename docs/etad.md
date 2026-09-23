@@ -1,4 +1,4 @@
-# ETAD reader: numerical precision and SNAP comparison
+# ETAD InSAR integration: numerical precision and SNAP comparison
 
 ## Implementation policy
 
@@ -10,6 +10,46 @@ units, grids and validity handling is the objective; bitwise reproduction of an 
 structures, not SNAP `Product` or `MetadataElement` objects. `etad_grid.h` provides non-owning grid views and geometry;
 `etad_computation.cuh` contains inline host/device scalar calculations without GDAL, XML, filesystem or Ceres dependencies.
 Ceres is used only for SAFE/ZIP access and extraction lifetime.
+
+## SLC association and preparation
+
+Host-side SLC association and ETAD preparation live under `sentinel1/etad`; they are part of
+`sentinel1-util-static`, not a separate algorithm executable:
+
+- `slc_metadata.h` and `slc_metadata.cc` read one native SLC product annotation selected by swath and polarisation.
+  They return owned plain C++ metadata without constructing a SNAP `Product`, `MetadataElement`, `Sentinel1Utils` or
+  `SubSwathInfo`. Radar frequency remains in Hz and native `slantRangeTime` remains a two-way time in seconds.
+- `etad_preparation.h` and `etad_preparation.cc` associate a zero-based contiguous SLC burst selection with global ETAD
+  burst indices, validate complete coverage and load the existing double-precision phase, height and gradient layers.
+- Variable-length product metadata and prepared arrays use `std::string` and `std::vector`. Burst selections,
+  associations, SLC timing geometry and borrowing prepared-grid views are standard-layout, trivially-copyable
+  structures. Views are created from their owning prepared bursts only after those bursts reach their final location.
+
+SLC-to-ETAD association does not call the generic point lookup `FindBurst`: adjacent ETAD burst coverages overlap.
+Instead it follows SNAP TOPS preparation by matching an SLC burst first-line time to the ETAD burst azimuth minimum
+within 0.1 seconds. ALUs additionally requires exactly one match and verifies that the complete SLC burst azimuth and
+two-way range extents lie strictly inside that ETAD burst's coverage.
+
+Standard SAFE names select the ETAD acquisition by their sensing-time and orbit token. Renamed or burst-product inputs
+fall back to the native annotation mission, absolute orbit and start/stop interval, requiring one unambiguous ETAD
+acquisition. The fallback allows one second around ETAD input-product bounds because those timestamps can be rounded to
+whole seconds while native SLC annotation bounds retain microseconds.
+
+The preparation entry point is independent of TOPSAR-Split and the SNAP data model:
+
+```cpp
+const auto slc_metadata = slc::ReadMetadata(slc_path, "IW1", "VV");
+const auto etad_product = Sentinel1EtadProduct::Open(etad_path);
+// first_burst is zero-based, so {1, 1} selects source burst 2.
+const auto prepared = etad::PrepareInSar(slc_metadata, {1, 1}, etad_product);
+```
+
+Each `PreparedBurst` owns its correction arrays and records the source SLC index, split-local index, output line offset,
+global ETAD `bIndex`, SLC timing geometry and ETAD interpolation geometry. Reference and secondary acquisitions are
+prepared independently; pair correspondence and device transfer remain backgeocoding responsibilities.
+
+Timing-calibration lookup now requires both swath and polarisation. It selects the matching direct/reference value but
+does not add the separately retained channel offset; the nonzero-offset policy remains unresolved as described below.
 
 ## Context from the original ALUs work
 
@@ -158,11 +198,23 @@ The parser retains geographic corners, temporal coverage, sampling, grid extents
 `LoadInSarBurstLayers` prepares only phase, height and troposphere-to-height gradient. It does not calculate corrected
 pixel positions, combine the geometric correction layers or resample complex imagery.
 
-## Verification and future E2E
+## Pipeline integration and verification
 
-Committed unit tests cover only annotation parsing and input-metadata combinations. The temporary numerical/CUDA test
-cases and the `etad_grid_compare.cc` executable have been removed as requested. Numerical acceptance will be through the
-coherence E2E with explicit SLC/ETAD/orbit/DEM inputs and an exported `--wif` sidecar.
+Unit tests cover only annotation parsing and input-metadata combinations. The temporary numerical/CUDA test
+cases and the `etad_grid_compare.cc` executable have been removed as requested. Pairwise `alus-coh` accepts
+`--etad_ref` and `--etad_sec`, which must be supplied together. Selected acquisitions are prepared independently and
+uploaded during backgeocoding. ETAD runs add a fifth Float32 in-memory plane after master I/Q and secondary I/Q:
+
+```text
+etad_ifg = reference_phase - secondary_phase
+    - secondary_gradient * (reference_height - secondary_height)
+```
+
+Secondary quantities are sampled with the backgeocoding pixel map. Coherence rotates each valid secondary complex
+sample by `exp(+j * etad_ifg)` before flat-earth correction and accumulation. Non-finite corrections zero the secondary
+sample and are represented as NaN in the fifth plane; zero phase remains valid. Non-ETAD and timeline runs retain the
+four-plane path. With `--wif`, the pre-deburst fifth plane is exported with description `etad_ifg`, radians units, NaN
+no-data and ETAD provenance.
 
 The comparison **method** is reusable: read corresponding raster windows, promote values to double, compare masks and
 each pixel, and report maximum absolute error, RMSE, signed bias, quantiles and counts above justified tolerances.
@@ -172,21 +224,25 @@ Aggregate statistics are not guaranteed to match across data types: quantisation
 subsequent calculations. Conversely, equal statistics can conceal a transposed or shifted raster. Pixelwise comparison
 on the same grid is essential. Reading a Float32 golden into a double buffer is fine; narrowing ALUs inputs is not.
 
-See [ETAD E2E data recipe](../build-automation/ETAD_E2E.md) for the staged SNAP graph and future sidecar comparison.
+See [ETAD E2E data recipe](../build-automation/ETAD_E2E.md) for the staged SNAP graph, exact inputs, measured results and
+acceptance thresholds. `run_saint_etienne_etad_test.sh` runs the full pipeline and `compare_etad_ifg.py` performs the
+striped pixelwise comparison while retaining difference and mask-mismatch rasters.
 
-Reader-step verification commands, with `BUILD_DIR` set to the configured build directory:
+Verification commands, with `BUILD_DIR` set to the configured build directory:
 
 ```bash
 cmake --build "$BUILD_DIR" --target sentinel1-etad-unit-test -j12
 "$BUILD_DIR/unit-test/sentinel1-etad-unit-test"
 ctest --test-dir "$BUILD_DIR" -R '^sentinel1-etad-unit-test$' --output-on-failure
 cmake --build "$BUILD_DIR" -j12
+ctest --test-dir "$BUILD_DIR" --output-on-failure
+PATH="$BUILD_DIR/alus_package:$PATH" build-automation/run_saint_etienne_etad_test.sh \
+    <Saint-Etienne dataset dir> <COPDEM 30m dir> <orbit dir> [output dir]
 ```
 
-The six parser/input-structure cases passed, the focused CTest entry passed, and the full build succeeded. Formatting
-and `git diff --check` passed. Clang-tidy was also run during development; it reported style warnings, including
-recommendations conflicting with this repository's explicit `#pragma once` convention. No ETAD coherence E2E was run:
-the pipeline and `--wif` sidecar integration are a later step.
+The eleven parser/input-structure and association cases pass, all CTest targets pass, and the full build succeeds. The
+Saint-Etienne E2E produces 33,740,991 mutually valid pixels with 0.0044522 rad RMSE and 0.017245 rad p99 absolute error
+against SNAP's pre-deburst `etad_ifg`; detailed mask and tolerance policy is recorded in the E2E recipe.
 
 ## Artifacts from this investigation
 

@@ -33,6 +33,7 @@ private:
     const int srp_number_points_;
     const int srp_polynomial_degree_;
     const bool subtract_flat_earth_;
+    const bool apply_etad_;
     CohWindow coh_win_;
     [[maybe_unused]] const int orbit_degree_;
     MetaData& meta_master_;
@@ -50,7 +51,8 @@ private:
 
 public:
     CohCuda(int srp_number_points, int srp_polynomial_degree, bool subtract_flat_earth, const CohWindow& coh_window,
-            int orbit_degree, MetaData& meta_master, MetaData& meta_slave);
+            int orbit_degree, MetaData& meta_master, MetaData& meta_slave, bool apply_etad = false);
+    [[nodiscard]] bool IsEtadEnabled() const { return apply_etad_; }
     void CoherencePreTileCalc();
     void PreTileCalc();
     void TileCalc(const CohTile& tile, ThreadContext& ctx);

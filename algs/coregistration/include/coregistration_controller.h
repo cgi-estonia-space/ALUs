@@ -19,6 +19,7 @@
 #include "backgeocoding_controller.h"
 #include "dem_property.h"
 #include "dem_type.h"
+#include "etad_preparation.h"
 #include "target_dataset.h"
 #include "topsar_split.h"
 
@@ -55,7 +56,8 @@ public:
                     std::string_view subswath_name, std::string_view polarisation);
 
     void Initialize(std::shared_ptr<topsarsplit::TopsarSplit> split_reference,
-                    std::shared_ptr<topsarsplit::TopsarSplit> split_secondary);
+                    std::shared_ptr<topsarsplit::TopsarSplit> split_secondary,
+                    std::shared_ptr<const s1tbx::etad::PreparedPair> etad_pair = nullptr);
 
     void DoWork(const float* egm96_device_array, PointerArray dem_tiles, bool mask_out_area_without_elevation,
                 const dem::Property* device_dem_properties, const std::vector<dem::Property> dem_properties,

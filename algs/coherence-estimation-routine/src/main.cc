@@ -40,6 +40,8 @@ alus::coherenceestimationroutine::Execute::Parameters AssembleParameters(
 
     params.input_reference = args.GetInputReference();
     params.input_secondary = args.GetInputSecondary();
+    params.etad_reference = args.GetEtadReference();
+    params.etad_secondary = args.GetEtadSecondary();
     params.output = args.GetOutput();
     params.subswath = args.GetSubswath();
     params.polarisation = args.GetPolarisation();

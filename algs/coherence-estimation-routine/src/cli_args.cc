@@ -57,7 +57,11 @@ void Arguments::Construct() {
         ( "orbit_ref", po::value<std::string>(&orbit_file_reference_),
             "Reference scene's POEORB/RESORB file. Can be unspecified.")
         ( "orbit_sec", po::value<std::string>(&orbit_file_secondary_),
-            "Secondary scene's POEORB/RESORB file. Can be unspecified.");
+            "Secondary scene's POEORB/RESORB file. Can be unspecified.")
+        ("etad_ref", po::value<std::string>(&etad_reference_),
+            "Reference scene's matching ETAD SAFE dataset (zipped or unpacked)")
+        ("etad_sec", po::value<std::string>(&etad_secondary_),
+            "Secondary scene's matching ETAD SAFE dataset (zipped or unpacked)");
         // clang-format on
     } else {
         // clang-format off
@@ -139,6 +143,12 @@ void Arguments::Check() {
         throw std::invalid_argument(
             "All burst indexes must be either supplied or left undefined. "
             "Use -a [ --aoi ] to skip defining burst indexes.");
+    }
+    if (vm_.count("etad_ref") != vm_.count("etad_sec")) {
+        throw std::invalid_argument("--etad_ref and --etad_sec must be supplied together.");
+    }
+    if (vm_.count("etad_ref") && (etad_reference_.empty() || etad_secondary_.empty())) {
+        throw std::invalid_argument("--etad_ref and --etad_sec must not be empty.");
     }
 
     if (timeline_args_ && !timeline_mission_.empty()) {

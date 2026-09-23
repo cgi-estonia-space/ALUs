@@ -26,10 +26,12 @@
 namespace alus {
 namespace coherence_cuda {
 CohCuda::CohCuda(const int srp_number_points, const int srp_polynomial_degree, const bool subtract_flat_earth,
-                 const CohWindow& coh_window, const int orbit_degree, MetaData& meta_master, MetaData& meta_slave)
+                 const CohWindow& coh_window, const int orbit_degree, MetaData& meta_master, MetaData& meta_slave,
+                 const bool apply_etad)
     : srp_number_points_{srp_number_points},
       srp_polynomial_degree_{srp_polynomial_degree},
       subtract_flat_earth_{subtract_flat_earth},
+      apply_etad_{apply_etad},
       coh_win_{coh_window},
       orbit_degree_{orbit_degree},
       meta_master_{meta_master},
@@ -181,7 +183,7 @@ void CohCuda::CoherencePreTileCalc() {
 }
 
 void CohCuda::TileCalc(const CohTile& tile, ThreadContext& buffers) {
-    coherence_computation_.LaunchCoherence(tile, buffers, coh_win_, band_params_);
+    coherence_computation_.LaunchCoherence(tile, buffers, coh_win_, band_params_, apply_etad_);
 }
 
 void CohCuda::PreTileCalc() {
