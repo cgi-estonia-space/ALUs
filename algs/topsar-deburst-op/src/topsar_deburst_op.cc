@@ -97,11 +97,13 @@ void TOPSARDeburstOp::ComputeTargetSlantRangeTimeToFirstAndLastPixels() {
 }
 
 void TOPSARDeburstOp::ComputeTargetWidthAndHeight() {
-    target_height_ = static_cast<int>((target_last_line_time_ - target_first_line_time_) / target_line_time_interval_);
+    target_height_ = static_cast<int>(
+        std::round(((target_last_line_time_ - target_first_line_time_) / target_line_time_interval_) + 1));
 
-    target_width_ =
-        static_cast<int>((target_slant_range_time_to_last_pixel_ - target_slant_range_time_to_first_pixel_) /
-                         target_delta_slant_range_time_);
+    target_width_ = static_cast<int>(
+        std::round(((target_slant_range_time_to_last_pixel_ - target_slant_range_time_to_first_pixel_) /
+                    target_delta_slant_range_time_) +
+                   1));
 }
 
 void TOPSARDeburstOp::ComputeSubSwathEffectStartEndPixels() {
@@ -258,25 +260,25 @@ bool TOPSARDeburstOp::ContainSelectedPolarisations(std::string_view band_name) c
 }
 
 void TOPSARDeburstOp::CreateTiePointGrids() {
-    int grid_width = 20;
-    int grid_height = 5;
+    constexpr int GRID_WIDTH = 21;
+    constexpr int GRID_HEIGHT = 11;
 
-    int sub_sampling_x = target_width_ / grid_width;
-    int sub_sampling_y = target_height_ / grid_height;
+    const auto sub_sampling_x = target_width_ / (GRID_WIDTH - 1.0f);
+    const auto sub_sampling_y = target_height_ / (GRID_HEIGHT - 1.0f);
 
-    int max_list = (grid_width + 1) * (grid_height + 1);
+    int max_list = (GRID_WIDTH + 1) * (GRID_HEIGHT + 1);
     std::vector<float> lat_list(max_list);
     std::vector<float> lon_list(max_list);
     std::vector<float> slrt_list(max_list);
     std::vector<float> inc_list(max_list);
 
     int k = 0;
-    for (int i = 0; i <= grid_height; i++) {
-        int y = i * sub_sampling_y;
-        double az_time = target_first_line_time_ + y * target_line_time_interval_;
-        for (int j = 0; j <= grid_width; j++) {
-            int x = j * sub_sampling_x;
-            double slr_time = target_slant_range_time_to_first_pixel_ + x * target_delta_slant_range_time_;
+    for (int i = 0; i <= GRID_HEIGHT; i++) {
+        const float y = std::min(static_cast<float>(i) * sub_sampling_y, static_cast<float>(target_height_ - 1));
+        const double az_time = target_first_line_time_ + (y * target_line_time_interval_);
+        for (int j = 0; j <= GRID_WIDTH; j++) {
+            const float x = std::min(static_cast<float>(j) * sub_sampling_x, static_cast<float>(target_width_ - 1));
+            const double slr_time = target_slant_range_time_to_first_pixel_ + (x * target_delta_slant_range_time_);
             //                (not from snap) and needs raw pointer for single sub_swath_
             lat_list.at(k) = static_cast<float>(su_->GetLatitude(az_time, slr_time, su_->subswath_.at(0).get()));
             lon_list.at(k) = static_cast<float>(su_->GetLongitude(az_time, slr_time, su_->subswath_.at(0).get()));
@@ -288,20 +290,20 @@ void TOPSARDeburstOp::CreateTiePointGrids() {
     }
 
     auto lat_grid =
-        std::make_shared<snapengine::TiePointGrid>(snapengine::OperatorUtils::TPG_LATITUDE, grid_width + 1,
-                                                   grid_height + 1, 0, 0, sub_sampling_x, sub_sampling_y, lat_list);
+        std::make_shared<snapengine::TiePointGrid>(snapengine::OperatorUtils::TPG_LATITUDE, GRID_WIDTH + 1,
+                                                   GRID_HEIGHT + 1, 0, 0, sub_sampling_x, sub_sampling_y, lat_list);
 
     auto lon_grid =
-        std::make_shared<snapengine::TiePointGrid>(snapengine::OperatorUtils::TPG_LONGITUDE, grid_width + 1,
-                                                   grid_height + 1, 0, 0, sub_sampling_x, sub_sampling_y, lon_list);
+        std::make_shared<snapengine::TiePointGrid>(snapengine::OperatorUtils::TPG_LONGITUDE, GRID_WIDTH + 1,
+                                                   GRID_HEIGHT + 1, 0, 0, sub_sampling_x, sub_sampling_y, lon_list);
 
     auto slrt_grid =
-        std::make_shared<snapengine::TiePointGrid>(snapengine::OperatorUtils::TPG_SLANT_RANGE_TIME, grid_width + 1,
-                                                   grid_height + 1, 0, 0, sub_sampling_x, sub_sampling_y, slrt_list);
+        std::make_shared<snapengine::TiePointGrid>(snapengine::OperatorUtils::TPG_SLANT_RANGE_TIME, GRID_WIDTH + 1,
+                                                   GRID_HEIGHT + 1, 0, 0, sub_sampling_x, sub_sampling_y, slrt_list);
 
     auto inc_grid =
-        std::make_shared<snapengine::TiePointGrid>(snapengine::OperatorUtils::TPG_INCIDENT_ANGLE, grid_width + 1,
-                                                   grid_height + 1, 0, 0, sub_sampling_x, sub_sampling_y, inc_list);
+        std::make_shared<snapengine::TiePointGrid>(snapengine::OperatorUtils::TPG_INCIDENT_ANGLE, GRID_WIDTH + 1,
+                                                   GRID_HEIGHT + 1, 0, 0, sub_sampling_x, sub_sampling_y, inc_list);
 
     lat_grid->SetUnit(snapengine::Unit::DEGREES);
     lon_grid->SetUnit(snapengine::Unit::DEGREES);
