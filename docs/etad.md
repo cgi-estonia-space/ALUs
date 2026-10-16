@@ -3,8 +3,10 @@
 ## Implementation policy
 
 The ETAD reader preserves the source samples as `double` and performs phase, interpolation and gradient calculations
-in double precision. It does **not** narrow inputs to Float32 to reproduce SNAP's implementation. Matching algorithms,
-units, grids and validity handling is the objective; bitwise reproduction of an intermediate precision loss is not.
+in double precision. It does **not** reproduce the Float32 conversion in SNAP's
+[rank-2 NetCDF reader](https://github.com/senbox-org/microwave-toolbox/blob/c2637806de2477ca0af2e23e3d669679b20d9f4d/sar-io/src/main/java/eu/esa/sar/io/sentinel1/Sentinel1ETADNetCDFReader.java#L299-L324).
+Matching algorithms, units, grids and validity handling is the objective; bitwise reproduction of an intermediate
+precision loss is not.
 
 `sentinel1_etad_product.cc` handles native XML and grouped NetCDF input. The owning grids and metadata are plain C++
 structures, not SNAP `Product` or `MetadataElement` objects. `etad_grid.h` provides non-owning grid views and geometry;
@@ -13,22 +15,19 @@ Ceres is used only for SAFE/ZIP access and extraction lifetime.
 
 ## SLC association and preparation
 
-Host-side SLC association and ETAD preparation live under `sentinel1/etad`; they are part of
-`sentinel1-util-static`, not a separate algorithm executable:
-
+Host-side SLC association and ETAD preparation are at `sentinel1/etad`:
 - `slc_metadata.h` and `slc_metadata.cc` read one native SLC product annotation selected by swath and polarisation.
-  They return owned plain C++ metadata without constructing a SNAP `Product`, `MetadataElement`, `Sentinel1Utils` or
+  Plain C++ metadata is returned without SNAP constructs like `Product`, `MetadataElement`, `Sentinel1Utils` or
   `SubSwathInfo`. Radar frequency remains in Hz and native `slantRangeTime` remains a two-way time in seconds.
 - `etad_preparation.h` and `etad_preparation.cc` associate a zero-based contiguous SLC burst selection with global ETAD
   burst indices, validate complete coverage and load the existing double-precision phase, height and gradient layers.
-- Variable-length product metadata and prepared arrays use `std::string` and `std::vector`. Burst selections,
-  associations, SLC timing geometry and borrowing prepared-grid views are standard-layout, trivially-copyable
-  structures. Views are created from their owning prepared bursts only after those bursts reach their final location.
 
 SLC-to-ETAD association does not call the generic point lookup `FindBurst`: adjacent ETAD burst coverages overlap.
-Instead it follows SNAP TOPS preparation by matching an SLC burst first-line time to the ETAD burst azimuth minimum
-within 0.1 seconds. ALUs additionally requires exactly one match and verifies that the complete SLC burst azimuth and
-two-way range extents lie strictly inside that ETAD burst's coverage.
+Instead it follows [SNAP TOPS preparation](https://github.com/senbox-org/microwave-toolbox/blob/c2637806de2477ca0af2e23e3d669679b20d9f4d/sar-op-sentinel1/src/main/java/eu/esa/sar/sentinel1/gpf/etadcorrectors/TOPSCorrector.java#L281-L289)
+by matching an SLC burst first-line time to the ETAD burst azimuth minimum within 0.1 seconds. The
+[ALUs association](https://github.com/kptr-juku/ALUs/blob/6e94a565bd4ffe54646dd86208435695e0d00f0f/sentinel1/etad/etad_preparation.cc#L88-L116)
+additionally requires exactly one match and verifies that the complete SLC burst azimuth and two-way range extents lie
+strictly inside that ETAD burst's coverage.
 
 Standard SAFE names select the ETAD acquisition by their sensing-time and orbit token. Renamed or burst-product inputs
 fall back to the native annotation mission, absolute orbit and start/stop interval, requiring one unambiguous ETAD
@@ -46,32 +45,14 @@ const auto prepared = etad::PrepareInSar(slc_metadata, {1, 1}, etad_product);
 
 Each `PreparedBurst` owns its correction arrays and records the source SLC index, split-local index, output line offset,
 global ETAD `bIndex`, SLC timing geometry and ETAD interpolation geometry. Reference and secondary acquisitions are
-prepared independently; pair correspondence and device transfer remain backgeocoding responsibilities.
+prepared independently; pair correspondence and device transfer are done by backgeocoding operator.
 
-Timing-calibration lookup now requires both swath and polarisation. It selects the matching direct/reference value but
-does not add the separately retained channel offset; the nonzero-offset policy remains unresolved as described below.
-
-## Context from the original ALUs work
-
-The original `cgi-estonia-space/ALUs` wiki already treats small floating-point differences as a numerical evaluation
-problem rather than an automatic algorithm failure:
-
-- [Coherence estimation evaluation — Single subswath](https://github.com/cgi-estonia-space/ALUs/wiki/Coherence-estimation-evaluation#single-subswath)
-  reports that almost all valid pixels can differ in a decimal place while the average relative difference is around
-  0.1%. It discusses orbital interpolation, backgeocoding and coherence arithmetic as sources of differences. The page
-  links the original [GPU-GSTP-MPR-0008 report](https://github.com/user-attachments/files/17943084/GPU-GSTP-MPR-0008.pdf).
-- [Calibration routine evaluation — Single subswath](https://github.com/cgi-estonia-space/ALUs/wiki/Calibration-routine-evaluation#single-subswath)
-  reports pixelwise differing percentages and relative error alongside aggregate statistics. Its SRTM3 example has
-  1.615699% differing pixels and 2.689596 PPM average relative difference, with zero pixels in its "bad pixels" category.
-- [Document stash](https://github.com/cgi-estonia-space/ALUs/wiki/Document-stash) indexes the earlier reports and figures.
-
-These pages were consulted on 2026-09-11. Their older coherence/calibration figures are context, **not ETAD acceptance
-thresholds**. In particular, GPU/CPU execution differences should not be used as a blanket explanation: the native ETAD
-comparison below used host calculations, and a specific SNAP reader conversion was identified.
+Timing-calibration lookup requires both swath and polarisation. It selects the matching direct/reference value but
+does not add the separately retained channel offset; nonzero channel offsets are not currently supported.
 
 ## Inputs and exact comparison stage
 
-For ETAD datasets, matching SLC inputs and data preparation, refer to
+The input products and processing configurations are from ESA's official
 [ETAD Correction Tutorial v3](https://drive.google.com/file/d/1RYGGYMI-KvxDd_u40dITl-yp8sWQNjw9/view).
 
 The comparison below uses these Saint-Etienne acquisitions:
@@ -90,9 +71,11 @@ Their embedded processing graphs specify:
 - S1-ETAD-Correction: `resamplingImage=false`, `outputPhaseCorrections=true`.
 - SLC radar frequency: `5405.000454334349 MHz`, explicitly converted to Hz for calculation.
 
-The selected SLC burst 2 corresponds to **ETAD global bIndex 5**, not bIndex 2.
+`bIndex` is product-global rather than a local SLC burst number. In this product, each temporal group is ordered IW3,
+IW1, IW2: the first group has indices 1, 2, 3 and the second has 4, 5, 6. The selected IW1 SLC burst 2 therefore
+corresponds to **ETAD global bIndex 5**. Association uses burst time rather than assuming this ordering.
 
-For each date, the three compared arrays were:
+For each date, the three compared arrays are:
 
 ```text
 processed/<SLC stem>_split_Orb_etad.data/tie_point_grids/etadPhaseCorrection_IW1_5.img
@@ -124,8 +107,8 @@ The first table compares ALUs double results directly with the numerical values 
 | 2024-08-24 | height | m | 6.102655038375815e-5 |
 | 2024-08-24 | gradient | rad/m | 1.233243256515415e-6 |
 
-For a second, storage-only diagnostic, the already-computed ALUs result was rendered to Float32. This conversion
-was **after** computation, not inside the reader or calculation. It separates output storage effects from input
+For a second, storage-only diagnostic, the already-computed ALUs result is in Float32. This conversion
+is done **after** computation, not inside the reader or calculation. It separates output storage effects from input
 quantisation effects. All six arrays have 47,415 finite samples and zero invalid-mask mismatches.
 
 | Date | Layer | Differing samples after Float32 rendering | Max absolute difference | RMSE |
@@ -142,54 +125,27 @@ quantisation effects. All six arrays have 47,415 finite samples and zero invalid
 The inspected Microwave Toolbox source is `origin/14.x` at
 `c2637806de2477ca0af2e23e3d669679b20d9f4d`:
 
-1. `sar-io/.../Sentinel1ETADNetCDFReader.java`, `readDataForRank2Variable`, lines 299–325, reads through
+1. [`Sentinel1ETADNetCDFReader.readDataForRank2Variable`](https://github.com/senbox-org/microwave-toolbox/blob/c2637806de2477ca0af2e23e3d669679b20d9f4d/sar-io/src/main/java/eu/esa/sar/io/sentinel1/Sentinel1ETADNetCDFReader.java#L299-L324) reads through
    `srcArray.getFloat(...)` and `destBuffer.setElemFloatAt(...)`, even for Float64 NetCDF variables. Promoting these
    values back to double later cannot recover discarded bits.
-2. `sar-op-sentinel1/.../etadcorrectors/TOPSCorrector.java`, `computeRangeTimeCorrectionPhase`, performs the phase formula
-   on these narrowed values. Multiplication by approximately `2*pi*5.405e9` amplifies small delay differences into
-   observable phase differences.
-3. `ETADUtils.java`, `computeGradientForCurrentBurst` / `computeGradient`, uses differences between neighbouring samples
-   and a local regression with an intercept. Rounding of both height and troposphere affects those differences. A high
-   fraction of non-identical gradient samples is therefore compatible with a small absolute discrepancy.
-4. `TOPSCorrector.saveBurstDataAsTiePointGrid` converts the computed values to Float32 again for TPG storage. Height's
-   exact match after output rendering is consistent with storage rounding alone.
+2. [`TOPSCorrector.computeRangeTimeCorrectionPhase`](https://github.com/senbox-org/microwave-toolbox/blob/c2637806de2477ca0af2e23e3d669679b20d9f4d/sar-op-sentinel1/src/main/java/eu/esa/sar/sentinel1/gpf/etadcorrectors/TOPSCorrector.java#L317-L334)
+   performs the phase formula on these narrowed values. Multiplication by approximately `2*pi*5.405e9` amplifies small
+   delay differences into observable phase differences.
+3. [`ETADUtils.computeGradientForCurrentBurst` and `computeGradient`](https://github.com/senbox-org/microwave-toolbox/blob/c2637806de2477ca0af2e23e3d669679b20d9f4d/sar-op-sentinel1/src/main/java/eu/esa/sar/sentinel1/gpf/etadcorrectors/ETADUtils.java#L544-L587)
+   use differences between neighbouring samples and a local regression with an intercept. Rounding of both height and
+   troposphere affects those differences. A high fraction of non-identical gradient samples is therefore compatible
+   with a small absolute discrepancy.
+4. [`TOPSCorrector.saveBurstDataAsTiePointGrid`](https://github.com/senbox-org/microwave-toolbox/blob/c2637806de2477ca0af2e23e3d669679b20d9f4d/sar-op-sentinel1/src/main/java/eu/esa/sar/sentinel1/gpf/etadcorrectors/TOPSCorrector.java#L304-L314)
+   converts the computed values to Float32 again for TPG storage. Height's exact match after output rendering is
+   consistent with storage rounding alone.
 
 A temporary diagnostic experiment rounded the four ALUs inputs before calculation. After output rendering it produced
 zero differing values for all six grids. This strongly isolates the reader's Float32 conversion as the source of the
-observed differences for these data. **That experiment was removed from the implementation.** It is evidence about the
-cause, not a production precision policy.
+observed differences for these data. The diagnostic is not part of the production implementation and does not define
+its precision policy.
 
-The results support the indexing, orientation, sign and regression implementation for these two bursts. They do not
-establish universal tolerances or validate the later full-resolution sidecar, resampling or coherence path.
-
-## Calibration schema clarification
-
-The earlier variable named `legacy` was a `pugi::xml_node`, not a version number or calibration value. Pugixml converts
-an existing node to true and a missing node to false. Consequently:
-
-```cpp
-legacy ? node : reference
-```
-
-selected the per-channel record for the old direct-value schema, or the product reference element for the newer schema.
-The implementation now uses `direct_calibrations`, `has_direct_calibrations` and explicit branches.
-
-- Direct-value schema: `instrumentTimingCalibrationList/instrumentTimingCalibration` carries `rangeCalibration` and
-  `azimuthCalibration` for each swath/polarisation.
-- Reference-plus-offset schema: `instrumentTimingCalibrationReference` carries the common values, and
-  `instrumentTimingCalibrationOffsetList` carries channel-dependent `rangeOffset` and `azimuthOffset` values.
-- The parser now **retains both reference values and offsets separately**. The current InSAR preparation uses the
-  reference range calibration. It does not apply channel offsets.
-
-The old comment about using only the reference "for SNAP 14.x parity" described the inspected SNAP utility's behavior;
-it was not evidence that nonzero offsets can generally be discarded. The supplied `support/etadProduct.xsd` documents
-channel-dependent offsets (lines 1322–1336 and 2384–2421) and separate per-burst residual polarisation offsets to apply
-relative to the reference channel (lines 341–390). A future polarisation-aware correction must distinguish these records
-and account for what SETAP has already incorporated into the grids, rather than blindly adding both.
-
-The inspected Saint-Etienne 2024-08-12 annotation has zero channel offsets and declares no swath/polarisation-dependent
-timing information. These comparisons therefore do not resolve nonzero-offset application. That remains an explicit
-extension beyond the current reference-calibration phase preparation.
+For these two bursts, the results support the indexing, orientation, sign and regression implementation. Universal
+tolerances and the later full-resolution sidecar, resampling and coherence path require separate validation.
 
 ## Geolocation scope
 
@@ -200,10 +156,10 @@ pixel positions, combine the geometric correction layers or resample complex ima
 
 ## Pipeline integration and verification
 
-Unit tests cover only annotation parsing and input-metadata combinations. The temporary numerical/CUDA test
-cases and the `etad_grid_compare.cc` executable have been removed as requested. Pairwise `alus-coh` accepts
+Unit tests cover only annotation parsing and input-metadata combinations. Pairwise `alus-coh` accepts
 `--etad_ref` and `--etad_sec`, which must be supplied together. Selected acquisitions are prepared independently and
-uploaded during backgeocoding. ETAD runs add a fifth Float32 in-memory plane after master I/Q and secondary I/Q:
+the correction grids for both acquisitions are uploaded to GPU memory during backgeocoding. ETAD runs add a fifth
+Float32 plane after reference I/Q and secondary I/Q:
 
 ```text
 etad_ifg = reference_phase - secondary_phase
@@ -218,15 +174,50 @@ no-data and ETAD provenance.
 
 The comparison **method** is reusable: read corresponding raster windows, promote values to double, compare masks and
 each pixel, and report maximum absolute error, RMSE, signed bias, quantiles and counts above justified tolerances.
-The old executable's DIMAP-specific discovery of burst TPGs is not the final sidecar reader.
+Equal aggregate statistics can conceal alignment errors, so acceptance uses the pixelwise comparison.
 
-Aggregate statistics are not guaranteed to match across data types: quantisation affects means, extrema, variance and
-subsequent calculations. Conversely, equal statistics can conceal a transposed or shifted raster. Pixelwise comparison
-on the same grid is essential. Reading a Float32 golden into a double buffer is fine; narrowing ALUs inputs is not.
+### Coherence interpretation
 
-See [ETAD E2E data recipe](../build-automation/ETAD_E2E.md) for the staged SNAP graph, exact inputs, measured results and
-acceptance thresholds. `run_saint_etienne_etad_test.sh` runs the full pipeline and `compare_etad_ifg.py` performs the
-striped pixelwise comparison while retaining difference and mask-mismatch rasters.
+ALUs applies `secondary *= exp(+j * etad_ifg)` before flat-earth correction and coherence-window accumulation. A
+constant phase does not change coherence magnitude; only phase variation inside the 10 x 3 window changes the coherent
+sum. SNAP's classical `InterferogramOp` applies ETAD in its
+[interferogram branch](https://github.com/senbox-org/microwave-toolbox/blob/ff8c42a86935f4129f495be4481d5d93df9bb683/sar-op-insar/src/main/java/eu/esa/sar/insar/gpf/InterferogramOp.java#L5018-L5042),
+but its [coherence branch](https://github.com/senbox-org/microwave-toolbox/blob/ff8c42a86935f4129f495be4481d5d93df9bb683/sar-op-insar/src/main/java/eu/esa/sar/insar/gpf/InterferogramOp.java#L5044-L5086)
+reloads the secondary tile and applies only flat-earth and optional topographic phase. The same separation is present in
+[SNAP 14.x](https://github.com/senbox-org/microwave-toolbox/blob/c2637806de2477ca0af2e23e3d669679b20d9f4d/sar-op-insar/src/main/java/eu/esa/sar/insar/gpf/InterferogramOp.java#L3207-L3273).
+
+The tutorial-derived SNAP ETAD and non-ETAD DIMAP graphs also produced different coregistered secondary samples.
+Consequently, the coherence difference measures graph/coregistration provenance, not an ETAD coherence effect. On
+the matched ALUs stack, the smaller coherence change is the actual effect of the smooth ETAD phase inside each window.
+The sign of a raster-wide mean change is not a phase-sign test.
+
+The SNAP operator sequences and parameters are recorded in the generated DIMAP graphs. Both use IW1/VV, burst 2,
+10 x 3 coherence and `Interferogram` with `includeCoherence=true`; the ETAD graph additionally includes
+`S1-ETAD-Correction` in grids-only mode before `Back-Geocoding`.
+
+The ALUs ETAD run:
+
+```bash
+./alus-coh \
+    -r S1A_IW_SLC__1SDV_20240812T173153_20240812T173220_055183_06B9C2_FAB2.SAFE/manifest.safe \
+    -s S1A_IW_SLC__1SDV_20240824T173153_20240824T173220_055358_06C040_6841.SAFE/manifest.safe \
+    --b_ref1 2 --b_ref2 2 --b_sec1 2 --b_sec2 2 --rg_win 10 --az_win 3 --sw IW1 -p VV \
+    --orbit_ref S1A_OPER_AUX_POEORB_OPOD_20240901T070629_V20240811T225942_20240813T005942.EOF \
+    --orbit_sec S1A_OPER_AUX_POEORB_OPOD_20240913T070636_V20240823T225942_20240825T005942.EOF \
+    --dem Copernicus_DSM_COG_10_N45_00_E003_00_DEM.tif \
+    --dem Copernicus_DSM_COG_10_N45_00_E004_00_DEM.tif \
+    --etad_ref S1A_IW_ETA__AXDV_20240812T173153_20240812T173220_055183_06B9C2_E046.SAFE \
+    --etad_sec S1A_IW_ETA__AXDV_20240824T173153_20240824T173220_055358_06C040_5B80.SAFE \
+    -o processed/ --wif
+```
+
+See the [Saint-Étienne ETAD comparison](../build-automation/SAINT_ETIENNE_ETAD.md) for the staged SNAP graph, exact
+inputs, measured results and acceptance thresholds. `run_saint_etienne_etad_test.sh` runs the full pipeline and
+`compare_etad_ifg.py` performs the striped pixelwise comparison while retaining difference and mask-mismatch rasters.
+
+The [Storm Daniel comparison](../build-automation/STORM_DANIEL_ETAD.md) documents the Thessaly pair, event references,
+required SNAP baseline and `run_storm_daniel_etad_test.sh`. It remains an exploratory comparison until the independent
+SNAP baseline has been reviewed and dataset-specific thresholds have been established.
 
 Verification commands, with `BUILD_DIR` set to the configured build directory:
 
@@ -237,25 +228,9 @@ ctest --test-dir "$BUILD_DIR" -R '^sentinel1-etad-unit-test$' --output-on-failur
 cmake --build "$BUILD_DIR" -j12
 ctest --test-dir "$BUILD_DIR" --output-on-failure
 PATH="$BUILD_DIR/alus_package:$PATH" build-automation/run_saint_etienne_etad_test.sh \
-    <Saint-Etienne dataset dir> <COPDEM 30m dir> <orbit dir> [output dir]
+    <SLC dir> <ETAD dir> <COPDEM 30m dir> <orbit dir> [output dir]
 ```
 
 The eleven parser/input-structure and association cases pass, all CTest targets pass, and the full build succeeds. The
 Saint-Etienne E2E produces 33,740,991 mutually valid pixels with 0.0044522 rad RMSE and 0.017245 rad p99 absolute error
-against SNAP's pre-deburst `etad_ifg`; detailed mask and tolerance policy is recorded in the E2E recipe.
-
-## Artifacts from this investigation
-
-The native-precision calculations were rendered to Float32 GeoTIFFs for the second table. The separate input-rounding
-experiment produced diagnostic artifacts only; those do not represent the final implementation.
-
-SHA-256 of the native-calculation rendered artifacts, identified independently of storage location:
-
-| Acquisition date | Artifact | SHA-256 |
-|---|---|---|
-| 2024-08-12 | `etadGradient_IW1_5.tif` | `3efbc7c68235f9e6cd049ed96a7e43f93a11cc82a6499c4b211a7ebd2b4e1063` |
-| 2024-08-12 | `etadHeight_IW1_5.tif` | `4c8017775f8f2d1ff4110c2584c2f407d23bb4a9595ecedc7256b20cf3394c2d` |
-| 2024-08-12 | `etadPhaseCorrection_IW1_5.tif` | `df633b4685d14020a2df02884543f570ba1761625ebdeddcd24d3e7408671f4a` |
-| 2024-08-24 | `etadGradient_IW1_5.tif` | `eec525ab99c279768144284c00af22d976e32caaae53f59d824b6cb820aa577b` |
-| 2024-08-24 | `etadHeight_IW1_5.tif` | `34c68b00d2a88092e869934c5f00ce7dbd6cd10e6ec6bfff464b9041c9a778cc` |
-| 2024-08-24 | `etadPhaseCorrection_IW1_5.tif` | `0e707ae29d0ce2d2993abd35facb7734befef574c9bb8fae3e79d44ffb76330d` |
+against SNAP's pre-deburst `etad_ifg`; the E2E recipe records the command, masks and acceptance thresholds.

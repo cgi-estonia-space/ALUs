@@ -144,7 +144,7 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
         if (reference_swath_selection.size() > 1U) {
             cor_output_file += swath + "_";
         }
-        cor_output_file += "Orb_Stack";
+        cor_output_file += apply_etad ? "Orb_etad_Stack" : "Orb_Stack";
 
         std::vector<GDALDataset*> coreg_output_datasets;
         {
@@ -205,7 +205,21 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
                     CHECK_GDAL_ERROR(etad_band->SetUnitType("radian"));
                     CHECK_GDAL_ERROR(etad_band->SetNoDataValue(std::numeric_limits<float>::quiet_NaN()));
                     AddMetadataTo(etad_dataset, metadata_);
-                    GeoTiffWriteFile(etad_dataset, cor_output_file + "_etad_ifg");
+                    const auto& reference_split = reference_splits.at(reference_index);
+                    const auto& secondary_split = secondary_splits.at(secondary_index);
+                    std::string reference_bursts = std::to_string(reference_split->GetFirstBurstIndex());
+                    if (reference_split->GetLastBurstIndex() != reference_split->GetFirstBurstIndex()) {
+                        reference_bursts += "-" + std::to_string(reference_split->GetLastBurstIndex());
+                    }
+                    std::string secondary_bursts = std::to_string(secondary_split->GetFirstBurstIndex());
+                    if (secondary_split->GetLastBurstIndex() != secondary_split->GetFirstBurstIndex()) {
+                        secondary_bursts += "-" + std::to_string(secondary_split->GetLastBurstIndex());
+                    }
+                    const std::string etad_output_file =
+                        output_folder + result_stem + "_" + swath + "_" + polarisation_upper + "_ref_b" +
+                        reference_bursts + "_sec_b" + secondary_bursts + "_Orb_etad_Stack_ifg.tif";
+                    GeoTiffWriteFile(etad_dataset, etad_output_file);
+                    LOGI << "ETAD interferometric phase output @ " << etad_output_file;
                 }
             }
         }
@@ -371,8 +385,8 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
     std::string output_file = output_folder + result_stem + "_";
     if (deb_products.size() == 1) {
         tc_input = deb_products.front();
-        output_file +=
-            "Orb_Stack_" + s1tbx::Sentinel1Utils(deb_products.front()).GetSubSwathNames().front() + "_coh_deb";
+        output_file += (apply_etad ? "Orb_etad_Stack_" : "Orb_Stack_") +
+                       s1tbx::Sentinel1Utils(deb_products.front()).GetSubSwathNames().front() + "_coh_deb";
     } else {
         std::string sw_names{};
         for (size_t i{}; i < deb_products.size(); i++) {
@@ -382,7 +396,7 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
                 sw_names += "_";
             }
         }
-        output_file += "Orb_Stack_coh_deb_mrg_" + sw_names;
+        output_file += (apply_etad ? "Orb_etad_Stack_coh_deb_mrg_" : "Orb_Stack_coh_deb_mrg_") + sw_names;
         // Merge
         auto merge_start = std::chrono::steady_clock::now();
         std::vector<std::string> merge_polarisations(deb_products.size(), polarisation_upper);
