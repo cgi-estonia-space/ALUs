@@ -85,16 +85,17 @@ struct SlaveMultiplyComplexReferencePhase {
     }
 };
 
-struct SlaveMultiplyEtadPhase {
+struct SecondaryEtadCorrection {
     __host__ __device__ thrust::tuple<float, float> operator()(const thrust::tuple<float, float, float>& t) {
         const float phase = thrust::get<0>(t);
-        const float slave_real = thrust::get<1>(t);
-        const float slave_imaginary = thrust::get<2>(t);
+        const float secondary_real = thrust::get<1>(t);
+        const float secondary_imaginary = thrust::get<2>(t);
         if (!isfinite(phase)) {
             return thrust::make_tuple(0.0F, 0.0F);
         }
-        const auto out = thrust::complex<float>(slave_real, slave_imaginary) *
-                         thrust::complex<float>(cosf(phase), sinf(phase));
+        // Complex multiplication results in phase rotation. ETAD phase is represented by Euler's identity components.
+        const auto out = thrust::complex(secondary_real, secondary_imaginary) *
+                         thrust::complex(cosf(phase), sinf(phase));
         return thrust::make_tuple(out.real(), out.imag());
     }
 };
@@ -261,7 +262,7 @@ void CoherenceComputation::LaunchCoherence(const CohTile& tile, ThreadContext& c
             thrust::make_zip_iterator(
                 thrust::make_tuple(ctx.d_etad_ifg.end(), ctx.d_band_slave_real.end(), ctx.d_band_slave_imag.end())),
             thrust::make_zip_iterator(thrust::make_tuple(ctx.d_band_slave_real.begin(), ctx.d_band_slave_imag.begin())),
-            SlaveMultiplyEtadPhase());
+            SecondaryEtadCorrection());
     }
 
     size_t size_to_last = input_tile_height * input_tile_width;
