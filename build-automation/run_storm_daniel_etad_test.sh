@@ -37,7 +37,7 @@ mkdir -p "$output_dir"
 script_dir=$(cd -- "$(dirname -- "$0")" && pwd)
 
 # Storm Daniel affected Thessaly in September 2023. Bursts 1-2 select stable, non-flooded scatterers in Thessaly.
-# See STORM_DANIEL_ETAD.md for event references and SNAP preparation.
+# See docs/etad.md for event context and SNAP preparation.
 reference_slc="S1A_IW_SLC__1SDV_20230906T044011_20230906T044038_050202_060AD8_546A.SAFE"
 reference_etad="S1A_IW_ETA__AXDV_20230906T044011_20230906T044038_050202_060AD8_7307.SAFE"
 secondary_slc="S1A_IW_SLC__1SDV_20230918T044011_20230918T044038_050377_0610CC_620B.SAFE"
@@ -77,7 +77,7 @@ golden="$NIGHTLY_GOLDEN_DIR/$golden_name"
 golden_header="${golden%.img}.hdr"
 if [[ ! -f "$golden" || ! -f "$golden_header" ]]; then
     echo "Missing SNAP pre-deburst etad_ifg golden: $golden" >&2
-    echo "Generate it with SNAP as documented in build-automation/STORM_DANIEL_ETAD.md" >&2
+    echo "Generate it with SNAP as documented in docs/etad.md" >&2
     exit 1
 fi
 
