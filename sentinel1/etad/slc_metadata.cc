@@ -11,7 +11,6 @@
 #include <iterator>
 #include <limits>
 #include <regex>
-#include <stdexcept>
 #include <string>
 #include <utility>
 
@@ -24,15 +23,14 @@
 #include <pugixml.hpp>
 
 #include "ceres-core/core/i_virtual_dir.h"
+#include "general_utils.h"
 
 namespace {
 constexpr double LIGHT_SPEED_METRES_PER_SECOND = 299792458.0;
-
-void Require(bool condition, const std::string& message) {
-    if (!condition) {
-        throw std::runtime_error("SLC metadata: " + message);
-    }
-}
+constexpr std::string_view REQUIRE_PREFIX = "SLC metadata";
+const auto Require = [](bool condition, std::string_view message) {
+    alus::utils::general::Require(condition, message, REQUIRE_PREFIX);
+};
 
 std::string Text(const pugi::xml_node& node, const char* field) {
     const std::string value = boost::algorithm::trim_copy(std::string(node.child_value(field)));
@@ -109,7 +107,7 @@ std::string ReadFile(alus::ceres::IVirtualDir& directory, const std::string& pat
 }
 }  // namespace
 
-namespace alus::s1tbx::slc {
+namespace alus::s1sar::slc {
 
 Metadata ParseAnnotation(std::string_view xml, std::string_view product_name) {
     pugi::xml_document document;
@@ -221,4 +219,4 @@ Metadata ReadMetadata(const std::filesystem::path& path, std::string_view swath_
     return std::move(matches.front());
 }
 
-}  // namespace alus::s1tbx::slc
+}  // namespace alus::s1sar::slc

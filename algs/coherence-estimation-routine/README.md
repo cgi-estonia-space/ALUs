@@ -3,6 +3,7 @@
 Coherence estimation routine consists of:  
 
 * 2 x input SLC coregistration(split + apply orbit file + backgeocoding)
+  * Optional ETAD based phase correction layer
 * Coherence estimation
 * Deburst
 * Merge (when multiple subswaths selected)

@@ -10,7 +10,7 @@
 #include <pugixml.hpp>
 
 namespace {
-namespace etad = alus::s1tbx::etad;
+namespace etad = alus::s1sar::etad;
 
 /** Native annotation with non-contiguous indices, overlapping bursts and variable grid sizes. */
 std::string Annotation() {

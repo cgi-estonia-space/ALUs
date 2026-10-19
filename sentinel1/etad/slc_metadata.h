@@ -11,7 +11,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace alus::s1tbx::slc {
+namespace alus::s1sar::slc {
 
 /** A native SLC burst's zero-Doppler first-line time, in UTC seconds since 2000-01-01. */
 struct Burst {
@@ -56,4 +56,4 @@ Metadata ParseAnnotation(std::string_view xml, std::string_view product_name);
  */
 Metadata ReadMetadata(const std::filesystem::path& path, std::string_view swath_id, std::string_view polarisation);
 
-}  // namespace alus::s1tbx::slc
+}  // namespace alus::s1sar::slc

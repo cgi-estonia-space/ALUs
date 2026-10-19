@@ -13,7 +13,7 @@
 #include "sentinel1_etad_product.h"
 #include "slc_metadata.h"
 
-namespace alus::s1tbx::etad {
+namespace alus::s1sar::etad {
 
 /** Zero-based contiguous selection in the source SLC annotation. */
 struct BurstSelection {
@@ -29,6 +29,7 @@ struct BurstAssociation {
     int etad_b_index{};
 };
 
+/** TODO - This would be a very good candidate for representing a burst when replacing SNAP datamodel **/
 /** Calculation-ready SLC burst timing. Azimuth is MJD2000 UTC; range is two-way time. */
 struct SlcBurstGeometry {
     double first_line_time{};
@@ -95,4 +96,4 @@ inline PreparedBurstView View(const PreparedBurst& burst) {
             View(burst.layers.height), View(burst.layers.gradient)};
 }
 
-}  // namespace alus::s1tbx::etad
+}  // namespace alus::s1sar::etad

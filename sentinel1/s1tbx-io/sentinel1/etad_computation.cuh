@@ -15,7 +15,7 @@
 #define ALUS_ETAD_HOST_DEVICE
 #endif
 
-namespace alus::s1tbx::etad {
+namespace alus::s1sar::etad {
 
 /** Convert seconds of range delay (or seconds/metre of gradient) to radians (or radians/metre). */
 ALUS_ETAD_HOST_DEVICE inline double DelayToPhase(double delay, double frequency_hz) {
@@ -125,6 +125,6 @@ ALUS_ETAD_HOST_DEVICE inline double TroposphericGradientAt(GridView troposphere,
     return std::isfinite(slope) ? slope : INVALID;
 }
 
-}  // namespace alus::s1tbx::etad
+}  // namespace alus::s1sar::etad
 
 #undef ALUS_ETAD_HOST_DEVICE

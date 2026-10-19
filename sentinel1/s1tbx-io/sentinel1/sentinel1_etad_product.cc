@@ -27,7 +27,6 @@
 #include <regex>
 #include <set>
 #include <sstream>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -47,15 +46,14 @@
 #include "ceres-core/core/i_virtual_dir.h"
 #include "etad_computation.cuh"
 #include "gdal_util.h"
+#include "general_utils.h"
 
 namespace {
 constexpr double INVALID = std::numeric_limits<double>::quiet_NaN();
-
-void Require(bool condition, const std::string& message) {
-    if (!condition) {
-        throw std::runtime_error("ETAD: " + message);
-    }
-}
+constexpr std::string_view REQUIRE_PREFIX = "ETAD";
+const auto Require = [](bool condition, std::string_view message) {
+    alus::utils::general::Require(condition, message, REQUIRE_PREFIX);
+};
 
 std::string Text(const pugi::xml_node& node, const char* field) {
     const std::string value = boost::algorithm::trim_copy(std::string(node.child_value(field)));
@@ -104,8 +102,8 @@ double Time(const pugi::xml_node& node, const char* field) {
     return std::chrono::duration<double>(std::chrono::microseconds(elapsed.total_microseconds())).count();
 }
 
-alus::s1tbx::etad::Coverage ReadCoverage(const pugi::xml_node& node) {
-    alus::s1tbx::etad::Coverage coverage{Time(node, "azimuthTimeMin"), Time(node, "azimuthTimeMax"),
+alus::s1sar::etad::Coverage ReadCoverage(const pugi::xml_node& node) {
+    alus::s1sar::etad::Coverage coverage{Time(node, "azimuthTimeMin"), Time(node, "azimuthTimeMax"),
                                          Number(node, "rangeTimeMin"), Number(node, "rangeTimeMax")};
     Require(coverage.azimuth_min < coverage.azimuth_max && coverage.range_min < coverage.range_max,
             "invalid temporal coverage");
@@ -118,11 +116,11 @@ size_t GridSize(size_t rows, size_t columns) {
     return rows * columns;
 }
 
-void CheckGrid(const alus::s1tbx::etad::Grid& grid) {
+void CheckGrid(const alus::s1sar::etad::Grid& grid) {
     Require(grid.values.size() == GridSize(grid.rows, grid.columns), "grid buffer size mismatch");
 }
 
-void CheckSameGrid(const alus::s1tbx::etad::Grid& left, const alus::s1tbx::etad::Grid& right) {
+void CheckSameGrid(const alus::s1sar::etad::Grid& left, const alus::s1sar::etad::Grid& right) {
     CheckGrid(left);
     CheckGrid(right);
     Require(left.rows == right.rows && left.columns == right.columns, "layer dimensions differ");
@@ -143,7 +141,7 @@ std::string SingleFile(alus::ceres::IVirtualDir& directory, const std::string& f
     return matches.front();
 }
 
-std::vector<alus::s1tbx::etad::Calibration> ReadCalibrations(const pugi::xml_node& aux) {
+std::vector<alus::s1sar::etad::Calibration> ReadCalibrations(const pugi::xml_node& aux) {
     const auto direct_calibrations = aux.child("instrumentTimingCalibrationList");
     const bool has_direct_calibrations = !direct_calibrations.empty();
     auto list = direct_calibrations;
@@ -152,9 +150,9 @@ std::vector<alus::s1tbx::etad::Calibration> ReadCalibrations(const pugi::xml_nod
         list = aux.child("instrumentTimingCalibrationOffsetList");
         entry_name = "instrumentTimingCalibrationOffset";
     }
-    std::vector<alus::s1tbx::etad::Calibration> calibrations;
+    std::vector<alus::s1sar::etad::Calibration> calibrations;
     for (const auto& node : list.children(entry_name)) {
-        alus::s1tbx::etad::Calibration calibration;
+        alus::s1sar::etad::Calibration calibration;
         calibration.swath_id = Text(node, "swath");
         calibration.polarisation = Text(node, "polarisation");
         if (has_direct_calibrations) {
@@ -176,7 +174,7 @@ std::vector<alus::s1tbx::etad::Calibration> ReadCalibrations(const pugi::xml_nod
 }
 }  // namespace
 
-namespace alus::s1tbx::etad {
+namespace alus::s1sar::etad {
 
 Metadata ParseAnnotation(std::string_view xml) {
     pugi::xml_document document;
@@ -400,10 +398,6 @@ InSarLayers ComputeInSarLayers(const Grid& troposphere, const Grid& geodetic, co
     }
     return {std::move(phase), height, std::move(gradient)};
 }
-}  // namespace alus::s1tbx::etad
-
-namespace alus::s1tbx {
-
 Sentinel1EtadProduct Sentinel1EtadProduct::Open(const std::filesystem::path& path) {
     Sentinel1EtadProduct product;
     auto input = std::filesystem::absolute(path).lexically_normal();
@@ -441,14 +435,14 @@ Sentinel1EtadProduct Sentinel1EtadProduct::Open(const std::filesystem::path& pat
     std::ifstream stream(annotation_path.string(), std::ios::binary);
     Require(stream.good(), "cannot read annotation " + annotation);
     const std::string xml{std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>()};
-    product.metadata_ = etad::ParseAnnotation(xml);
+    product.metadata_ = ParseAnnotation(xml);
     product.measurement_path_ = directory.GetFile(measurement).string();
     Require(std::filesystem::is_regular_file(product.measurement_path_), "measurement extraction failed");
     return product;
 }
 
-etad::Grid Sentinel1EtadProduct::LoadLayer(int b_index, std::string_view layer) const {
-    const auto& burst = etad::GetBurst(metadata_, b_index);
+Grid Sentinel1EtadProduct::LoadLayer(int b_index, std::string_view layer) const {
+    const auto& burst = GetBurst(metadata_, b_index);
     Require(!layer.empty() && layer.find_first_of("/\\") == std::string_view::npos, "invalid layer name");
     std::ostringstream group_name;
     group_name << "Burst" << std::setfill('0') << std::setw(4) << burst.b_index;
@@ -471,7 +465,7 @@ etad::Grid Sentinel1EtadProduct::LoadLayer(int b_index, std::string_view layer) 
                 dimensions[1]->GetName() == "rangeExtent" && dimensions[0]->GetSize() == burst.rows &&
                 dimensions[1]->GetSize() == burst.columns,
             "NetCDF/XML dimension or axis mismatch for " + context);
-    etad::Grid grid{burst.rows, burst.columns, std::vector<double>(GridSize(burst.rows, burst.columns))};
+    Grid grid{burst.rows, burst.columns, std::vector<double>(GridSize(burst.rows, burst.columns))};
     const std::array<GUInt64, 2> start{0, 0};
     const std::array<size_t, 2> count{grid.rows, grid.columns};
     Require(array->Read(start.data(), count.data(), nullptr, nullptr, GDALExtendedDataType::Create(GDT_Float64),
@@ -496,15 +490,15 @@ etad::Grid Sentinel1EtadProduct::LoadLayer(int b_index, std::string_view layer) 
     return grid;
 }
 
-etad::InSarLayers Sentinel1EtadProduct::LoadInSarBurstLayers(int b_index, std::string_view polarisation,
-                                                             double frequency_hz) const {
+InSarLayers Sentinel1EtadProduct::LoadInSarBurstLayers(int b_index, std::string_view polarisation,
+                                                       double frequency_hz) const {
     CheckFrequency(frequency_hz);
-    const auto& burst = etad::GetBurst(metadata_, b_index);
+    const auto& burst = GetBurst(metadata_, b_index);
     const auto troposphere = LoadLayer(b_index, "troposphericCorrectionRg");
     const auto geodetic = LoadLayer(b_index, "geodeticCorrectionRg");
     const auto ionosphere = LoadLayer(b_index, "ionosphericCorrectionRg");
     const auto height = LoadLayer(b_index, "height");
-    return etad::ComputeInSarLayers(troposphere, geodetic, ionosphere, height, frequency_hz,
-                                    etad::RangeCalibration(metadata_, burst.swath_id, polarisation));
+    return ComputeInSarLayers(troposphere, geodetic, ionosphere, height, frequency_hz,
+                              RangeCalibration(metadata_, burst.swath_id, polarisation));
 }
-}  // namespace alus::s1tbx
+}  // namespace alus::s1sar::etad

@@ -7,7 +7,7 @@
 #include <gtest/gtest.h>
 
 namespace {
-namespace slc = alus::s1tbx::slc;
+namespace slc = alus::s1sar::slc;
 
 std::string Annotation() {
     return R"(<product>

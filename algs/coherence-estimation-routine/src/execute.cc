@@ -111,11 +111,11 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
     const auto* d_egm96_values = dem_assistant->GetEgm96Manager()->GetDeviceValues();
 
     const bool apply_etad = !params_.etad_reference.empty();
-    std::optional<s1tbx::Sentinel1EtadProduct> reference_etad;
-    std::optional<s1tbx::Sentinel1EtadProduct> secondary_etad;
+    std::optional<s1sar::etad::Sentinel1EtadProduct> reference_etad;
+    std::optional<s1sar::etad::Sentinel1EtadProduct> secondary_etad;
     if (apply_etad) {
-        reference_etad.emplace(s1tbx::Sentinel1EtadProduct::Open(params_.etad_reference));
-        secondary_etad.emplace(s1tbx::Sentinel1EtadProduct::Open(params_.etad_secondary));
+        reference_etad.emplace(s1sar::etad::Sentinel1EtadProduct::Open(params_.etad_reference));
+        secondary_etad.emplace(s1sar::etad::Sentinel1EtadProduct::Open(params_.etad_secondary));
         metadata_.AddWhenMissing(common::metadata::sentinel1::ETAD_CORRECTION_APPLIED, "1");
         metadata_.AddWhenMissing(common::metadata::sentinel1::ETAD_GEOMETRY_APPLIED, "0");
         metadata_.AddWhenMissing(common::metadata::sentinel1::ETAD_PHASE_APPLIED, "1");
@@ -151,27 +151,27 @@ void Execute::CalcSingleCoherence(const std::vector<std::shared_ptr<alus::topsar
             const auto coreg_start = std::chrono::steady_clock::now();
 
             coregistration::Coregistration coreg;
-            std::shared_ptr<const s1tbx::etad::PreparedPair> etad_pair;
+            std::shared_ptr<const s1sar::etad::PreparedPair> etad_pair;
             if (apply_etad) {
                 const auto& reference_split = reference_splits.at(reference_index);
                 const auto& secondary_split = secondary_splits.at(secondary_index);
                 const auto reference_slc =
-                    s1tbx::slc::ReadMetadata(params_.input_reference, swath, params_.polarisation);
+                    s1sar::slc::ReadMetadata(params_.input_reference, swath, params_.polarisation);
                 const auto secondary_slc =
-                    s1tbx::slc::ReadMetadata(params_.input_secondary, swath, params_.polarisation);
-                const s1tbx::etad::BurstSelection reference_selection{
+                    s1sar::slc::ReadMetadata(params_.input_secondary, swath, params_.polarisation);
+                const s1sar::etad::BurstSelection reference_selection{
                     reference_split->GetFirstBurstIndex() - topsarsplit::TopsarSplit::BURST_INDEX_OFFSET,
                     reference_split->GetLastBurstIndex() - reference_split->GetFirstBurstIndex() + 1,
                 };
-                const s1tbx::etad::BurstSelection secondary_selection{
+                const s1sar::etad::BurstSelection secondary_selection{
                     secondary_split->GetFirstBurstIndex() - topsarsplit::TopsarSplit::BURST_INDEX_OFFSET,
                     secondary_split->GetLastBurstIndex() - secondary_split->GetFirstBurstIndex() + 1,
                 };
-                auto prepared_pair = std::make_shared<s1tbx::etad::PreparedPair>();
-                prepared_pair->reference = std::make_shared<s1tbx::etad::PreparedAcquisition>(
-                    s1tbx::etad::PrepareInSar(reference_slc, reference_selection, reference_etad.value()));
-                prepared_pair->secondary = std::make_shared<s1tbx::etad::PreparedAcquisition>(
-                    s1tbx::etad::PrepareInSar(secondary_slc, secondary_selection, secondary_etad.value()));
+                auto prepared_pair = std::make_shared<s1sar::etad::PreparedPair>();
+                prepared_pair->reference = std::make_shared<s1sar::etad::PreparedAcquisition>(
+                    s1sar::etad::PrepareInSar(reference_slc, reference_selection, reference_etad.value()));
+                prepared_pair->secondary = std::make_shared<s1sar::etad::PreparedAcquisition>(
+                    s1sar::etad::PrepareInSar(secondary_slc, secondary_selection, secondary_etad.value()));
                 etad_pair = std::move(prepared_pair);
             }
 

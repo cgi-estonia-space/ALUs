@@ -50,7 +50,7 @@ BackgeocodingController::BackgeocodingController(std::shared_ptr<AlusFileReader<
                                                   std::shared_ptr<AlusFileWriter<float>> output_dataset,
                                                   std::shared_ptr<snapengine::Product> master_product,
                                                   std::shared_ptr<snapengine::Product> slave_product,
-                                                  std::shared_ptr<const s1tbx::etad::PreparedPair> etad_pair)
+                                                   std::shared_ptr<const s1sar::etad::PreparedPair> etad_pair)
     : master_input_dataset_(std::move(master_input_dataset)),
       slave_input_dataset_(std::move(slave_input_dataset)),
       output_dataset_(std::move(output_dataset)),

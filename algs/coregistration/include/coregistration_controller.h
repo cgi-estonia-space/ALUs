@@ -57,7 +57,7 @@ public:
 
     void Initialize(std::shared_ptr<topsarsplit::TopsarSplit> split_reference,
                     std::shared_ptr<topsarsplit::TopsarSplit> split_secondary,
-                    std::shared_ptr<const s1tbx::etad::PreparedPair> etad_pair = nullptr);
+                    std::shared_ptr<const s1sar::etad::PreparedPair> etad_pair = nullptr);
 
     void DoWork(const float* egm96_device_array, PointerArray dem_tiles, bool mask_out_area_without_elevation,
                 const dem::Property* device_dem_properties, const std::vector<dem::Property> dem_properties,

@@ -17,6 +17,7 @@
 #include <chrono>
 #include <cctype>
 #include <functional>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 
@@ -24,6 +25,28 @@
 #include "zip_util.h"
 
 namespace alus::utils::general {
+
+/**
+ * Throw std::runtime_error when a required condition is false.
+ *
+ * @param condition Required condition.
+ * @param message Error detail without a component prefix.
+ * @param prefix Optional component name, formatted as "prefix: message" when supplied.
+ */
+inline void Require(bool condition, std::string_view message, std::string_view prefix = {}) {
+    if (condition) {
+        return;
+    }
+
+    std::string error;
+    error.reserve(prefix.size() + (prefix.empty() ? 0 : 2) + message.size());
+    if (!prefix.empty()) {
+        error.append(prefix);
+        error.append(": ");
+    }
+    error.append(message);
+    throw std::runtime_error(error);
+}
 
 inline void MeasureExecutionTime(std::string_view message, const std::function<void()>& code_block) {
     const auto start = std::chrono::steady_clock::now();

@@ -53,23 +53,23 @@ __global__ void ComputeEtadCorrection(EtadBurstDescriptor reference, EtadBurstDe
         secondary.slc_geometry.first_range_time + mapped_x * secondary.slc_geometry.range_time_interval;
 
     const double reference_phase =
-        s1tbx::etad::SampleGrid(reference.phase, reference.etad_geometry, reference_azimuth, reference_range);
+        s1sar::etad::SampleGrid(reference.phase, reference.etad_geometry, reference_azimuth, reference_range);
     const double reference_height =
-        s1tbx::etad::SampleGrid(reference.height, reference.etad_geometry, reference_azimuth, reference_range);
+        s1sar::etad::SampleGrid(reference.height, reference.etad_geometry, reference_azimuth, reference_range);
     const double secondary_phase =
-        s1tbx::etad::SampleGrid(secondary.phase, secondary.etad_geometry, secondary_azimuth, secondary_range);
+        s1sar::etad::SampleGrid(secondary.phase, secondary.etad_geometry, secondary_azimuth, secondary_range);
     const double secondary_height =
-        s1tbx::etad::SampleGrid(secondary.height, secondary.etad_geometry, secondary_azimuth, secondary_range);
+        s1sar::etad::SampleGrid(secondary.height, secondary.etad_geometry, secondary_azimuth, secondary_range);
     const double secondary_gradient =
-        s1tbx::etad::SampleGrid(secondary.gradient, secondary.etad_geometry, secondary_azimuth, secondary_range);
-    const double correction = s1tbx::etad::DifferentialPhase(reference_phase, secondary_phase, reference_height,
+        s1sar::etad::SampleGrid(secondary.gradient, secondary.etad_geometry, secondary_azimuth, secondary_range);
+    const double correction = s1sar::etad::DifferentialPhase(reference_phase, secondary_phase, reference_height,
                                                              secondary_height, secondary_gradient);
     output[index] = isfinite(correction) ? static_cast<float>(correction) : INVALID;
 }
 
 }  // namespace
 
-EtadCorrection::DeviceBurst EtadCorrection::Upload(const s1tbx::etad::PreparedBurst& burst) {
+EtadCorrection::DeviceBurst EtadCorrection::Upload(const s1sar::etad::PreparedBurst& burst) {
     DeviceBurst device;
     device.phase = cuda::CudaPtr<double>(burst.layers.phase.values.size());
     device.height = cuda::CudaPtr<double>(burst.layers.height.values.size());
@@ -88,7 +88,7 @@ EtadCorrection::DeviceBurst EtadCorrection::Upload(const s1tbx::etad::PreparedBu
     return device;
 }
 
-EtadCorrection::EtadCorrection(const s1tbx::etad::PreparedPair& pair) {
+EtadCorrection::EtadCorrection(const s1sar::etad::PreparedPair& pair) {
     if (pair.reference == nullptr || pair.secondary == nullptr || pair.reference->bursts.empty() ||
         pair.secondary->bursts.empty()) {
         throw std::invalid_argument("ETAD correction requires prepared reference and secondary bursts");

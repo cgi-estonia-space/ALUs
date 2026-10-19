@@ -128,7 +128,7 @@ void Coregistration::Initialize(const Coregistration::Parameters& params) {
 
 void Coregistration::Initialize(std::shared_ptr<topsarsplit::TopsarSplit> split_reference,
                                 std::shared_ptr<topsarsplit::TopsarSplit> split_secondary,
-                                std::shared_ptr<const s1tbx::etad::PreparedPair> etad_pair) {
+                                std::shared_ptr<const s1sar::etad::PreparedPair> etad_pair) {
     split_reference_ = std::move(split_reference);
     split_secondary_ = std::move(split_secondary);
     std::shared_ptr<C16Dataset<int16_t>> reference_reader = split_reference_->GetPixelReader();

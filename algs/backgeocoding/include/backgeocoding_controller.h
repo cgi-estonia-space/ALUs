@@ -57,7 +57,7 @@ public:
                             std::shared_ptr<AlusFileWriter<float>> output_dataset,
                             std::shared_ptr<snapengine::Product> master_product,
                             std::shared_ptr<snapengine::Product> slave_product,
-                            std::shared_ptr<const s1tbx::etad::PreparedPair> etad_pair = nullptr);
+                             std::shared_ptr<const s1sar::etad::PreparedPair> etad_pair = nullptr);
 
     ~BackgeocodingController() = default;
     BackgeocodingController(const BackgeocodingController&) = delete;  // class does not support copying(and moving)
@@ -96,7 +96,7 @@ private:
     std::shared_ptr<snapengine::Product> slave_product_;
     std::shared_ptr<snapengine::Product> target_product_;
     std::unique_ptr<EtadCorrection> etad_correction_;
-    std::shared_ptr<const s1tbx::etad::PreparedPair> etad_pair_;
+    std::shared_ptr<const s1sar::etad::PreparedPair> etad_pair_;
 
     std::mutex exception_mutex_;
 

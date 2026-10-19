@@ -6,7 +6,7 @@
 
 #include <cstddef>
 
-namespace alus::s1tbx::etad {
+namespace alus::s1sar::etad {
 
 /** Non-owning azimuth-major grid. The pointer must address memory accessible to the caller. */
 struct GridView {
@@ -26,4 +26,4 @@ struct GridGeometry {
     double range_step{};
 };
 
-}  // namespace alus::s1tbx::etad
+}  // namespace alus::s1sar::etad

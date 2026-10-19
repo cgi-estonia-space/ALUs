@@ -23,7 +23,7 @@
 #include "ceres-core/core/i_virtual_dir.h"
 #include "etad_grid.h"
 
-namespace alus::s1tbx::etad {
+namespace alus::s1sar::etad {
 
 /** Contiguous azimuth-major grid. Invalid samples are quiet NaNs; zero is valid. */
 struct Grid {
@@ -149,10 +149,6 @@ Grid ComputeTroposphericGradient(const Grid& troposphere, const Grid& height);
 InSarLayers ComputeInSarLayers(const Grid& troposphere, const Grid& geodetic, const Grid& ionosphere,
                                const Grid& height, double frequency_hz, double calibration_seconds);
 
-}  // namespace alus::s1tbx::etad
-
-namespace alus::s1tbx {
-
 /**
  * Host-only ETAD SAFE/ZIP reader. Open parses metadata; layer reads are explicit and return owned arrays.
  * Copies share ownership of extracted ZIP files. Returned arrays outlive the reader.
@@ -163,11 +159,11 @@ public:
     /** Accept an unpacked SAFE directory, its manifest.safe, or ZIP. Currently IW SLC ETAD only. */
     static Sentinel1EtadProduct Open(const std::filesystem::path& path);
 
-    [[nodiscard]] const etad::Metadata& GetMetadata() const { return metadata_; }
+    [[nodiscard]] const Metadata& GetMetadata() const { return metadata_; }
     [[nodiscard]] const std::string& GetName() const { return name_; }
 
     /** Read /<swath>/BurstNNNN/<layer> in native NetCDF order, validating dimensions and converting fill to NaN. */
-    [[nodiscard]] etad::Grid LoadLayer(int b_index, std::string_view layer) const;
+    [[nodiscard]] Grid LoadLayer(int b_index, std::string_view layer) const;
 
     /**
      * Load four InSAR layers and calculate corrections with the SLC frequency in Hz.
@@ -175,15 +171,15 @@ public:
      * Numerical differences against SNAP's Float32 reader/exports are documented in docs/etad.md.
      * Uses reference range calibration; channel-dependent calibration offsets are retained as metadata only.
      */
-    [[nodiscard]] etad::InSarLayers LoadInSarBurstLayers(int b_index, std::string_view polarisation,
-                                                         double frequency_hz) const;
+    [[nodiscard]] InSarLayers LoadInSarBurstLayers(int b_index, std::string_view polarisation,
+                                                   double frequency_hz) const;
 
 private:
     Sentinel1EtadProduct() = default;
     std::shared_ptr<ceres::IVirtualDir> directory_;
     std::filesystem::path measurement_path_;
     std::string name_;
-    etad::Metadata metadata_;
+    Metadata metadata_;
 };
 
-}  // namespace alus::s1tbx
+}  // namespace alus::s1sar::etad

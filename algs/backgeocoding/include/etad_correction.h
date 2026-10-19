@@ -16,11 +16,11 @@ namespace alus::backgeocoding {
 
 /** Device-addressable correction layers and timing geometry for one SLC burst. */
 struct EtadBurstDescriptor {
-    s1tbx::etad::SlcBurstGeometry slc_geometry;
-    s1tbx::etad::GridGeometry etad_geometry;
-    s1tbx::etad::GridView phase;
-    s1tbx::etad::GridView height;
-    s1tbx::etad::GridView gradient;
+    s1sar::etad::SlcBurstGeometry slc_geometry;
+    s1sar::etad::GridGeometry etad_geometry;
+    s1sar::etad::GridView phase;
+    s1sar::etad::GridView height;
+    s1sar::etad::GridView gradient;
     size_t first_output_line;
 };
 
@@ -28,7 +28,7 @@ static_assert(std::is_standard_layout_v<EtadBurstDescriptor> && std::is_triviall
 
 class EtadCorrection {
 public:
-    explicit EtadCorrection(const s1tbx::etad::PreparedPair& pair);
+    explicit EtadCorrection(const s1sar::etad::PreparedPair& pair);
 
     EtadCorrection(const EtadCorrection&) = delete;
     EtadCorrection& operator=(const EtadCorrection&) = delete;
@@ -45,7 +45,7 @@ private:
         EtadBurstDescriptor descriptor;
     };
 
-    static DeviceBurst Upload(const s1tbx::etad::PreparedBurst& burst);
+    static DeviceBurst Upload(const s1sar::etad::PreparedBurst& burst);
 
     std::vector<DeviceBurst> reference_;
     std::vector<DeviceBurst> secondary_;

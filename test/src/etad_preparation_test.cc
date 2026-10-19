@@ -7,8 +7,8 @@
 #include <gtest/gtest.h>
 
 namespace {
-namespace etad = alus::s1tbx::etad;
-namespace slc = alus::s1tbx::slc;
+namespace etad = alus::s1sar::etad;
+namespace slc = alus::s1sar::slc;
 
 slc::Metadata SlcMetadata() {
     slc::Metadata metadata;
