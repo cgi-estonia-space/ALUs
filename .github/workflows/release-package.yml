@@ -4,25 +4,38 @@ on:
   push:
     branches: [ "development", "main" ]
   workflow_dispatch:
+    inputs:
+      source_ref:
+        description: Source tag, branch or commit to package (empty uses the selected workflow ref)
+        required: false
+        type: string
 
 permissions:
   contents: read
 
 jobs:
   release-package:
-    name: Build Ubuntu 24.04 package
-    runs-on: ubuntu-24.04
+    name: Build Ubuntu ${{ matrix.ubuntu }} package
+    runs-on: ubuntu-${{ matrix.ubuntu }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - ubuntu: '22.04'
+            platform_path: 22_04/jammy
+          - ubuntu: '24.04'
+            platform_path: 24_04/noble
     steps:
       - name: Install build dependencies
         env:
-          ALUS_PLATFORM_BASE_URL: https://raw.githubusercontent.com/${{ github.repository_owner }}/ALUs-platform/main/ubuntu/24_04/noble
+          ALUS_PLATFORM_BASE_URL: https://raw.githubusercontent.com/${{ github.repository_owner }}/ALUs-platform/main/ubuntu/${{ matrix.platform_path }}
         run: |
           set -euo pipefail
 
           scripts_dir="$RUNNER_TEMP/alus-platform"
           mkdir -p "$scripts_dir"
 
-          # These are the same Noble scripts used to prepare ALUs-platform development images.
+          # Use the matching distribution's ALUs-platform development environment.
           for script in install_cuda_base.sh setup_runtime.sh setup_dev.sh; do
             curl --fail --silent --show-error --location \
               "$ALUS_PLATFORM_BASE_URL/$script" \
@@ -42,21 +55,25 @@ jobs:
           )
 
           echo "/usr/local/cuda-12/bin" >> "$GITHUB_PATH"
+          echo "CUDACXX=/usr/local/cuda-12/bin/nvcc" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@v4
         with:
+          ref: ${{ inputs.source_ref || github.ref }}
           submodules: recursive
 
       - name: Build and package
         id: build_and_package
         shell: bash
+        env:
+          PACKAGE_PLATFORM: ubuntu-${{ matrix.ubuntu }}-x86_64
         run: |
           set -euo pipefail
 
           ver_major=$(grep VERSION_MAJOR VERSION | cut -d' ' -f3)
           ver_minor=$(grep VERSION_MINOR VERSION | cut -d' ' -f3)
           ver_patch=$(grep VERSION_PATCH VERSION | cut -d' ' -f3)
-          package_name="alus-$ver_major-$ver_minor-$ver_patch"
+          package_name="alus-$ver_major-$ver_minor-$ver_patch-$PACKAGE_PLATFORM"
           package_filename="$package_name.tar.gz"
           package_path="$RUNNER_TEMP/$package_filename"
 

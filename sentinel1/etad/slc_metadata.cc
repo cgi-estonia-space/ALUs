@@ -26,36 +26,35 @@
 #include "general_utils.h"
 
 namespace {
+namespace aug = alus::utils::general;
+
 constexpr double LIGHT_SPEED_METRES_PER_SECOND = 299792458.0;
 constexpr std::string_view REQUIRE_PREFIX = "SLC metadata";
-const auto Require = [](bool condition, std::string_view message) {
-    alus::utils::general::Require(condition, message, REQUIRE_PREFIX);
-};
 
 std::string Text(const pugi::xml_node& node, const char* field) {
     const std::string value = boost::algorithm::trim_copy(std::string(node.child_value(field)));
-    Require(!value.empty(), "missing " + std::string(node.name()) + "/" + field);
+    aug::Require(!value.empty(), "missing " + std::string(node.name()) + "/" + field, REQUIRE_PREFIX);
     return value;
 }
 
 double Number(const std::string& text) {
     size_t consumed{};
     const double value = std::stod(text, &consumed);
-    Require(consumed == text.size() && std::isfinite(value), "invalid number '" + text + "'");
+    aug::Require(consumed == text.size() && std::isfinite(value), "invalid number '" + text + "'", REQUIRE_PREFIX);
     return value;
 }
 
 double Number(const pugi::xml_node& node, const char* field) { return Number(Text(node, field)); }
 
 size_t PositiveSize(const std::string& text) {
-    Require(!text.empty() && std::all_of(text.begin(), text.end(), [](unsigned char character) {
+    aug::Require(!text.empty() && std::all_of(text.begin(), text.end(), [](unsigned char character) {
                 return std::isdigit(character) != 0;
             }),
-            "invalid positive integer '" + text + "'");
+            "invalid positive integer '" + text + "'", REQUIRE_PREFIX);
     size_t consumed{};
     const auto value = std::stoull(text, &consumed);
-    Require(consumed == text.size() && value > 0 && value <= std::numeric_limits<size_t>::max(),
-            "invalid positive integer '" + text + "'");
+    aug::Require(consumed == text.size() && value > 0 && value <= std::numeric_limits<size_t>::max(),
+            "invalid positive integer '" + text + "'", REQUIRE_PREFIX);
     return static_cast<size_t>(value);
 }
 
@@ -65,7 +64,7 @@ int PositiveInteger(const pugi::xml_node& node, const char* field) {
     size_t consumed{};
     const auto text = Text(node, field);
     const int value = std::stoi(text, &consumed);
-    Require(consumed == text.size() && value > 0, "invalid positive integer '" + text + "'");
+    aug::Require(consumed == text.size() && value > 0, "invalid positive integer '" + text + "'", REQUIRE_PREFIX);
     return value;
 }
 
@@ -73,7 +72,7 @@ double Time(const pugi::xml_node& node, const char* field) {
     constexpr size_t DATE_TIME_SEPARATOR = 10;
     auto text = Text(node, field);
     static const std::regex UTC_PATTERN(R"(\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d{1,6})?Z?)");
-    Require(std::regex_match(text, UTC_PATTERN), "invalid UTC timestamp '" + text + "'");
+    aug::Require(std::regex_match(text, UTC_PATTERN), "invalid UTC timestamp '" + text + "'", REQUIRE_PREFIX);
     if (text.back() == 'Z') {
         text.pop_back();
     }
@@ -81,7 +80,7 @@ double Time(const pugi::xml_node& node, const char* field) {
     const auto time = boost::posix_time::time_from_string(text);
     const boost::posix_time::ptime epoch(boost::gregorian::date(2000, 1, 1));
     const auto elapsed = time - epoch;
-    Require(!elapsed.is_special(), "invalid UTC timestamp '" + text + "'");
+    aug::Require(!elapsed.is_special(), "invalid UTC timestamp '" + text + "'", REQUIRE_PREFIX);
     return std::chrono::duration<double>(std::chrono::microseconds(elapsed.total_microseconds())).count();
 }
 
@@ -102,7 +101,7 @@ std::string ProductName(std::filesystem::path path) {
 std::string ReadFile(alus::ceres::IVirtualDir& directory, const std::string& path) {
     const auto file = directory.GetFile(path);
     std::ifstream stream(file.string(), std::ios::binary);
-    Require(stream.good(), "cannot read annotation " + path);
+    aug::Require(stream.good(), "cannot read annotation " + path, REQUIRE_PREFIX);
     return {std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>()};
 }
 }  // namespace
@@ -112,13 +111,13 @@ namespace alus::s1sar::slc {
 Metadata ParseAnnotation(std::string_view xml, std::string_view product_name) {
     pugi::xml_document document;
     const auto result = document.load_buffer(xml.data(), xml.size());
-    Require(result, "annotation XML: " + std::string(result.description()));
+    aug::Require(result, "annotation XML: " + std::string(result.description()), REQUIRE_PREFIX);
     const auto root = document.child("product");
-    Require(root, "annotation root must be product");
+    aug::Require(root, "annotation root must be product", REQUIRE_PREFIX);
 
     Metadata metadata;
     metadata.product_name = boost::algorithm::trim_copy(std::string(product_name));
-    Require(!metadata.product_name.empty(), "empty product name");
+    aug::Require(!metadata.product_name.empty(), "empty product name", REQUIRE_PREFIX);
 
     const auto header = root.child("adsHeader");
     metadata.mission = Upper(Text(header, "missionId"));
@@ -128,18 +127,18 @@ Metadata ParseAnnotation(std::string_view xml, std::string_view product_name) {
     metadata.absolute_orbit = PositiveInteger(header, "absoluteOrbitNumber");
     metadata.start_time = Time(header, "startTime");
     metadata.stop_time = Time(header, "stopTime");
-    Require(metadata.mission.rfind("S1", 0) == 0 && metadata.mode == "IW" &&
+    aug::Require(metadata.mission.rfind("S1", 0) == 0 && metadata.mode == "IW" &&
                 Upper(Text(header, "productType")) == "SLC",
-            "only Sentinel-1 IW SLC annotations are supported");
-    Require(metadata.swath_id == "IW1" || metadata.swath_id == "IW2" || metadata.swath_id == "IW3",
-            "invalid IW swath");
-    Require(metadata.polarisation == "VV" || metadata.polarisation == "VH" || metadata.polarisation == "HH" ||
+            "only Sentinel-1 IW SLC annotations are supported", REQUIRE_PREFIX);
+    aug::Require(metadata.swath_id == "IW1" || metadata.swath_id == "IW2" || metadata.swath_id == "IW3",
+            "invalid IW swath", REQUIRE_PREFIX);
+    aug::Require(metadata.polarisation == "VV" || metadata.polarisation == "VH" || metadata.polarisation == "HH" ||
                 metadata.polarisation == "HV",
-            "invalid polarisation");
-    Require(metadata.start_time <= metadata.stop_time, "invalid annotation time interval");
+            "invalid polarisation", REQUIRE_PREFIX);
+    aug::Require(metadata.start_time <= metadata.stop_time, "invalid annotation time interval", REQUIRE_PREFIX);
 
     metadata.radar_frequency_hz = Number(root.child("generalAnnotation").child("productInformation"), "radarFrequency");
-    Require(metadata.radar_frequency_hz > 0, "radar frequency must be positive, in Hz");
+    aug::Require(metadata.radar_frequency_hz > 0, "radar frequency must be positive, in Hz", REQUIRE_PREFIX);
 
     const auto image = root.child("imageAnnotation").child("imageInformation");
     auto& raster = metadata.raster;
@@ -148,27 +147,28 @@ Metadata ParseAnnotation(std::string_view xml, std::string_view product_name) {
     const double range_pixel_spacing = Number(image, "rangePixelSpacing");
     raster.total_lines = PositiveSize(image, "numberOfLines");
     raster.total_samples = PositiveSize(image, "numberOfSamples");
-    Require(raster.azimuth_time_interval > 0 && raster.first_range_time > 0 && range_pixel_spacing > 0,
-            "sampling values must be positive");
+    aug::Require(raster.azimuth_time_interval > 0 && raster.first_range_time > 0 && range_pixel_spacing > 0,
+            "sampling values must be positive", REQUIRE_PREFIX);
     raster.range_time_interval = 2.0 * range_pixel_spacing / LIGHT_SPEED_METRES_PER_SECOND;
 
     const auto timing = root.child("swathTiming");
     raster.lines_per_burst = PositiveSize(timing, "linesPerBurst");
     raster.samples_per_burst = PositiveSize(timing, "samplesPerBurst");
     const auto burst_list = timing.child("burstList");
-    Require(burst_list.attribute("count"), "missing burstList@count");
+    aug::Require(burst_list.attribute("count"), "missing burstList@count", REQUIRE_PREFIX);
     const size_t declared_count = PositiveSize(burst_list.attribute("count").value());
     for (const auto& burst : burst_list.children("burst")) {
         metadata.bursts.push_back({Time(burst, "azimuthTime")});
     }
-    Require(metadata.bursts.size() == declared_count, "count mismatch in burstList");
-    Require(raster.samples_per_burst == raster.total_samples, "samplesPerBurst does not match numberOfSamples");
-    Require(raster.lines_per_burst <= std::numeric_limits<size_t>::max() / metadata.bursts.size() &&
+    aug::Require(metadata.bursts.size() == declared_count, "count mismatch in burstList", REQUIRE_PREFIX);
+    aug::Require(raster.samples_per_burst == raster.total_samples,
+                 "samplesPerBurst does not match numberOfSamples", REQUIRE_PREFIX);
+    aug::Require(raster.lines_per_burst <= std::numeric_limits<size_t>::max() / metadata.bursts.size() &&
                 raster.lines_per_burst * metadata.bursts.size() == raster.total_lines,
-            "burst lines do not match numberOfLines");
+            "burst lines do not match numberOfLines", REQUIRE_PREFIX);
     for (size_t i = 1; i < metadata.bursts.size(); ++i) {
-        Require(metadata.bursts[i - 1].first_line_time < metadata.bursts[i].first_line_time,
-                "burst first-line times must be strictly increasing");
+        aug::Require(metadata.bursts[i - 1].first_line_time < metadata.bursts[i].first_line_time,
+                "burst first-line times must be strictly increasing", REQUIRE_PREFIX);
     }
     return metadata;
 }
@@ -178,14 +178,14 @@ Metadata ReadMetadata(const std::filesystem::path& path, std::string_view swath_
     if (input.filename().empty()) {
         input = input.parent_path();
     }
-    Require(std::filesystem::exists(input), "input does not exist: " + input.string());
+    aug::Require(std::filesystem::exists(input), "input does not exist: " + input.string(), REQUIRE_PREFIX);
     if (boost::algorithm::iequals(input.filename().string(), "manifest.safe")) {
         input = input.parent_path();
     }
-    Require(std::filesystem::is_directory(input) || boost::algorithm::iequals(input.extension().string(), ".zip"),
-            "expected SAFE directory, manifest.safe, or ZIP");
+    aug::Require(std::filesystem::is_directory(input) || boost::algorithm::iequals(input.extension().string(), ".zip"),
+            "expected SAFE directory, manifest.safe, or ZIP", REQUIRE_PREFIX);
     auto directory = ceres::IVirtualDir::Create(boost::filesystem::path(input.string()));
-    Require(directory != nullptr, "cannot open " + input.string());
+    aug::Require(directory != nullptr, "cannot open " + input.string(), REQUIRE_PREFIX);
 
     std::string root;
     if (!directory->Exists("manifest.safe")) {
@@ -195,14 +195,15 @@ Metadata ReadMetadata(const std::filesystem::path& path, std::string_view swath_
                 roots.push_back(entry);
             }
         }
-        Require(roots.size() == 1, "expected one SAFE root containing manifest.safe");
+        aug::Require(roots.size() == 1, "expected one SAFE root containing manifest.safe", REQUIRE_PREFIX);
         root = roots.front() + "/";
     }
     const std::string product_name =
         root.empty() ? ProductName(input) : ProductName(std::filesystem::path(root).parent_path());
     const std::string requested_swath = Upper(std::string(swath_id));
     const std::string requested_polarisation = Upper(std::string(polarisation));
-    Require(!requested_swath.empty() && !requested_polarisation.empty(), "swath and polarisation are required");
+    aug::Require(!requested_swath.empty() && !requested_polarisation.empty(),
+                 "swath and polarisation are required", REQUIRE_PREFIX);
 
     std::vector<Metadata> matches;
     const std::string annotation_folder = root + "annotation";
@@ -215,7 +216,8 @@ Metadata ReadMetadata(const std::filesystem::path& path, std::string_view swath_
             matches.push_back(std::move(metadata));
         }
     }
-    Require(matches.size() == 1, "expected one " + requested_swath + "/" + requested_polarisation + " annotation");
+    aug::Require(matches.size() == 1,
+                 "expected one " + requested_swath + "/" + requested_polarisation + " annotation", REQUIRE_PREFIX);
     return std::move(matches.front());
 }
 
